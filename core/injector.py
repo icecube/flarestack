@@ -70,10 +70,12 @@ class Injector:
 
         return mc[band_mask], omega, band_mask
 
-    def inject_signal(self):
+    def inject_signal(self, scale=1.):
         """Randomly select simulated events from the Monte Carlo dataset to
-        simulate a signal for each source.
+        simulate a signal for each source. The source flux can be scaled by
+        the scale parameter.
 
+        :param scale: Ratio of Injected Flux to source flux.
         :return: Set of signal events for the given IC Season.
         """
         mc = self._mc
@@ -83,6 +85,8 @@ class Injector:
                                      ("sigma", np.float), ("logE", np.float),
                                      ("dec", np.float), ('timeMJD', np.float),
                                      ])
+
+        n_tot_exp = 0
 
         # Loop over each source to be simulated
         for source in self.sources:
@@ -96,7 +100,7 @@ class Injector:
             eff_inj_time = self.time_PDF.effective_injection_time(source)
 
             # Calculate the fluence, using the effective injection time.
-            fluence = source['flux'] * eff_inj_time
+            fluence = source['injection flux'] * eff_inj_time * scale
 
             # Recalculates the oneweights to account for the declination
             # band, and the relative distance of the sources.
@@ -106,14 +110,17 @@ class Injector:
                 self.mc_weights[band_mask] / omega)             
             n_inj = np.sum(source_mc["ow"])
 
+            n_tot_exp += n_inj
+
             if source["Name"] not in self.ref_fluxes.keys():
                 self.ref_fluxes[source["Name"]] = n_inj
 
             # Simulates poisson noise around the expectation value n_inj. If
             # n_s = 0, skips simulation step.
             n_s = np.random.poisson(n_inj)
+            n_s = int(n_inj)
 
-            print "Expected", n_inj, "events, injecting", n_s, "events."
+            # print "Expected", n_inj, "events, injecting", n_s, "events."
 
             if n_s < 1:
                 continue
@@ -140,16 +147,20 @@ class Injector:
             # Joins the new events to the signal events
             sig_events = np.concatenate((sig_events, sim_ev))
 
+        print "Expecting", n_tot_exp, "Injecting", len(sig_events)
+
         return sig_events
 
-    def create_dataset(self):
+    def create_dataset(self, scale=1):
         """Create a dataset based on scrambled data for background, and Monte
-        Carlo simulation for signal. Returns the composite dataset.
+        Carlo simulation for signal. Returns the composite dataset. The source
+        flux can be scaled by the scale parameter.
 
+        :param scale: Ratio of Injected Flux to source flux
         :return: Simulated dataset
         """
         bkg_events = self.scramble_data()
-        sig_events = self.inject_signal()
+        sig_events = self.inject_signal(scale)
 
         if len(sig_events) > 0:
             simulated_data = np.concatenate((bkg_events, sig_events))

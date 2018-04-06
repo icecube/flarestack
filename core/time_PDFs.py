@@ -23,7 +23,7 @@ class TimePDF:
         self.season = season
         self.t0 = season["Start (MJD)"]
         self.t1 = season["End (MJD)"]
-        self.season_f = lambda t: box_func(t, self.t0, self.t1)
+        self.season_f = lambda t: box_func(t, self.t0 - 1e-9, self.t1 + 1e-9)
 
     @classmethod
     def register_subclass(cls, time_pdf_name):
@@ -54,7 +54,7 @@ class TimePDF:
         :param source: Source to be considered
         :return: Product of signal integral and season
         """
-        return self.signal_integral(t, source) * self.season_f(t - 1e-9)
+        return self.signal_integral(t, source) * self.season_f(t)
 
     def effective_injection_time(self, source):
         """Calculates the effective injection time for the given PDF.
@@ -107,6 +107,18 @@ class TimePDF:
         f = self.inverse_interpolate(source)
         return f(np.random.uniform(0., 1., n_s))
 
+    def background_f(self, t, source):
+        """In all cases, we assume that the background is uniform in time.
+        Thus, the background PDF is just a normalised version of the season_f
+        box function.
+
+        :param t: Time
+        :param source: Source to be considered
+        :return: Value of normalised box function at t
+        """
+        return self.season_f(t) / (self.t1 - self.t0)
+
+
 @TimePDF.register_subclass('Steady')
 class Steady(TimePDF):
     """The time-independent case for a Time PDF. Requires no additional
@@ -117,13 +129,14 @@ class Steady(TimePDF):
     def signal_f(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
         time. It is thus simply equal to the season_f, normalised with the
-        length of the season to give an integral of 1.
+        length of the season to give an integral of 1. It is thus equal to
+        the background PDF.
 
         :param t: Time
         :param source: Source to be considered
         :return: Value of normalised box function at t
         """
-        return self.season_f(t) / (self.t1 - self.t0)
+        return self.background_f(t, source)
 
     def signal_integral(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
@@ -202,8 +215,7 @@ class Box(TimePDF):
 
     def signal_integral(self, t, source):
         """In this case, the signal PDF is a uniform PDF for a fixed duration of
-        time. It is normalised with the length of the box, to give an
-        integral of 1. Thus, the integral is simply a linear function increasing
+        time. Thus, the integral is simply a linear function increasing
         between t0 (box start) and t1 (box end). After t1, the integral is
         equal to 1, while it is equal to 0 for t < t0.
 
