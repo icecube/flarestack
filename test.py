@@ -1,5 +1,9 @@
 import numpy as np
 import resource
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from tqdm import tqdm
 import scipy.optimize
 from core.injector import Injector
@@ -7,8 +11,8 @@ from core.llh import LLH
 from core.ts_distributions import plot_background_TS_distribution
 from IceCube_data.pointsource_7year import ps_7year
 
-# source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
-#               "/Input/Catalogues/Jetted_TDE_catalogue.npy"
+source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
+              "/Input/Catalogues/Jetted_TDE_catalogue.npy"
 
 # source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 #               "/Input/Catalogues/Dai_Fang_TDE_catalogue.npy"
@@ -80,9 +84,9 @@ llh_energy = injection_energy
 llh_time = injection_time
 
 llh_kwargs = {
-    "LLH Energy PDF": llh_energy,
+    "LLH Energy PDF": injection_energy,
     "LLH Time PDF": injection_time,
-    "Fit Gamma?": True,
+    "Fit Gamma?": False,
     "Fit Weights?": False
 }
 
@@ -111,7 +115,7 @@ n_trials = 1000
 #     print "Scale", scale
 
 
-def run_trials(scale=1, n=n_trials):
+def run_trials(n=n_trials, scale=1):
 
     param_vals = [[] for x in p0]
     ts_vals = []
@@ -120,80 +124,19 @@ def run_trials(scale=1, n=n_trials):
     print "Generating", n, "trials!"
 
     for i in tqdm(range(n)):
-        llh_functions = dict()
 
-        for season in ps_7year:
-            dataset = injectors[season["Name"]].create_dataset(scale)
-            llh_f = llhs[season["Name"]].create_llh_function(dataset)
-            llh_functions[season["Name"]] = llh_f
-
-        def f_final(params):
-
-            weights = dict()
-
-            weights_matrix = np.ones([len(ps_7year), len(sources)])
-
-            season_weights = []
-            weights = dict()
-
-            # for source in sources:
-
-            for i, season in enumerate(ps_7year):
-                llh = llhs[season["Name"]]
-                acc = llh.acceptance(sources, params)
-
-                time_weights = []
-
-                for source in sources:
-                    start = llh.time_PDF.product_integral(season["Start (MJD)"],
-                                                          source)
-                    end = llh.time_PDF.product_integral(season["End (MJD)"],
-                                                        source)
-
-                    time_weights.append(end - start)
-
-                w = acc * sources["weight_distance"] * np.array(time_weights)
-                w = w[:, np.newaxis]
-
-                # season_weights.append(np.sum(w))
-
-                for j, ind_w in enumerate(w):
-                    weights_matrix[i][j] = ind_w
-
-                # weights[season["Name"]] = w / np.sum(w)
-
-            weights_matrix /= np.sum(weights_matrix)
-
-            # season_weights = np.array(season_weights) /np.sum(
-            #     season_weights)
-
-            # print "Season Weights", weights_matrix
-            # print weights_matrix*params[0]
-            # raw_input("prompt")
-
-            ts_val = 0
-            for i, (name, f) in enumerate(llh_functions.iteritems()):
-                w = weights_matrix[i][:, np.newaxis]
-
-                # print w
-                # raw_input("prompt")
-
-                # w /= np.sum(w)
-                ts_val += f(params, w, 1.)
-
-            return -ts_val
-        #
-        # print p0
+        f = run(scale)
 
         res = scipy.optimize.fmin_l_bfgs_b(
-            f_final, p0, bounds=bounds, approx_grad=True)
+            f, p0, bounds=bounds, approx_grad=True)
 
         vals = res[0]
         ts = -res[1]
+
         flag = res[2]["warnflag"]
 
-        for i, val in enumerate(vals):
-            param_vals[i].append(val)
+        for j, val in enumerate(vals):
+            param_vals[j].append(val)
         ts_vals.append(float(ts))
 
         flags.append(flag)
@@ -216,16 +159,82 @@ def run_trials(scale=1, n=n_trials):
     return ts_vals, param_vals, flags
 
 
-print "Generating background trials"
+def run(scale=1):
 
-bkg_ts, params, flags = run_trials(1.0, 1000)
+    llh_functions = dict()
 
-ts_array = np.array(bkg_ts)
+    for season in ps_7year:
+        dataset = injectors[season["Name"]].create_dataset(scale)
+        llh_f = llhs[season["Name"]].create_llh_function(dataset)
+        llh_functions[season["Name"]] = llh_f
 
-frac = float(len(ts_array[ts_array <= 0])) / (float(len(ts_array)))
+    def f_final(params):
 
-# print ts_array
+        weights_matrix = np.ones([len(ps_7year), len(sources)])
 
-print "Fraction of underfluctuations is", frac
+        for i, season in enumerate(ps_7year):
+            llh = llhs[season["Name"]]
+            acc = llh.acceptance(sources, params)
 
-plot_background_TS_distribution(ts_array)
+            time_weights = []
+
+            for source in sources:
+
+                time_weights.append(llh.time_PDF.time_weight(source))
+
+            w = acc * sources["weight_distance"] * np.array(time_weights)
+
+            w = w[:, np.newaxis]
+
+            for j, ind_w in enumerate(w):
+                weights_matrix[i][j] = ind_w
+
+        weights_matrix /= np.sum(weights_matrix)
+
+        ts_val = 0
+        for i, (name, f) in enumerate(llh_functions.iteritems()):
+            w = weights_matrix[i][:, np.newaxis]
+            ts_val += f(params, w, 1)
+
+        return -ts_val
+
+    return f_final
+
+def scan_likelihood(scale=1):
+
+    f = run(scale)
+
+    n_range = np.linspace(1, 100, 1e4)
+    y = []
+
+    for n in tqdm(n_range):
+        y.append(f([n])[0][0])
+
+    plt.figure()
+    plt.plot(n_range, y)
+    plt.savefig("llh_scan.pdf")
+    plt.close()
+
+    min_y = np.min(y)
+
+    print "Minimum value of", min_y,
+
+    min_n = n_range[y.index(min_y)]
+
+    print "at", min_n
+
+def bkg_trials():
+    print "Generating background trials"
+
+    bkg_ts, params, flags = run_trials(1.0, 1000)
+
+    ts_array = np.array(bkg_ts)
+
+    frac = float(len(ts_array[ts_array <= 0])) / (float(len(ts_array)))
+
+    print "Fraction of underfluctuations is", frac
+
+    plot_background_TS_distribution(ts_array)
+
+run_trials(1000)
+scan_likelihood()

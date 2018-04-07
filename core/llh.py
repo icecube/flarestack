@@ -26,6 +26,7 @@ class LLH(SoB):
         # default for weighting the detector acceptance. Otherwise uses a
         # default of 2.
         self.fit_gamma = kwargs["Fit Gamma?"]
+
         if hasattr(self, "energy_pdf"):
             self.default_gamma = self.energy_pdf.gamma
         elif self.fit_gamma:
@@ -183,12 +184,12 @@ class LLH(SoB):
         # If using Energy, finds gamma and calculates the energy weight
         # Otherwise gives a weight of 1
         if SoB_energy_cache is not None:
-            n_s = params[:-1]
+            n_s = np.array(params[:-1])
             gamma = params[-1]
             w = self.estimate_energy_weights(gamma, SoB_energy_cache)
 
         else:
-            n_s = params[:]
+            n_s = np.array(params[:])
             w = 1.
 
         # print n_s
@@ -217,12 +218,12 @@ class LLH(SoB):
         # Multiplies energy weights by source weights (spatial and time)
         # if self.FitWeights is False:
 
-        n_j = n_s * np.sum(weights)
+        n_j = n_s * weights
 
-        b = weights
+        # b = np.array(1.)
 
-        y = np.sum(numexpr.evaluate('(b * SoB_spacetime)'), axis=0)
-        a = numexpr.evaluate('n_j * (w*y-1.)')
+        y = np.sum(numexpr.evaluate('(w * SoB_spacetime)'), axis=0)
+        a = numexpr.evaluate('n_j * (y-1.)')
         del y
         del w
 

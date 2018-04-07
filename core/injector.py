@@ -106,8 +106,10 @@ class Injector:
             # band, and the relative distance of the sources.
             # Multiplies by the fluence, to enable calculations of n_inj,
             # the expected number of injected events
+
             source_mc["ow"] = fluence * source["weight_distance"] * (
-                self.mc_weights[band_mask] / omega)             
+                self.mc_weights[band_mask] / omega)
+
             n_inj = np.sum(source_mc["ow"])
 
             n_tot_exp += n_inj
@@ -118,7 +120,6 @@ class Injector:
             # Simulates poisson noise around the expectation value n_inj. If
             # n_s = 0, skips simulation step.
             n_s = np.random.poisson(n_inj)
-            n_s = int(n_inj)
 
             # print "Expected", n_inj, "events, injecting", n_s, "events."
 
@@ -147,7 +148,7 @@ class Injector:
             # Joins the new events to the signal events
             sig_events = np.concatenate((sig_events, sim_ev))
 
-        print "Expecting", n_tot_exp, "Injecting", len(sig_events)
+        # print "Expecting", n_tot_exp, "Injecting", len(sig_events)
 
         return sig_events
 

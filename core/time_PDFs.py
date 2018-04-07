@@ -23,6 +23,7 @@ class TimePDF:
         self.season = season
         self.t0 = season["Start (MJD)"]
         self.t1 = season["End (MJD)"]
+        self.livetime = season["Livetime"]
         self.season_f = lambda t: box_func(t, self.t0 - 1e-9, self.t1 + 1e-9)
 
     @classmethod
@@ -117,6 +118,13 @@ class TimePDF:
         :return: Value of normalised box function at t
         """
         return self.season_f(t) / (self.t1 - self.t0)
+
+    def time_weight(self, source):
+        diff = self.signal_integral(self.t1, source) - \
+               self.signal_integral(self.t0, source)
+
+        time = self.t1 - self.t0
+        return diff * time
 
 
 @TimePDF.register_subclass('Steady')
