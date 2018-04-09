@@ -42,4 +42,4 @@ IC86_234_dict = {
 }
 
 ps_7year = [IC59_dict, IC79_dict, IC86_1_dict, IC86_234_dict]
-ps_7year = [IC59_dict, IC79_dict, IC86_1_dict]
+ps_7year = [IC79_dict, IC86_1_dict]

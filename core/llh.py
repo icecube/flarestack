@@ -189,59 +189,70 @@ class LLH(SoB):
             w = self.estimate_energy_weights(gamma, SoB_energy_cache)
 
         else:
-            n_s = np.array(params[:])
+            n_s = np.array(params)
             w = 1.
 
-        # print n_s
+        all_n_j = n_s * weights
 
-        # all_n_j = n_s * weights
-        #
-        # llh_value = 0
-        #
-        # SoB = w * SoB_spacetime
-        #
-        # chi = (SoB - 1.) / float(n_all)
-        #
-        # for n_j in all_n_j:
-        #
-        #     x = ((n_j * chi) + 1)
-        #
-        #     llh = np.log(x)
-        #
-        #     llh_value += np.sum(llh) + (n_all - n_mask) * np.log1p(-n_j / n_all)
+        llh_value = 0
 
+        for i, n_j in enumerate(all_n_j):
+            SoB = w * SoB_spacetime[i]
+
+            chi = (SoB - 1.) / float(n_all)
+
+            x = ((n_j * chi) + 1)
+
+            llh = np.log(x)
+
+            full_llh = np.sum(llh) + (n_all - n_mask) * np.log1p(-n_j / n_all)
+
+            source_weight = weights[i] * len(all_n_j)
+            # source_weight = 1.
+
+            llh_value += full_llh * source_weight
+
+        # llh_value = np.array(llh_value)
         # print llh_value
-        #
-        # raw_input("prompt")
 
         # If not fitting weights, use array. Otherwise, use matrix.
         # Multiplies energy weights by source weights (spatial and time)
         # if self.FitWeights is False:
 
-        n_j = n_s * weights
-
-        # b = np.array(1.)
-
-        y = np.sum(numexpr.evaluate('(w * SoB_spacetime)'), axis=0)
-        a = numexpr.evaluate('n_j * (y-1.)')
-        del y
-        del w
-
-        # if self.FitWeights is True:
-        #     # y = numexpr.evaluate('SoB_spacetime')
-        #     c = np.matrix(numexpr.evaluate('w*SoB_spacetime-1.'))
-        #     del w
-        #     a = np.squeeze(np.asarray(n_s * c))
-        #     del c
-
-        llh_value = numexpr.evaluate('log1p(a / n_all)')
-
-        # # Make sure to delete variables from memory
-        # del SoB_spacetime
-        # del a
+        # n_j = n_s * weights
         #
-        # Calculates llh, accounting for the discarded "non-coincident" data
-        llh_value = llh_value.sum() + (n_all - n_mask) * np.log1p(-n_j / n_all)
+        # b = np.ones_like(weights)
+        #
+        # print n_j,
+        #
+        # y = np.sum(numexpr.evaluate('(b * SoB_spacetime)'), axis=0)
+        #
+        # print y
+        #
+        # a = numexpr.evaluate('n_j * ((w * y)-1.)')
+        #
+        # print a
+        #
+        # raw_input("prompt")
+        #
+        # del y
+        # del w
+        #
+        # # if self.FitWeights is True:
+        # #     # y = numexpr.evaluate('SoB_spacetime')
+        # #     c = np.matrix(numexpr.evaluate('w*SoB_spacetime-1.'))
+        # #     del w
+        # #     a = np.squeeze(np.asarray(n_s * c))
+        # #     del c
+        #
+        # llh_value = numexpr.evaluate('log1p(a / n_all)')
+        #
+        # # # Make sure to delete variables from memory
+        # # del SoB_spacetime
+        # # del a
+        # #
+        # # Calculates llh, accounting for the discarded "non-coincident" data
+        # llh_value = llh_value.sum() + (n_all - n_mask) * np.log1p(-n_j / n_all)
 
         # Definition of test statistic
         return 2. * llh_value

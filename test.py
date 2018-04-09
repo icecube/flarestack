@@ -17,8 +17,8 @@ source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 # source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 #               "/Input/Catalogues/Dai_Fang_TDE_catalogue.npy"
 # #
-source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
-              "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
+# source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
+#               "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
 
 old_sources = np.load(source_path)
 
@@ -48,7 +48,7 @@ sources["weight"] = np.ones_like(old_sources["flux"])
 
 sources["weight_distance"] = sources["distance"] ** -2
 
-sources["injection flux"] = old_sources["flux"] * 5
+sources["injection flux"] = old_sources["flux"] * 10
 
 injectors = dict()
 llhs = dict()
@@ -63,17 +63,13 @@ injection_energy = {
 
 injection_time = {
     "Name": "Box",
-    "Pre-Window": 20,
-    "Post-Window": 0
+    "Pre-Window": 13,
+    "Post-Window": 213
 }
 
 # injection_time = {
 #     "Name": "Steady"
 # }
-
-injection_time = {
-    "Name": "Steady"
-}
 
 inj_kwargs = {
     "Injection Energy PDF": injection_energy,
@@ -84,7 +80,7 @@ llh_energy = injection_energy
 llh_time = injection_time
 
 llh_kwargs = {
-    "LLH Energy PDF": injection_energy,
+    "LLH Energy PDF": llh_energy,
     "LLH Time PDF": injection_time,
     "Fit Gamma?": False,
     "Fit Weights?": False
@@ -123,17 +119,20 @@ def run_trials(n=n_trials, scale=1):
 
     print "Generating", n, "trials!"
 
-    for i in tqdm(range(n)):
+    for i in tqdm(range(int(n))):
 
         f = run(scale)
 
         res = scipy.optimize.fmin_l_bfgs_b(
             f, p0, bounds=bounds, approx_grad=True)
 
+        flag = res[2]["warnflag"]
+
+        if flag > 0:
+            res = scipy.optimize.brute(f, ranges=bounds, full_output=True)
+
         vals = res[0]
         ts = -res[1]
-
-        flag = res[2]["warnflag"]
 
         for j, val in enumerate(vals):
             param_vals[j].append(val)
@@ -180,7 +179,8 @@ def run(scale=1):
 
             for source in sources:
 
-                time_weights.append(llh.time_PDF.time_weight(source))
+                time_weights.append(llh.time_PDF.effective_injection_time(
+                    source))
 
             w = acc * sources["weight_distance"] * np.array(time_weights)
 
@@ -194,7 +194,15 @@ def run(scale=1):
         ts_val = 0
         for i, (name, f) in enumerate(llh_functions.iteritems()):
             w = weights_matrix[i][:, np.newaxis]
-            ts_val += f(params, w, 1)
+
+            season_weight = np.sum(w) * float(len(ps_7year))
+
+            # print np.sum(w)
+
+            # print season_weight
+            # raw_input("prompt")
+
+            ts_val += f(params, w, 1) * season_weight
 
         return -ts_val
 
@@ -204,11 +212,15 @@ def scan_likelihood(scale=1):
 
     f = run(scale)
 
-    n_range = np.linspace(1, 100, 1e4)
+    n_range = np.linspace(1, 200, 1e4)
     y = []
 
     for n in tqdm(n_range):
-        y.append(f([n])[0][0])
+        new = f([n])
+        try:
+            y.append(new[0][0])
+        except IndexError:
+            y.append(new)
 
     plt.figure()
     plt.plot(n_range, y)
@@ -219,14 +231,35 @@ def scan_likelihood(scale=1):
 
     print "Minimum value of", min_y,
 
-    min_n = n_range[y.index(min_y)]
+    min_index = y.index(min_y)
+
+    min_n = n_range[min_index]
 
     print "at", min_n
+
+    l_y = np.array(y[:min_index])
+
+    try:
+        l_y = min(l_y[l_y > (min_y + 0.5)])
+
+        l_lim = n_range[y.index(l_y)]
+
+    except ValueError:
+        l_lim = 0
+
+    u_y = np.array(y[min_index:])
+
+    u_y = min(u_y[u_y > (min_y + 0.5)])
+
+    u_lim = n_range[y.index(u_y)]
+
+    print "One Sigma interval between", l_lim, "and", u_lim
+
 
 def bkg_trials():
     print "Generating background trials"
 
-    bkg_ts, params, flags = run_trials(1.0, 1000)
+    bkg_ts, params, flags = run_trials(1000, 0.0)
 
     ts_array = np.array(bkg_ts)
 
@@ -236,5 +269,6 @@ def bkg_trials():
 
     plot_background_TS_distribution(ts_array)
 
-run_trials(1000)
+run_trials(200)
 scan_likelihood()
+bkg_trials()

@@ -55,20 +55,13 @@ class TimePDF:
         :param source: Source to be considered
         :return: Product of signal integral and season
         """
-        return self.signal_integral(t, source) * self.season_f(t)
 
-    def effective_injection_time(self, source):
-        """Calculates the effective injection time for the given PDF.
-        The livetime is measured in days, but here is converted to seconds.
+        f = np.array(self.signal_integral(t, source) * self.season_f(t))
 
-        :param source: Source to be considered
-        :return: Effective Livetime in seconds
-        """
-        season_length = self.season["Livetime"]
-        frac = self.product_integral(self.t1, source) - \
-               self.product_integral(self.t0, source)
+        f[f < 0.] = 0
+        f[f > 1.] = 1
 
-        return season_length * (60 * 60 * 24) * frac
+        return f
 
     def inverse_interpolate(self, source):
         """Calculates the values for the integral of the signal PDF within
@@ -88,7 +81,7 @@ class TimePDF:
         t_range = np.linspace(self.t0, self.t1, 1.e4)
         cumu = (self.product_integral(t_range, source) - min_int) / fraction
 
-        # Checks to ensure the cuumulative fraction spans 0 to 1
+        # Checks to ensure the cumulative fraction spans 0 to 1
         if max(cumu) > 1:
             raise Exception("Cumulative Distribution exceeds 1.")
         elif min(cumu) < 0:
@@ -123,7 +116,7 @@ class TimePDF:
         diff = self.signal_integral(self.t1, source) - \
                self.signal_integral(self.t0, source)
 
-        time = self.t1 - self.t0
+        time = self.effective_injection_time(source)
         return diff * time
 
 
@@ -172,6 +165,19 @@ class Steady(TimePDF):
 
         return start, end
 
+    def effective_injection_time(self, source):
+        """Calculates the effective injection time for the given PDF.
+        The livetime is measured in days, but here is converted to seconds.
+
+        :param source: Source to be considered
+        :return: Effective Livetime in seconds
+        """
+        season_length = self.season["Livetime"]
+        frac = self.product_integral(self.t1, source) - \
+               self.product_integral(self.t0, source)
+
+        return season_length * (60 * 60 * 24) * frac
+
 
 @TimePDF.register_subclass('Box')
 class Box(TimePDF):
@@ -194,7 +200,7 @@ class Box(TimePDF):
         :param source: Source to be considered
         :return: Time of Window Start
         """
-        return source["Ref Time (MJD)"] - self.pre_window
+        return max(self.t0, source["Ref Time (MJD)"] - self.pre_window)
 
     def sig_t1(self, source):
         """Calculates the starting time for the window, equal to the
@@ -204,7 +210,7 @@ class Box(TimePDF):
         :param source: Source to be considered
         :return: Time of Window End
         """
-        return source["Ref Time (MJD)"] + self.post_window
+        return min(source["Ref Time (MJD)"] + self.post_window, self.t1)
 
     def signal_f(self, t, source):
         """In this case, the signal PDF is a uniform PDF for a fixed duration of
@@ -236,7 +242,7 @@ class Box(TimePDF):
         t1 = self.sig_t1(source)
 
         return np.abs(((t - t0) * (self.signal_f(t, source)) +
-                       0.5 * (np.sign(t - t1) + 1)))
+                       0.5 * (np.sign(t - (t1 - 1e-9)) + 1)))
 
     def flare_time_mask(self, source):
         """In this case, the interesting period for Flare Searches is the
@@ -250,3 +256,17 @@ class Box(TimePDF):
         end = min(self.t1, self.sig_t1(source))
 
         return start, end
+
+    def effective_injection_time(self, source):
+        """Calculates the effective injection time for the given PDF.
+        The livetime is measured in days, but here is converted to seconds.
+
+        :param source: Source to be considered
+        :return: Effective Livetime in seconds
+        """
+        season_length = self.season["Livetime"] * (60 * 60 * 24)
+        t0 = self.sig_t0(source)
+        t1 = self.sig_t1(source)
+        time = season_length * (t1 - t0) / (self.t1 - self.t0)
+
+        return max(time, 0.)
