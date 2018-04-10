@@ -148,7 +148,7 @@ class Injector:
             # Joins the new events to the signal events
             sig_events = np.concatenate((sig_events, sim_ev))
 
-        # print "Expecting", n_tot_exp, "Injecting", len(sig_events)
+        print "Expecting", n_tot_exp, "Injecting", len(sig_events)
 
         return sig_events
 

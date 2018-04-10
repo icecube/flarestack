@@ -164,14 +164,14 @@ class LLH(SoB):
         else:
             SoB_energy_cache = None
 
-        def test_statistic(params, weights, season_weight):
+        def test_statistic(params, weights):
             return self.calculate_test_statistic(
-                params, weights, season_weight, n_mask, n_all, SoB_spacetime,
+                params, weights, n_mask, n_all, SoB_spacetime,
                 SoB_energy_cache)
 
         return test_statistic
 
-    def calculate_test_statistic(self, params, weights, season_weight, n_mask,
+    def calculate_test_statistic(self, params, weights, n_mask,
                                  n_all, SoB_spacetime,
                                  SoB_energy_cache=None):
         """Calculates the test statistic, given the parameters. Uses numexpr
@@ -207,10 +207,7 @@ class LLH(SoB):
 
             full_llh = np.sum(llh) + (n_all - n_mask) * np.log1p(-n_j / n_all)
 
-            source_weight = weights[i] * len(all_n_j)
-            # source_weight = 1.
-
-            llh_value += full_llh * source_weight
+            llh_value += full_llh
 
         # llh_value = np.array(llh_value)
         # print llh_value

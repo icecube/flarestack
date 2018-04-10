@@ -93,14 +93,12 @@ class Chi2_LeftTruncated(object):
                '\t KS       = {0:7.2%}'.format(self._ks)
 
 
-def plot_background_TS_distribution(ts_array, ):
+def plot_background_ts_distribution(ts_array, ):
     chi2 = Chi2_LeftTruncated(ts_array)
 
     df = chi2._f.args[0]
     loc = chi2._f.args[1]
     scale = chi2._f.args[2]
-
-    print chi2
 
     path = "bkg_TS.pdf"
     plt.figure()

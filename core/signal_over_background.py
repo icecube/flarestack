@@ -104,7 +104,7 @@ class SoB:
         return hist_2d
 
     def create_2d_ratio_spline(self, gamma):
-        """Creates 2D histograms for both data and MC, in which the datasets
+        """Creates 2D histograms for both data and MC, in which the seasons
         are binned by Sin(Declination) and Log(Energy/GeV). Each histogram is
         normalised in Sin(Declination) bands. Then creates a histogram of the
         ratio of the Signal/Background histograms. In bins where there is
