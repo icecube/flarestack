@@ -7,9 +7,9 @@ source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 
 # source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 #               "/Input/Catalogues/Dai_Fang_TDE_catalogue.npy"
-# #
-source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
-              "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
+
+# source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
+#               "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
 
 old_sources = np.load(source_path)
 
@@ -72,13 +72,12 @@ llh_time = injection_time
 
 llh_kwargs = {
     "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": injection_time,
-    "Fit Gamma?": True,
+    "LLH Time PDF": llh_time,
+    # "Fit Gamma?": True,
     "Fit Weights?": False
 }
 
 mh = MinimisationHandler(ps_7year, sources, inj_kwargs, llh_kwargs)
-
 
 mh.run_trials(200)
 

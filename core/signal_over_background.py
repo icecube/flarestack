@@ -10,7 +10,6 @@ class SoB:
         self._mc = np.load(season["mc_path"])
         self._exp = np.load(season["exp_path"])
 
-
         # Bins for sin declination (not evenly spaced)
         self.sin_dec_bins = np.unique(np.concatenate([
             np.linspace(-1., -0.9, 2 + 1),
@@ -24,26 +23,50 @@ class SoB:
 
         e_pdf_dict = kwargs["LLH Energy PDF"]
 
+        # If provided in kwargs, sets whether the spectral index (gamma)
+        # should be included as a fit prameter. If this is not specified,
+        # the default is to not fit gamma.
+        try:
+            self.fit_gamma = kwargs["Fit Gamma?"]
+        except KeyError:
+            self.fit_gamma = False
+
         if e_pdf_dict is not None:
             self.energy_pdf = EnergyPDF.create(e_pdf_dict)
             # Bins for energy Log(E/GeV)
             self.energy_bins = np.linspace(1., 10., 40 + 1)
 
-            # Sets precision
+            # Sets precision for energy SoB
             self.precision = .1
 
-            # Produces a set (i.e no duplicates) of datapoints for gamma
-            # This is best on 33 points between 0.9 and 4.1
-            # Each point is modified by _around(i)
-            # Useful for different precisions, where rounding errors might
-            # otherwise lead to duplicates in set
-            self.gamma_support_points = set(
-                [self._around(i) for i in np.linspace(0.9, 4.1, 30 + 3)])
+            # If there is an LLH energy pdf specified, uses that gamma as the
+            # default for weighting the detector acceptance.
+            self.default_gamma = self.energy_pdf.gamma
 
-            print "Making Log(Signal/Background) Splines for",
-            print len(self.gamma_support_points), "gamma points."
+            # If gamma is to be fit, the SoB energy histograms must be
+            # evaluated for a range of values between the bounds of 1 and 4
+            if self.fit_gamma:
+                # Produces a set (i.e no duplicates) of datapoints for gamma
+                # This is best on 33 points between 0.9 and 4.1
+                # Each point is modified by _around(i)
+                # Useful for different precisions, where rounding errors might
+                # otherwise lead to duplicates in set
+                self.gamma_support_points = set(
+                    [self._around(i) for i in np.linspace(0.9, 4.1, 30 + 3)])
+
+            print "Making Log(Signal/Background) Splines."
             self.SoB_spline_2Ds = self.create_2d_splines()
             print "Made", len(self.SoB_spline_2Ds), "Splines."
+
+        # Checks gamma is not being fit without an energy PDF provided
+        elif self.fit_gamma:
+            raise Exception("LLH has been set to fit gamma, "
+                    "but no Energy PDF has been provided")
+
+        # If gamma is not a fit parameter, and no energy PDF has been
+        # provided, sets a default value of gamma = 2.
+        else:
+            self.default_gamma = 2.
 
     def _around(self, value):
         """Produces an array in which the precision of the value
@@ -159,16 +182,26 @@ class SoB:
         return spline
 
     def create_2d_splines(self):
-        """Loops over each value of gamma in self.gamma_support_points. For
-        each gamma value, calculates the Log(Signal/Background) 2D PDF. Then
-        fits a spline to each histogram, and saves the splines in a
-        dictionary. Returns the dictionary of splines.
+        """If gamma will not be fit, then calculates the Log(Signal/Background)
+        2D PDF for the fixed value self.default_gamma. Fits a spline to each
+        histogram, and saves the spline in a dictionary.
+
+        If gamma should be fit, instead loops over each value of gamma in
+        self.gamma_support_points. For each gamma value, the spline creation
+        is repeated, and saved as a dictionary entry.
+
+        In either case, returns the dictionary of spline/splines.
 
         :return: Dictionary of 2D Log(Signal/Background) splines
         """
         splines = dict()
 
-        for gamma in self.gamma_support_points:
+        if self.fit_gamma:
+            for gamma in self.gamma_support_points:
+                splines[gamma] = self.create_2d_ratio_spline(gamma)
+
+        else:
+            gamma = self.default_gamma
             splines[gamma] = self.create_2d_ratio_spline(gamma)
 
         return splines

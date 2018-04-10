@@ -20,20 +20,7 @@ class LLH(SoB):
         # If a time PDF is to be used, a dictionary must be provided in kwargs
         time_dict = kwargs["LLH Time PDF"]
         if time_dict is not None:
-            self.time_PDF = TimePDF.create(time_dict, season)
-
-        # If there is an LLH energy pdf specified, uses that gamma as the
-        # default for weighting the detector acceptance. Otherwise uses a
-        # default of 2.
-        self.fit_gamma = kwargs["Fit Gamma?"]
-
-        if hasattr(self, "energy_pdf"):
-            self.default_gamma = self.energy_pdf.gamma
-        elif self.fit_gamma:
-            raise Exception("LLH has been set to fit gamma, "
-                            "but no Energy PDF has been provided")
-        else:
-            self.default_gamma = 2.
+            self.time_pdf = TimePDF.create(time_dict, season)
 
         self.acceptance_f = self.create_acceptance_function()
 
@@ -89,10 +76,10 @@ class LLH(SoB):
         veto = np.ones_like(data["timeMJD"], dtype=np.bool)
 
         for source in sources:
-            if hasattr(self, "time_PDF"):
+            if hasattr(self, "time_pdf"):
 
                 # Sets time mask, based on parameters for LLH Time PDF
-                start_time, end_time = self.time_PDF.flare_time_mask(source)
+                start_time, end_time = self.time_pdf.flare_time_mask(source)
                 time_mask = np.logical_and(
                     np.greater(data["timeMJD"], start_time),
                     np.less(data["timeMJD"], end_time)
@@ -118,18 +105,15 @@ class LLH(SoB):
             # Scales the width of the box in ra, to give a roughly constant
             # area. However, if the width would have to be greater that +/- pi,
             # then sets the area to be exactly 2 pi.
-
             dPhi = np.amin([2. * np.pi, 2. * width / cos_factor])
 
             # Accounts for wrapping effects at ra=0, calculates the distance
             # of each event to the source.
-
             ra_dist = np.fabs(
                 (data["ra"] - source['ra'] + np.pi) % (2. * np.pi) - np.pi)
             ra_mask = ra_dist < dPhi / 2.
 
             spatial_mask = dec_mask & ra_mask
-
             coincident_mask = spatial_mask & time_mask
 
             veto = veto & ~coincident_mask
@@ -145,7 +129,6 @@ class LLH(SoB):
 
         n_mask = np.sum(mask)
         n_all = len(data)
-
         n_sources = len(self.sources)
         
         SoB_spacetime = np.zeros_like(np.zeros([n_sources, n_mask]))
@@ -157,10 +140,19 @@ class LLH(SoB):
             del sig
             del bkg
 
-        if self.fit_gamma:
+        # If an llh energy PDF has been provided, calculate the SoB values
+        # for the coincident data, and stores it in a cache.
+        if hasattr(self, "energy_pdf"):
             SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
-        # elif hasattr(self, "energy_PDF"):
-        #     self.estimate_energy_weights(gamma, SoB_energy_cache)
+
+            # If gamma is not going to be fit, replaces the SoB energy
+            # cache with the weight array corresponding to the gamma provided
+            # in the llh energy PDF
+            if not self.fit_gamma:
+                SoB_energy_cache = self.estimate_energy_weights(
+                    self.default_gamma, SoB_energy_cache)
+
+        # Otherwise, pass no energy weight information
         else:
             SoB_energy_cache = None
 
@@ -181,23 +173,34 @@ class LLH(SoB):
         :return: Test Statistic
         """
 
-        # If using Energy, finds gamma and calculates the energy weight
-        # Otherwise gives a weight of 1
-        if SoB_energy_cache is not None:
+        # If fitting gamma and calculates the energy weights for the given
+        # value of gamma
+        if self.fit_gamma:
             n_s = np.array(params[:-1])
             gamma = params[-1]
-            w = self.estimate_energy_weights(gamma, SoB_energy_cache)
+            SoB_energy = self.estimate_energy_weights(gamma, SoB_energy_cache)
 
+        # If using energy information but with a fixed value of gamma,
+        # sets the weights as equal to those for the provided gamma value.
+        elif SoB_energy_cache is not None:
+            n_s = np.array(params)
+            SoB_energy = SoB_energy_cache
+
+        # If not using energy information, assigns a weight of 1. to each event
         else:
             n_s = np.array(params)
-            w = 1.
+            SoB_energy = 1.
 
         all_n_j = n_s * weights
+
+        # print SoB_energy * SoB_spacetime
+        #
+        # raw_input("prompt")
 
         llh_value = 0
 
         for i, n_j in enumerate(all_n_j):
-            SoB = w * SoB_spacetime[i]
+            SoB = SoB_energy * SoB_spacetime[i]
 
             chi = (SoB - 1.) / float(n_all)
 
@@ -226,19 +229,19 @@ class LLH(SoB):
         #
         # print y
         #
-        # a = numexpr.evaluate('n_j * ((w * y)-1.)')
+        # a = numexpr.evaluate('n_j * ((SoB_energy * y)-1.)')
         #
         # print a
         #
         # raw_input("prompt")
         #
         # del y
-        # del w
+        # del SoB_energy
         #
         # # if self.FitWeights is True:
         # #     # y = numexpr.evaluate('SoB_spacetime')
-        # #     c = np.matrix(numexpr.evaluate('w*SoB_spacetime-1.'))
-        # #     del w
+        # #     c = np.matrix(numexpr.evaluate('SoB_energy*SoB_spacetime-1.'))
+        # #     del SoB_energy
         # #     a = np.squeeze(np.asarray(n_s * c))
         # #     del c
         #
@@ -271,8 +274,8 @@ class LLH(SoB):
         """
         space_term = self.signal_spatial(source, cut_data)
 
-        if hasattr(self, "time_PDF"):
-            time_term = self.time_PDF.signal_f(cut_data["timeMJD"], source)
+        if hasattr(self, "time_pdf"):
+            time_term = self.time_pdf.signal_f(cut_data["timeMJD"], source)
             sig_pdf = space_term * time_term
 
         else:
@@ -319,8 +322,8 @@ class LLH(SoB):
         space_term = (1. / (2. * np.pi)) * np.exp(
             self.bkg_spatial(cut_data["sinDec"]))
 
-        if hasattr(self, "time_PDF"):
-            time_term = self.time_PDF.background_f(cut_data["timeMJD"], source)
+        if hasattr(self, "time_pdf"):
+            time_term = self.time_pdf.background_f(cut_data["timeMJD"], source)
             sig_pdf = space_term * time_term
         else:
             sig_pdf = space_term
@@ -343,7 +346,7 @@ class LLH(SoB):
         """
         energy_SoB_cache = dict()
 
-        for gamma in self.gamma_support_points:
+        for gamma in self.SoB_spline_2Ds.keys():
             energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma].ev(
                 cut_data["logE"], cut_data["sinDec"])
 
@@ -352,26 +355,30 @@ class LLH(SoB):
     def estimate_energy_weights(self, gamma, energy_SoB_cache):
         """Quickly estimates the value of Signal/Background for Gamma.
         Uses pre-calculated values for first and second derivatives.
-        Uses a Taylor series to estimate S(gamma).
+        Uses a Taylor series to estimate S(gamma), unless SoB has already
+        been calculated for a given gamma.
 
         :param gamma: Spectral Index
         :param energy_SoB_cache: Weight cache
         :return: Estimated value for S(gamma)
         """
-        g1 = self._around(gamma)
-        dg = self.precision
+        if gamma in energy_SoB_cache.keys():
+            val = np.exp(energy_SoB_cache[gamma])
+        else:
+            g1 = self._around(gamma)
+            dg = self.precision
 
-        g0 = self._around(g1 - dg)
-        g2 = self._around(g1 + dg)
+            g0 = self._around(g1 - dg)
+            g2 = self._around(g1 + dg)
 
-        # Uses Numexpr to quickly estimate S(gamma)
-        S0 = energy_SoB_cache[g0]
-        S1 = energy_SoB_cache[g1]
-        S2 = energy_SoB_cache[g2]
+            # Uses Numexpr to quickly estimate S(gamma)
+            S0 = energy_SoB_cache[g0]
+            S1 = energy_SoB_cache[g1]
+            S2 = energy_SoB_cache[g2]
 
-        val = numexpr.evaluate(
-            "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
-            " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
-        )
+            val = numexpr.evaluate(
+                "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
+                " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
+            )
 
         return val

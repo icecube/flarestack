@@ -41,6 +41,7 @@ class MinimisationHandler:
         # The default value for n_s is 1. It can be between 0 and 1000.
         p0 = [1.]
         bounds = [(0, 1000.)]
+        names = ["n_s"]
 
         # If weights are to be fitted, then each source has an independent
         # n_s in the same 0-1000 range.
@@ -48,6 +49,7 @@ class MinimisationHandler:
             if llh_kwargs["Fit Weights?"]:
                 p0 = [1. for x in sources]
                 bounds = [(0, 1000.) for x in sources]
+                names = ["n_s (" + x["Name"] + ")" for x in sources]
 
         # If gamma is to be included as a fit parameter, then its default
         # value if 2, and it can range between 1 and 4.
@@ -55,9 +57,11 @@ class MinimisationHandler:
             if llh_kwargs["Fit Gamma?"]:
                 p0.append(2.)
                 bounds.append((1., 4.))
+                names.append("Gamma")
 
         self.p0 = p0
         self.bounds = bounds
+        self.param_names = names
 
         # Sets the default flux scale for finding sensitivity
         # Default value is 1 (Gev)^-1 (cm)^-2 (s)^-1
@@ -96,13 +100,26 @@ class MinimisationHandler:
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
+        print ""
         print 'Memory usage max: %s (Gb)' % mem_use
 
-        for i, param in enumerate(param_vals):
-            print "Parameter", i, ":", np.mean(param), np.median(param), np.std(
-                param)
+        n_inj = 0
+        for inj in self.injectors.itervalues():
+            for val in inj.ref_fluxes.itervalues():
+                n_inj += val
+        print ""
+        print "Injected with an expectation of", n_inj, "events."
 
-        print "Test Statistic:", np.mean(ts_vals), np.std(ts_vals)
+        print ""
+        print "FIT RESULTS:"
+        print ""
+
+        for i, param in enumerate(param_vals):
+            print "Parameter", self.param_names[i], ":", np.mean(param), \
+                np.median(param), np.std(param)
+        print "Test Statistic:", np.mean(ts_vals), np.median(ts_vals), np.std(
+            ts_vals)
+        print ""
 
         # print "FLAG STATISTICS:"
         # for i in sorted(np.unique(flags)):
@@ -131,7 +148,7 @@ class MinimisationHandler:
 
                 for source in self.sources:
 
-                    time_weights.append(llh.time_PDF.effective_injection_time(
+                    time_weights.append(llh.time_pdf.effective_injection_time(
                         source))
 
                 w = acc * self.sources["weight_distance"] * np.array(
