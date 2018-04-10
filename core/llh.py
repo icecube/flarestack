@@ -191,68 +191,16 @@ class LLH(SoB):
             n_s = np.array(params)
             SoB_energy = 1.
 
+        # Calculates the expected number of signal events for each source in
+        # the season
         all_n_j = n_s * weights
+        
+        # Evaluate the likelihood function for neutrinos close to each source
+        llh_value = np.sum(np.log1p(
+            all_n_j * ((SoB_energy * SoB_spacetime) - 1)/n_all))
 
-        # print SoB_energy * SoB_spacetime
-        #
-        # raw_input("prompt")
-
-        llh_value = 0
-
-        for i, n_j in enumerate(all_n_j):
-            SoB = SoB_energy * SoB_spacetime[i]
-
-            chi = (SoB - 1.) / float(n_all)
-
-            x = ((n_j * chi) + 1)
-
-            llh = np.log(x)
-
-            full_llh = np.sum(llh) + (n_all - n_mask) * np.log1p(-n_j / n_all)
-
-            llh_value += full_llh
-
-        # llh_value = np.array(llh_value)
-        # print llh_value
-
-        # If not fitting weights, use array. Otherwise, use matrix.
-        # Multiplies energy weights by source weights (spatial and time)
-        # if self.FitWeights is False:
-
-        # n_j = n_s * weights
-        #
-        # b = np.ones_like(weights)
-        #
-        # print n_j,
-        #
-        # y = np.sum(numexpr.evaluate('(b * SoB_spacetime)'), axis=0)
-        #
-        # print y
-        #
-        # a = numexpr.evaluate('n_j * ((SoB_energy * y)-1.)')
-        #
-        # print a
-        #
-        # raw_input("prompt")
-        #
-        # del y
-        # del SoB_energy
-        #
-        # # if self.FitWeights is True:
-        # #     # y = numexpr.evaluate('SoB_spacetime')
-        # #     c = np.matrix(numexpr.evaluate('SoB_energy*SoB_spacetime-1.'))
-        # #     del SoB_energy
-        # #     a = np.squeeze(np.asarray(n_s * c))
-        # #     del c
-        #
-        # llh_value = numexpr.evaluate('log1p(a / n_all)')
-        #
-        # # # Make sure to delete variables from memory
-        # # del SoB_spacetime
-        # # del a
-        # #
-        # # Calculates llh, accounting for the discarded "non-coincident" data
-        # llh_value = llh_value.sum() + (n_all - n_mask) * np.log1p(-n_j / n_all)
+        # Account for the events in the veto region, by assuming they have S/B=0
+        llh_value += np.sum((n_all - n_mask) * np.log1p(-all_n_j / n_all))
 
         # Definition of test statistic
         return 2. * llh_value

@@ -73,7 +73,7 @@ llh_time = injection_time
 llh_kwargs = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    # "Fit Gamma?": True,
+    "Fit Gamma?": True,
     "Fit Weights?": False
 }
 

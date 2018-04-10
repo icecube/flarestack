@@ -32,7 +32,6 @@ class MinimisationHandler:
         # For each season, we create an independent injector and a
         # likelihood, using the source list along with the sets of energy/time
         # PDFs provided in inj_kwargs and llh_kwargs.
-
         for season in self.seasons:
             self.injectors[season["Name"]] = Injector(season, sources,
                                                       **inj_kwargs)
@@ -77,14 +76,13 @@ class MinimisationHandler:
         print "Generating", n, "trials!"
 
         for i in tqdm(range(int(n))):
-
             f = self.run(scale)
 
             res = scipy.optimize.fmin_l_bfgs_b(
                 f, self.p0, bounds=self.bounds, approx_grad=True)
 
             flag = res[2]["warnflag"]
-
+            # If the minimiser does not converge, repeat with brute force
             if flag > 0:
                 res = scipy.optimize.brute(f, ranges=self.bounds,
                                            full_output=True)
@@ -94,8 +92,8 @@ class MinimisationHandler:
 
             for j, val in enumerate(vals):
                 param_vals[j].append(val)
-            ts_vals.append(float(ts))
 
+            ts_vals.append(float(ts))
             flags.append(flag)
 
         mem_use = str(
