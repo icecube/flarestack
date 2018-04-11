@@ -11,11 +11,10 @@ class LLH(SoB):
     """General  LLH class.
     """
 
-    def __init__(self, season, sources, **kwargs):
+    def __init__(self, season, sources, splines=None, **kwargs):
         print "Initialising LLH for", season["Name"]
-        SoB.__init__(self, season, **kwargs)
+        SoB.__init__(self, season, splines, **kwargs)
         self.sources = sources
-        # self.mc_weights = self.energy_pdf.weight_mc(self._mc)
 
         # If a time PDF is to be used, a dictionary must be provided in kwargs
         time_dict = kwargs["LLH Time PDF"]
@@ -40,7 +39,7 @@ class LLH(SoB):
             dec_bins, gamma_bins, values, kind='linear')
         return f
 
-    def acceptance(self, source, params):
+    def acceptance(self, source, params=None):
         """Calculates the detector acceptance for a given source, using the
         2D interpolation of the acceptance as a function of declination and
         gamma. If gamma IS NOT being fit, uses the default value of gamma for
@@ -172,7 +171,6 @@ class LLH(SoB):
         :param params: Parameters from minimisation
         :return: Test Statistic
         """
-
         # If fitting gamma and calculates the energy weights for the given
         # value of gamma
         if self.fit_gamma:
@@ -330,3 +328,127 @@ class LLH(SoB):
             )
 
         return val
+
+
+class FlareLLH(LLH):
+
+    def create_llh_function(self, coincident_data, flare_veto, n_all,
+                            marginilisation):
+
+        flare_data = coincident_data[~flare_veto]
+
+        n_coincident = len(coincident_data)
+
+        sig = self.signal_pdf(self.sources, flare_data)
+        bkg = self.background_pdf(self.sources, flare_data)
+        SoB_spacetime = sig / bkg
+        del sig
+        del bkg
+
+        # If an llh energy PDF has been provided, calculate the SoB values
+        # for the coincident data, and stores it in a cache.
+        if hasattr(self, "energy_pdf"):
+            SoB_energy_cache = self.create_SoB_energy_cache(flare_data)
+
+            # If gamma is not going to be fit, replaces the SoB energy
+            # cache with the weight array corresponding to the gamma provided
+            # in the llh energy PDF
+            if not self.fit_gamma:
+                SoB_energy_cache = self.estimate_energy_weights(
+                    self.default_gamma, SoB_energy_cache)
+
+        # Otherwise, pass no energy weight information
+        else:
+            SoB_energy_cache = None
+
+        def test_statistic(params, weights):
+            return self.calculate_flare_test_statistic(
+                params, weights, n_all, marginilisation, SoB_spacetime,
+                SoB_energy_cache)
+
+        return test_statistic
+
+    def calculate_flare_test_statistic(self, params, weights,
+                                 n_all, n_coincident, marginilisation,
+                                       SoB_spacetime,
+                                 SoB_energy_cache=None):
+        """Calculates the test statistic, given the parameters. Uses numexpr
+        for faster calculations.
+
+        :param params: Parameters from minimisation
+        :return: Test Statistic
+        """
+        n_mask = len(SoB_spacetime)
+
+        # If fitting gamma and calculates the energy weights for the given
+        # value of gamma
+        if self.fit_gamma:
+            n_s = np.array(params[:-1])
+            gamma = params[-1]
+            SoB_energy = self.estimate_energy_weights(gamma, SoB_energy_cache)
+
+        # If using energy information but with a fixed value of gamma,
+        # sets the weights as equal to those for the provided gamma value.
+        elif SoB_energy_cache is not None:
+            n_s = np.array(params)
+            SoB_energy = SoB_energy_cache
+
+        # If not using energy information, assigns a weight of 1. to each event
+        else:
+            n_s = np.array(params)
+            SoB_energy = 1.
+
+        # print SoB_spacetime * SoB_energy
+        # print SoB_spacetime, SoB_energy
+        # raw_input("prompt")
+
+        # Calculates the expected number of signal events for each source in
+        # the season
+        n_j = n_s * weights
+
+        # print "n_j", n_j
+
+        # Evaluate the likelihood function for neutrinos close to each source
+        llh_value = np.sum(np.log((
+            1 + (n_j * ((SoB_energy * SoB_spacetime) - 1) / n_all))
+                                  * marginilisation))
+
+        # print llh_value
+
+        # Account for the events in the veto region, by assuming they have S/B=0
+        llh_value += np.sum((n_all - n_mask) * np.log((1 + -n_j / n_all)
+                                                      * marginilisation))
+
+        # llh_value += np.sum((n_all - n_mask) * np.log((1 + -n_j / n_all)))
+
+        print llh_value
+
+        raw_input("prompt")
+
+        # Definition of test statistic
+        return 2. * llh_value
+
+    def find_significant_events(self, coincident_data, sources):
+
+        sig = self.signal_pdf(sources, coincident_data)
+        bkg = self.background_pdf(sources, coincident_data)
+        SoB_spacetime = sig / bkg
+
+        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
+
+        SoB_energy = self.estimate_energy_weights(
+                self.default_gamma, SoB_energy_cache)
+
+        SoB = SoB_spacetime * SoB_energy
+
+        mask = SoB > 1.
+
+        return coincident_data[mask]
+
+    def create_flare(self, season, sources, **kwargs):
+        spline_dict = dict()
+        spline_dict["Background spatial"] = self.bkg_spatial
+        spline_dict["SoB_spline_2D"] = self.SoB_spline_2Ds
+
+        flare_llh = FlareLLH(season, sources, spline_dict, **kwargs)
+        return flare_llh

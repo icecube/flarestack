@@ -7,7 +7,7 @@ import matplotlib.cm as cm
 from tqdm import tqdm
 import scipy.optimize
 from core.injector import Injector
-from core.llh import LLH
+from core.llh import LLH, FlareLLH
 from core.ts_distributions import plot_background_ts_distribution
 
 
@@ -29,13 +29,30 @@ class MinimisationHandler:
         self.inj_kwargs = inj_kwargs
         self.llh_kwargs = llh_kwargs
 
+        # Checks if the code should search for flares. By default, this is
+        # not done.
+        try:
+            self.flare = llh_kwargs["Flare Search?"]
+        except KeyError:
+            self.flare = False
+
+        if self.flare:
+            self.run = self.run_flare
+        else:
+            self.run = self.run_stacked
+
         # For each season, we create an independent injector and a
         # likelihood, using the source list along with the sets of energy/time
         # PDFs provided in inj_kwargs and llh_kwargs.
         for season in self.seasons:
             self.injectors[season["Name"]] = Injector(season, sources,
                                                       **inj_kwargs)
-            self.llhs[season["Name"]] = LLH(season, sources, **llh_kwargs)
+
+            if not self.flare:
+                self.llhs[season["Name"]] = LLH(season, sources, **llh_kwargs)
+            else:
+                self.llhs[season["Name"]] = FlareLLH(season, sources,
+                                                     **llh_kwargs)
 
         # The default value for n_s is 1. It can be between 0 and 1000.
         p0 = [1.]
@@ -125,7 +142,7 @@ class MinimisationHandler:
 
         return ts_vals, param_vals, flags
 
-    def run(self, scale=1):
+    def run_stacked(self, scale=1):
 
         llh_functions = dict()
 
@@ -135,6 +152,12 @@ class MinimisationHandler:
             llh_functions[season["Name"]] = llh_f
 
         def f_final(params):
+
+            # Creates a matrix fixing the fraction of the total signal that
+            # is expected in each Source+Season pair. The matrix is
+            # normalised to 1, so that for a given total n_s, the expectation
+            # for the ith season for the jth source is given by:
+            #  n_exp = n_s * weight_matrix[i][j]
 
             weights_matrix = np.ones([len(self.seasons), len(self.sources)])
 
@@ -159,15 +182,157 @@ class MinimisationHandler:
 
             weights_matrix /= np.sum(weights_matrix)
 
+            # Having created the weight matrix, loops over each season of
+            # data and evaluates the TS function for that season
+
             ts_val = 0
             for i, (name, f) in enumerate(llh_functions.iteritems()):
                 w = weights_matrix[i][:, np.newaxis]
-
                 ts_val += f(params, w)
 
             return -ts_val
 
         return f_final
+
+    def run_flare(self, scale=1):
+
+        datasets = dict()
+
+        full_data = dict()
+
+        for season in self.seasons:
+            coincident_data = self.injectors[season["Name"]].create_dataset(scale)
+            llh = self.llhs[season["Name"]]
+
+            full_data[season["Name"]] = coincident_data
+
+            for source in self.sources:
+                mask = llh.select_coincident_data(coincident_data, [source])
+                coincident_data = coincident_data[mask]
+
+                name = source["Name"]
+                if name not in datasets.keys():
+                    datasets[name] = dict()
+
+                if len(coincident_data) > 0:
+
+                    new_entry = dict(season)
+                    new_entry["Coincident Data"] = coincident_data
+                    significant = llh.find_significant_events(
+                        coincident_data, source)
+                    new_entry["Significant Times"] = significant["timeMJD"]
+                    new_entry["N_all"] = len(coincident_data)
+
+                    datasets[name][season["Name"]] = new_entry
+
+        for (source, source_dict) in datasets.iteritems():
+
+            src = self.sources[self.sources["Name"] == source]
+
+            max_flare = src["End Time (MJD)"] - src["Start Time (MJD)"]
+
+            all_times = []
+            n_tot = 0
+            for season_dict in source_dict.itervalues():
+                new_times = season_dict["Significant Times"]
+                all_times.extend(new_times)
+                n_tot += len(season_dict["Coincident Data"])
+
+            all_times = sorted(all_times)
+
+            print "In total", len(all_times), "of", n_tot
+
+            # Minimum flare duration (days)
+            min_flare = 1.
+
+            pairs = [(x, y) for x in all_times for y in all_times if y > x +
+                     min_flare]
+
+            all_pairs = [(x, y) for x in all_times for y in all_times if y > x]
+
+            print "This gives", len(pairs), "possible pairs out of",
+            print len(all_pairs), "pairs."
+
+            all_res = []
+            all_ts = []
+
+            for (t_start, t_end) in pairs:
+
+                w = np.ones(len(source_dict))
+
+                llhs = dict()
+
+                flare_length = t_end - t_start
+                marginalisation = flare_length / max_flare
+
+                for i, season_dict in enumerate(source_dict.itervalues()):
+                    coincident_data = season_dict["Coincident Data"]
+                    flare_veto = np.logical_or(
+                        np.less(coincident_data["timeMJD"], t_start),
+                        np.greater(coincident_data["timeMJD"], t_end))
+
+                    if np.sum(~flare_veto) > 1:
+
+                        t_s = max(t_start, season_dict["Start (MJD)"])
+                        t_end = min(t_end, season_dict["End (MJD)"])
+
+                        T = t_end - t_s
+
+                        llh_kwargs = dict(self.llh_kwargs)
+                        llh_kwargs["LLH Time PDF"]["Start Time (MJD)"] = t_s
+                        llh_kwargs["LLH Time PDF"]["End Time (MJD)"] = t_end
+
+                        llh = self.llhs[season["Name"]]
+
+                        flare_llh = llh.create_flare(season_dict, src,
+                                                     **llh_kwargs)
+
+                        flare_f = flare_llh.create_llh_function(
+                            coincident_data, flare_veto, season_dict["N_all"],
+                            marginalisation)
+
+                        llhs[season_dict["Name"]] = {
+                            "llh": flare_llh,
+                            "f": flare_f,
+                            "T": T
+                        }
+
+                # From here, we have normal minimisation behaviour
+
+                def f_final(params):
+
+                    weights_matrix = np.ones(len(llhs))
+
+                    for i, llh_dict in enumerate(llhs.itervalues()):
+                        T = llh_dict["T"]
+                        acc = llh.acceptance(src, params)
+                        weights_matrix[i] = T * acc
+
+                    weights_matrix /= np.sum(weights_matrix)
+
+                    ts = 0
+
+                    for i, llh_dict in enumerate(llhs.itervalues()):
+                        w = weights_matrix[i]
+                        ts += llh_dict["f"](params, w)
+
+                    return -ts
+
+                # f_final([])
+
+                res = scipy.optimize.fmin_l_bfgs_b(
+                    f_final, self.p0, bounds=self.bounds, approx_grad=True)
+
+                print res
+                raw_input("prompt")
+
+                all_res.append(res)
+                all_ts.append(-res[1])
+
+            print max(all_ts)
+
+            raw_input("prompt")
+
 
     def scan_likelihood(self, scale=1):
 

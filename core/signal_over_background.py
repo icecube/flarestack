@@ -5,10 +5,8 @@ from energy_PDFs import EnergyPDF
 
 class SoB:
 
-    def __init__(self, season, **kwargs):
+    def __init__(self, season, splines=None, **kwargs):
         self.season = season
-        self._mc = np.load(season["mc_path"])
-        self._exp = np.load(season["exp_path"])
 
         # Bins for sin declination (not evenly spaced)
         self.sin_dec_bins = np.unique(np.concatenate([
@@ -19,10 +17,6 @@ class SoB:
             np.linspace(0.9, 1., 2 + 1),
         ]))
 
-        self.bkg_spatial = self.create_bkg_spatial_spline(self._exp)
-
-        e_pdf_dict = kwargs["LLH Energy PDF"]
-
         # If provided in kwargs, sets whether the spectral index (gamma)
         # should be included as a fit prameter. If this is not specified,
         # the default is to not fit gamma.
@@ -30,6 +24,8 @@ class SoB:
             self.fit_gamma = kwargs["Fit Gamma?"]
         except KeyError:
             self.fit_gamma = False
+
+        e_pdf_dict = kwargs["LLH Energy PDF"]
 
         if e_pdf_dict is not None:
             self.energy_pdf = EnergyPDF.create(e_pdf_dict)
@@ -54,19 +50,31 @@ class SoB:
                 self.gamma_support_points = set(
                     [self._around(i) for i in np.linspace(0.9, 4.1, 30 + 3)])
 
-            print "Making Log(Signal/Background) Splines."
-            self.SoB_spline_2Ds = self.create_2d_splines()
-            print "Made", len(self.SoB_spline_2Ds), "Splines."
-
         # Checks gamma is not being fit without an energy PDF provided
         elif self.fit_gamma:
             raise Exception("LLH has been set to fit gamma, "
-                    "but no Energy PDF has been provided")
+                            "but no Energy PDF has been provided")
 
         # If gamma is not a fit parameter, and no energy PDF has been
         # provided, sets a default value of gamma = 2.
         else:
             self.default_gamma = 2.
+
+        if splines is None:
+
+            self._mc = np.load(season["mc_path"])
+            self._exp = np.load(season["exp_path"])
+
+            self.bkg_spatial = self.create_bkg_spatial_spline(self._exp)
+
+            if e_pdf_dict is not None:
+                print "Making Log(Signal/Background) Splines."
+                self.SoB_spline_2Ds = self.create_2d_splines()
+                print "Made", len(self.SoB_spline_2Ds), "Splines."
+
+        else:
+            self.SoB_spline_2Ds = splines["SoB_spline_2D"]
+            self.bkg_spatial = splines["Background spatial"]
 
     def _around(self, value):
         """Produces an array in which the precision of the value

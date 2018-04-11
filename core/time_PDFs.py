@@ -270,3 +270,53 @@ class Box(TimePDF):
         time = season_length * (t1 - t0) / (self.t1 - self.t0)
 
         return max(time, 0.)
+
+
+@TimePDF.register_subclass('FixedBox')
+class FixedBox(Box):
+    """The simplest time-dependent case for a Time PDF. Used for a source that
+    is uniformly emitting for a fixed period of time. In this case, the start
+    and end time for the box is unique for each source. The sources must have
+    a field "Start Time (MJD)" and another "End Time (MJD)", specifying the
+    period of the Time PDF.
+    """
+
+    def __init__(self, t_pdf_dict, season):
+        TimePDF.__init__(self, t_pdf_dict, season)
+
+        if "Start Time (MJD)" in t_pdf_dict.keys():
+            self.start_mjd = t_pdf_dict["Start Time (MJD)"]
+
+        if "End Time (MJD)" in t_pdf_dict.keys():
+            self.end_mjd = t_pdf_dict["End Time (MJD)"]
+
+
+    def sig_t0(self, source):
+        """Calculates the starting time for the window, equal to the
+        source reference time in MJD minus the length of the pre-reference-time
+        window (in days).
+
+        :param source: Source to be considered
+        :return: Time of Window Start
+        """
+        if hasattr(self, "start_mjd"):
+            t0 = self.start_mjd
+        else:
+            t0 = source["Start Time (MJD)"]
+
+        return max(self.t0, t0)
+
+    def sig_t1(self, source):
+        """Calculates the starting time for the window, equal to the
+        source reference time in MJD plus the length of the post-reference-time
+        window (in days).
+
+        :param source: Source to be considered
+        :return: Time of Window End
+        """
+        if hasattr(self, "end_mjd"):
+            t1 = self.start_mjd
+        else:
+            t1 = source["End Time (MJD)"]
+
+        return min(t1, self.t1)

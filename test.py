@@ -8,27 +8,30 @@ source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 # source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 #               "/Input/Catalogues/Dai_Fang_TDE_catalogue.npy"
 
-# source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
-#               "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
+source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
+              "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
 
 old_sources = np.load(source_path)
 
 # print old_sources
 
 sources = np.empty_like(old_sources, dtype=[
-        ("ra", np.float), ("dec", np.float),
-        ("injection flux", np.float),
-        ("llh flux", np.float),
-        # ("n_exp", np.float),
-        ("weight", np.float),
-        # ("weight_acceptance", np.float),
-        # ("weight_time", np.float),
-        ("weight_distance", np.float),
-        ("Ref Time (MJD)", np.float),
-        ("distance", np.float), ('Name', 'a30'),
-        ])
+    ("ra", np.float), ("dec", np.float),
+    ("injection flux", np.float),
+    ("llh flux", np.float),
+    # ("n_exp", np.float),
+    ("weight", np.float),
+    # ("weight_acceptance", np.float),
+    # ("weight_time", np.float),
+    ("weight_distance", np.float),
+    ("Ref Time (MJD)", np.float),
+    ("Start Time (MJD)", np.float),
+    ("End Time (MJD)", np.float),
+    ("distance", np.float), ('Name', 'a30'),
+])
 
-for x in ["ra", "dec", "distance", "weight"]:
+for x in ["ra", "dec", "distance", "weight", "Start Time (MJD)",
+          "End Time (MJD)"]:
     sources[x] = old_sources[x]
 
 sources["Name"] = old_sources["name"]
@@ -39,7 +42,7 @@ sources["weight"] = np.ones_like(old_sources["flux"])
 
 sources["weight_distance"] = sources["distance"] ** -2
 
-sources["injection flux"] = old_sources["flux"] * 50
+sources["injection flux"] = old_sources["flux"] * 10
 
 injectors = dict()
 llhs = dict()
@@ -54,13 +57,15 @@ injection_energy = {
 
 injection_time = {
     "Name": "Box",
-    "Pre-Window": 13,
-    "Post-Window": 213
+    "Pre-Window": 5.,
+    "Post-Window": 30.
 }
 
-# injection_time = {
-#     "Name": "Steady"
+# llh_time = {
+#     "Name": "FixedBox"
 # }
+
+llh_time = injection_time
 
 inj_kwargs = {
     "Injection Energy PDF": injection_energy,
@@ -68,13 +73,13 @@ inj_kwargs = {
 }
 
 llh_energy = injection_energy
-llh_time = injection_time
 
 llh_kwargs = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Fit Weights?": False
+    # "Fit Gamma?": True,
+    # "Fit Weights?": True,
+    # "Flare Search?": True
 }
 
 mh = MinimisationHandler(ps_7year, sources, inj_kwargs, llh_kwargs)
