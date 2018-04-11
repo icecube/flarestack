@@ -101,6 +101,7 @@ class MinimisationHandler:
             flag = res[2]["warnflag"]
             # If the minimiser does not converge, repeat with brute force
             if flag > 0:
+
                 res = scipy.optimize.brute(f, ranges=self.bounds,
                                            full_output=True)
 
@@ -136,9 +137,9 @@ class MinimisationHandler:
             ts_vals)
         print ""
 
-        # print "FLAG STATISTICS:"
-        # for i in sorted(np.unique(flags)):
-        #     print "Flag", i, ":", flags.count(i)
+        print "FLAG STATISTICS:"
+        for i in sorted(np.unique(flags)):
+            print "Flag", i, ":", flags.count(i)
 
         return ts_vals, param_vals, flags
 

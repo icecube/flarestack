@@ -44,6 +44,17 @@ class TimePDF:
 
         return cls.subclasses[t_pdf_name](t_pdf_dict, season)
 
+    def background_f(self, t, source):
+        """In all cases, we assume that the background is uniform in time.
+        Thus, the background PDF is just a normalised version of the season_f
+        box function.
+
+        :param t: Time
+        :param source: Source to be considered
+        :return: Value of normalised box function at t
+        """
+        return self.season_f(t) / (self.t1 - self.t0)
+
     def product_integral(self, t, source):
         """Calculates the product of the given signal PDF with the season box
         function. Thus gives 0 everywhere outside the season, and otherwise
@@ -100,17 +111,6 @@ class TimePDF:
         """
         f = self.inverse_interpolate(source)
         return f(np.random.uniform(0., 1., n_s))
-
-    def background_f(self, t, source):
-        """In all cases, we assume that the background is uniform in time.
-        Thus, the background PDF is just a normalised version of the season_f
-        box function.
-
-        :param t: Time
-        :param source: Source to be considered
-        :return: Value of normalised box function at t
-        """
-        return self.season_f(t) / (self.t1 - self.t0)
 
     def time_weight(self, source):
         diff = self.signal_integral(self.t1, source) - \

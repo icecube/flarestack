@@ -60,7 +60,7 @@ class LLH(SoB):
 
         return self.acceptance_f(dec, gamma)
 
-    def select_coincident_data(self, data, sources):
+    def select_spatially_coincident_data(self, data, sources):
         """Checks each source, and only identifies events in data which are
         both spatially and time-coincident with the source. Spatial
         coincidence is defined as a +/- 5 degree box centered on the  given
@@ -75,17 +75,6 @@ class LLH(SoB):
         veto = np.ones_like(data["timeMJD"], dtype=np.bool)
 
         for source in sources:
-            if hasattr(self, "time_pdf"):
-
-                # Sets time mask, based on parameters for LLH Time PDF
-                start_time, end_time = self.time_pdf.flare_time_mask(source)
-                time_mask = np.logical_and(
-                    np.greater(data["timeMJD"], start_time),
-                    np.less(data["timeMJD"], end_time)
-                )
-
-            else:
-                time_mask = np.ones_like(data["timeMJD"], dtype=np.bool)
 
             # Sets half width of spatial box
             width = np.deg2rad(5.)
@@ -113,56 +102,63 @@ class LLH(SoB):
             ra_mask = ra_dist < dPhi / 2.
 
             spatial_mask = dec_mask & ra_mask
-            coincident_mask = spatial_mask & time_mask
+            # coincident_mask = spatial_mask & time_mask
 
-            veto = veto & ~coincident_mask
+            veto = veto & ~spatial_mask
 
         # print "Of", len(data), "total events, we consider", np.sum(~veto), \
         #     "events which are coincident with the sources."
         return ~veto
 
     def create_llh_function(self, data):
-        mask = self.select_coincident_data(data, self.sources)
+        n_all = float(len(data))
+        SoB_spacetime = []
 
-        coincident_data = data[mask]
-
-        n_mask = np.sum(mask)
-        n_all = len(data)
-        n_sources = len(self.sources)
-        
-        SoB_spacetime = np.zeros_like(np.zeros([n_sources, n_mask]))
-
-        for i, source in enumerate(self.sources):
-            sig = self.signal_pdf(source, coincident_data)
-            bkg = self.background_pdf(source, coincident_data)
-            SoB_spacetime[i] = sig/bkg
-            del sig
-            del bkg
-
-        # If an llh energy PDF has been provided, calculate the SoB values
-        # for the coincident data, and stores it in a cache.
         if hasattr(self, "energy_pdf"):
-            SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
-
-            # If gamma is not going to be fit, replaces the SoB energy
-            # cache with the weight array corresponding to the gamma provided
-            # in the llh energy PDF
-            if not self.fit_gamma:
-                SoB_energy_cache = self.estimate_energy_weights(
-                    self.default_gamma, SoB_energy_cache)
-
+            SoB_energy_cache = []
         # Otherwise, pass no energy weight information
         else:
             SoB_energy_cache = None
 
+        n_mask = np.zeros(len(self.sources))
+
+        for i, source in enumerate(self.sources):
+
+            s_mask = self.select_spatially_coincident_data(data, [source])
+
+            coincident_data = data[s_mask]
+            n_mask[i] = np.sum(s_mask)
+
+            if len(coincident_data) > 0:
+
+                sig = self.signal_pdf(source, coincident_data)
+                bkg = self.background_pdf(source, coincident_data)
+                SoB_spacetime.append(sig/bkg)
+                del sig
+                del bkg
+
+                # If an llh energy PDF has been provided, calculate the SoB values
+                # for the coincident data, and stores it in a cache.
+                if SoB_energy_cache is not None:
+                    energy_cache = self.create_SoB_energy_cache(coincident_data)
+
+                    # If gamma is not going to be fit, replaces the SoB energy
+                    # cache with the weight array corresponding to the gamma provided
+                    # in the llh energy PDF
+                    if not self.fit_gamma:
+                        energy_cache = self.estimate_energy_weights(
+                            self.default_gamma, energy_cache)
+
+                    SoB_energy_cache.append(energy_cache)
+
         def test_statistic(params, weights):
             return self.calculate_test_statistic(
-                params, weights, n_mask, n_all, SoB_spacetime,
+                params, weights, n_all, SoB_spacetime,
                 SoB_energy_cache)
 
         return test_statistic
 
-    def calculate_test_statistic(self, params, weights, n_mask,
+    def calculate_test_statistic(self, params, weights,
                                  n_all, SoB_spacetime,
                                  SoB_energy_cache=None):
         """Calculates the test statistic, given the parameters. Uses numexpr
@@ -171,12 +167,18 @@ class LLH(SoB):
         :param params: Parameters from minimisation
         :return: Test Statistic
         """
+
         # If fitting gamma and calculates the energy weights for the given
         # value of gamma
         if self.fit_gamma:
             n_s = np.array(params[:-1])
             gamma = params[-1]
-            SoB_energy = self.estimate_energy_weights(gamma, SoB_energy_cache)
+
+            SoB_energy = [self.estimate_energy_weights(gamma, x) for x in \
+                    SoB_energy_cache]
+
+            # SoB_energy = [self.estimate_energy_weights(gamma,
+            #                                            SoB_energy_cache[0])]
 
         # If using energy information but with a fixed value of gamma,
         # sets the weights as equal to those for the provided gamma value.
@@ -192,14 +194,30 @@ class LLH(SoB):
         # Calculates the expected number of signal events for each source in
         # the season
         all_n_j = n_s * weights
-        
-        # Evaluate the likelihood function for neutrinos close to each source
-        llh_value = np.sum(np.log1p(
-            all_n_j * ((SoB_energy * SoB_spacetime) - 1)/n_all))
 
-        # Account for the events in the veto region, by assuming they have S/B=0
-        llh_value += np.sum((n_all - n_mask) * np.log1p(-all_n_j / n_all))
+        llh_value = 0
 
+        for i, SoB_e in enumerate(SoB_energy):
+            n_mask = float(len(SoB_e))
+            # SoB = SoB_energy[i] * SoB_spacetime[i]
+            #
+            # chi = (SoB - 1)/n_all[i]
+
+            # print i, SoB_e, SoB_spacetime[i], n_all[i], n_mask[i], chi
+            #
+            # print np.sum(np.log1p(all_n_j * chi))
+
+            # Evaluate the likelihood function for neutrinos close to each source
+            llh_value += np.sum(np.log1p(
+                all_n_j[i] * ((SoB_energy[i] * SoB_spacetime[i]) - 1)/n_all))
+
+
+            # Account for the events in the veto region, by assuming they have S/B=0
+            llh_value += np.sum(
+                (n_all - n_mask) * np.log1p(-all_n_j[i] / n_all))
+        #
+        #     print llh_value
+        # raw_input("prompt")
         # Definition of test statistic
         return 2. * llh_value
 
@@ -220,12 +238,19 @@ class LLH(SoB):
         """
         space_term = self.signal_spatial(source, cut_data)
 
+        # print space_term,
+
         if hasattr(self, "time_pdf"):
             time_term = self.time_pdf.signal_f(cut_data["timeMJD"], source)
+
+            # print time_term
             sig_pdf = space_term * time_term
 
         else:
             sig_pdf = space_term
+
+        # print sig_pdf
+        # raw_input("prompt")
 
         return sig_pdf
 
@@ -268,11 +293,18 @@ class LLH(SoB):
         space_term = (1. / (2. * np.pi)) * np.exp(
             self.bkg_spatial(cut_data["sinDec"]))
 
+        # print space_term,
+
         if hasattr(self, "time_pdf"):
             time_term = self.time_pdf.background_f(cut_data["timeMJD"], source)
+            # print time_term
             sig_pdf = space_term * time_term
         else:
             sig_pdf = space_term
+
+        # print sig_pdf
+
+        # raw_input("prompt")
 
         return sig_pdf
 

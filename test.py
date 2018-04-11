@@ -42,7 +42,7 @@ sources["weight"] = np.ones_like(old_sources["flux"])
 
 sources["weight_distance"] = sources["distance"] ** -2
 
-sources["injection flux"] = old_sources["flux"] * 10
+sources["injection flux"] = old_sources["flux"] * 100
 
 injectors = dict()
 llhs = dict()
@@ -57,9 +57,13 @@ injection_energy = {
 
 injection_time = {
     "Name": "Box",
-    "Pre-Window": 5.,
+    "Pre-Window": 20.,
     "Post-Window": 30.
 }
+
+# injection_time = {
+#     "Name": "Steady"
+# }
 
 # llh_time = {
 #     "Name": "FixedBox"
