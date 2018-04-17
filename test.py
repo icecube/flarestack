@@ -8,8 +8,8 @@ source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 # source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 #               "/Input/Catalogues/Dai_Fang_TDE_catalogue.npy"
 
-source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
-              "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
+# source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
+#               "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
 
 old_sources = np.load(source_path)
 
@@ -42,7 +42,7 @@ sources["weight"] = np.ones_like(old_sources["flux"])
 
 sources["weight_distance"] = sources["distance"] ** -2
 
-sources["injection flux"] = old_sources["flux"] * 100
+sources["injection flux"] = old_sources["flux"] * 60
 
 injectors = dict()
 llhs = dict()
@@ -57,23 +57,26 @@ injection_energy = {
 
 injection_time = {
     "Name": "Box",
-    "Pre-Window": 20.,
-    "Post-Window": 30.
+    "Pre-Window": 0.,
+    "Post-Window": 5.
 }
 
 # injection_time = {
 #     "Name": "Steady"
 # }
 
-# llh_time = {
-#     "Name": "FixedBox"
-# }
+llh_time = {
+    "Name": "FixedBox",
+    # "Pre-Window": 300.,
+    # "Post-Window": 250.
+}
 
-llh_time = injection_time
+# llh_time = injection_time
 
 inj_kwargs = {
     "Injection Energy PDF": injection_energy,
     "Injection Time PDF": injection_time,
+    "Poisson Smear?": True
 }
 
 llh_energy = injection_energy
@@ -83,12 +86,12 @@ llh_kwargs = {
     "LLH Time PDF": llh_time,
     # "Fit Gamma?": True,
     # "Fit Weights?": True,
-    # "Flare Search?": True
+    "Flare Search?": True
 }
 
-mh = MinimisationHandler(ps_7year, sources, inj_kwargs, llh_kwargs)
+mh = MinimisationHandler("TEST", ps_7year, sources, inj_kwargs, llh_kwargs)
 
-mh.run_trials(200)
+mh.run(10)
 
 # bkg_ts = mh.bkg_trials()
 
@@ -104,5 +107,3 @@ mh.run_trials(200)
 #
 #     print "For k=" + str(scale), "we have", frac_over_median, \
 #         "overfluctuations."
-
-

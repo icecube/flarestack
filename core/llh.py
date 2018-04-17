@@ -12,7 +12,7 @@ class LLH(SoB):
     """
 
     def __init__(self, season, sources, splines=None, **kwargs):
-        print "Initialising LLH for", season["Name"]
+        # print "Initialising LLH for", season["Name"]
         SoB.__init__(self, season, splines, **kwargs)
         self.sources = sources
 
@@ -174,8 +174,8 @@ class LLH(SoB):
             n_s = np.array(params[:-1])
             gamma = params[-1]
 
-            SoB_energy = [self.estimate_energy_weights(gamma, x) for x in \
-                    SoB_energy_cache]
+            SoB_energy = np.array([self.estimate_energy_weights(gamma, x) for x
+                                in SoB_energy_cache])
 
             # SoB_energy = [self.estimate_energy_weights(gamma,
             #                                            SoB_energy_cache[0])]
@@ -184,40 +184,45 @@ class LLH(SoB):
         # sets the weights as equal to those for the provided gamma value.
         elif SoB_energy_cache is not None:
             n_s = np.array(params)
-            SoB_energy = SoB_energy_cache
+            SoB_energy = np.array(SoB_energy_cache)
 
         # If not using energy information, assigns a weight of 1. to each event
         else:
             n_s = np.array(params)
-            SoB_energy = 1.
+            SoB_energy = np.array(1.)
 
         # Calculates the expected number of signal events for each source in
         # the season
-        all_n_j = n_s * weights
-
-        llh_value = 0
-
-        for i, SoB_e in enumerate(SoB_energy):
-            n_mask = float(len(SoB_e))
-            # SoB = SoB_energy[i] * SoB_spacetime[i]
-            #
-            # chi = (SoB - 1)/n_all[i]
-
-            # print i, SoB_e, SoB_spacetime[i], n_all[i], n_mask[i], chi
-            #
-            # print np.sum(np.log1p(all_n_j * chi))
-
-            # Evaluate the likelihood function for neutrinos close to each source
-            llh_value += np.sum(np.log1p(
-                all_n_j[i] * ((SoB_energy[i] * SoB_spacetime[i]) - 1)/n_all))
+        all_n_j = (n_s * weights).T
 
 
-            # Account for the events in the veto region, by assuming they have S/B=0
-            llh_value += np.sum(
-                (n_all - n_mask) * np.log1p(-all_n_j[i] / n_all))
+        # llh_value = 0
         #
-        #     print llh_value
-        # raw_input("prompt")
+        # for i, SoB_e in enumerate(SoB_energy):
+        #     n_mask = float(len(SoB_e))
+        #     # SoB = SoB_energy[i] * SoB_spacetime[i]
+        #     #
+        #     # chi = (SoB - 1)/n_all[i]
+        #
+        #     # print i, SoB_e, SoB_spacetime[i], n_all[i], n_mask[i], chi
+        #     #
+        #     # print np.sum(np.log1p(all_n_j * chi))
+        #
+        #     # Evaluate the likelihood function for neutrinos close to each source
+        #     llh_value += np.sum(np.log1p(
+        #         all_n_j.T[i] * ((SoB_energy[i] * SoB_spacetime[i]) -  1.)/n_all))
+        #
+        #     # Account for the events in the veto region, by assuming they have S/B=0
+        #     llh_value += self.assume_background(all_n_j.T[i], n_mask, n_all)
+
+        n_mask = np.array([len(x) for x in SoB_spacetime])
+
+        x = ((all_n_j * (SoB_energy * np.array(SoB_spacetime) - 1.))/n_all)[0]
+
+        llh_value = np.sum([np.sum(np.log1p(y)) for y in x])
+
+        llh_value += self.assume_background(all_n_j, n_mask, n_all)
+
         # Definition of test statistic
         return 2. * llh_value
 
@@ -350,6 +355,7 @@ class LLH(SoB):
             g2 = self._around(g1 + dg)
 
             # Uses Numexpr to quickly estimate S(gamma)
+
             S0 = energy_SoB_cache[g0]
             S1 = energy_SoB_cache[g1]
             S2 = energy_SoB_cache[g2]
@@ -361,26 +367,42 @@ class LLH(SoB):
 
         return val
 
+    def assume_background(self, n_s, n_coincident, n_all):
+        """To save time with likelihood calculation, it can be assumed that
+        all events defined as "non-coincident", because of distance in space
+        and time to the source, are in fact background events. This is
+        equivalent to setting S=0 for all non-coincident events. IN this
+        case, the likelihood can be calculated as the product of the number
+        of non-coincident events, and the likelihood of an event which has S=0.
+
+        :param n_s: Array of expected number of events
+        :param n_coincident: Number of events that were not assumed to have S=0
+        :param n_all: The total number of events
+        :return: Log Likelihood value for the given
+        """
+
+        return np.sum((n_all - n_coincident) * np.log1p((-n_s / n_all)))
+
 
 class FlareLLH(LLH):
 
-    def create_llh_function(self, coincident_data, flare_veto, n_all,
+    def create_llh_function(self, data, flare_veto, n_all,
                             marginilisation):
 
-        flare_data = coincident_data[~flare_veto]
+        coincident_data = data[~flare_veto]
 
-        n_coincident = len(coincident_data)
+        n_mask = len(coincident_data)
 
-        sig = self.signal_pdf(self.sources, flare_data)
-        bkg = self.background_pdf(self.sources, flare_data)
-        SoB_spacetime = sig / bkg
+        sig = self.signal_pdf(self.sources, coincident_data)
+        bkg = self.background_pdf(self.sources, coincident_data)
+        SoB_spacetime = sig/bkg
         del sig
         del bkg
 
         # If an llh energy PDF has been provided, calculate the SoB values
         # for the coincident data, and stores it in a cache.
         if hasattr(self, "energy_pdf"):
-            SoB_energy_cache = self.create_SoB_energy_cache(flare_data)
+            SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
 
             # If gamma is not going to be fit, replaces the SoB energy
             # cache with the weight array corresponding to the gamma provided
@@ -389,7 +411,6 @@ class FlareLLH(LLH):
                 SoB_energy_cache = self.estimate_energy_weights(
                     self.default_gamma, SoB_energy_cache)
 
-        # Otherwise, pass no energy weight information
         else:
             SoB_energy_cache = None
 
@@ -400,10 +421,9 @@ class FlareLLH(LLH):
 
         return test_statistic
 
-    def calculate_flare_test_statistic(self, params, weights,
-                                 n_all, n_coincident, marginilisation,
-                                       SoB_spacetime,
-                                 SoB_energy_cache=None):
+    def calculate_flare_test_statistic(self, params, weights, n_all,
+                                       marginilisation, SoB_spacetime,
+                                       SoB_energy_cache=None):
         """Calculates the test statistic, given the parameters. Uses numexpr
         for faster calculations.
 
@@ -417,6 +437,7 @@ class FlareLLH(LLH):
         if self.fit_gamma:
             n_s = np.array(params[:-1])
             gamma = params[-1]
+
             SoB_energy = self.estimate_energy_weights(gamma, SoB_energy_cache)
 
         # If using energy information but with a fixed value of gamma,
@@ -430,32 +451,17 @@ class FlareLLH(LLH):
             n_s = np.array(params)
             SoB_energy = 1.
 
-        # print SoB_spacetime * SoB_energy
-        # print SoB_spacetime, SoB_energy
-        # raw_input("prompt")
-
         # Calculates the expected number of signal events for each source in
         # the season
         n_j = n_s * weights
 
-        # print "n_j", n_j
-
         # Evaluate the likelihood function for neutrinos close to each source
         llh_value = np.sum(np.log((
-            1 + (n_j * ((SoB_energy * SoB_spacetime) - 1) / n_all))
-                                  * marginilisation))
-
-        # print llh_value
+            1 + ((n_j/n_all) * (SoB_energy * SoB_spacetime)))))
 
         # Account for the events in the veto region, by assuming they have S/B=0
-        llh_value += np.sum((n_all - n_mask) * np.log((1 + -n_j / n_all)
-                                                      * marginilisation))
 
-        # llh_value += np.sum((n_all - n_mask) * np.log((1 + -n_j / n_all)))
-
-        print llh_value
-
-        raw_input("prompt")
+        llh_value += self.assume_background(n_j, n_mask, n_all)
 
         # Definition of test statistic
         return 2. * llh_value

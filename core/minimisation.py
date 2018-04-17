@@ -19,8 +19,10 @@ class MinimisationHandler:
     """
     n_trials = 1000
 
-    def __init__(self, datasets, sources, inj_kwargs, llh_kwargs, scale=1.):
+    def __init__(self, name, datasets, sources, inj_kwargs, llh_kwargs,
+                 scale=1.):
 
+        self.name = name
         self.injectors = dict()
         self.llhs = dict()
         self.seasons = datasets
@@ -84,7 +86,7 @@ class MinimisationHandler:
         self.scale = scale
         self.bkg_ts = None
 
-    def run_trials(self, n=n_trials, scale=1):
+    def run_stacked(self, n=n_trials, scale=1):
 
         param_vals = [[] for x in self.p0]
         ts_vals = []
@@ -93,7 +95,7 @@ class MinimisationHandler:
         print "Generating", n, "trials!"
 
         for i in tqdm(range(int(n))):
-            f = self.run(scale)
+            f = self.run_trial(scale)
 
             res = scipy.optimize.fmin_l_bfgs_b(
                 f, self.p0, bounds=self.bounds, approx_grad=True)
@@ -101,18 +103,22 @@ class MinimisationHandler:
             flag = res[2]["warnflag"]
             # If the minimiser does not converge, repeat with brute force
             if flag > 0:
+                try:
+                    res = scipy.optimize.brute(f, ranges=self.bounds,
+                                               full_output=True)
 
-                res = scipy.optimize.brute(f, ranges=self.bounds,
-                                           full_output=True)
+                except KeyError:
+                    res = None
 
-            vals = res[0]
-            ts = -res[1]
+            if res is not None:
+                vals = res[0]
+                ts = -res[1]
 
-            for j, val in enumerate(vals):
-                param_vals[j].append(val)
+                for j, val in enumerate(vals):
+                    param_vals[j].append(val)
 
-            ts_vals.append(float(ts))
-            flags.append(flag)
+                ts_vals.append(float(ts))
+                flags.append(flag)
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
@@ -141,9 +147,15 @@ class MinimisationHandler:
         for i in sorted(np.unique(flags)):
             print "Flag", i, ":", flags.count(i)
 
+        bkg_median = 0.
+
+        frac_over = np.sum(np.array(ts_vals) > bkg_median) / float(len(ts_vals))
+
+        print "Fraction of overfluctuations", frac_over
+
         return ts_vals, param_vals, flags
 
-    def run_stacked(self, scale=1):
+    def run_trial(self, scale=1):
 
         llh_functions = dict()
 
@@ -195,145 +207,241 @@ class MinimisationHandler:
 
         return f_final
 
-    def run_flare(self, scale=1):
+    def run_flare(self, n=n_trials, scale=1):
 
-        datasets = dict()
+        print "Running", n, "trials"
 
-        full_data = dict()
+        results = {
+            "Stacked": []
+        }
 
-        for season in self.seasons:
-            coincident_data = self.injectors[season["Name"]].create_dataset(scale)
-            llh = self.llhs[season["Name"]]
+        for source in self.sources:
+            results[source["Name"]] = []
 
-            full_data[season["Name"]] = coincident_data
+        for i in tqdm(range(int(n))):
 
-            for source in self.sources:
-                mask = llh.select_coincident_data(coincident_data, [source])
-                coincident_data = coincident_data[mask]
+            datasets = dict()
 
-                name = source["Name"]
-                if name not in datasets.keys():
-                    datasets[name] = dict()
+            full_data = dict()
 
-                if len(coincident_data) > 0:
+            for season in self.seasons:
+                data = self.injectors[season["Name"]].create_dataset(scale)
+                llh = self.llhs[season["Name"]]
 
-                    new_entry = dict(season)
-                    new_entry["Coincident Data"] = coincident_data
-                    significant = llh.find_significant_events(
-                        coincident_data, source)
-                    new_entry["Significant Times"] = significant["timeMJD"]
-                    new_entry["N_all"] = len(coincident_data)
+                full_data[season["Name"]] = data
 
-                    datasets[name][season["Name"]] = new_entry
+                for source in self.sources:
+                    mask = llh.select_spatially_coincident_data(data, [source])
+                    spatial_coincident_data = data[mask]
 
-        for (source, source_dict) in datasets.iteritems():
+                    t_mask = np.logical_and(
+                        np.greater(spatial_coincident_data["timeMJD"],
+                                   source["Start Time (MJD)"]),
+                        np.less(spatial_coincident_data["timeMJD"],
+                                source["End Time (MJD)"])
+                    )
 
-            src = self.sources[self.sources["Name"] == source]
+                    coincident_data = spatial_coincident_data[t_mask]
 
-            max_flare = src["End Time (MJD)"] - src["Start Time (MJD)"]
+                    name = source["Name"]
+                    if name not in datasets.keys():
+                        datasets[name] = dict()
 
-            all_times = []
-            n_tot = 0
-            for season_dict in source_dict.itervalues():
-                new_times = season_dict["Significant Times"]
-                all_times.extend(new_times)
-                n_tot += len(season_dict["Coincident Data"])
+                    if len(coincident_data) > 0:
 
-            all_times = sorted(all_times)
+                        new_entry = dict(season)
+                        new_entry["Coincident Data"] = spatial_coincident_data
+                        significant = llh.find_significant_events(
+                            coincident_data, source)
+                        new_entry["Significant Times"] = significant["timeMJD"]
+                        new_entry["N_all"] = len(data)
 
-            print "In total", len(all_times), "of", n_tot
+                        datasets[name][season["Name"]] = new_entry
 
-            # Minimum flare duration (days)
-            min_flare = 1.
+            stacked_ts = 0.0
 
-            pairs = [(x, y) for x in all_times for y in all_times if y > x +
-                     min_flare]
+            for (source, source_dict) in datasets.iteritems():
 
-            all_pairs = [(x, y) for x in all_times for y in all_times if y > x]
+                src = self.sources[self.sources["Name"] == source]
 
-            print "This gives", len(pairs), "possible pairs out of",
-            print len(all_pairs), "pairs."
+                all_times = []
+                n_tot = 0
+                for season_dict in source_dict.itervalues():
+                    new_times = season_dict["Significant Times"]
+                    all_times.extend(new_times)
+                    n_tot += len(season_dict["Coincident Data"])
 
-            all_res = []
-            all_ts = []
+                all_times = np.array(sorted(all_times))
 
-            for (t_start, t_end) in pairs:
+                # print "In total", len(all_times), "of", n_tot
 
-                w = np.ones(len(source_dict))
+                # Minimum flare duration (days)
+                min_flare = 1.
 
-                llhs = dict()
+                pairs = []
 
-                flare_length = t_end - t_start
-                marginalisation = flare_length / max_flare
+                for x in all_times:
+                    for y in all_times:
+                        if y > (x + min_flare):
+                            pairs.append((x, y))
+                #
+                # print pairs
+                # raw_input("prompt")
 
-                for i, season_dict in enumerate(source_dict.itervalues()):
-                    coincident_data = season_dict["Coincident Data"]
-                    flare_veto = np.logical_or(
-                        np.less(coincident_data["timeMJD"], t_start),
-                        np.greater(coincident_data["timeMJD"], t_end))
+                # all_pairs = [(x, y) for x in all_times for y in all_times if y > x]
 
-                    if np.sum(~flare_veto) > 1:
+                # print "This gives", len(pairs), "possible pairs out of",
+                # print len(all_pairs), "pairs."
 
-                        t_s = max(t_start, season_dict["Start (MJD)"])
-                        t_end = min(t_end, season_dict["End (MJD)"])
+                if len(pairs) > 0:
 
-                        T = t_end - t_s
+                    all_res = []
+                    all_ts = []
 
-                        llh_kwargs = dict(self.llh_kwargs)
-                        llh_kwargs["LLH Time PDF"]["Start Time (MJD)"] = t_s
-                        llh_kwargs["LLH Time PDF"]["End Time (MJD)"] = t_end
+                    for pair in pairs:
+                        t_start = pair[0]
+                        t_end = pair[1]
 
-                        llh = self.llhs[season["Name"]]
+                        w = np.ones(len(source_dict))
 
-                        flare_llh = llh.create_flare(season_dict, src,
-                                                     **llh_kwargs)
+                        llhs = dict()
 
-                        flare_f = flare_llh.create_llh_function(
-                            coincident_data, flare_veto, season_dict["N_all"],
-                            marginalisation)
+                        for i, season_dict in enumerate(source_dict.itervalues()):
+                            coincident_data = season_dict["Coincident Data"]
+                            data = full_data[season_dict["Name"]]
+                            flare_veto = np.logical_or(
+                                np.less(coincident_data["timeMJD"], t_start),
+                                np.greater(coincident_data["timeMJD"], t_end))
 
-                        llhs[season_dict["Name"]] = {
-                            "llh": flare_llh,
-                            "f": flare_f,
-                            "T": T
-                        }
+                            if np.sum(~flare_veto) > 0:
 
-                # From here, we have normal minimisation behaviour
+                                t_s = max(t_start, season_dict["Start (MJD)"])
+                                t_e = min(t_end, season_dict["End (MJD)"])
+                                flare_length = t_e - t_s
 
-                def f_final(params):
+                                t_s_min = max(src["Start Time (MJD)"][0],
+                                              season_dict["Start (MJD)"])
+                                t_e_max = min(src["End Time (MJD)"][0],
+                                              season_dict["End (MJD)"])
+                                max_flare = t_e_max - t_s_min
 
-                    weights_matrix = np.ones(len(llhs))
+                                full_flare_veto = np.logical_or(
+                                    np.less(data["timeMJD"], t_s_min),
+                                    np.greater(data["timeMJD"], t_e_max))
 
-                    for i, llh_dict in enumerate(llhs.itervalues()):
-                        T = llh_dict["T"]
-                        acc = llh.acceptance(src, params)
-                        weights_matrix[i] = T * acc
+                                n_all = len(data[~full_flare_veto])
 
-                    weights_matrix /= np.sum(weights_matrix)
+                                marginalisation = flare_length / max_flare
 
-                    ts = 0
+                                llh_kwargs = dict(self.llh_kwargs)
+                                llh_kwargs["LLH Time PDF"]["Name"] = "FixedBox"
+                                llh_kwargs["LLH Time PDF"]["Start Time (" \
+                                                           "MJD)"] = t_s
+                                llh_kwargs["LLH Time PDF"]["End Time (" \
+                                                           "MJD)"] = t_e
+                                llh_kwargs["LLH Time PDF"]["Bkg Start Time (" \
+                                                           "MJD)"] = t_s_min
+                                llh_kwargs["LLH Time PDF"]["Bkg End Time (" \
+                                                           "MJD)"] = t_e_max
 
-                    for i, llh_dict in enumerate(llhs.itervalues()):
-                        w = weights_matrix[i]
-                        ts += llh_dict["f"](params, w)
+                                llh = self.llhs[season["Name"]]
 
-                    return -ts
+                                flare_llh = llh.create_flare(season_dict, src,
+                                                             **llh_kwargs)
 
-                # f_final([])
+                                flare_f = flare_llh.create_llh_function(
+                                    coincident_data, flare_veto, n_all,
+                                    marginalisation)
 
-                res = scipy.optimize.fmin_l_bfgs_b(
-                    f_final, self.p0, bounds=self.bounds, approx_grad=True)
+                                llhs[season_dict["Name"]] = {
+                                    "llh": flare_llh,
+                                    "f": flare_f,
+                                    "flare length": flare_length
+                                }
 
-                print res
-                raw_input("prompt")
+                        # From here, we have normal minimisation behaviour
 
-                all_res.append(res)
-                all_ts.append(-res[1])
+                        def f_final(params):
 
-            print max(all_ts)
+                            weights_matrix = np.ones(len(llhs))
 
-            raw_input("prompt")
+                            for i, llh_dict in enumerate(llhs.itervalues()):
+                                T = llh_dict["flare length"]
+                                acc = llh.acceptance(src, params)
+                                weights_matrix[i] = T * acc
 
+                            weights_matrix /= np.sum(weights_matrix)
+
+                            ts = 0
+
+                            for i, llh_dict in enumerate(llhs.itervalues()):
+                                w = weights_matrix[i]
+                                ts += llh_dict["f"](params, w)
+
+                            return -ts
+
+                        res = scipy.optimize.fmin_l_bfgs_b(
+                            f_final, self.p0, bounds=self.bounds,
+                            approx_grad=True)
+
+                        all_res.append(res)
+                        all_ts.append(-res[1])
+
+                    max_ts = max(all_ts)
+                    stacked_ts += max_ts
+                    index = all_ts.index(max_ts)
+
+                    results[source].append([max_ts, pairs[index],
+                                                 all_res[index]])
+
+            results["Stacked"].append(stacked_ts)
+
+        full_ts = results["Stacked"]
+
+        print "Combined Test Statistic:"
+        print np.mean(full_ts), np.median(full_ts), np.std(
+              full_ts)
+        # plot_background_ts_distribution(full_ts)
+
+        print ""
+
+        for source in self.sources:
+            print "Results for", source["Name"]
+
+            combined_res = results[source["Name"]]
+
+            full_ts = np.array([x[0] for x in combined_res])
+
+            full_params = np.array([x[2][0] for x in combined_res ])
+
+            starts = np.array([x[1][0] for x in combined_res])
+
+            ends = np.array([x[1][1] for x in combined_res ])
+
+            lengths = np.array([x[1][1] - x[1][0] for x in combined_res])
+
+            for i, column in enumerate(full_params.T):
+                print "Param", i, np.mean(column), np.median(column), np.std(column)
+            print "Window length:", np.mean(lengths), np.median(lengths), np.std(
+                lengths)
+
+            print "Window start:", np.mean(starts), np.median(starts), np.std(
+                starts)
+            print "Window end:", np.mean(ends), np.median(ends), np.std(ends)
+
+            print "Source:", source["Start Time (MJD)"],
+            print source["End Time (MJD)"], source["Ref Time (MJD)"]
+
+            print "Test Statistic", np.mean(full_ts), np.median(full_ts), np.std(
+                  full_ts), "\n"
+
+            # plot_background_ts_distribution(full_ts)
+
+            # bkg_median = 5.51
+            #
+            # frac_over = np.sum(full_ts > bkg_median) / float(n)
+            #
+            # print "Fraction of overfluctuations", frac_over
 
     def scan_likelihood(self, scale=1):
 
@@ -386,7 +494,7 @@ class MinimisationHandler:
         """
         print "Generating background trials"
 
-        bkg_ts, params, flags = self.run_trials(100, 0.0)
+        bkg_ts, params, flags = self.run(100, 0.0)
 
         ts_array = np.array(bkg_ts)
 

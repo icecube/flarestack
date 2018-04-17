@@ -48,7 +48,7 @@ class SoB:
                 # Useful for different precisions, where rounding errors might
                 # otherwise lead to duplicates in set
                 self.gamma_support_points = set(
-                    [self._around(i) for i in np.linspace(0.9, 4.1, 30 + 3)])
+                    [self._around(i) for i in np.linspace(0.8, 4.2, 30 + 5)])
 
         # Checks gamma is not being fit without an energy PDF provided
         elif self.fit_gamma:

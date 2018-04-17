@@ -290,6 +290,30 @@ class FixedBox(Box):
         if "End Time (MJD)" in t_pdf_dict.keys():
             self.end_mjd = t_pdf_dict["End Time (MJD)"]
 
+        if "Bkg Start Time (MJD)" in t_pdf_dict.keys():
+            self.bkg_start_mjd = t_pdf_dict["Bkg Start Time (MJD)"]
+        else:
+            self.bkg_start_mjd = self.t0
+
+        if "Bkg End Time (MJD)" in t_pdf_dict.keys():
+            self.bkg_end_mjd = t_pdf_dict["Bkg End Time (MJD)"]
+        else:
+            self.bkg_end_mjd = self.t1
+
+    def signal_f(self, t, source):
+        """In this case, the signal PDF is a uniform PDF for a fixed duration of
+        time. It is normalised with the length of the box, to give an
+        integral of 1.
+
+        :param t: Time
+        :param source: Source to be considered
+        :return: Value of normalised box function at t
+        """
+
+        t0 = self.sig_t0(source)
+        t1 = self.sig_t1(source)
+        return box_func(t, t0, t1) / (t1 - t0)
+
 
     def sig_t0(self, source):
         """Calculates the starting time for the window, equal to the
@@ -315,8 +339,15 @@ class FixedBox(Box):
         :return: Time of Window End
         """
         if hasattr(self, "end_mjd"):
-            t1 = self.start_mjd
+            t1 = self.end_mjd
         else:
             t1 = source["End Time (MJD)"]
 
         return min(t1, self.t1)
+
+    def background_f(self, t, source):
+
+        t0 = max(self.t0, self.bkg_start_mjd)
+        t1 = min(self.t1, self.bkg_end_mjd)
+
+        return box_func(t, t0, t1) / (t1 - t0)

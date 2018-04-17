@@ -36,8 +36,8 @@ class PowerLaw(EnergyPDF):
         if "Gamma" in e_pdf_dict.keys():
             self.gamma = float(e_pdf_dict["Gamma"])
 
-            print "Energy PDF created. A Power Law was selected with gamma=" + \
-                  str(self.gamma) + "."
+            # print "Energy PDF created. A Power Law was selected with gamma=" + \
+            #       str(self.gamma) + "."
 
         if "E Min" in e_pdf_dict.keys():
             self.e_min = e_pdf_dict["E Min"]

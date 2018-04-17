@@ -94,23 +94,26 @@ class Chi2_LeftTruncated(object):
 
 
 def plot_background_ts_distribution(ts_array, ):
-    chi2 = Chi2_LeftTruncated(ts_array)
-
-    df = chi2._f.args[0]
-    loc = chi2._f.args[1]
-    scale = chi2._f.args[2]
-
     path = "bkg_TS.pdf"
     plt.figure()
     plt.hist(ts_array, bins=20, lw=2, histtype='step', color='black',
              label='Test Stat', density=True)
 
-    xrange = np.linspace(
-        min([np.min(ts_array), loc]), np.max(ts_array), 100
-    )
+    yrange = 0.1/float(len(ts_array))
 
-    plt.plot(xrange, scipy.stats.chi2.pdf(xrange, df, loc, scale))
+    try:
+        chi2 = Chi2_LeftTruncated(ts_array)
+        df = chi2._f.args[0]
+        loc = chi2._f.args[1]
+        scale = chi2._f.args[2]
+        xrange = np.linspace(
+            min([np.min(ts_array), loc]), np.max(ts_array), 100
+        )
+        plt.plot(xrange, scipy.stats.chi2.pdf(xrange, df, loc, scale))
+    except ValueError:
+        pass
 
+    plt.ylim((yrange, 1.))
     plt.yscale("log")
     plt.grid()
     plt.xlabel(r"$\lambda$")

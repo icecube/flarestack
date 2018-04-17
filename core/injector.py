@@ -21,6 +21,13 @@ class Injector:
         self.mc_weights = self.energy_pdf.weight_mc(self._mc)
         self.time_PDF = TimePDF.create(kwargs["Injection Time PDF"],
                                        season)
+
+        if "Poisson Smear?" in kwargs.keys():
+            self.poisson_smear = kwargs["Poisson Smear?"]
+        else:
+            self.poisson_smear = True
+
+
         self.ref_fluxes = dict()
 
     def scramble_data(self):
@@ -119,7 +126,11 @@ class Injector:
 
             # Simulates poisson noise around the expectation value n_inj. If
             # n_s = 0, skips simulation step.
-            n_s = np.random.poisson(n_inj)
+            if self.poisson_smear:
+                n_s = np.random.poisson(n_inj)
+            # If there is no poisson noise, rounds n_s down to nearest integer
+            else:
+                n_s = int(n_inj)
 
             # print "Expected", n_inj, "events, injecting", n_s, "events."
 
