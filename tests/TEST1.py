@@ -1,6 +1,7 @@
 import numpy as np
 from core.minimisation import MinimisationHandler
-from IceCube_data.pointsource_7year import ps_7year
+from core.results import ResultsHandler
+from data.icecube_pointsource_7year import ps_7year
 
 source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
               "/Input/Catalogues/Jetted_TDE_catalogue.npy"
@@ -8,8 +9,8 @@ source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 # source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 #               "/Input/Catalogues/Dai_Fang_TDE_catalogue.npy"
 
-# source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
-#               "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
+source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
+              "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
 
 old_sources = np.load(source_path)
 
@@ -17,8 +18,7 @@ old_sources = np.load(source_path)
 
 sources = np.empty_like(old_sources, dtype=[
     ("ra", np.float), ("dec", np.float),
-    ("injection flux", np.float),
-    ("llh flux", np.float),
+    ("injection flux scale", np.float),
     # ("n_exp", np.float),
     ("weight", np.float),
     # ("weight_acceptance", np.float),
@@ -36,13 +36,12 @@ for x in ["ra", "dec", "distance", "weight", "Start Time (MJD)",
 
 sources["Name"] = old_sources["name"]
 sources["Ref Time (MJD)"] = old_sources["discoverydate_mjd"]
-sources["llh flux"] = old_sources["flux"]
 
 sources["weight"] = np.ones_like(old_sources["flux"])
 
 sources["weight_distance"] = sources["distance"] ** -2
 
-sources["injection flux"] = old_sources["flux"] * 60
+sources["injection flux scale"] = 1.
 
 injectors = dict()
 llhs = dict()
@@ -61,12 +60,12 @@ injection_time = {
     "Post-Window": 5.
 }
 
-# injection_time = {
-#     "Name": "Steady"
-# }
+injection_time = {
+    "Name": "Steady"
+}
 
 llh_time = {
-    "Name": "FixedBox",
+    "Name": "Steady",
     # "Pre-Window": 300.,
     # "Post-Window": 250.
 }
@@ -76,7 +75,7 @@ llh_time = {
 inj_kwargs = {
     "Injection Energy PDF": injection_energy,
     "Injection Time PDF": injection_time,
-    "Poisson Smear?": True
+    "Poisson Smear?": True,
 }
 
 llh_energy = injection_energy
@@ -86,12 +85,17 @@ llh_kwargs = {
     "LLH Time PDF": llh_time,
     # "Fit Gamma?": True,
     # "Fit Weights?": True,
-    "Flare Search?": True
+    # "Flare Search?": True
 }
 
-mh = MinimisationHandler("TEST", ps_7year, sources, inj_kwargs, llh_kwargs)
+name = "tests/TEST1/"
 
-mh.run(10)
+mh = MinimisationHandler(name, ps_7year, sources, inj_kwargs,
+                         llh_kwargs)
+# #
+mh.iterate_run(scale=1, n_trials=50)
+
+rh = ResultsHandler(name, cleanup=True)
 
 # bkg_ts = mh.bkg_trials()
 

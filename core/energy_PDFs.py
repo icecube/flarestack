@@ -75,3 +75,6 @@ class PowerLaw(EnergyPDF):
             weights[mask] = 0.
 
         return weights
+
+
+

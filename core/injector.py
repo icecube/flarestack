@@ -1,6 +1,6 @@
 import numpy as np
 import healpy as hp
-import copy
+from shared import k_to_flux
 from energy_PDFs import EnergyPDF
 from time_PDFs import TimePDF
 
@@ -95,6 +95,9 @@ class Injector:
 
         n_tot_exp = 0
 
+        if scale not in self.ref_fluxes.keys():
+            self.ref_fluxes[scale] = dict()
+
         # Loop over each source to be simulated
         for source in self.sources:
 
@@ -106,8 +109,11 @@ class Injector:
             # the source, scaled if the injection PDF is not uniform in time.
             eff_inj_time = self.time_PDF.effective_injection_time(source)
 
+            # All injection fluxes are given in terms of k, equal to 1e-9
+            inj_flux = k_to_flux(source['injection flux scale'])
+
             # Calculate the fluence, using the effective injection time.
-            fluence = source['injection flux'] * eff_inj_time * scale
+            fluence = inj_flux * eff_inj_time * scale
 
             # Recalculates the oneweights to account for the declination
             # band, and the relative distance of the sources.
@@ -121,8 +127,8 @@ class Injector:
 
             n_tot_exp += n_inj
 
-            if source["Name"] not in self.ref_fluxes.keys():
-                self.ref_fluxes[source["Name"]] = n_inj
+            if source["Name"] not in self.ref_fluxes[scale].keys():
+                self.ref_fluxes[scale][source["Name"]] = n_inj
 
             # Simulates poisson noise around the expectation value n_inj. If
             # n_s = 0, skips simulation step.

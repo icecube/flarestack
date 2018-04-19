@@ -1,4 +1,6 @@
 import numpy as np
+import os
+from shared import plots_dir
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -93,8 +95,14 @@ class Chi2_LeftTruncated(object):
                '\t KS       = {0:7.2%}'.format(self._ks)
 
 
-def plot_background_ts_distribution(ts_array, ):
-    path = "bkg_TS.pdf"
+def plot_background_ts_distribution(ts_array, path):
+    ts_array = np.array(ts_array)
+
+    try:
+        os.makedirs(os.path.dirname(path))
+    except OSError:
+        pass
+
     plt.figure()
     plt.hist(ts_array, bins=20, lw=2, histtype='step', color='black',
              label='Test Stat', density=True)
@@ -117,5 +125,28 @@ def plot_background_ts_distribution(ts_array, ):
     plt.yscale("log")
     plt.grid()
     plt.xlabel(r"$\lambda$")
+    plt.savefig(path)
+    plt.close()
+
+
+def plot_fit_results(results, name, labels):
+    results = np.array(results)
+
+    dir = plots_dir + name + "/"
+    try:
+        os.makedirs(dir)
+    except OSError:
+        pass
+    path = dir + "params.pdf"
+
+    n_dim = len(results)
+    print n_dim
+    plt.figure()
+
+    for i, row in enumerate(results):
+        plt.subplot(n_dim, 1, i+1)
+        plt.hist(row, density=True)
+        plt.title(labels[i])
+
     plt.savefig(path)
     plt.close()

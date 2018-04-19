@@ -1,5 +1,15 @@
 data_dir = "/afs/ifh.de/user/a/astasik/scratch/PS_Data"
 
+IC40_dict = {
+    "Name": "IC40",
+    "exp_path": data_dir + "/FinalSample/IC40/exp/IC40_exp_corrected.npy",
+    "mc_path": data_dir + "/FinalSample/IC40/mc/IC40_nugen_corrected.npy",
+    "aw_path": data_dir + "/DeclinationAcceptance/IC40",
+    "Livetime": 375.539,
+    "Start (MJD)": 54561.4746759,
+    "End (MJD)": 54964.1892245
+}
+
 IC59_dict = {
     "Name": "IC59",
     "exp_path": data_dir + "/FinalSample/IC59/exp/IC59_exp_corrected.npy",
@@ -41,5 +51,5 @@ IC86_234_dict = {
     "End (MJD)": 57160.0440856
 }
 
-ps_7year = [IC59_dict, IC79_dict, IC86_1_dict, IC86_234_dict]
-ps_7year = [IC79_dict, IC86_1_dict]
+ps_7year = [IC40_dict, IC59_dict, IC79_dict, IC86_1_dict, IC86_234_dict]
+# ps_7year = [IC79_dict, IC86_1_dict]

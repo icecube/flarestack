@@ -1,5 +1,8 @@
 import numpy as np
 import resource
+import random
+import os
+import cPickle as Pickle
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -8,7 +11,9 @@ from tqdm import tqdm
 import scipy.optimize
 from core.injector import Injector
 from core.llh import LLH, FlareLLH
-from core.ts_distributions import plot_background_ts_distribution
+from core.ts_distributions import plot_background_ts_distribution, \
+    plot_fit_results
+from shared import name_pickle_output_dir
 
 
 class MinimisationHandler:
@@ -20,9 +25,10 @@ class MinimisationHandler:
     n_trials = 1000
 
     def __init__(self, name, datasets, sources, inj_kwargs, llh_kwargs,
-                 scale=1.):
+                 scale=1., cleanup=False):
 
         self.name = name
+        self.pickle_output_dir = name_pickle_output_dir(name)
         self.injectors = dict()
         self.llhs = dict()
         self.seasons = datasets
@@ -86,7 +92,71 @@ class MinimisationHandler:
         self.scale = scale
         self.bkg_ts = None
 
+        if cleanup:
+            self.clean_pickles()
+
+    def dump_results(self, results, scale, seed):
+        """Takes the results of a set of trials, and saves the dictionary as
+        a pickle file. The flux scale is used as a parent directory, and the
+        pickle file itself is saved with a name equal to its random seed.
+
+        :param results: Dictionary of Minimisation results from trials
+        :param scale: Scale of inputted flux
+        :param seed: Random seed used for running of trials
+        """
+
+        write_dir = self.pickle_output_dir + str(float(scale)) + "/"
+
+        # Tries to create the parent diretory, unless it already exists
+        try:
+            os.makedirs(write_dir)
+        except OSError:
+            pass
+
+        file_name = write_dir + str(seed) + ".pkl"
+
+        print "Saving to", file_name
+
+        with open(file_name, "wb") as f:
+            Pickle.dump(results, f)
+
+    def clean_pickles(self):
+        """This function will remove all pre-existing pickle files in the
+        output directory, to prevent contamination if the minimisation
+        handler arguments are run with different arguments. By default,
+        it is not run. The argument cleanup=True must be provided for this
+        function to be called. In any case, the user is required to confirm
+        the deletion.
+        """
+
+        cmd = "rm -rf " + self.pickle_output_dir + "*"
+
+        print "All saved pickle data will be removed, using the following " \
+              "command:"
+        print
+        print "\t", cmd
+        print
+        print "Is this correct? (y/n)"
+
+        x = ""
+
+        while x not in ["y", "n"]:
+            x = raw_input("")
+
+        if x == "y":
+            os.system(cmd)
+
+    def iterate_run(self, scale=1, n_steps=5, n_trials=50):
+
+        scale_range = np.linspace(0., scale, n_steps)
+
+        for scale in scale_range:
+            self.run(n_trials, scale)
+
     def run_stacked(self, n=n_trials, scale=1):
+
+        seed = int(random.random() * 10 ** 8)
+        np.random.seed(seed)
 
         param_vals = [[] for x in self.p0]
         ts_vals = []
@@ -127,7 +197,7 @@ class MinimisationHandler:
 
         n_inj = 0
         for inj in self.injectors.itervalues():
-            for val in inj.ref_fluxes.itervalues():
+            for val in inj.ref_fluxes[scale].itervalues():
                 n_inj += val
         print ""
         print "Injected with an expectation of", n_inj, "events."
@@ -147,11 +217,13 @@ class MinimisationHandler:
         for i in sorted(np.unique(flags)):
             print "Flag", i, ":", flags.count(i)
 
-        bkg_median = 0.
+        results = {
+            "TS": ts_vals,
+            "Parameters": param_vals,
+            "Flags": flags
+        }
 
-        frac_over = np.sum(np.array(ts_vals) > bkg_median) / float(len(ts_vals))
-
-        print "Fraction of overfluctuations", frac_over
+        self.dump_results(results, scale, seed)
 
         return ts_vals, param_vals, flags
 
@@ -434,14 +506,6 @@ class MinimisationHandler:
 
             print "Test Statistic", np.mean(full_ts), np.median(full_ts), np.std(
                   full_ts), "\n"
-
-            # plot_background_ts_distribution(full_ts)
-
-            # bkg_median = 5.51
-            #
-            # frac_over = np.sum(full_ts > bkg_median) / float(n)
-            #
-            # print "Fraction of overfluctuations", frac_over
 
     def scan_likelihood(self, scale=1):
 
