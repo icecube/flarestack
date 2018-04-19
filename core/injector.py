@@ -27,7 +27,6 @@ class Injector:
         else:
             self.poisson_smear = True
 
-
         self.ref_fluxes = dict()
 
     def scramble_data(self):

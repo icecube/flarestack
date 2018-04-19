@@ -74,6 +74,8 @@ class LLH(SoB):
         """
         veto = np.ones_like(data["timeMJD"], dtype=np.bool)
 
+        # print min(data["timeMJD"]), max(data["timeMJD"])
+
         for source in sources:
 
             # Sets half width of spatial box
@@ -102,9 +104,10 @@ class LLH(SoB):
             ra_mask = ra_dist < dPhi / 2.
 
             spatial_mask = dec_mask & ra_mask
-            # coincident_mask = spatial_mask & time_mask
 
             veto = veto & ~spatial_mask
+
+        # print min(data[~veto]["timeMJD"]), max(data[~veto]["timeMJD"])
 
         # print "Of", len(data), "total events, we consider", np.sum(~veto), \
         #     "events which are coincident with the sources."
@@ -125,6 +128,7 @@ class LLH(SoB):
         for i, source in enumerate(self.sources):
 
             s_mask = self.select_spatially_coincident_data(data, [source])
+            print min(data["timeMJD"]), max(data["timeMJD"])
 
             coincident_data = data[s_mask]
             n_mask[i] = np.sum(s_mask)
@@ -133,6 +137,7 @@ class LLH(SoB):
 
                 sig = self.signal_pdf(source, coincident_data)
                 bkg = self.background_pdf(source, coincident_data)
+
                 SoB_spacetime.append(sig/bkg)
                 del sig
                 del bkg
@@ -247,8 +252,6 @@ class LLH(SoB):
 
         if hasattr(self, "time_pdf"):
             time_term = self.time_pdf.signal_f(cut_data["timeMJD"], source)
-
-            # print time_term
             sig_pdf = space_term * time_term
 
         else:
@@ -298,18 +301,11 @@ class LLH(SoB):
         space_term = (1. / (2. * np.pi)) * np.exp(
             self.bkg_spatial(cut_data["sinDec"]))
 
-        # print space_term,
-
         if hasattr(self, "time_pdf"):
             time_term = self.time_pdf.background_f(cut_data["timeMJD"], source)
-            # print time_term
             sig_pdf = space_term * time_term
         else:
             sig_pdf = space_term
-
-        # print sig_pdf
-
-        # raw_input("prompt")
 
         return sig_pdf
 
