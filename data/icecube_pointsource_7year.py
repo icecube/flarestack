@@ -7,7 +7,7 @@ IC40_dict = {
     "aw_path": data_dir + "/DeclinationAcceptance/IC40",
     "Livetime": 375.539,
     "Start (MJD)": 54561.4746759,
-    "End (MJD)": 54964.1892245
+    "End (MJD)": 54971.1502639
 }
 
 IC59_dict = {
@@ -16,8 +16,8 @@ IC59_dict = {
     "mc_path": data_dir + "/FinalSample/IC59/mc/IC59_nugen_corrected.npy",
     "aw_path": data_dir + "/DeclinationAcceptance/IC59",
     "Livetime": 348.138,
-    "Start (MJD)": 54964.1892245,
-    "End (MJD)": 55347.2862153
+    "Start (MJD)": 54971.1545498,
+    "End (MJD)": 55347.2843914
 }
 
 IC79_dict = {
