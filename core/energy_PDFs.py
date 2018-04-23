@@ -31,7 +31,7 @@ class PowerLaw(EnergyPDF):
     for the init function, where gamma is the spectral index of the Power Law.
     """
 
-    def __init__(self, e_pdf_dict):
+    def __init__(self, e_pdf_dict=dict()):
 
         if "Gamma" in e_pdf_dict.keys():
             self.gamma = float(e_pdf_dict["Gamma"])

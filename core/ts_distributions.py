@@ -129,18 +129,16 @@ def plot_background_ts_distribution(ts_array, path):
     plt.close()
 
 
-def plot_fit_results(results, name, labels):
+def plot_fit_results(results, path, labels):
     results = np.array(results)
 
-    dir = plots_dir + name + "/"
     try:
-        os.makedirs(dir)
+        os.makedirs(os.path.dirname(path))
     except OSError:
         pass
-    path = dir + "params.pdf"
 
     n_dim = len(results)
-    print n_dim
+
     plt.figure()
 
     for i, row in enumerate(results):

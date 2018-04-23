@@ -2,8 +2,9 @@ import numexpr
 import astro
 import numpy as np
 import scipy.interpolate
+import cPickle as Pickle
 from signal_over_background import SoB
-from energy_PDFs import EnergyPDF
+from shared import acceptance_path
 from time_PDFs import TimePDF
 
 
@@ -38,6 +39,21 @@ class LLH(SoB):
         f = scipy.interpolate.interp2d(
             dec_bins, gamma_bins, values, kind='linear')
         return f
+
+    # def create_acceptance_function(self):
+    #
+    #     acc_path = acceptance_path(self.season["Name"])
+    #
+    #     with open(acc_path) as f:
+    #         acc_dict = Pickle.load(f)
+    #
+    #     dec_bins = acc_dict["dec"]
+    #     gamma_bins = acc_dict["gamma"]
+    #     values = acc_dict["acceptance"]
+    #     f = scipy.interpolate.interp2d(
+    #         dec_bins, gamma_bins, values.T, kind='linear')
+    #     return f
+
 
     def acceptance(self, source, params=None):
         """Calculates the detector acceptance for a given source, using the
@@ -128,7 +144,6 @@ class LLH(SoB):
         for i, source in enumerate(self.sources):
 
             s_mask = self.select_spatially_coincident_data(data, [source])
-            print min(data["timeMJD"]), max(data["timeMJD"])
 
             coincident_data = data[s_mask]
             n_mask[i] = np.sum(s_mask)
@@ -136,7 +151,7 @@ class LLH(SoB):
             if len(coincident_data) > 0:
 
                 sig = self.signal_pdf(source, coincident_data)
-                bkg = self.background_pdf(source, coincident_data)
+                bkg = np.array(self.background_pdf(source, coincident_data))
 
                 SoB_spacetime.append(sig/bkg)
                 del sig
@@ -222,9 +237,10 @@ class LLH(SoB):
 
         n_mask = np.array([len(x) for x in SoB_spacetime])
 
-        x = ((all_n_j * (SoB_energy * np.array(SoB_spacetime) - 1.))/n_all)[0]
+        x = 1. + ((all_n_j/n_all) * (SoB_energy * np.array(SoB_spacetime) -
+                                   1.))[0]
 
-        llh_value = np.sum([np.sum(np.log1p(y)) for y in x])
+        llh_value = np.sum([np.log(y) for y in x])
 
         llh_value += self.assume_background(all_n_j, n_mask, n_all)
 

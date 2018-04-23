@@ -109,17 +109,17 @@ class Injector:
             eff_inj_time = self.time_PDF.effective_injection_time(source)
 
             # All injection fluxes are given in terms of k, equal to 1e-9
-            inj_flux = k_to_flux(source['injection flux scale'])
+            inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
 
             # Calculate the fluence, using the effective injection time.
-            fluence = inj_flux * eff_inj_time * scale
+            fluence = inj_flux * eff_inj_time
 
             # Recalculates the oneweights to account for the declination
             # band, and the relative distance of the sources.
             # Multiplies by the fluence, to enable calculations of n_inj,
             # the expected number of injected events
 
-            source_mc["ow"] = fluence * source["weight_distance"] * (
+            source_mc["ow"] = fluence * (source["Distance"] ** -2) * (
                 self.mc_weights[band_mask] / omega)
 
             n_inj = np.sum(source_mc["ow"])

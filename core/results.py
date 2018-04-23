@@ -5,18 +5,23 @@ import scipy
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from shared import name_pickle_output_dir, plot_output_dir, k_to_flux
-from ts_distributions import plot_background_ts_distribution
+from shared import name_pickle_output_dir, plot_output_dir, k_to_flux, fit_setup
+from ts_distributions import plot_background_ts_distribution, plot_fit_results
 
 
 class ResultsHandler:
 
-    def __init__(self, name, cleanup=False):
+    def __init__(self, name, llh_kwargs, sources, cleanup=False):
         self.name = name
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(name)
         self.plot_dir = plot_output_dir(name)
         self.merged_dir = self.pickle_output_dir + "merged/"
+
+        p0, bounds, names = fit_setup(llh_kwargs, sources)
+        self.names = names
+        self.bounds = bounds
+        self.p0 = p0
 
         if cleanup:
             self.clean_merged_data()
@@ -91,12 +96,16 @@ class ResultsHandler:
         for scale in x:
             print scale,
             ts_array = np.array(self.results[scale]["TS"])
-            frac = float(len(ts_array[ts_array > 0])) / (float(len(ts_array)))
+            frac = float(len(ts_array[ts_array > bkg_median])) / (float(len(ts_array)))
             print "Fraction of overfluctuations is", "{0:.2f}".format(frac)
             y.append(frac)
 
             ts_path = self.plot_dir + "ts_distributions/" + str(scale) + ".pdf"
             plot_background_ts_distribution(ts_array, ts_path)
+
+            param_path = self.plot_dir + "params/" + str(scale) + ".pdf"
+            plot_fit_results(self.results[scale]["Parameters"], param_path,
+                             self.names)
 
         x = k_to_flux(np.array(x))
 
@@ -109,7 +118,7 @@ class ResultsHandler:
             return value
 
         best_a = scipy.optimize.curve_fit(
-            f, x, y)[0][0]
+            f, x, y, p0=[1e10])[0][0]
 
         def best_f(x):
             return f(x, best_a)

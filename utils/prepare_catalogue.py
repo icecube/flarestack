@@ -9,37 +9,16 @@ arbitrary number of sources.
 import numpy as np
 import time
 from sys import stdout
-from common import cat_path
+from shared import catalogue_dir
 
-def read_in_catalogue():
-    """Produces a catalogue with a single source_path.
-
-    :return: Source Array
-    """
-    sources = np.empty(
-        1, dtype=[("ra", np.float), ("dec", np.float),
-                  ("flux", np.float), ("n_exp", np.float),
-                  ("weight", np.float), ("weight_acceptance", np.float),
-                  ("weight_time", np.float),
-                  ("weight_distance", np.float),
-                  ("discoverydate_mjd", np.float),
-                  ("distance", np.float), ('name', 'a30'),
-                  ])
-
-    sources['ra'] = np.array([np.deg2rad(180.)])
-    sources['dec'] = np.arcsin(-0.95)
-    sources['flux'] = np.array([1.e-9])
-    sources['weight'] = np.array([1.0])
-    sources['distance'] = np.array([1.0])
-    sources['discoverydate_mjd'] = (
-        np.array([55800.4164699]) )
-    sources['name'] = 'SN_01'
-    sources["n_exp"] = 0.0
-    sources["weight_acceptance"] = 0.0
-    sources["weight_time"] = 0.0
-    sources["weight_distance"] = 0.0
-
-    return sources
+cat_dtype = [
+    ("ra", np.float), ("dec", np.float),
+    ("Relative Injection Weight", np.float),
+    ("Ref Time (MJD)", np.float),
+    ("Start Time (MJD)", np.float),
+    ("End Time (MJD)", np.float),
+    ("Distance", np.float), ('Name', 'a30'),
+]
 
 
 def single_source(sindec):
@@ -49,29 +28,21 @@ def single_source(sindec):
     :return: Source Array
     """
     sources = np.empty(
-        1, dtype=[("ra", np.float), ("dec", np.float),
-                  ("flux", np.float), ("n_exp", np.float),
-                  ("weight", np.float), ("weight_acceptance", np.float),
-                  ("weight_time", np.float),
-                  ("weight_distance", np.float),
-                  ("discoverydate_mjd", np.float),
-                  ("distance", np.float), ('name', 'a30'),
-                  ])
+        1, dtype=cat_dtype)
+
+    ref_time = 55800.4164699
 
     sources['ra'] = np.array([np.deg2rad(180.)])
     sources['dec'] = np.arcsin(sindec)
-    sources['flux'] = np.array([1.e-9])
-    sources['weight'] = np.array([1.0])
-    sources['distance'] = np.array([1.0])
-    sources['discoverydate_mjd'] = (
-        np.array([55800.4164699]) )
-    sources['name'] = 'PS_dec=' + str(sindec)
-    sources["n_exp"] = 0.0
-    sources["weight_acceptance"] = 0.0
-    sources["weight_time"] = 0.0
-    sources["weight_distance"] = 0.0
+    sources['Relative Injection Weight'] = np.array([1.])
+    sources['Distance'] = np.array([1.0])
+    sources['Ref Time (MJD)'] = (np.array([ref_time]))
+    sources['Start Time (MJD)'] = (np.array([ref_time - 50]))
+    sources['End Time (MJD)'] = (np.array([ref_time + 100]))
+    sources['Name'] = 'PS_dec=' + str(sindec)
 
     return sources
+
 
 def make_single_sources():
     """Makes single-source catalogues for a variety of sindec intervals."""
@@ -79,7 +50,7 @@ def make_single_sources():
 
     sindecs = np.linspace(1.00, -1.00, 41)
     print sindecs, "\n"
-    save_name = cat_path + "single_source_dec_"
+    save_name = catalogue_dir + "single_source_dec_"
 
     for sindec in sindecs:
         cat = single_source(sindec)
@@ -93,50 +64,52 @@ def make_single_sources():
     print "\n"
     print "Single Source catalogues created!", "\n"
 
-def read_in_catalogue_stack(n_sources):
-    """Produces a catalogue of n sources. Attributes are randomised within
-    physical bounds.
 
-    :param n_sources: Number of sources in catalogue
-    :return: Source Array
+def custom_sources(ra, dec, weight, distance, ref_time,
+                   start_time, end_time, name):
+    """Creates a catalogue array,
+
+    :param ra: Right Ascension (Degrees)
+    :param dec: Declination (Degrees)
+    :param weight: Relative Weights for Source Injection
+    :param distance: Distance to source (a.u.)
+    :param ref_time: Reference Time (MJD)
+    :param start_time: Start Time for window (MJD)
+    :param end_time: End Time for window (MJD)
+    :param name: Source Name
+    :return: Catalogue Array
     """
 
-    sources = np.empty(
-        n_sources, dtype=[("ra", np.float), ("dec", np.float),
-                  ("flux", np.float), ("n_exp", np.float),
-                  ("weight", np.float), ("weight_acceptance", np.float),
-                  ("weight_time", np.float),
-                  ("weight_distance", np.float),
-                  ("norm_time", np.float),
-                  ("global_weight_norm_time", np.float),
-                  ("discoverydate_mjd", np.float),
-                  ("distance", np.float), ('name', 'a30'),
-                  ])
+    sources = np.empty_like(
+        ra, dtype=cat_dtype)
 
-    sources['ra'] = np.deg2rad(np.linspace(0., 360, n_sources + 1)[:-1])
-    sources['dec'] = np.deg2rad(np.linspace(-90., 90., n_sources + 2)[1:-1])
+    sources['ra'] = np.array([np.deg2rad(ra)])
+    sources['dec'] = np.arcsin(np.array([np.deg2rad(dec)]))
 
-    sources['flux'] = np.ones_like(sources['ra'])
-    normalisation = n_sources * 1.e-9 / np.sum(sources['flux'])
-    sources['flux'] *= normalisation
-    sources['weight'] = np.ones_like(sources['ra'])
-    sources['distance'] = np.ones_like(sources['ra'])
-    sources['discoverydate_mjd'] = (
-        55694.4164699 + (np.array(range(n_sources)) / float(n_sources)) *
-        368.00423609999416)
-    sources['name'] = ['SN' + str(i) for i in range(n_sources)]
+    # If some sources are to be brighter than others, a non-uniform weight
+    # array can be passed. This array is normalised, such that the mean
+    # weight is 1.
+    sources['Relative Injection Weight'] = np.array([weight]) * float(len(
+        weight))/np.sum(weight)
+
+    # The source distance can be provided, in arbitrary units. The injector
+    # and reconstructor will weight sources according to 1/ (distance ^ 2).
+
+    sources['Distance'] = np.array([distance])
+
+    # The source reference time can be arbitrarily defined, for example as
+    # the discovery date or the date of lightcurve peak. It is important that
+    # this is consistently defined between sources. Box Time PDFs can be defined
+    # relative to this point.
+    sources['Ref Time (MJD)'] = (np.array([ref_time]))
+
+    # The source csan also be assigned fixed start and end times. Fixed Box
+    # Time PDFs can be defined relative to these values. This allows for the
+    # Time PDF duration to vary between sources.
+    sources['Start Time (MJD)'] = (np.array([start_time]))
+    sources['End Time (MJD)'] = (np.array([end_time]))
+
+    sources['Name'] = np.array([name])
 
     return sources
 
-if __name__ == '__main__':
-    
-    # # Saves a single-source_path catalogue
-    # single_source_array = read_in_catalogue()
-    # np.save(cat_path + "catalogue00.npy", single_source_array)
-    #
-    # # Saves an n-source_path catalogue
-    # n = 10
-    # n_source_array = read_in_catalogue_stack(n)
-    # np.save(cat_path + "catalogue_stack" + str(n) + ".npy", n_source_array)
-
-    make_single_sources()

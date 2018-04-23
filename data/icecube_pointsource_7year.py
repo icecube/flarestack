@@ -36,8 +36,8 @@ IC86_1_dict = {
     "mc_path": data_dir + "/FinalSample/IC86_1/mc/IC86_1_nugen_corrected.npy",
     "aw_path": data_dir + "/DeclinationAcceptance/IC86_1",
     "Livetime": 332.61,
-    "Start (MJD)": 55694.4164699,
-    "End (MJD)": 56062.420706
+    "Start (MJD)": 55694.9904745,
+    "End (MJD)": 56062.4183102
 }
 
 IC86_234_dict = {
@@ -47,9 +47,9 @@ IC86_234_dict = {
     "mc_path": data_dir + "/FinalSample/IC86_2/mc/IC86_2_nugen_corrected.npy",
     "aw_path": data_dir + "/DeclinationAcceptance/IC86_2AndFollowing",
     "Livetime": 330.38 + 359.95 + 367.21,
-    "Start (MJD)": 56062.420706,
+    "Start (MJD)": 56043.423125,
     "End (MJD)": 57160.0440856
 }
 
 ps_7year = [IC40_dict, IC59_dict, IC79_dict, IC86_1_dict, IC86_234_dict]
-# ps_7year = [IC79_dict, IC86_1_dict]
+ps_7year = [IC79_dict, IC86_1_dict]

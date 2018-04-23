@@ -13,7 +13,7 @@ from core.injector import Injector
 from core.llh import LLH, FlareLLH
 from core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results
-from shared import name_pickle_output_dir
+from shared import name_pickle_output_dir, fit_setup
 
 
 class MinimisationHandler:
@@ -22,7 +22,7 @@ class MinimisationHandler:
     IceCube datasets, a list of sources, and independent sets of arguments for
     the injector and the likelihood.
     """
-    n_trials = 1000
+    n_trials_default = 1000
 
     def __init__(self, name, datasets, sources, inj_kwargs, llh_kwargs,
                  scale=1., cleanup=False):
@@ -62,26 +62,7 @@ class MinimisationHandler:
                 self.llhs[season["Name"]] = FlareLLH(season, sources,
                                                      **llh_kwargs)
 
-        # The default value for n_s is 1. It can be between 0 and 1000.
-        p0 = [1.]
-        bounds = [(0, 1000.)]
-        names = ["n_s"]
-
-        # If weights are to be fitted, then each source has an independent
-        # n_s in the same 0-1000 range.
-        if "Fit Weights?" in llh_kwargs.keys():
-            if llh_kwargs["Fit Weights?"]:
-                p0 = [1. for x in sources]
-                bounds = [(0, 1000.) for x in sources]
-                names = ["n_s (" + x["Name"] + ")" for x in sources]
-
-        # If gamma is to be included as a fit parameter, then its default
-        # value if 2, and it can range between 1 and 4.
-        if "Fit Gamma?" in llh_kwargs.keys():
-            if llh_kwargs["Fit Gamma?"]:
-                p0.append(2.)
-                bounds.append((1., 4.))
-                names.append("Gamma")
+        p0, bounds, names = fit_setup(llh_kwargs, sources)
 
         self.p0 = p0
         self.bounds = bounds
@@ -153,7 +134,7 @@ class MinimisationHandler:
         for scale in scale_range:
             self.run(n_trials, scale)
 
-    def run_stacked(self, n=n_trials, scale=1):
+    def run_stacked(self, n_trials=n_trials_default, scale=1):
 
         seed = int(random.random() * 10 ** 8)
         np.random.seed(seed)
@@ -162,9 +143,9 @@ class MinimisationHandler:
         ts_vals = []
         flags = []
 
-        print "Generating", n, "trials!"
+        print "Generating", n_trials, "trials!"
 
-        for i in tqdm(range(int(n))):
+        for i in tqdm(range(int(n_trials))):
             f = self.run_trial(scale)
 
             res = scipy.optimize.fmin_l_bfgs_b(
@@ -257,7 +238,7 @@ class MinimisationHandler:
                     time_weights.append(llh.time_pdf.effective_injection_time(
                         source))
 
-                w = acc * self.sources["weight_distance"] * np.array(
+                w = acc * (self.sources["Distance"] ** -2) * np.array(
                     time_weights)
 
                 w = w[:, np.newaxis]
@@ -279,9 +260,9 @@ class MinimisationHandler:
 
         return f_final
 
-    def run_flare(self, n=n_trials, scale=1):
+    def run_flare(self, n_trials=n_trials_default, scale=1):
 
-        print "Running", n, "trials"
+        print "Running", n_trials, "trials"
 
         results = {
             "Stacked": []
@@ -290,7 +271,7 @@ class MinimisationHandler:
         for source in self.sources:
             results[source["Name"]] = []
 
-        for i in tqdm(range(int(n))):
+        for i in tqdm(range(int(n_trials))):
 
             datasets = dict()
 

@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.interpolate
 from energy_PDFs import EnergyPDF
+from shared import gamma_range
 
 
 class SoB:
@@ -47,8 +48,11 @@ class SoB:
                 # Each point is modified by _around(i)
                 # Useful for different precisions, where rounding errors might
                 # otherwise lead to duplicates in set
+                step = 0.1
+                gamma_points = np.arange(gamma_range[0] - step,
+                                         gamma_range[1] + 2*step, step)
                 self.gamma_support_points = set(
-                    [self._around(i) for i in np.linspace(0.8, 4.2, 30 + 5)])
+                    [self._around(i) for i in gamma_points])
 
         # Checks gamma is not being fit without an energy PDF provided
         elif self.fit_gamma:

@@ -2,6 +2,7 @@ import numpy as np
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
 from data.icecube_pointsource_7year import ps_7year
+from shared import catalogue_dir
 
 source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
               "/Input/Catalogues/Jetted_TDE_catalogue.npy"
@@ -12,36 +13,26 @@ source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
 source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
               "/Input/Catalogues/Individual_TDEs/Swift J1644+57.npy"
 
-old_sources = np.load(source_path)
+# source_path = catalogue_dir + "single_source_dec_0.10.npy"
 
-# print old_sources
+old_sources = np.load(source_path)
 
 sources = np.empty_like(old_sources, dtype=[
     ("ra", np.float), ("dec", np.float),
-    ("injection flux scale", np.float),
-    # ("n_exp", np.float),
-    ("weight", np.float),
-    # ("weight_acceptance", np.float),
-    # ("weight_time", np.float),
-    ("weight_distance", np.float),
+    ("Relative Injection Weight", np.float),
     ("Ref Time (MJD)", np.float),
     ("Start Time (MJD)", np.float),
     ("End Time (MJD)", np.float),
-    ("distance", np.float), ('Name', 'a30'),
+    ("Distance", np.float), ('Name', 'a30'),
 ])
 
-for x in ["ra", "dec", "distance", "weight", "Start Time (MJD)",
-          "End Time (MJD)"]:
+for x in ["ra", "dec", "Start Time (MJD)", "End Time (MJD)"]:
     sources[x] = old_sources[x]
 
 sources["Name"] = old_sources["name"]
+sources["Relative Injection Weight"] = np.ones_like(old_sources["flux"])
 sources["Ref Time (MJD)"] = old_sources["discoverydate_mjd"]
-
-sources["weight"] = np.ones_like(old_sources["flux"])
-
-sources["weight_distance"] = sources["distance"] ** -2
-
-sources["injection flux scale"] = 1.
+sources["Distance"] = old_sources["distance"]
 
 injectors = dict()
 llhs = dict()
@@ -50,7 +41,7 @@ llhs = dict()
 
 injection_energy = {
     "Name": "Power Law",
-    "Gamma": 1.9,
+    "Gamma": 2.0,
     # "E Min": 10000
 }
 
@@ -83,7 +74,7 @@ llh_energy = injection_energy
 llh_kwargs = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    # "Fit Gamma?": True,
+    "Fit Gamma?": True,
     # "Fit Weights?": True,
     # "Flare Search?": True
 }
@@ -93,9 +84,9 @@ name = "tests/TEST1/"
 mh = MinimisationHandler(name, ps_7year, sources, inj_kwargs,
                          llh_kwargs)
 # #
-mh.iterate_run(scale=1, n_trials=50)
+mh.iterate_run(scale=3., n_trials=500)
 
-rh = ResultsHandler(name, cleanup=True)
+rh = ResultsHandler(name, llh_kwargs, sources, cleanup=True)
 
 # bkg_ts = mh.bkg_trials()
 
