@@ -6,7 +6,9 @@ import os
 import sys
 from config import scratch_path
 from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
-    log_dir, catalogue_dir, pickle_dir, plots_dir
+    log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir
+from utils.prepare_catalogue import make_single_sources
+from utils.create_acceptance_functions import make_acceptance_f
 
 if __name__ == "__main__":
     print "\n \n"
@@ -40,9 +42,27 @@ if __name__ == "__main__":
         sys.exit()
 
     for dir in [input_dir, storage_dir, output_dir, log_dir, catalogue_dir,
-                pickle_dir, plots_dir]:
+                acc_f_dir, pickle_dir, plots_dir]:
         if not os.path.isdir(dir):
             print "Making Directory:", dir
             os.makedirs(dir)
         else:
             print "Found Directory:", dir
+
+    print "\n"
+    print "********************************************************************"
+    print "*                                                                  *"
+    print "*                 Initialising catalogue creation                  *"
+    print "*                                                                  *"
+    print "********************************************************************"
+    print "\n"
+    make_single_sources()
+
+    print "\n"
+    print "********************************************************************"
+    print "*                                                                  *"
+    print "*                   Making Acceptance Functions                    *"
+    print "*                                                                  *"
+    print "********************************************************************"
+    print "\n"
+    make_acceptance_f()
