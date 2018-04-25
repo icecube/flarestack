@@ -24,6 +24,22 @@ class LLH(SoB):
 
         self.acceptance_f = self.create_acceptance_function()
 
+    # def create_acceptance_function(self):
+    #     """Creates a 2D linear interpolation of the acceptance of the detector
+    #     for the given season, as a function of declination and gamma. Returns
+    #     this interpolation function.
+    #
+    #     :return: 2D linear interpolation
+    #     """
+    #     dec_bins = np.load(
+    #         self.season['aw_path'] + '_bins_dec.npy')
+    #     gamma_bins = np.load(
+    #         self.season['aw_path'] + '_bins_gamma.npy')
+    #     values = np.load(self.season['aw_path'] + '_values.npy')
+    #     f = scipy.interpolate.interp2d(
+    #         dec_bins, gamma_bins, values, kind='linear')
+    #     return f
+
     def create_acceptance_function(self):
         """Creates a 2D linear interpolation of the acceptance of the detector
         for the given season, as a function of declination and gamma. Returns
@@ -31,28 +47,18 @@ class LLH(SoB):
 
         :return: 2D linear interpolation
         """
-        dec_bins = np.load(
-            self.season['aw_path'] + '_bins_dec.npy')
-        gamma_bins = np.load(
-            self.season['aw_path'] + '_bins_gamma.npy')
-        values = np.load(self.season['aw_path'] + '_values.npy')
-        f = scipy.interpolate.interp2d(
-            dec_bins, gamma_bins, values, kind='linear')
-        return f
 
-    # def create_acceptance_function(self):
-    #
-    #     acc_path = acceptance_path(self.season["Name"])
-    #
-    #     with open(acc_path) as f:
-    #         acc_dict = Pickle.load(f)
-    #
-    #     dec_bins = acc_dict["dec"]
-    #     gamma_bins = acc_dict["gamma"]
-    #     values = acc_dict["acceptance"]
-    #     f = scipy.interpolate.interp2d(
-    #         dec_bins, gamma_bins, values.T, kind='linear')
-    #     return f
+        acc_path = acceptance_path(self.season["Name"])
+
+        with open(acc_path) as f:
+            acc_dict = Pickle.load(f)
+
+        dec_bins = acc_dict["dec"]
+        gamma_bins = acc_dict["gamma"]
+        values = acc_dict["acceptance"]
+        f = scipy.interpolate.interp2d(
+            dec_bins, gamma_bins, values.T, kind='linear')
+        return f
 
 
     def acceptance(self, source, params=None):

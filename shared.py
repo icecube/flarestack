@@ -20,17 +20,26 @@ log_dir = fs_scratch_dir + "logs/"
 catalogue_dir = input_dir + "catalogues/"
 
 pickle_dir = storage_dir + "pickles/"
+inj_param_dir = pickle_dir + "injection_values/"
 
 plots_dir = output_dir + "plots/"
 
 acc_f_dir = input_dir + "acceptance_functions/"
+SoB_spline_dir = input_dir + "SoB_splines/"
+
+skylab_ref_dir = input_dir + "skylab_reference/"
 
 
 gamma_range = [1., 4.]
+gamma_precision = .1
 
 
 def name_pickle_output_dir(name):
     return pickle_dir + name
+
+
+def inj_dir_name(name):
+    return inj_param_dir + name
 
 
 def plot_output_dir(name):
@@ -41,7 +50,11 @@ def acceptance_path(season_name):
     return acc_f_dir + season_name + ".pkl"
 
 
-def fit_setup(llh_kwargs, sources):
+def SoB_spline_path(season_name):
+    return SoB_spline_dir + season_name + '.pkl'
+
+
+def fit_setup(llh_kwargs, sources, flare=False):
 
     # The default value for n_s is 1. It can be between 0 and 1000.
     p0 = [1.]
@@ -64,7 +77,13 @@ def fit_setup(llh_kwargs, sources):
             bounds.append(tuple(gamma_range))
             names.append("Gamma")
 
+    if flare:
+        names += ["Flare Start", "Flare End", "Flare Length"]
+
     return p0, bounds, names
+
+
+k_flux_factor = 10 ** -9
 
 
 def k_to_flux(k):
@@ -74,4 +93,14 @@ def k_to_flux(k):
     :param k: Flux scale
     :return: Flux value
     """
-    return k * 10 ** -9
+    return k * k_flux_factor
+
+
+def flux_to_k(flux):
+    """k is a flux scale, with k=1 equal to (10)^-9 x (Gev)^-1 (s)^-1 (cm)^-2.
+    The flux values can be converted into values for k.
+
+    :param flux: Flux value
+    :return: Flux scale (k)
+    """
+    return flux / k_flux_factor

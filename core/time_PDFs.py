@@ -15,6 +15,9 @@ def box_func(t, t0, t1):
     return val
 
 
+# def start_and
+
+
 class TimePDF:
     subclasses = {}
 
@@ -53,7 +56,7 @@ class TimePDF:
         :param source: Source to be considered
         :return: Value of normalised box function at t
         """
-        return self.season_f(t) / (self.t1 - self.t0)
+        return self.season_f(t) / self.season["Livetime"]
 
     def product_integral(self, t, source):
         """Calculates the product of the given signal PDF with the season box
@@ -112,13 +115,6 @@ class TimePDF:
         f = self.inverse_interpolate(source)
         return f(np.random.uniform(0., 1., n_s))
 
-    def time_weight(self, source):
-        diff = self.signal_integral(self.t1, source) - \
-               self.signal_integral(self.t0, source)
-
-        time = self.effective_injection_time(source)
-        return diff * time
-
 
 @TimePDF.register_subclass('Steady')
 class Steady(TimePDF):
@@ -173,10 +169,8 @@ class Steady(TimePDF):
         :return: Effective Livetime in seconds
         """
         season_length = self.season["Livetime"]
-        frac = self.product_integral(self.t1, source) - \
-               self.product_integral(self.t0, source)
 
-        return season_length * (60 * 60 * 24) * frac
+        return season_length * (60 * 60 * 24)
 
 
 @TimePDF.register_subclass('Box')

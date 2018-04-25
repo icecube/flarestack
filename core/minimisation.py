@@ -13,7 +13,7 @@ from core.injector import Injector
 from core.llh import LLH, FlareLLH
 from core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results
-from shared import name_pickle_output_dir, fit_setup
+from shared import name_pickle_output_dir, fit_setup, inj_dir_name
 
 
 class MinimisationHandler:
@@ -62,7 +62,7 @@ class MinimisationHandler:
                 self.llhs[season["Name"]] = FlareLLH(season, sources,
                                                      **llh_kwargs)
 
-        p0, bounds, names = fit_setup(llh_kwargs, sources)
+        p0, bounds, names = fit_setup(llh_kwargs, sources, self.flare)
 
         self.p0 = p0
         self.bounds = bounds
@@ -72,6 +72,8 @@ class MinimisationHandler:
         # Default value is 1 (Gev)^-1 (cm)^-2 (s)^-1
         self.scale = scale
         self.bkg_ts = None
+
+        # self.clean_true_param_values()
 
         if cleanup:
             self.clean_pickles()
@@ -101,6 +103,40 @@ class MinimisationHandler:
         with open(file_name, "wb") as f:
             Pickle.dump(results, f)
 
+    def dump_injection_values(self, scale):
+
+        inj_dict = dict()
+        for source in self.sources:
+            name = source["Name"]
+            n_inj = 0
+            for inj in self.injectors.itervalues():
+                n_inj += inj.ref_fluxes[scale][name]
+
+            default = {
+                "n_s": n_inj
+            }
+
+            if "Gamma" in self.param_names:
+                default["Gamma"] = self.inj_kwargs["Injection Energy PDF"][
+                    "Gamma"]
+
+            # if self.flare:
+            #     default["Flare Start"] = self.inj_kwargs["Time PDF"].t0
+
+            inj_dict[name] = default
+
+        inj_dir = inj_dir_name(self.name)
+
+        # Tries to create the parent directory, unless it already exists
+        try:
+            os.makedirs(inj_dir)
+        except OSError:
+            pass
+
+        file_name = inj_dir + str(scale) + ".pkl"
+        with open(file_name, "wb") as f:
+            Pickle.dump(inj_dict, f)
+
     def clean_pickles(self):
         """This function will remove all pre-existing pickle files in the
         output directory, to prevent contamination if the minimisation
@@ -127,12 +163,24 @@ class MinimisationHandler:
         if x == "y":
             os.system(cmd)
 
+    # def clean_true_param_values(self):
+    #     inj_dir = inj_dir_name(self.name)
+    #     names = os.listdir(inj_dir)
+    #
+    #     for name in names:
+    #         path = inj_dir + name
+    #         os.remove(path)
+
+
     def iterate_run(self, scale=1, n_steps=5, n_trials=50):
 
         scale_range = np.linspace(0., scale, n_steps)
 
+        truth_dict = dict()
+
         for scale in scale_range:
-            self.run(n_trials, scale)
+            new = self.run(n_trials, scale)
+            truth_dict[scale] = new
 
     def run_stacked(self, n_trials=n_trials_default, scale=1):
 
@@ -206,7 +254,7 @@ class MinimisationHandler:
 
         self.dump_results(results, scale, seed)
 
-        return ts_vals, param_vals, flags
+        self.dump_injection_values(scale)
 
     def run_trial(self, scale=1):
 
@@ -248,6 +296,11 @@ class MinimisationHandler:
 
             weights_matrix /= np.sum(weights_matrix)
 
+            # for i, row in enumerate(weights_matrix):
+            #     print "Season", i, np.sum(row)
+            #
+            # raw_input("prompt")
+
             # Having created the weight matrix, loops over each season of
             # data and evaluates the TS function for that season
 
@@ -262,14 +315,20 @@ class MinimisationHandler:
 
     def run_flare(self, n_trials=n_trials_default, scale=1):
 
+        seed = int(random.random() * 10 ** 8)
+        np.random.seed(seed)
+
         print "Running", n_trials, "trials"
 
         results = {
-            "Stacked": []
+            "TS": []
         }
 
         for source in self.sources:
-            results[source["Name"]] = []
+            results[source["Name"]] = {
+                "TS": [],
+                "Parameters": [[] for x in self.param_names]
+            }
 
         for i in tqdm(range(int(n_trials))):
 
@@ -444,49 +503,47 @@ class MinimisationHandler:
                     stacked_ts += max_ts
                     index = all_ts.index(max_ts)
 
-                    results[source].append([max_ts, pairs[index],
-                                                 all_res[index]])
+                    best_start = pairs[index][0]
+                    best_end = pairs[index][1]
 
-            results["Stacked"].append(stacked_ts)
+                    best_length = best_end - best_start
 
-        full_ts = results["Stacked"]
+                    best = [x for x in all_res[index][0]] + [
+                        best_start, best_end, best_length
+                    ]
+
+                    for k, val in enumerate(best):
+                        results[source]["Parameters"][k].append(val)
+
+                    results[source]["TS"].append(max_ts)
+
+            results["TS"].append(stacked_ts)
+
+        full_ts = results["TS"]
 
         print "Combined Test Statistic:"
         print np.mean(full_ts), np.median(full_ts), np.std(
               full_ts)
-        # plot_background_ts_distribution(full_ts)
-
-        print ""
 
         for source in self.sources:
             print "Results for", source["Name"]
 
             combined_res = results[source["Name"]]
 
-            full_ts = np.array([x[0] for x in combined_res])
+            full_ts = combined_res["TS"]
 
-            full_params = np.array([x[2][0] for x in combined_res ])
+            full_params = np.array(combined_res["Parameters"])
 
-            starts = np.array([x[1][0] for x in combined_res])
-
-            ends = np.array([x[1][1] for x in combined_res ])
-
-            lengths = np.array([x[1][1] - x[1][0] for x in combined_res])
-
-            for i, column in enumerate(full_params.T):
-                print "Param", i, np.mean(column), np.median(column), np.std(column)
-            print "Window length:", np.mean(lengths), np.median(lengths), np.std(
-                lengths)
-
-            print "Window start:", np.mean(starts), np.median(starts), np.std(
-                starts)
-            print "Window end:", np.mean(ends), np.median(ends), np.std(ends)
-
-            print "Source:", source["Start Time (MJD)"],
-            print source["End Time (MJD)"], source["Ref Time (MJD)"]
+            for i, column in enumerate(full_params):
+                print self.param_names[i], ":", np.mean(column),\
+                    np.median(column), np.std(column)
 
             print "Test Statistic", np.mean(full_ts), np.median(full_ts), np.std(
                   full_ts), "\n"
+
+        self.dump_results(results, scale, seed)
+
+        self.dump_injection_values(scale)
 
     def scan_likelihood(self, scale=1):
 
@@ -529,45 +586,3 @@ class MinimisationHandler:
             u_lim = ">" + str(max(n_range))
 
         print "One Sigma interval between", l_lim, "and", u_lim
-
-    def bkg_trials(self):
-        """Generate 1000 Background Trials, and plots the distribution. Also
-        fits a Chi-squared distribution to the data, accounting for the fact
-        that the Test Statistic distribution is truncated at 0.
-
-        :return: Array of Test Statistic values
-        """
-        print "Generating background trials"
-
-        bkg_ts, params, flags = self.run(100, 0.0)
-
-        ts_array = np.array(bkg_ts)
-
-        frac = float(len(ts_array[ts_array <= 0])) / (float(len(ts_array)))
-
-        print "Fraction of underfluctuations is", frac
-
-        plot_background_ts_distribution(ts_array)
-
-        self.bkg_ts = ts_array
-
-        return ts_array
-
-    def find_sensitivity(self):
-
-        if self.bkg_ts is None:
-            self.bkg_trials()
-
-        bkg_median = np.median(self.bkg_ts)
-
-        ts = self.run_trials(100, scale=self.scale)[0]
-        frac_over = np.sum(ts > bkg_median) / float(len(ts))
-
-        if frac_over < 0.95:
-            rescale = 10
-        else:
-            rescale = 0.1
-
-        converge = False
-
-        # while not conver

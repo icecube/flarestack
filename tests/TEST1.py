@@ -1,7 +1,7 @@
 import numpy as np
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_pointsource_7year import ps_7year
+from data.icecube_pointsource_7year import ps_7986
 from shared import catalogue_dir
 
 source_path = "/afs/ifh.de/user/s/steinrob/scratch/The-Flux-Evaluator__Data" \
@@ -30,7 +30,7 @@ for x in ["ra", "dec", "Start Time (MJD)", "End Time (MJD)"]:
     sources[x] = old_sources[x]
 
 sources["Name"] = old_sources["name"]
-sources["Relative Injection Weight"] = np.ones_like(old_sources["flux"])
+sources["Relative Injection Weight"] = np.ones_like(old_sources["flux"]) * 60
 sources["Ref Time (MJD)"] = old_sources["discoverydate_mjd"]
 sources["Distance"] = old_sources["distance"]
 
@@ -56,12 +56,12 @@ injection_time = {
 }
 
 llh_time = {
-    "Name": "Steady",
+    "Name": "FixedBox",
     # "Pre-Window": 300.,
     # "Post-Window": 250.
 }
 
-# llh_time = injection_time
+llh_time = injection_time
 
 inj_kwargs = {
     "Injection Energy PDF": injection_energy,
@@ -71,22 +71,34 @@ inj_kwargs = {
 
 llh_energy = injection_energy
 
-llh_kwargs = {
+llh_kwargs_0 = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
-    # "Fit Weights?": True,
-    # "Flare Search?": True
+    "Flare Search?": False
+}
+llh_kwargs_1 = {
+    "LLH Energy PDF": llh_energy,
+    "LLH Time PDF": llh_time,
+    "Fit Gamma?": False,
+    "Flare Search?": True
 }
 
-name = "tests/TEST1/"
+llh_kwargs_2 = {
+    "LLH Energy PDF": llh_energy,
+    "LLH Time PDF": llh_time,
+    "Fit Gamma?": True,
+    "Flare Search?": True
+}
 
-mh = MinimisationHandler(name, ps_7year, sources, inj_kwargs,
-                         llh_kwargs)
-# #
-mh.iterate_run(scale=3., n_trials=500)
+for i, llh_kwargs in enumerate([llh_kwargs_0, llh_kwargs_1]):
 
-rh = ResultsHandler(name, llh_kwargs, sources, cleanup=True)
+    name = "tests/TEST" + str(i) + "/"
+    mh = MinimisationHandler(name, ps_7986, sources, inj_kwargs,
+                             llh_kwargs)
+    mh.iterate_run(scale=6., n_trials=100)
+
+    rh = ResultsHandler(name, llh_kwargs, sources, cleanup=True)
 
 # bkg_ts = mh.bkg_trials()
 

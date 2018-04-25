@@ -15,10 +15,10 @@ dec_edges = np.arcsin(sin_edges)
 gamma_vals = np.linspace(gamma_range[0], gamma_range[1], 31)
 
 
-def make_acceptance_f():
+def make_acceptance_f(all_data):
     e_pdf = PowerLaw()
 
-    for season in ps_7year:
+    for season in all_data:
         mc = np.load(season["mc_path"])
         # old_dec_bins = np.load(
         #     season['aw_path'] + '_bins_dec.npy')

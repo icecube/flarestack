@@ -19,7 +19,7 @@ class SoB:
         ]))
 
         # If provided in kwargs, sets whether the spectral index (gamma)
-        # should be included as a fit prameter. If this is not specified,
+        # should be included as a fit parameter. If this is not specified,
         # the default is to not fit gamma.
         try:
             self.fit_gamma = kwargs["Fit Gamma?"]

@@ -44,18 +44,21 @@ def single_source(sindec):
     return sources
 
 
+def ps_catalogue_name(sindec):
+    return catalogue_dir + "single_source_sindec_" + '{0:.2f}'.format(sindec)\
+           + ".npy"
+
+
 def make_single_sources():
     """Makes single-source catalogues for a variety of sindec intervals."""
     print "Making single-source catalogues for the following sin(declinations):"
 
     sindecs = np.linspace(1.00, -1.00, 41)
     print sindecs, "\n"
-    save_name = catalogue_dir + "single_source_dec_"
 
     for sindec in sindecs:
         cat = single_source(sindec)
-        save_path = save_name + '{0:.2f}'.format(sindec) + \
-                    ".npy"
+        save_path = ps_catalogue_name(sindec)
         stdout.write("\rSaving to " + save_path)
         stdout.flush()
         np.save(save_path, cat)

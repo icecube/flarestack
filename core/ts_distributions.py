@@ -129,7 +129,8 @@ def plot_background_ts_distribution(ts_array, path):
     plt.close()
 
 
-def plot_fit_results(results, path, labels):
+def plot_fit_results(results, path, labels, inj=None):
+
     results = np.array(results)
 
     try:
@@ -139,12 +140,34 @@ def plot_fit_results(results, path, labels):
 
     n_dim = len(results)
 
-    plt.figure()
+    fig = plt.figure()
+
+    fig.set_size_inches(7, n_dim*3)
+    fig.subplots_adjust(hspace=.5)
 
     for i, row in enumerate(results):
+
+        label = labels[i]
+
         plt.subplot(n_dim, 1, i+1)
-        plt.hist(row, density=True)
-        plt.title(labels[i])
+        plt.hist(row, histtype="step", density=True, bins=20, color="blue")
+        plt.axvline(np.median(row), linestyle="--", color="blue",
+                    label="Median")
+        plt.title(label)
+
+        if inj is not None and label == "n_s":
+            n_s = 0
+            for val in inj.itervalues():
+                n_s += val["n_s"]
+            plt.axvline(n_s, linestyle="--", color="orange", label="Injection")
+        elif inj is not None and label == "Gamma":
+            gamma = inj.itervalues().next()["Gamma"]
+            plt.axvline(gamma, linestyle="--", color="orange",
+                        label="Injection")
+
+
+        plt.legend()
+
 
     plt.savefig(path)
     plt.close()
