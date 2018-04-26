@@ -265,9 +265,41 @@ class Box(TimePDF):
 
         return max(time, 0.)
 
+@TimePDF.register_subclass('FixedRefBox')
+class FixedRefBox(Box):
+    """The simplest time-dependent case for a Time PDF. Used for a source that
+    is uniformly emitting for a fixed period of time. In this case, the start
+    and end time for the box is unique for each source. The sources must have
+    a field "Start Time (MJD)" and another "End Time (MJD)", specifying the
+    period of the Time PDF.
+    """
+    def __init__(self, t_pdf_dict, season):
+        Box.__init__(self, t_pdf_dict, season)
+        self.fixed_ref = t_pdf_dict["Fixed Ref Time (MJD)"]
 
-@TimePDF.register_subclass('FixedBox')
-class FixedBox(Box):
+    def sig_t0(self, source):
+        """Calculates the starting time for the window, equal to the
+        source reference time in MJD minus the length of the pre-reference-time
+        window (in days).
+
+        :param source: Source to be considered
+        :return: Time of Window Start
+        """
+        return max(self.t0, self.fixed_ref - self.pre_window)
+
+    def sig_t1(self, source):
+        """Calculates the starting time for the window, equal to the
+        source reference time in MJD plus the length of the post-reference-time
+        window (in days).
+
+        :param source: Source to be considered
+        :return: Time of Window End
+        """
+        return min(self.fixed_ref + self.post_window, self.t1)
+
+
+@TimePDF.register_subclass('FixedEndBox')
+class FixedEndBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. In this case, the start
     and end time for the box is unique for each source. The sources must have
