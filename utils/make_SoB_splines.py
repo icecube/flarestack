@@ -1,7 +1,6 @@
 import numpy as np
 import scipy.interpolate
 import cPickle as Pickle
-from tqdm import tqdm
 from shared import gamma_precision, SoB_spline_path
 from core.energy_PDFs import PowerLaw
 
@@ -128,7 +127,7 @@ def create_2d_splines(exp, mc):
     """
     splines = dict()
 
-    for gamma in tqdm(gamma_support_points):
+    for gamma in gamma_support_points:
         splines[gamma] = create_2d_ratio_spline(exp, mc, gamma)
 
     return splines
@@ -138,8 +137,8 @@ def make_spline(seasons):
 
     print "Splines will be made to calculate the Signal/Background ratio of " \
           "the MC to data. The MC will be weighted with a power law, for each" \
-          "gamma in:"
-    print gamma_support_points
+          " gamma in:"
+    print list(gamma_support_points)
 
     for season in seasons:
         print "Making splines for", season["Name"]
@@ -154,6 +153,16 @@ def make_spline(seasons):
         with open(path, "wb") as f:
             Pickle.dump(splines, f)
 
+
+def load_spline(season):
+    path = SoB_spline_path(season["Name"])
+
+    print "Loading from", path
+
+    with open(path) as f:
+        res = Pickle.load(f)
+
+    return res
 
 # from data.icecube_pointsource_7year import ps_7year
 # make_spline(ps_7year)

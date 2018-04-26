@@ -2,6 +2,7 @@ import numpy as np
 import scipy.interpolate
 from energy_PDFs import EnergyPDF
 from shared import gamma_range
+from utils.make_SoB_splines import load_spline
 
 
 class SoB:
@@ -73,7 +74,22 @@ class SoB:
 
             if e_pdf_dict is not None:
                 print "Making Log(Signal/Background) Splines."
-                self.SoB_spline_2Ds = self.create_2d_splines()
+
+
+                self.SoB_spline_2Ds = load_spline(self.season)
+
+                # print self.SoB_spline_2Ds.keys()
+                #
+                # print self.SoB_spline_2Ds[2.0].ev(3, 1.)
+                #
+                # self.SoB_spline_2Ds = self.create_2d_splines()
+                #
+                # print self.SoB_spline_2Ds[2.0].ev(3, 1.)
+                #
+                # print self.SoB_spline_2Ds.keys()
+                # raw_input("prompt")
+
+
                 print "Made", len(self.SoB_spline_2Ds), "Splines."
 
         else:

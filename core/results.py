@@ -12,8 +12,11 @@ from ts_distributions import plot_background_ts_distribution, plot_fit_results
 
 class ResultsHandler:
 
-    def __init__(self, name, llh_kwargs, sources, show_inj=False,
+    def __init__(self, name, llh_kwargs, cat_path, show_inj=False,
                  cleanup=False):
+
+        sources = np.load(cat_path)
+
         self.name = name
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(name)

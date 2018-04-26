@@ -2,12 +2,13 @@ import numpy as np
 import resource
 import random
 import os
+import argparse
 import cPickle as Pickle
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from tqdm import tqdm
+# from tqdm import tqdm
 import scipy.optimize
 from core.injector import Injector
 from core.llh import LLH, FlareLLH
@@ -24,23 +25,24 @@ class MinimisationHandler:
     """
     n_trials_default = 1000
 
-    def __init__(self, name, datasets, sources, inj_kwargs, llh_kwargs,
-                 scale=1., cleanup=False):
+    def __init__(self, mh_dict, cleanup=False):
 
-        self.name = name
-        self.pickle_output_dir = name_pickle_output_dir(name)
+        sources = np.load(mh_dict["catalogue"])
+
+        self.name = mh_dict["name"]
+        self.pickle_output_dir = name_pickle_output_dir(self.name)
         self.injectors = dict()
         self.llhs = dict()
-        self.seasons = datasets
+        self.seasons = mh_dict["datasets"]
         self.sources = sources
 
-        self.inj_kwargs = inj_kwargs
-        self.llh_kwargs = llh_kwargs
+        self.inj_kwargs = mh_dict["inj kwargs"]
+        self.llh_kwargs = mh_dict["llh kwargs"]
 
         # Checks if the code should search for flares. By default, this is
         # not done.
         try:
-            self.flare = llh_kwargs["Flare Search?"]
+            self.flare = self.llh_kwargs["Flare Search?"]
         except KeyError:
             self.flare = False
 
@@ -54,15 +56,16 @@ class MinimisationHandler:
         # PDFs provided in inj_kwargs and llh_kwargs.
         for season in self.seasons:
             self.injectors[season["Name"]] = Injector(season, sources,
-                                                      **inj_kwargs)
+                                                      **self.inj_kwargs)
 
             if not self.flare:
-                self.llhs[season["Name"]] = LLH(season, sources, **llh_kwargs)
+                self.llhs[season["Name"]] = LLH(season, sources,
+                                                **self.llh_kwargs)
             else:
                 self.llhs[season["Name"]] = FlareLLH(season, sources,
-                                                     **llh_kwargs)
+                                                     **self.llh_kwargs)
 
-        p0, bounds, names = fit_setup(llh_kwargs, sources, self.flare)
+        p0, bounds, names = fit_setup(self.llh_kwargs, sources, self.flare)
 
         self.p0 = p0
         self.bounds = bounds
@@ -70,7 +73,6 @@ class MinimisationHandler:
 
         # Sets the default flux scale for finding sensitivity
         # Default value is 1 (Gev)^-1 (cm)^-2 (s)^-1
-        self.scale = scale
         self.bkg_ts = None
 
         # self.clean_true_param_values()
@@ -80,8 +82,8 @@ class MinimisationHandler:
 
     def dump_results(self, results, scale, seed):
         """Takes the results of a set of trials, and saves the dictionary as
-        a pickle file. The flux scale is used as a parent directory, and the
-        pickle file itself is saved with a name equal to its random seed.
+        a pickle pkl_file. The flux scale is used as a parent directory, and the
+        pickle pkl_file itself is saved with a name equal to its random seed.
 
         :param results: Dictionary of Minimisation results from trials
         :param scale: Scale of inputted flux
@@ -176,11 +178,11 @@ class MinimisationHandler:
 
         scale_range = np.linspace(0., scale, n_steps)
 
-        truth_dict = dict()
+        # truth_dict = dict()
 
         for scale in scale_range:
-            new = self.run(n_trials, scale)
-            truth_dict[scale] = new
+            self.run(n_trials, scale)
+            # truth_dict[scale] = new
 
     def run_stacked(self, n_trials=n_trials_default, scale=1):
 
@@ -193,7 +195,7 @@ class MinimisationHandler:
 
         print "Generating", n_trials, "trials!"
 
-        for i in tqdm(range(int(n_trials))):
+        for i in range(int(n_trials)):
             f = self.run_trial(scale)
 
             res = scipy.optimize.fmin_l_bfgs_b(
@@ -330,7 +332,7 @@ class MinimisationHandler:
                 "Parameters": [[] for x in self.param_names]
             }
 
-        for i in tqdm(range(int(n_trials))):
+        for i in range(int(n_trials)):
 
             datasets = dict()
 
@@ -586,3 +588,18 @@ class MinimisationHandler:
             u_lim = ">" + str(max(n_range))
 
         print "One Sigma interval between", l_lim, "and", u_lim
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", help="Path for analysis pkl_file")
+    cfg = parser.parse_args()
+
+    print cfg.file
+
+    with open(cfg.file) as f:
+        mh_dict = Pickle.load(f)
+
+    mh = MinimisationHandler(mh_dict)
+    mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"])

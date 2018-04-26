@@ -18,6 +18,7 @@ output_dir = fs_scratch_dir + "output/"
 log_dir = fs_scratch_dir + "logs/"
 
 catalogue_dir = input_dir + "catalogues/"
+analysis_dir = input_dir + "analysis/"
 
 pickle_dir = storage_dir + "pickles/"
 inj_param_dir = pickle_dir + "injection_values/"

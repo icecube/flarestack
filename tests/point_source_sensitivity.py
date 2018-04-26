@@ -1,11 +1,14 @@
 import numpy as np
+import os
+import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
 from data.icecube_pointsource_7year import ps_7year
-from shared import plot_output_dir, flux_to_k
+from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.prepare_catalogue import ps_catalogue_name
 from utils.skylab_reference import skylab_7year_sensitivity
 from scipy.interpolate import interp1d
+from cluster import run_desy_cluster as rd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -41,25 +44,54 @@ llh_kwargs = {
 
 name = "tests/ps_sens"
 
-sindecs = np.linspace(0.90, -0.90, 13)
-sindecs = np.linspace(0.5, -0.5, 3)
+# sindecs = np.linspace(0.90, -0.90, 13)
+sindecs = np.linspace(0.75, -0.75, 7)
 
 sens = []
 
-for sindec in sindecs:
-    source_path = ps_catalogue_name(sindec)
+analyses=[]
 
-    sources = np.load(source_path)
+for sindec in sindecs:
+    cat_path = ps_catalogue_name(sindec)
 
     subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
 
     scale = flux_to_k(skylab_7year_sensitivity(sindec)) * 2
 
-    # mh = MinimisationHandler(subname, ps_7year, sources, inj_kwargs,
-    #                          llh_kwargs)
-    # mh.iterate_run(scale=scale, n_trials=500, n_steps=10)
+    mh_dict = {
+        "name": subname,
+        "datasets": ps_7year,
+        "catalogue": cat_path,
+        "inj kwargs": inj_kwargs,
+        "llh kwargs": llh_kwargs,
+        "scale": scale,
+        "n_steps": 10
+    }
 
-    rh = ResultsHandler(subname, llh_kwargs, sources)
+    analysis_path = analysis_dir + subname
+
+    try:
+        os.makedirs(analysis_path)
+    except OSError:
+        pass
+
+    pkl_file = analysis_path + "dict.pkl"
+
+    with open(pkl_file, "wb") as f:
+        Pickle.dump(mh_dict, f)
+
+    rd.submit_to_cluster(pkl_file, n_jobs=10)
+
+    # mh = MinimisationHandler(mh_dict)
+    # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"])
+
+    analyses.append(mh_dict)
+
+rd.wait_for_cluster()
+
+for rh_dict in analyses:
+    rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
+                        rh_dict["catalogue"])
     sens.append(rh.sensitivity)
 
 plot_range = np.linspace(-0.99, 0.99, 1000)

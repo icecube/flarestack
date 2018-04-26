@@ -378,10 +378,20 @@ class LLH(SoB):
             S1 = energy_SoB_cache[g1]
             S2 = energy_SoB_cache[g2]
 
+            # print "S0", S0[:5]
+            # print "S1", S1[:5]
+            # print "S2", S2[:5]
+
             val = numexpr.evaluate(
                 "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
                 " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
             )
+
+            # print np.log(val[:5])
+            #
+            # print g0, g1, g2, gamma
+            #
+            # raw_input("prompt")
 
         return val
 
