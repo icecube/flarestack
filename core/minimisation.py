@@ -173,7 +173,6 @@ class MinimisationHandler:
     #         path = inj_dir + name
     #         os.remove(path)
 
-
     def iterate_run(self, scale=1, n_steps=5, n_trials=50):
 
         scale_range = np.linspace(0., scale, n_steps)
@@ -447,8 +446,8 @@ class MinimisationHandler:
 
                                 marginalisation = flare_length / max_flare
 
-                                llh_kwargs = dict(self.llh_kwargs)
-                                llh_kwargs["LLH Time PDF"]["Name"] = "FixedBox"
+                                llh_kwargs = dict()
+                                llh_kwargs["LLH Time PDF"]["Name"] = "FixedEndBox"
                                 llh_kwargs["LLH Time PDF"]["Start Time (" \
                                                            "MJD)"] = t_s
                                 llh_kwargs["LLH Time PDF"]["End Time (" \
@@ -602,4 +601,5 @@ if __name__ == '__main__':
         mh_dict = Pickle.load(f)
 
     mh = MinimisationHandler(mh_dict)
-    mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"])
+    mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],
+                   n_trials=mh_dict["n_trials"])

@@ -190,7 +190,7 @@ class ResultsHandler:
             return value
 
         best_a = scipy.optimize.curve_fit(
-            f, x, y, p0=[1.], bounds=(0., 1e5))[0][0]
+            f, x, y, p0=[1.])[0][0]
 
         def best_f(x):
             return f(x, best_a)

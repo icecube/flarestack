@@ -19,8 +19,8 @@ class Injector:
         self.sources = sources
         self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
         self.mc_weights = self.energy_pdf.weight_mc(self._mc)
-        self.time_PDF = TimePDF.create(kwargs["Injection Time PDF"],
-                                       season)
+        self.sig_time_PDF = TimePDF.create(kwargs["Injection Time PDF"],
+                                           season)
 
         if "Poisson Smear?" in kwargs.keys():
             self.poisson_smear = kwargs["Poisson Smear?"]
@@ -106,7 +106,7 @@ class Injector:
             # Calculate the effective injection time for simulation. Equal to
             # the overlap between the season and the injection time PDF for
             # the source, scaled if the injection PDF is not uniform in time.
-            eff_inj_time = self.time_PDF.effective_injection_time(source)
+            eff_inj_time = self.sig_time_PDF.effective_injection_time(source)
 
             # All injection fluxes are given in terms of k, equal to 1e-9
             inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
@@ -158,7 +158,7 @@ class Injector:
 
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.
-            sim_ev["timeMJD"] = self.time_PDF.simulate_times(source, n_s)
+            sim_ev["timeMJD"] = self.sig_time_PDF.simulate_times(source, n_s)
 
             # Joins the new events to the signal events
             sig_events = np.concatenate((sig_events, sim_ev))

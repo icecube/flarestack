@@ -285,6 +285,7 @@ class FixedRefBox(Box):
         :param source: Source to be considered
         :return: Time of Window Start
         """
+
         return max(self.t0, self.fixed_ref - self.pre_window)
 
     def sig_t1(self, source):

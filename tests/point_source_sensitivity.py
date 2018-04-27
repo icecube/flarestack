@@ -44,12 +44,11 @@ llh_kwargs = {
 
 name = "tests/ps_sens"
 
-# sindecs = np.linspace(0.90, -0.90, 13)
-sindecs = np.linspace(0.75, -0.75, 7)
-
+sindecs = np.linspace(0.90, -0.90, 13)
+# sindecs = np.linspace(0.75, -0.75, 7)
 sens = []
 
-analyses=[]
+analyses = []
 
 for sindec in sindecs:
     cat_path = ps_catalogue_name(sindec)
@@ -65,6 +64,7 @@ for sindec in sindecs:
         "inj kwargs": inj_kwargs,
         "llh kwargs": llh_kwargs,
         "scale": scale,
+        "n_trials": 100,
         "n_steps": 10
     }
 
@@ -80,7 +80,7 @@ for sindec in sindecs:
     with open(pkl_file, "wb") as f:
         Pickle.dump(mh_dict, f)
 
-    rd.submit_to_cluster(pkl_file, n_jobs=10)
+    rd.submit_to_cluster(pkl_file, n_jobs=100)
 
     # mh = MinimisationHandler(mh_dict)
     # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"])
@@ -91,7 +91,7 @@ rd.wait_for_cluster()
 
 for rh_dict in analyses:
     rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                        rh_dict["catalogue"])
+                        rh_dict["catalogue"], cleanup=True)
     sens.append(rh.sensitivity)
 
 plot_range = np.linspace(-0.99, 0.99, 1000)
@@ -133,8 +133,8 @@ plt.subplots_adjust(hspace=0.001)
 
 ratio_interp = interp1d(sindecs, ratios)
 
-interp_range = np.linspace(np.min(sens),
-                           np.max(sens), 1000)
+interp_range = np.linspace(np.min(sindecs),
+                           np.max(sindecs), 1000)
 
 ax1.plot(
     interp_range,

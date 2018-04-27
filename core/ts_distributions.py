@@ -105,7 +105,7 @@ def plot_background_ts_distribution(ts_array, path):
 
     plt.figure()
     plt.hist(ts_array, bins=20, lw=2, histtype='step', color='black',
-             label='Test Stat', density=True)
+             label='Test Stat', normed=True)
 
     yrange = 0.1/float(len(ts_array))
 
@@ -150,7 +150,7 @@ def plot_fit_results(results, path, labels, inj=None):
         label = labels[i]
 
         plt.subplot(n_dim, 1, i+1)
-        plt.hist(row, histtype="step", density=True, bins=20, color="blue")
+        plt.hist(row, histtype="step", normed=True, bins=20, color="blue")
         plt.axvline(np.median(row), linestyle="--", color="blue",
                     label="Median")
         plt.title(label)
