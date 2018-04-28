@@ -485,7 +485,7 @@ class FlareLLH(LLH):
 
         # Evaluate the likelihood function for neutrinos close to each source
         llh_value = np.sum(np.log((
-            1 + ((n_j/n_all) * (SoB_energy * SoB_spacetime)))))
+            1 + ((n_j/n_all) * (SoB_energy * SoB_spacetime))) * marginilisation))
 
         # Account for the events in the veto region, by assuming they have S/B=0
 

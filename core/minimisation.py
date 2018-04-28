@@ -349,9 +349,9 @@ class MinimisationHandler:
 
                     t_mask = np.logical_and(
                         np.greater(spatial_coincident_data["timeMJD"],
-                                   source["Start Time (MJD)"]),
+                                   llh.time_pdf.sig_t0(source)),
                         np.less(spatial_coincident_data["timeMJD"],
-                                source["End Time (MJD)"])
+                                llh.time_pdf.sig_t1(source))
                     )
 
                     coincident_data = spatial_coincident_data[t_mask]
@@ -366,6 +366,7 @@ class MinimisationHandler:
                         new_entry["Coincident Data"] = spatial_coincident_data
                         significant = llh.find_significant_events(
                             coincident_data, source)
+
                         new_entry["Significant Times"] = significant["timeMJD"]
                         new_entry["N_all"] = len(data)
 
@@ -401,10 +402,10 @@ class MinimisationHandler:
                 # print pairs
                 # raw_input("prompt")
 
-                # all_pairs = [(x, y) for x in all_times for y in all_times if y > x]
+                all_pairs = [(x, y) for x in all_times for y in all_times if y > x]
 
-                # print "This gives", len(pairs), "possible pairs out of",
-                # print len(all_pairs), "pairs."
+                print "This gives", len(pairs), "possible pairs out of",
+                print len(all_pairs), "pairs."
 
                 if len(pairs) > 0:
 
@@ -425,6 +426,7 @@ class MinimisationHandler:
                             flare_veto = np.logical_or(
                                 np.less(coincident_data["timeMJD"], t_start),
                                 np.greater(coincident_data["timeMJD"], t_end))
+                            # flare_veto = np.zeros_like(coincident_data["timeMJD"])
 
                             if np.sum(~flare_veto) > 0:
 
@@ -432,9 +434,9 @@ class MinimisationHandler:
                                 t_e = min(t_end, season_dict["End (MJD)"])
                                 flare_length = t_e - t_s
 
-                                t_s_min = max(src["Start Time (MJD)"][0],
+                                t_s_min = max(llh.time_pdf.sig_t0(source),
                                               season_dict["Start (MJD)"])
-                                t_e_max = min(src["End Time (MJD)"][0],
+                                t_e_max = min(llh.time_pdf.sig_t1(source),
                                               season_dict["End (MJD)"])
                                 max_flare = t_e_max - t_s_min
 
@@ -442,11 +444,12 @@ class MinimisationHandler:
                                     np.less(data["timeMJD"], t_s_min),
                                     np.greater(data["timeMJD"], t_e_max))
 
-                                n_all = len(data[~full_flare_veto])
+                                # n_all = len(data[~full_flare_veto])
+                                n_all = len(data)
 
                                 marginalisation = flare_length / max_flare
 
-                                llh_kwargs = dict()
+                                llh_kwargs = dict(self.llh_kwargs)
                                 llh_kwargs["LLH Time PDF"]["Name"] = "FixedEndBox"
                                 llh_kwargs["LLH Time PDF"]["Start Time (" \
                                                            "MJD)"] = t_s

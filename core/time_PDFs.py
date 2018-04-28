@@ -172,6 +172,26 @@ class Steady(TimePDF):
 
         return season_length * (60 * 60 * 24)
 
+    def sig_t0(self, source):
+        """Calculates the starting time for the window, equal to the
+        source reference time in MJD minus the length of the pre-reference-time
+        window (in days).
+
+        :param source: Source to be considered
+        :return: Time of Window Start
+        """
+        return self.t0
+
+    def sig_t1(self, source):
+        """Calculates the starting time for the window, equal to the
+        source reference time in MJD plus the length of the post-reference-time
+        window (in days).
+
+        :param source: Source to be considered
+        :return: Time of Window End
+        """
+        return self.t1
+
 
 @TimePDF.register_subclass('Box')
 class Box(TimePDF):

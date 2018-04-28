@@ -53,6 +53,7 @@ class ResultsHandler:
             self.inj = None
 
         self.merge_pickle_data()
+
         self.find_sensitivity()
 
     def clean_merged_data(self):
@@ -107,7 +108,7 @@ class ResultsHandler:
                     data = Pickle.load(f)
                 os.remove(path)
 
-                for key in ["TS", "Flags"]:
+                for key in ["TS"]:
                     try:
                         merged_data[key] += data[key]
                     except KeyError:
@@ -190,7 +191,9 @@ class ResultsHandler:
             return value
 
         best_a = scipy.optimize.curve_fit(
-            f, x, y, p0=[1.])[0][0]
+            f, x, y,  p0=[0.1])[0][0]
+
+        # print "best_a", best_a
 
         def best_f(x):
             return f(x, best_a)

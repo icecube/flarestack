@@ -42,14 +42,14 @@ flare_no_energy = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": False,
-    "Find Flare?": True
+    "Flare Search?": True
 }
 
 flare_with_energy = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
-    "Find Flare?": True
+    "Flare Search?": True
 }
 
 name = "tests/flare_vs_window"
@@ -60,10 +60,9 @@ sindecs = [0.0]
 
 lengths = np.linspace(0, max_window, 31)
 
-print lengths
-raw_input("prompt")
-# lengths = [20., 50.]
+lengths = [5., 10., 20., 50., 100., 200.]
 
+lengths = np.logspace(-2, 0.0, 5) * max_window
 
 
 analyses = dict()
@@ -109,6 +108,7 @@ for sindec in sindecs:
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
+                "n_trials": 5,
                 "n_steps": 10
             }
 
@@ -124,10 +124,10 @@ for sindec in sindecs:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            # rd.submit_to_cluster(pkl_file, n_jobs=100)
+            rd.submit_to_cluster(pkl_file, n_jobs=500)
 
-            mh = MinimisationHandler(mh_dict)
-            mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
+            # mh = MinimisationHandler(mh_dict)
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=10)
 
             res[flare_length] = mh_dict
 
@@ -151,6 +151,7 @@ for (sindec, src_res) in analyses.iteritems():
                                     rh_dict["catalogue"], cleanup=True)
                 sens.append(rh.sensitivity * float(length) * 60 * 60 * 24)
                 fracs.append(float(length)/max_window)
+
             except:
                 pass
 
@@ -158,10 +159,10 @@ for (sindec, src_res) in analyses.iteritems():
 
     ax1.grid(True, which='both')
     ax1.semilogy(nonposy='clip')
-    ax1.set_ylabel(r"Time-Integrated Flux Strength [ GeV$^{-1}$ cm$^{-2}$]",
+    ax1.set_ylabel(r"Time-Integrated Sensitivity [ GeV$^{-1}$ cm$^{-2}$]",
                    fontsize=12)
     ax1.set_xlabel(r"(Flare Length) / (Maximum Window)")
-    ax1.set_xlim(0, 1.0)
+    # ax1.set_xlim(0, 1.0)
 
     plt.title("Flare in " + str(int(max_window)) + " day window")
 
