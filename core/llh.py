@@ -320,8 +320,7 @@ class LLH(SoB):
         :param cut_data: Subset of Dataset with coincident events
         :return: Array of Background Spacetime PDF values
         """
-        space_term = (1. / (2. * np.pi)) * np.exp(
-            self.bkg_spatial(cut_data["sinDec"]))
+        space_term = self.background_spatial(source, cut_data)
 
         if hasattr(self, "time_pdf"):
             time_term = self.time_pdf.background_f(cut_data["timeMJD"], source)
@@ -330,6 +329,12 @@ class LLH(SoB):
             sig_pdf = space_term
 
         return sig_pdf
+
+    def background_spatial(self, source, cut_data):
+        space_term = (1. / (2. * np.pi)) * np.exp(
+            self.bkg_spatial(cut_data["sinDec"]))
+        return space_term
+
 
 # ==============================================================================
 # Energy Log(Signal/Background) Ratio
@@ -409,7 +414,7 @@ class LLH(SoB):
         :return: Log Likelihood value for the given
         """
 
-        return np.sum((n_all - n_coincident) * np.log1p((-n_s / n_all)))
+        return (n_all - n_coincident) * np.sum(np.log1p((-n_s / n_all)))
 
 
 class FlareLLH(LLH):
@@ -421,8 +426,8 @@ class FlareLLH(LLH):
 
         n_mask = len(coincident_data)
 
-        sig = self.signal_pdf(self.sources, coincident_data)
-        bkg = self.background_pdf(self.sources, coincident_data)
+        sig = self.signal_spatial(self.sources, coincident_data)
+        bkg = self.background_spatial(self.sources, coincident_data)
         SoB_spacetime = sig/bkg
         del sig
         del bkg
@@ -485,29 +490,34 @@ class FlareLLH(LLH):
 
         # Evaluate the likelihood function for neutrinos close to each source
         llh_value = np.sum(np.log((
-            1 + ((n_j/n_all) * (SoB_energy * SoB_spacetime))) * marginilisation))
+            1 + ((n_j/n_all) * (SoB_energy * SoB_spacetime)))))
 
         # Account for the events in the veto region, by assuming they have S/B=0
 
         llh_value += self.assume_background(n_j, n_mask, n_all)
+
+        # Account for increased trials of shorter time windows with
+        # marginilisation factor
+
+        llh_value += np.log(marginilisation)
 
         # Definition of test statistic
         return 2. * llh_value
 
     def find_significant_events(self, coincident_data, sources):
 
-        sig = self.signal_pdf(sources, coincident_data)
-        bkg = self.background_pdf(sources, coincident_data)
-        SoB_spacetime = sig / bkg
+        sig = self.signal_spatial(sources, coincident_data)
+        bkg = self.background_spatial(sources, coincident_data)
+        SoB_space = sig / bkg
 
         SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
 
         SoB_energy = self.estimate_energy_weights(
                 self.default_gamma, SoB_energy_cache)
 
-        SoB = SoB_spacetime * SoB_energy
+        SoB = SoB_space * SoB_energy
 
-        mask = SoB > 1.
+        mask = SoB > 0.5
 
         return coincident_data[mask]
 
@@ -515,6 +525,8 @@ class FlareLLH(LLH):
         spline_dict = dict()
         spline_dict["Background spatial"] = self.bkg_spatial
         spline_dict["SoB_spline_2D"] = self.SoB_spline_2Ds
+        kwargs["LLH Time PDF"] = None
 
         flare_llh = FlareLLH(season, sources, spline_dict, **kwargs)
+
         return flare_llh

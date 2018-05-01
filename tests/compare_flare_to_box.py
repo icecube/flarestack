@@ -99,7 +99,7 @@ for sindec in sindecs:
             }
 
             scale = flux_to_k(skylab_7year_sensitivity(sindec)) * (
-                    4000 / flare_length)
+                    3500 / flare_length)
 
             mh_dict = {
                 "name": full_name,
@@ -124,10 +124,10 @@ for sindec in sindecs:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            rd.submit_to_cluster(pkl_file, n_jobs=500)
+            rd.submit_to_cluster(pkl_file, n_jobs=2000)
 
             # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=10)
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=3)
 
             res[flare_length] = mh_dict
 
@@ -162,6 +162,7 @@ for (sindec, src_res) in analyses.iteritems():
     ax1.set_ylabel(r"Time-Integrated Sensitivity [ GeV$^{-1}$ cm$^{-2}$]",
                    fontsize=12)
     ax1.set_xlabel(r"(Flare Length) / (Maximum Window)")
+    ax1.set_xscale("log")
     # ax1.set_xlim(0, 1.0)
 
     plt.title("Flare in " + str(int(max_window)) + " day window")

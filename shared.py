@@ -25,6 +25,8 @@ inj_param_dir = pickle_dir + "injection_values/"
 
 plots_dir = output_dir + "plots/"
 
+illustration_dir = plots_dir + "illustrations/"
+
 acc_f_dir = input_dir + "acceptance_functions/"
 SoB_spline_dir = input_dir + "SoB_splines/"
 

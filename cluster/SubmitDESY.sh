@@ -5,7 +5,7 @@
 ##
 ##(the running time for this job)
 
-#$ -l h_cpu=11:59:00
+#$ -l h_cpu=15:59:00
 #$ -l h_rss=3G
 ##
 ##Force OS = SL5/6

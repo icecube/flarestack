@@ -363,7 +363,7 @@ class MinimisationHandler:
                     if len(coincident_data) > 0:
 
                         new_entry = dict(season)
-                        new_entry["Coincident Data"] = spatial_coincident_data
+                        new_entry["Coincident Data"] = coincident_data
                         significant = llh.find_significant_events(
                             coincident_data, source)
 
@@ -387,7 +387,7 @@ class MinimisationHandler:
 
                 all_times = np.array(sorted(all_times))
 
-                # print "In total", len(all_times), "of", n_tot
+                print "In total", len(all_times), "of", n_tot
 
                 # Minimum flare duration (days)
                 min_flare = 1.
@@ -422,13 +422,17 @@ class MinimisationHandler:
 
                         for i, season_dict in enumerate(source_dict.itervalues()):
                             coincident_data = season_dict["Coincident Data"]
-                            data = full_data[season_dict["Name"]]
+
+                            data = full_data[season["Name"]]
+
                             flare_veto = np.logical_or(
                                 np.less(coincident_data["timeMJD"], t_start),
                                 np.greater(coincident_data["timeMJD"], t_end))
                             # flare_veto = np.zeros_like(coincident_data["timeMJD"])
 
                             if np.sum(~flare_veto) > 0:
+
+                                llh = self.llhs[season_dict["Name"]]
 
                                 t_s = max(t_start, season_dict["Start (MJD)"])
                                 t_e = min(t_end, season_dict["End (MJD)"])
@@ -440,27 +444,18 @@ class MinimisationHandler:
                                               season_dict["End (MJD)"])
                                 max_flare = t_e_max - t_s_min
 
-                                full_flare_veto = np.logical_or(
-                                    np.less(data["timeMJD"], t_s_min),
-                                    np.greater(data["timeMJD"], t_e_max))
-
                                 # n_all = len(data[~full_flare_veto])
-                                n_all = len(data)
+                                n_all = np.sum(np.logical_and(
+                                    np.greater(data["timeMJD"],
+                                               t_s),
+                                    np.less(data["timeMJD"],
+                                            t_e)
+                                ))
 
                                 marginalisation = flare_length / max_flare
 
                                 llh_kwargs = dict(self.llh_kwargs)
-                                llh_kwargs["LLH Time PDF"]["Name"] = "FixedEndBox"
-                                llh_kwargs["LLH Time PDF"]["Start Time (" \
-                                                           "MJD)"] = t_s
-                                llh_kwargs["LLH Time PDF"]["End Time (" \
-                                                           "MJD)"] = t_e
-                                llh_kwargs["LLH Time PDF"]["Bkg Start Time (" \
-                                                           "MJD)"] = t_s_min
-                                llh_kwargs["LLH Time PDF"]["Bkg End Time (" \
-                                                           "MJD)"] = t_e_max
-
-                                llh = self.llhs[season["Name"]]
+                                llh_kwargs["LLH Time PDF"] = None
 
                                 flare_llh = llh.create_flare(season_dict, src,
                                                              **llh_kwargs)
