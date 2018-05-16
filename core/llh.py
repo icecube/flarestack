@@ -48,7 +48,7 @@ class LLH(SoB):
         :return: 2D linear interpolation
         """
 
-        acc_path = acceptance_path(self.season["Name"])
+        acc_path = acceptance_path(self.season)
 
         with open(acc_path) as f:
             acc_dict = Pickle.load(f)
@@ -94,7 +94,7 @@ class LLH(SoB):
         :param sources: Sources to be tested
         :return: Mask to remove
         """
-        veto = np.ones_like(data["timeMJD"], dtype=np.bool)
+        veto = np.ones_like(data[self.season["MJD Time Key"]], dtype=np.bool)
 
         # print min(data["timeMJD"]), max(data["timeMJD"])
 
@@ -221,32 +221,24 @@ class LLH(SoB):
         # the season
         all_n_j = (n_s * weights).T
 
-
-        # llh_value = 0
-        #
-        # for i, SoB_e in enumerate(SoB_energy):
-        #     n_mask = float(len(SoB_e))
-        #     # SoB = SoB_energy[i] * SoB_spacetime[i]
-        #     #
-        #     # chi = (SoB - 1)/n_all[i]
-        #
-        #     # print i, SoB_e, SoB_spacetime[i], n_all[i], n_mask[i], chi
-        #     #
-        #     # print np.sum(np.log1p(all_n_j * chi))
-        #
-        #     # Evaluate the likelihood function for neutrinos close to each source
-        #     llh_value += np.sum(np.log1p(
-        #         all_n_j.T[i] * ((SoB_energy[i] * SoB_spacetime[i]) -  1.)/n_all))
-        #
-        #     # Account for the events in the veto region, by assuming they have S/B=0
-        #     llh_value += self.assume_background(all_n_j.T[i], n_mask, n_all)
-
         n_mask = np.array([len(x) for x in SoB_spacetime])
 
         x = 1. + ((all_n_j/n_all) * (SoB_energy * np.array(SoB_spacetime) -
-                                   1.))[0]
+                                     1.))[0]
 
-        llh_value = np.sum([np.log(y) for y in x])
+        # for i, y in enumerate(x):
+        #     if y > 0.:
+        #         pass
+        #     else:
+        #         print y
+        #         print all_n_j
+        #         print n_all
+        #         print SoB_energy[0][i]
+        #         print np.array(SoB_spacetime)[0][i]
+        #
+        #         raw_input("prompt")
+
+        llh_value = np.sum([np.log(abs(y)) for y in x])
 
         llh_value += self.assume_background(all_n_j, n_mask, n_all)
 
@@ -273,7 +265,9 @@ class LLH(SoB):
         # print space_term,
 
         if hasattr(self, "time_pdf"):
-            time_term = self.time_pdf.signal_f(cut_data["timeMJD"], source)
+            time_term = self.time_pdf.signal_f(
+                cut_data[self.season["MJD Time Key"]], source)
+
             sig_pdf = space_term * time_term
 
         else:
@@ -323,7 +317,9 @@ class LLH(SoB):
         space_term = self.background_spatial(source, cut_data)
 
         if hasattr(self, "time_pdf"):
-            time_term = self.time_pdf.background_f(cut_data["timeMJD"], source)
+            time_term = self.time_pdf.background_f(
+                cut_data[self.season["MJD Time Key"]], source)
+
             sig_pdf = space_term * time_term
         else:
             sig_pdf = space_term
@@ -420,7 +416,7 @@ class LLH(SoB):
 class FlareLLH(LLH):
 
     def create_llh_function(self, data, flare_veto, n_all,
-                            marginilisation):
+                            marginalisation):
 
         coincident_data = data[~flare_veto]
 
@@ -449,13 +445,13 @@ class FlareLLH(LLH):
 
         def test_statistic(params, weights):
             return self.calculate_flare_test_statistic(
-                params, weights, n_all, marginilisation, SoB_spacetime,
+                params, weights, n_all, marginalisation, SoB_spacetime,
                 SoB_energy_cache)
 
         return test_statistic
 
     def calculate_flare_test_statistic(self, params, weights, n_all,
-                                       marginilisation, SoB_spacetime,
+                                       marginalisation, SoB_spacetime,
                                        SoB_energy_cache=None):
         """Calculates the test statistic, given the parameters. Uses numexpr
         for faster calculations.
@@ -488,6 +484,12 @@ class FlareLLH(LLH):
         # the season
         n_j = n_s * weights
 
+        if n_all > 0:
+            pass
+        else:
+            print n_all, n_j
+            raw_input("prompt")
+
         # Evaluate the likelihood function for neutrinos close to each source
         llh_value = np.sum(np.log((
             1 + ((n_j/n_all) * (SoB_energy * SoB_spacetime)))))
@@ -497,27 +499,36 @@ class FlareLLH(LLH):
         llh_value += self.assume_background(n_j, n_mask, n_all)
 
         # Account for increased trials of shorter time windows with
-        # marginilisation factor
+        # marginalisation factor
 
-        llh_value += np.log(marginilisation)
+        llh_value += np.log(marginalisation)
 
         # Definition of test statistic
         return 2. * llh_value
 
-    def find_significant_events(self, coincident_data, sources):
+    def find_significant_events(self, coincident_data, source):
+        """Finds events in the coincident dataset (spatially and temporally
+        overlapping sources), which are significant. This is defined as having a
+        Signal/Background Ratio that is greater than 1. The S/B ratio is
+        calculating using spatial and energy PDFs.
 
-        sig = self.signal_spatial(sources, coincident_data)
-        bkg = self.background_spatial(sources, coincident_data)
+        :param coincident_data: Data overlapping the source spatially/temporally
+        :param source: Source to be considered
+        :return: Significant events in coincident dataset
+        """
+
+        sig = self.signal_spatial(source, coincident_data)
+        bkg = self.background_spatial(source, coincident_data)
         SoB_space = sig / bkg
 
         SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
 
         SoB_energy = self.estimate_energy_weights(
-                self.default_gamma, SoB_energy_cache)
+                gamma=3.0, energy_SoB_cache=SoB_energy_cache)
 
         SoB = SoB_space * SoB_energy
 
-        mask = SoB > 0.5
+        mask = SoB > 1.0
 
         return coincident_data[mask]
 

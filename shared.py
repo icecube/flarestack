@@ -19,6 +19,8 @@ log_dir = fs_scratch_dir + "logs/"
 
 catalogue_dir = input_dir + "catalogues/"
 analysis_dir = input_dir + "analysis/"
+dataset_dir = input_dir + "data/"
+livetime_dir = dataset_dir + "livetime/"
 
 pickle_dir = storage_dir + "pickles/"
 inj_param_dir = pickle_dir + "injection_values/"
@@ -49,19 +51,20 @@ def plot_output_dir(name):
     return plots_dir + name
 
 
-def acceptance_path(season_name):
-    return acc_f_dir + season_name + ".pkl"
+def acceptance_path(season):
+    return acc_f_dir + season["Data Sample"] + "/" + \
+           season["Name"] + '.pkl'
 
 
-def SoB_spline_path(season_name):
-    return SoB_spline_dir + season_name + '.pkl'
-
+def SoB_spline_path(season):
+    return SoB_spline_dir + season["Data Sample"] + "/" + \
+           season["Name"] + '.pkl'
 
 def fit_setup(llh_kwargs, sources, flare=False):
 
     # The default value for n_s is 1. It can be between 0 and 1000.
     p0 = [1.]
-    bounds = [(0, 1000.)]
+    bounds = [(0.0, 1000.)]
     names = ["n_s"]
 
     # If weights are to be fitted, then each source has an independent
@@ -69,7 +72,7 @@ def fit_setup(llh_kwargs, sources, flare=False):
     if "Fit Weights?" in llh_kwargs.keys():
         if llh_kwargs["Fit Weights?"]:
             p0 = [1. for x in sources]
-            bounds = [(0, 1000.) for x in sources]
+            bounds = [bounds[0] for x in sources]
             names = ["n_s (" + x["Name"] + ")" for x in sources]
 
     # If gamma is to be included as a fit parameter, then its default

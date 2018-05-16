@@ -24,10 +24,58 @@ class TimePDF:
     def __init__(self, t_pdf_dict, season):
         self.t_dict = t_pdf_dict
         self.season = season
-        self.t0 = season["Start (MJD)"]
-        self.t1 = season["End (MJD)"]
-        self.livetime = season["Livetime"]
-        self.season_f = lambda t: box_func(t, self.t0 - 1e-9, self.t1 + 1e-9)
+
+        self.grl = np.load(season["grl_path"])
+
+        if np.sum(~self.grl["good_i3"]) == 0:
+            pass
+        else:
+            raise Exception("Runs marked as 'bad' are found in Good Run List")
+
+        self.t0 = min(self.grl["start"])
+        self.t1 = max(self.grl["stop"])
+
+        self.livetime = np.sum(self.grl["length"])
+
+        step = 1e-10
+
+        t_range = [self.t0 - step]
+        f = [0.]
+
+        mjd = [0.]
+        livetime = [0.]
+        total_t = 0.
+
+        for i, run in enumerate(self.grl):
+
+            mjd.append(run["start"])
+            livetime.append(total_t)
+            total_t += run["length"]
+            mjd.append(run["stop"])
+            livetime.append(total_t)
+
+            t_range.extend([
+                run["start"] - step, run["start"], run["stop"],
+                run["stop"] + step
+            ])
+            f.extend([0., 1., 1., 0.])
+
+            if t_range != sorted(t_range):
+                print t_range[-8:]
+                print run
+
+                for j in range(3):
+                    print np.sort(self.grl, order="start")[i + j - 1]
+
+                raw_input("prompt")
+
+        mjd.append(1e5)
+        livetime.append(total_t)
+
+        self.season_f = interp1d(t_range, f, kind="linear")
+
+        self.mjd_to_livetime = interp1d(mjd, livetime, kind="linear")
+        self.livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
 
     @classmethod
     def register_subclass(cls, time_pdf_name):
@@ -56,7 +104,7 @@ class TimePDF:
         :param source: Source to be considered
         :return: Value of normalised box function at t
         """
-        return self.season_f(t) / self.season["Livetime"]
+        return 1. / self.livetime
 
     def product_integral(self, t, source):
         """Calculates the product of the given signal PDF with the season box
@@ -70,10 +118,10 @@ class TimePDF:
         :return: Product of signal integral and season
         """
 
-        f = np.array(self.signal_integral(t, source) * self.season_f(t))
+        f = np.array(self.signal_integral(t, source))
 
-        f[f < 0.] = 0
-        f[f > 1.] = 1
+        f[f < 0.] = 0.
+        f[f > 1.] = 1.
 
         return f
 
@@ -88,11 +136,23 @@ class TimePDF:
         :param source: Source to be considered
         :return: Interpolated function
         """
-        max_int = self.product_integral(self.t1, source)
-        min_int = self.product_integral(self.t0, source)
+        max_int = self.product_integral(self.sig_t1(source), source)
+        min_int = self.product_integral(self.sig_t0(source), source)
         fraction = max_int - min_int
 
-        t_range = np.linspace(self.t0, self.t1, 1.e4)
+        # t_range = np.linspace(self.t0, self.t1, 10)
+        # print self.mjd_to_livetime(t_range)
+        # print t_range[-1], self.t1
+        # print self.mjd_to_livetime(t_range[-1]), self.mjd_to_livetime(self.t1)
+        # print self.signal_integral(self.t1, source)
+        # print self.livetime
+        # print self.mjd_to_livetime(self.t1)/self.livetime
+        # print self.sig_t0(source), self.sig_t1(source)
+        #
+        # print max_int, min_int, fraction
+        # raw_input("prompt")
+
+        t_range = np.linspace(self.sig_t0(source), self.sig_t1(source), 1e4)
         cumu = (self.product_integral(t_range, source) - min_int) / fraction
 
         # Checks to ensure the cumulative fraction spans 0 to 1
@@ -113,6 +173,7 @@ class TimePDF:
         :return: Array of times in MJD for a given source
         """
         f = self.inverse_interpolate(source)
+
         return f(np.random.uniform(0., 1., n_s))
 
 
@@ -146,8 +207,7 @@ class Steady(TimePDF):
         :return: Value of normalised box function at t
         """
 
-        return np.abs(((t - self.t0) * (self.signal_f(t, source)) +
-                       0.5 * (np.sign(t - self.t1) + 1)))
+        return self.mjd_to_livetime(t)/self.livetime
 
     def flare_time_mask(self, source):
         """In this case, the interesting period for Flare Searches is the
@@ -168,7 +228,7 @@ class Steady(TimePDF):
         :param source: Source to be considered
         :return: Effective Livetime in seconds
         """
-        season_length = self.season["Livetime"]
+        season_length = self.livetime
 
         return season_length * (60 * 60 * 24)
 
@@ -228,8 +288,8 @@ class Box(TimePDF):
 
     def signal_f(self, t, source):
         """In this case, the signal PDF is a uniform PDF for a fixed duration of
-        time. It is normalised with the length of the box, to give an
-        integral of 1.
+        time. It is normalised with the length of the box in LIVETIME rather
+        than days, to give an integral of 1.
 
         :param t: Time
         :param source: Source to be considered
@@ -238,8 +298,13 @@ class Box(TimePDF):
 
         t0 = self.sig_t0(source)
         t1 = self.sig_t1(source)
+        length = self.mjd_to_livetime(t1) - self.mjd_to_livetime(t0)
 
-        return box_func(t, t0, t1) / (t1 - t0)
+        if length > 0.:
+            return box_func(t, t0, t1) / length
+
+        else:
+            return np.zeros_like(t)
 
     def signal_integral(self, t, source):
         """In this case, the signal PDF is a uniform PDF for a fixed duration of
@@ -255,8 +320,10 @@ class Box(TimePDF):
         t0 = self.sig_t0(source)
         t1 = self.sig_t1(source)
 
-        return np.abs(((t - t0) * (self.signal_f(t, source)) +
-                       0.5 * (np.sign(t - (t1 - 1e-9)) + 1)))
+        length = self.mjd_to_livetime(t1) - self.mjd_to_livetime(t0)
+
+        return np.abs((self.mjd_to_livetime(t) - self.mjd_to_livetime(t0))
+                      * box_func(t, t0, t1+1e-9) / length)
 
     def flare_time_mask(self, source):
         """In this case, the interesting period for Flare Searches is the
@@ -278,12 +345,13 @@ class Box(TimePDF):
         :param source: Source to be considered
         :return: Effective Livetime in seconds
         """
-        season_length = self.season["Livetime"] * (60 * 60 * 24)
-        t0 = self.sig_t0(source)
-        t1 = self.sig_t1(source)
+        season_length = self.livetime * (60 * 60 * 24)
+        t0 = self.mjd_to_livetime(self.sig_t0(source))
+        t1 = self.mjd_to_livetime(self.sig_t1(source))
         time = season_length * (t1 - t0) / (self.t1 - self.t0)
 
         return max(time, 0.)
+
 
 @TimePDF.register_subclass('FixedRefBox')
 class FixedRefBox(Box):
@@ -347,19 +415,19 @@ class FixedEndBox(Box):
         else:
             self.bkg_end_mjd = self.t1
 
-    def signal_f(self, t, source):
-        """In this case, the signal PDF is a uniform PDF for a fixed duration of
-        time. It is normalised with the length of the box, to give an
-        integral of 1.
-
-        :param t: Time
-        :param source: Source to be considered
-        :return: Value of normalised box function at t
-        """
-
-        t0 = self.sig_t0(source)
-        t1 = self.sig_t1(source)
-        return box_func(t, t0, t1) / (t1 - t0)
+    # def signal_f(self, t, source):
+    #     """In this case, the signal PDF is a uniform PDF for a fixed duration of
+    #     time. It is normalised with the length of the box, to give an
+    #     integral of 1.
+    #
+    #     :param t: Time
+    #     :param source: Source to be considered
+    #     :return: Value of normalised box function at t
+    #     """
+    #
+    #     t0 = self.sig_t0(source)
+    #     t1 = self.sig_t1(source)
+    #     return box_func(t, t0, t1) / (t1 - t0)
 
 
     def sig_t0(self, source):
@@ -396,5 +464,6 @@ class FixedEndBox(Box):
 
         t0 = max(self.t0, self.bkg_start_mjd)
         t1 = min(self.t1, self.bkg_end_mjd)
+        length = self.mjd_to_livetime(t1) - self.mjd_to_livetime(t0)
 
-        return box_func(t, t0, t1) / (t1 - t0)
+        return 1. / length

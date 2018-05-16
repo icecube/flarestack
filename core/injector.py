@@ -15,19 +15,24 @@ class Injector:
         self.injection_band_mask = dict()
         self.season = season
         self._raw_data = np.load(season["exp_path"])
+
         self._mc = np.load(season["mc_path"])
         self.sources = sources
         self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
         self.mc_weights = self.energy_pdf.weight_mc(self._mc)
-        self.sig_time_PDF = TimePDF.create(kwargs["Injection Time PDF"],
-                                           season)
+        self.time_pdf = TimePDF.create(kwargs["Injection Time PDF"],
+                                       season)
 
         if "Poisson Smear?" in kwargs.keys():
             self.poisson_smear = kwargs["Poisson Smear?"]
         else:
             self.poisson_smear = True
 
-        self.ref_fluxes = dict()
+        self.ref_fluxes = {
+            0.0: dict()
+        }
+        for source in sources:
+            self.ref_fluxes[0.0][source["Name"]] = 0.0
 
     def scramble_data(self):
         """Scrambles the raw dataset to "blind" the data. Assigns a flat Right
@@ -41,7 +46,16 @@ class Injector:
         # Assigns a flat random distribution for Right Ascension
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
-        np.random.shuffle(data['timeMJD'])
+
+        index_shuffle = range(len(data))
+        np.random.shuffle(index_shuffle)
+
+        data[self.season["MJD Time Key"]] = data[self.season["MJD Time Key"]][
+            index_shuffle
+        ]
+        data["Run"] = data["Run"][index_shuffle]
+
+        # np.random.shuffle(data[self.season["MJD Time Key"]])
 
         return data
 
@@ -86,11 +100,12 @@ class Injector:
         """
         mc = self._mc
         # Creates empty signal event array
-        sig_events = np.empty((0, ),
-                              dtype=[("ra", np.float), ("sinDec", np.float),
-                                     ("sigma", np.float), ("logE", np.float),
-                                     ("dec", np.float), ('timeMJD', np.float),
-                                     ])
+        sig_events = np.empty((0, ), dtype=self._raw_data.dtype)
+                              # dtype=[("ra", np.float), ("sinDec", np.float),
+                              #        ("sigma", np.float), ("logE", np.float),
+                              #        ("dec", np.float),
+                              #        (self.season["MJD Time Key"], np.float),
+                              #        ])
 
         n_tot_exp = 0
 
@@ -106,7 +121,7 @@ class Injector:
             # Calculate the effective injection time for simulation. Equal to
             # the overlap between the season and the injection time PDF for
             # the source, scaled if the injection PDF is not uniform in time.
-            eff_inj_time = self.sig_time_PDF.effective_injection_time(source)
+            eff_inj_time = self.time_pdf.effective_injection_time(source)
 
             # All injection fluxes are given in terms of k, equal to 1e-9
             inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
@@ -158,7 +173,14 @@ class Injector:
 
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.
-            sim_ev["timeMJD"] = self.sig_time_PDF.simulate_times(source, n_s)
+
+            sim_ev[self.season["MJD Time Key"]] = \
+                self.time_pdf.simulate_times(source, n_s)
+
+            # print sig_events.dtype.names
+
+            # print sim_ev[self.season["MJD Time Key"]]
+            # raw_input("prompt")
 
             # Joins the new events to the signal events
             sig_events = np.concatenate((sig_events, sim_ev))
@@ -176,7 +198,11 @@ class Injector:
         :return: Simulated dataset
         """
         bkg_events = self.scramble_data()
-        sig_events = self.inject_signal(scale)
+
+        if scale > 0.:
+            sig_events = self.inject_signal(scale)
+        else:
+            sig_events = []
 
         if len(sig_events) > 0:
             simulated_data = np.concatenate((bkg_events, sig_events))

@@ -1,7 +1,7 @@
 import numpy as np
+import os
 import cPickle as Pickle
 from shared import gamma_range, acceptance_path
-from data.icecube_pointsource_7year import ps_7year
 from core.energy_PDFs import PowerLaw
 from core.injector import Injector
 
@@ -12,8 +12,8 @@ sin_edges = np.append(sin_edges, 1.)
 dec_range = np.arcsin(sin_dec_range)
 dec_edges = np.arcsin(sin_edges)
 
-gamma_vals = np.linspace(gamma_range[0], gamma_range[1], 31)
-
+# gamma_vals = np.linspace(gamma_range[0], gamma_range[1], 31)
+gamma_vals = np.linspace(0.5, 5.5, 51)
 
 def make_acceptance_f(all_data):
     e_pdf = PowerLaw()
@@ -52,7 +52,12 @@ def make_acceptance_f(all_data):
             "acceptance": acc
         }
 
-        savepath = acceptance_path(season["Name"])
+        savepath = acceptance_path(season)
+
+        try:
+            os.makedirs(os.path.dirname(savepath))
+        except OSError:
+            pass
 
         print "Saving", season["Name"], "acceptance values to:", savepath
 

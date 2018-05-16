@@ -35,10 +35,7 @@ class Chi2_LeftTruncated(object):
         def func(p):
             dist = scipy.stats.chi2(*p)
             loglh = dist.logpdf(data_right).sum()
-            # print loglh,
             loglh += N_left * dist.logcdf(cut)
-
-            # print loglh, p, N_all, N_left
 
             return -loglh
 
@@ -47,7 +44,7 @@ class Chi2_LeftTruncated(object):
         if not res.success:
             print 'Chi2 fit did not converge! Result is likely garbage.'
 
-        self._q_left = N_left / float(N_all)
+        # self._q_left = N_left / float(N_all)
         self._cut = cut
         self._f = scipy.stats.chi2(*res.x)
         self._ks = scipy.stats.kstest(data_right, self._f.cdf)[0]
@@ -97,6 +94,9 @@ class Chi2_LeftTruncated(object):
 
 def plot_background_ts_distribution(ts_array, path):
     ts_array = np.array(ts_array)
+    ts_array = ts_array[~np.isnan(ts_array)]
+
+    # print np.sum(np.isnan(ts_array))
 
     try:
         os.makedirs(os.path.dirname(path))
@@ -109,6 +109,8 @@ def plot_background_ts_distribution(ts_array, path):
 
     yrange = 0.1/float(len(ts_array))
 
+    five_sigma = 0.999999713349
+
     try:
         chi2 = Chi2_LeftTruncated(ts_array)
         df = chi2._f.args[0]
@@ -118,8 +120,11 @@ def plot_background_ts_distribution(ts_array, path):
             min([np.min(ts_array), loc]), np.max(ts_array), 100
         )
         plt.plot(xrange, scipy.stats.chi2.pdf(xrange, df, loc, scale))
+
+        disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
+
     except ValueError:
-        pass
+        disc_potential = np.nan
 
     plt.ylim((yrange, 1.))
     plt.yscale("log")
@@ -127,6 +132,8 @@ def plot_background_ts_distribution(ts_array, path):
     plt.xlabel(r"$\lambda$")
     plt.savefig(path)
     plt.close()
+
+    return disc_potential
 
 
 def plot_fit_results(results, path, labels, inj=None):
@@ -160,14 +167,12 @@ def plot_fit_results(results, path, labels, inj=None):
             for val in inj.itervalues():
                 n_s += val["n_s"]
             plt.axvline(n_s, linestyle="--", color="orange", label="Injection")
-        elif inj is not None and label == "Gamma":
-            gamma = inj.itervalues().next()["Gamma"]
-            plt.axvline(gamma, linestyle="--", color="orange",
+        elif inj is not None:
+            val = inj.itervalues().next()[label]
+            plt.axvline(val, linestyle="--", color="orange",
                         label="Injection")
 
-
         plt.legend()
-
 
     plt.savefig(path)
     plt.close()

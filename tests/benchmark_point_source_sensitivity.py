@@ -3,7 +3,7 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_pointsource_7year import ps_7year
+from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.prepare_catalogue import ps_catalogue_name
 from utils.skylab_reference import skylab_7year_sensitivity
@@ -64,8 +64,8 @@ for sindec in sindecs:
         "inj kwargs": inj_kwargs,
         "llh kwargs": llh_kwargs,
         "scale": scale,
-        "n_trials": 100,
-        "n_steps": 10
+        "n_trials": 30,
+        "n_steps": 15
     }
 
     analysis_path = analysis_dir + subname
@@ -80,7 +80,7 @@ for sindec in sindecs:
     with open(pkl_file, "wb") as f:
         Pickle.dump(mh_dict, f)
 
-    rd.submit_to_cluster(pkl_file, n_jobs=100)
+    rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
     # mh = MinimisationHandler(mh_dict)
     # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"])

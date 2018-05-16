@@ -1,6 +1,7 @@
 import os
 import cPickle as Pickle
 import numpy as np
+import math
 import scipy
 import matplotlib
 matplotlib.use('Agg')
@@ -44,7 +45,9 @@ class ResultsHandler:
             self.clean_merged_data()
 
         self.sensitivity = np.nan
-        self.extrapolated = False
+        self.disc_potential = np.nan
+        self.extrapolated_sens = False
+        self.extrapolated_disc = False
         self.show_inj = show_inj
 
         if self.show_inj:
@@ -55,6 +58,7 @@ class ResultsHandler:
         self.merge_pickle_data()
 
         self.find_sensitivity()
+        self.find_disc_potential()
 
     def clean_merged_data(self):
         try:
@@ -167,6 +171,7 @@ class ResultsHandler:
 
         bkg_median = np.median(bkg_ts)
         x = sorted(self.results.keys())
+        x_acc = []
         y = []
 
         for scale in x:
@@ -175,6 +180,7 @@ class ResultsHandler:
             frac = float(len(ts_array[ts_array > bkg_median])) / (float(len(ts_array)))
             print "Fraction of overfluctuations is", "{0:.2f}".format(frac)
             y.append(frac)
+            x_acc.append(x)
 
             self.make_plots(scale)
 
@@ -201,7 +207,7 @@ class ResultsHandler:
         self.sensitivity = k_to_flux((1./best_a) * np.log(b / (1 - threshold)))
 
         if self.sensitivity > max(x_flux):
-            self.extrapolated = True
+            self.extrapolated_sens = True
 
         xrange = np.linspace(0.0, 1.1 * max(x), 1000)
 
@@ -219,10 +225,78 @@ class ResultsHandler:
         plt.savefig(savepath)
         plt.close()
 
-        if self.extrapolated:
+        if self.extrapolated_sens:
             print "EXTRAPOLATED",
 
         print "Sensitivity is", "{0:.3g}".format(self.sensitivity)
+
+    def find_disc_potential(self):
+
+        ts_path = self.plot_dir + "ts_distributions/0.0.pdf"
+
+        try:
+            bkg_dict = self.results[0.0]
+        except KeyError:
+            raise Exception("No key equal to '0.0'")
+
+        bkg_ts = bkg_dict["TS"]
+        disc_threshold = plot_background_ts_distribution(bkg_ts, ts_path)
+        bkg_median = np.median(bkg_ts)
+        x = sorted(self.results.keys())
+        y = []
+
+        for scale in x:
+            print scale,
+            ts_array = np.array(self.results[scale]["TS"])
+            frac = float(len(ts_array[ts_array > disc_threshold])) / (
+                float(len(ts_array)))
+            print "Fraction of overfluctuations is", "{0:.2f}".format(frac)
+            y.append(frac)
+
+        x = np.array(x)
+
+        x_flux = k_to_flux(x)
+
+        threshold = 0.5
+
+        def f(x, a, b):
+            value = 0.5 * (np.tanh(a*x - b) + 1.)
+            return value
+
+        [best_a, best_b] = scipy.optimize.curve_fit(
+            f, x, y,  p0=[0.001, 0.])[0]
+
+        def best_f(x):
+            return f(x, best_a, best_b)
+
+        sol = best_b/best_a
+
+        self.disc_potential = k_to_flux(sol)
+
+        if self.disc_potential > max(x_flux):
+            self.extrapolated_disc = True
+
+        xrange = np.linspace(0.0, 1.1 * max(x), 1000)
+
+        savepath = self.plot_dir + "disc.pdf"
+
+        plt.figure()
+        plt.scatter(x_flux, y, color="black")
+        plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
+        plt.axhline(threshold, lw=1, color="red", linestyle="--")
+        plt.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
+        plt.axvline(self.disc_potential, lw=2, color="red")
+        plt.ylim(0., 1.)
+        plt.xlim(0., k_to_flux(max(xrange)))
+        plt.ylabel(r'Overfluctuations relative to 90\% of $\lambda_{bkg}$')
+        plt.xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+        plt.savefig(savepath)
+        plt.close()
+
+        if self.extrapolated_disc:
+            print "EXTRAPOLATED",
+
+        print "Discovery Potential is", "{0:.3g}".format(self.disc_potential)
 
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
@@ -255,7 +329,12 @@ class ResultsHandler:
                          ".pdf"
 
             if self.show_inj:
-                inj = self.inj[str(scale)]
+                for key in self.inj.keys():
+                    if '{0:.4G}'.format(float(key)) == '{0:.4G}'.format(
+                            float(scale)):
+                        inj = self.inj[key]
+                        print inj
+                        raw_input("prompt")
             else:
                 inj = None
 

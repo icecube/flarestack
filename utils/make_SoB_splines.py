@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import scipy.interpolate
 import cPickle as Pickle
 from shared import gamma_precision, SoB_spline_path
@@ -142,7 +143,7 @@ def make_spline(seasons):
 
     for season in seasons:
         print "Making splines for", season["Name"]
-        path = SoB_spline_path(season["Name"])
+        path = SoB_spline_path(season)
         exp = np.load(season["exp_path"])
         mc = np.load(season["mc_path"])
 
@@ -150,12 +151,17 @@ def make_spline(seasons):
 
         print "Saving to", path
 
+        try:
+            os.makedirs(os.path.dirname(path))
+        except OSError:
+            pass
+
         with open(path, "wb") as f:
             Pickle.dump(splines, f)
 
 
 def load_spline(season):
-    path = SoB_spline_path(season["Name"])
+    path = SoB_spline_path(season)
 
     print "Loading from", path
 

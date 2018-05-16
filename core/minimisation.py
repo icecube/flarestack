@@ -90,7 +90,7 @@ class MinimisationHandler:
         :param seed: Random seed used for running of trials
         """
 
-        write_dir = self.pickle_output_dir + str(float(scale)) + "/"
+        write_dir = self.pickle_output_dir + '{0:.4G}'.format(scale) + "/"
 
         # Tries to create the parent diretory, unless it already exists
         try:
@@ -122,8 +122,46 @@ class MinimisationHandler:
                 default["Gamma"] = self.inj_kwargs["Injection Energy PDF"][
                     "Gamma"]
 
-            # if self.flare:
-            #     default["Flare Start"] = self.inj_kwargs["Time PDF"].t0
+            if self.flare:
+                fs = [inj.time_pdf.sig_t0(source)
+                      for inj in self.injectors.itervalues()]
+                true_fs = min(fs)
+                fe = [inj.time_pdf.sig_t1(source)
+                      for inj in self.injectors.itervalues()]
+                true_fe = max(fe)
+
+                true_l = true_fe - true_fs
+
+                sim = [
+                    list(np.random.uniform(true_fs, true_fe,
+                                      np.random.poisson(n_inj)))
+                    for i in range(1000)
+                ]
+
+                s = []
+                e = []
+                l = []
+
+                for data in sim:
+                    if data != []:
+                        s.append(min(data))
+                        e.append(max(data))
+                        l.append(max(data) - min(data))
+
+                if len(s) > 0:
+                    med_s = np.median(s)
+                    med_e = np.median(e)
+                    med_l = np.median(l)
+                else:
+                    med_s = np.nan
+                    med_e = np.nan
+                    med_l = np.nan
+
+                print med_s, med_e, med_l
+
+                default["Flare Start"] = med_s
+                default["Flare End"] = med_e
+                default["Flare Length"] = med_l
 
             inj_dict[name] = default
 
@@ -139,31 +177,31 @@ class MinimisationHandler:
         with open(file_name, "wb") as f:
             Pickle.dump(inj_dict, f)
 
-    def clean_pickles(self):
-        """This function will remove all pre-existing pickle files in the
-        output directory, to prevent contamination if the minimisation
-        handler arguments are run with different arguments. By default,
-        it is not run. The argument cleanup=True must be provided for this
-        function to be called. In any case, the user is required to confirm
-        the deletion.
-        """
-
-        cmd = "rm -rf " + self.pickle_output_dir + "*"
-
-        print "All saved pickle data will be removed, using the following " \
-              "command:"
-        print
-        print "\t", cmd
-        print
-        print "Is this correct? (y/n)"
-
-        x = ""
-
-        while x not in ["y", "n"]:
-            x = raw_input("")
-
-        if x == "y":
-            os.system(cmd)
+    # def clean_pickles(self):
+    #     """This function will remove all pre-existing pickle files in the
+    #     output directory, to prevent contamination if the minimisation
+    #     handler arguments are run with different arguments. By default,
+    #     it is not run. The argument cleanup=True must be provided for this
+    #     function to be called. In any case, the user is required to confirm
+    #     the deletion.
+    #     """
+    #
+    #     cmd = "rm -rf " + self.pickle_output_dir + "*"
+    #
+    #     print "All saved pickle data will be removed, using the following " \
+    #           "command:"
+    #     print
+    #     print "\t", cmd
+    #     print
+    #     print "Is this correct? (y/n)"
+    #
+    #     x = ""
+    #
+    #     while x not in ["y", "n"]:
+    #         x = raw_input("")
+    #
+    #     if x == "y":
+    #         os.system(cmd)
 
     # def clean_true_param_values(self):
     #     inj_dir = inj_dir_name(self.name)
@@ -175,7 +213,9 @@ class MinimisationHandler:
 
     def iterate_run(self, scale=1, n_steps=5, n_trials=50):
 
-        scale_range = np.linspace(0., scale, n_steps)
+        scale_range = np.linspace(0., scale, n_steps)[1:]
+
+        self.run(n_trials*10, scale=0.0)
 
         # truth_dict = dict()
 
@@ -183,7 +223,7 @@ class MinimisationHandler:
             self.run(n_trials, scale)
             # truth_dict[scale] = new
 
-    def run_stacked(self, n_trials=n_trials_default, scale=1):
+    def run_stacked(self, n_trials=n_trials_default, scale=1.):
 
         seed = int(random.random() * 10 ** 8)
         np.random.seed(seed)
@@ -197,22 +237,43 @@ class MinimisationHandler:
         for i in range(int(n_trials)):
             f = self.run_trial(scale)
 
-            res = scipy.optimize.fmin_l_bfgs_b(
-                f, self.p0, bounds=self.bounds, approx_grad=True)
+            # seed = scipy.optimize.brute(f, ranges=self.bounds)
+            #
+            # print seed
+            # raw_input("prompt")
 
-            flag = res[2]["warnflag"]
+            # if "Gamma" in self.param_names:
+            #     con = (
+            #         {'type': 'ineq', 'fun': lambda x: constraint(x)},
+            #         {'type': 'ineq', 'fun': lambda x: x[1] - 1.},
+            #         {'type': 'ineq', 'fun': lambda x: 4. - x[1]}
+            #     )
+            # else:
+            #     con = {
+            #         {'type': 'ineq', 'fun': lambda x: constraint(x)}
+            #     }
+
+            res = scipy.optimize.minimize(
+                f, self.p0, bounds=self.bounds)
+
+            # print res
+            # raw_input("prompt")
+
+            flag = res.status
+            vals = res.x
+            ts = -res.fun
             # If the minimiser does not converge, repeat with brute force
             if flag > 0:
-                try:
-                    res = scipy.optimize.brute(f, ranges=self.bounds,
-                                               full_output=True)
+                vals = scipy.optimize.brute(f, ranges=self.bounds,
+                                            finish=None)
+                ts = -f(vals)
 
-                except KeyError:
-                    res = None
+                # except KeyError:
+                #     res = None
 
             if res is not None:
-                vals = res[0]
-                ts = -res[1]
+                # vals = res.x
+                # ts = -res.fun
 
                 for j, val in enumerate(vals):
                     param_vals[j].append(val)
@@ -257,14 +318,16 @@ class MinimisationHandler:
 
         self.dump_injection_values(scale)
 
-    def run_trial(self, scale=1):
+    def run_trial(self, scale=1.):
 
         llh_functions = dict()
+        n_all = dict()
 
         for season in self.seasons:
             dataset = self.injectors[season["Name"]].create_dataset(scale)
             llh_f = self.llhs[season["Name"]].create_llh_function(dataset)
             llh_functions[season["Name"]] = llh_f
+            n_all[season["Name"]] = len(dataset)
 
         def f_final(params):
 
@@ -306,20 +369,64 @@ class MinimisationHandler:
             # data and evaluates the TS function for that season
 
             ts_val = 0
-            for i, (name, f) in enumerate(llh_functions.iteritems()):
+            for i, (name, f) in enumerate(sorted(llh_functions.iteritems())):
                 w = weights_matrix[i][:, np.newaxis]
+                # print i, name, w, ts_val,
                 ts_val += f(params, w)
+                # print ts_val
+
+            # raw_input("prompt")
 
             return -ts_val
 
+        # def constraint(params):
+        #     weights_matrix = np.ones([len(self.seasons), len(self.sources)])
+        #
+        #     for i, season in enumerate(self.seasons):
+        #         llh = self.llhs[season["Name"]]
+        #         acc = llh.acceptance(self.sources, params)
+        #
+        #         time_weights = []
+        #
+        #         for source in self.sources:
+        #             time_weights.append(llh.time_pdf.effective_injection_time(
+        #                 source))
+        #
+        #         w = acc * (self.sources["Distance"] ** -2) * np.array(
+        #             time_weights)
+        #
+        #         w = w[:, np.newaxis]
+        #
+        #         for j, ind_w in enumerate(w):
+        #             weights_matrix[i][j] = ind_w
+        #
+        #     weights_matrix /= np.sum(weights_matrix)
+        #
+        #     satisfy = True
+        #
+        #     for i, season in enumerate(sorted(self.seasons)):
+        #         n_s = weights_matrix[i] * params[0]
+        #
+        #         n_max = n_all[season["Name"]]
+        #
+        #         if abs(n_s) < n_max:
+        #             pass
+        #         else:
+        #             satisfy = False
+        #
+        #     return satisfy
+
         return f_final
 
-    def run_flare(self, n_trials=n_trials_default, scale=1):
+    def run_flare(self, n_trials=n_trials_default, scale=1.):
 
         seed = int(random.random() * 10 ** 8)
         np.random.seed(seed)
 
         print "Running", n_trials, "trials"
+
+        # Initialises lists for all values that will need ti be stored,
+        # in order to verify that the minimisation is working successfuly
 
         results = {
             "TS": []
@@ -331,19 +438,32 @@ class MinimisationHandler:
                 "Parameters": [[] for x in self.param_names]
             }
 
+        # Loop over trials
+
         for i in range(int(n_trials)):
 
             datasets = dict()
 
             full_data = dict()
 
+            # Loop over each data season
+
             for season in self.seasons:
+
+                # Generate a scrambled dataset, and save it to the datasets
+                # dictionary. Loads the llh for the season.
+
                 data = self.injectors[season["Name"]].create_dataset(scale)
                 llh = self.llhs[season["Name"]]
 
                 full_data[season["Name"]] = data
 
+                # Loops over each source in catalogue
+
                 for source in self.sources:
+
+                    # Identify spatially- and temporally-coincident data
+
                     mask = llh.select_spatially_coincident_data(data, [source])
                     spatial_coincident_data = data[mask]
 
@@ -356,14 +476,21 @@ class MinimisationHandler:
 
                     coincident_data = spatial_coincident_data[t_mask]
 
+                    # Creates empty dictionary to save info
+
                     name = source["Name"]
                     if name not in datasets.keys():
                         datasets[name] = dict()
+
+                    # If there are events in the window...
 
                     if len(coincident_data) > 0:
 
                         new_entry = dict(season)
                         new_entry["Coincident Data"] = coincident_data
+
+                        # Identify significant events (S/B > 1)
+
                         significant = llh.find_significant_events(
                             coincident_data, source)
 
@@ -387,10 +514,18 @@ class MinimisationHandler:
 
                 all_times = np.array(sorted(all_times))
 
-                print "In total", len(all_times), "of", n_tot
+                # print "In total", len(all_times), "of", n_tot
 
                 # Minimum flare duration (days)
                 min_flare = 1.
+
+                t_s_min = float(min([llh.time_pdf.sig_t0(source)
+                                    for llh in self.llhs.itervalues()]))
+
+                t_e_max = float(max([llh.time_pdf.sig_t1(source)
+                                    for llh in self.llhs.itervalues()]))
+
+                max_flare = t_e_max - t_s_min
 
                 pairs = []
 
@@ -398,14 +533,8 @@ class MinimisationHandler:
                     for y in all_times:
                         if y > (x + min_flare):
                             pairs.append((x, y))
-                #
-                # print pairs
-                # raw_input("prompt")
 
                 all_pairs = [(x, y) for x in all_times for y in all_times if y > x]
-
-                print "This gives", len(pairs), "possible pairs out of",
-                print len(all_pairs), "pairs."
 
                 if len(pairs) > 0:
 
@@ -416,14 +545,19 @@ class MinimisationHandler:
                         t_start = pair[0]
                         t_end = pair[1]
 
+                        flare_length = t_end - t_start
+
+                        overall_marginalisation = flare_length / max_flare
                         w = np.ones(len(source_dict))
 
                         llhs = dict()
 
-                        for i, season_dict in enumerate(source_dict.itervalues()):
+                        for i, (name, season_dict) in enumerate(
+                                sorted(source_dict.iteritems())):
+
                             coincident_data = season_dict["Coincident Data"]
 
-                            data = full_data[season["Name"]]
+                            data = full_data[name]
 
                             flare_veto = np.logical_or(
                                 np.less(coincident_data["timeMJD"], t_start),
@@ -434,25 +568,33 @@ class MinimisationHandler:
 
                                 llh = self.llhs[season_dict["Name"]]
 
-                                t_s = max(t_start, season_dict["Start (MJD)"])
-                                t_e = min(t_end, season_dict["End (MJD)"])
+                                t_s = min(
+                                    max(t_start, season_dict["Start (MJD)"]),
+                                    season_dict["End (MJD)"])
+                                t_e = max(
+                                    min(t_end, season_dict["End (MJD)"]),
+                                    season_dict["Start (MJD)"])
                                 flare_length = t_e - t_s
 
-                                t_s_min = max(llh.time_pdf.sig_t0(source),
-                                              season_dict["Start (MJD)"])
-                                t_e_max = min(llh.time_pdf.sig_t1(source),
-                                              season_dict["End (MJD)"])
-                                max_flare = t_e_max - t_s_min
+                                # t_s_min = max(llh.time_pdf.sig_t0(source),
+                                #               season_dict["Start (MJD)"])
+                                # t_e_max = min(llh.time_pdf.sig_t1(source),
+                                #               season_dict["End (MJD)"])
+                                # max_flare = t_e_max - t_s_min
 
                                 # n_all = len(data[~full_flare_veto])
-                                n_all = np.sum(np.logical_and(
-                                    np.greater(data["timeMJD"],
-                                               t_s),
-                                    np.less(data["timeMJD"],
-                                            t_e)
+                                n_all = np.sum(~np.logical_or(
+                                    np.less(data["timeMJD"], t_s),
+                                    np.greater(data["timeMJD"], t_e)
                                 ))
 
-                                marginalisation = flare_length / max_flare
+                                if n_all > 0:
+                                    pass
+                                else:
+                                    print t_start, t_end, t_s, t_e, max_flare
+
+                                # marginalisation = flare_length / max_flare
+                                marginalisation = 1.
 
                                 llh_kwargs = dict(self.llh_kwargs)
                                 llh_kwargs["LLH Time PDF"] = None
@@ -476,18 +618,23 @@ class MinimisationHandler:
 
                             weights_matrix = np.ones(len(llhs))
 
-                            for i, llh_dict in enumerate(llhs.itervalues()):
+                            for i, llh_dict in enumerate(
+                                    sorted(llhs.itervalues())):
                                 T = llh_dict["flare length"]
                                 acc = llh.acceptance(src, params)
                                 weights_matrix[i] = T * acc
 
                             weights_matrix /= np.sum(weights_matrix)
 
-                            ts = 0
+                            ts = 2 * np.log(overall_marginalisation)
 
-                            for i, llh_dict in enumerate(llhs.itervalues()):
+                            for i, (name, llh_dict) in enumerate(
+                                    sorted(llhs.iteritems())):
+
                                 w = weights_matrix[i]
-                                ts += llh_dict["f"](params, w)
+
+                                if w > 0.:
+                                    ts += llh_dict["f"](params, w)
 
                             return -ts
 
@@ -585,6 +732,73 @@ class MinimisationHandler:
             u_lim = ">" + str(max(n_range))
 
         print "One Sigma interval between", l_lim, "and", u_lim
+
+
+    def check_flare_background_rate(self):
+
+        results = [[] for x in self.seasons]
+        total = [[] for x in self.seasons]
+
+        for i in range(int(1000)):
+
+            # Loop over each data season
+
+            for j, season in enumerate(sorted(self.seasons)):
+
+                # Generate a scrambled dataset, and save it to the datasets
+                # dictionary. Loads the llh for the season.
+
+                data = self.injectors[season["Name"]].create_dataset(0.0)
+                llh = self.llhs[season["Name"]]
+
+                # Loops over each source in catalogue
+
+                for source in self.sources:
+
+                    # Identify spatially- and temporally-coincident data
+
+                    mask = llh.select_spatially_coincident_data(data, [source])
+                    spatial_coincident_data = data[mask]
+
+
+
+                    t_mask = np.logical_and(
+                        np.greater(spatial_coincident_data["timeMJD"],
+                                   llh.time_pdf.sig_t0(source)),
+                        np.less(spatial_coincident_data["timeMJD"],
+                                llh.time_pdf.sig_t1(source))
+                    )
+
+                    coincident_data = spatial_coincident_data[t_mask]
+                    total[j].append(len(coincident_data))
+                    # If there are events in the window...
+
+                    if len(coincident_data) > 0:
+
+                        # Identify significant events (S/B > 1)
+
+                        significant = llh.find_significant_events(
+                            coincident_data, source)
+
+                        results[j].append(len(significant))
+                    else:
+                        results[j].append(0)
+
+        for j, season in enumerate(sorted(self.seasons)):
+            res = results[j]
+            tot = total[j]
+
+            print season["Name"],"Significant events", np.mean(res), \
+                np.median(res), np.std(res)
+            print season["Name"], "All events", np.mean(tot), np.median(tot), \
+                np.std(tot)
+
+            llh = self.llhs[season["Name"]]
+
+            for source in self.sources:
+
+                print "Livetime", llh.time_pdf.effective_injection_time(source)
+
 
 
 if __name__ == '__main__':

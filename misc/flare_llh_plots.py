@@ -151,4 +151,60 @@ plt.savefig(time_path)
 plt.close()
 
 
+fig = plt.figure()
+
+ax1 = plt.subplot(211)
+ax2 = plt.subplot(212, sharex=ax1)
+
+def box_func(t, t1):
+    """Box function that is equal to 1 between t0 and t1, and 0 otherwise.
+    Equal to 0.5 at to and t1.
+
+    :param t: Time to be evaluated
+    :param t0: Start time of box
+    :param t1: End time of box
+    :return: Value of Box function at t
+    """
+    val = 0.5 * ((np.sign(t)) - (np.sign(t - t1)))/ t1
+    return val
+
+
+x = np.linspace(-10, 150, 3001)
+
+y1 = box_func(x, 30)
+y2 = box_func(x, 105)
+
+ax1.plot(x, y1, color="red")
+ax2.plot(x, y2, color="blue")
+
+# ax1.fill_between(x, 0, y1, facecolor="blue")
+# ax2.fill_between(x, 0, y2, facecolor="red")
+
+ax1.set_ylim(0, 1.2 * max(y1 + y2))
+ax2.set_ylim(0, 1.2 * max(y1 + y2))
+ax1.set_xlim(0., 150)
+fig.subplots_adjust(hspace=0)
+ax2.invert_yaxis()
+plt.xlabel("Time (days)")
+ax2.set_ylabel("Search Window")
+ax1.set_ylabel("Injection PDF")
+
+ax1.get_xaxis().set_visible(False)
+
+search_path = illustration_dir + "search1.pdf"
+
+fig.set_size_inches(8, 6)
+plt.savefig(search_path)
+
+for tmax in [50, 90]:
+    ax1.plot(x, box_func(x, tmax), color="red")
+
+ax1.arrow(35, 0.04, 65, -0.02, head_width=0.005, head_length=10,
+          length_includes_head=True, color="k", shape="full", lw=0.7)
+
+search_path = illustration_dir + "search2.pdf"
+plt.savefig(search_path)
+plt.close()
+
+
 
