@@ -3,6 +3,7 @@ import healpy as hp
 from shared import k_to_flux
 from energy_PDFs import EnergyPDF
 from time_PDFs import TimePDF
+from data.tools import data_loader
 
 
 class Injector:
@@ -14,9 +15,10 @@ class Injector:
         print "Initialising Injector for", season["Name"]
         self.injection_band_mask = dict()
         self.season = season
-        self._raw_data = np.load(season["exp_path"])
 
-        self._mc = np.load(season["mc_path"])
+        self._raw_data = data_loader(season["exp_path"])
+
+        self._mc = data_loader(season["mc_path"])
         self.sources = sources
         self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
         self.mc_weights = self.energy_pdf.weight_mc(self._mc)
@@ -183,7 +185,8 @@ class Injector:
             # raw_input("prompt")
 
             # Joins the new events to the signal events
-            sig_events = np.concatenate((sig_events, sim_ev))
+            sig_events = np.concatenate(
+                (sig_events, sim_ev[list(self._raw_data.dtype.names)]))
 
         # print "Expecting", n_tot_exp, "Injecting", len(sig_events)
 

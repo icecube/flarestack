@@ -25,7 +25,12 @@ class TimePDF:
         self.t_dict = t_pdf_dict
         self.season = season
 
-        self.grl = np.load(season["grl_path"])
+        if isinstance(season["grl_path"], list):
+            self.grl = np.sort(np.array(np.concatenate(
+                [np.load(x) for x in season["grl_path"]])),
+                order="run")
+        else:
+            self.grl = np.load(season["grl_path"])
 
         if np.sum(~self.grl["good_i3"]) == 0:
             pass
@@ -60,19 +65,40 @@ class TimePDF:
             ])
             f.extend([0., 1., 1., 0.])
 
-            if t_range != sorted(t_range):
-                print t_range[-8:]
-                print run
+            # if t_range != sorted(t_range):
+            #     print t_range[-8:]
+            #     print run
+            #
+            #     for j in range(3):
+            #         print np.sort(self.grl, order="start")[i + j - 1]
+            #
+            #     raw_input("prompt")
 
-                for j in range(3):
-                    print np.sort(self.grl, order="start")[i + j - 1]
+        stitch_t = [t_range[0]]
+        stitch_f = [1.]
+        for i, t in enumerate(t_range[1:]):
+            gap = t - t_range[i - 1]
 
-                raw_input("prompt")
+            if gap < 1e-5 and f[i] == 0:
+                pass
+            else:
+                stitch_t.append(t)
+                stitch_f.append(f[i])
+
+            # print stitch_t
+            # print stitch_f
+            # raw_input("input")
+
+        if stitch_t != sorted(stitch_t):
+            print "Error!"
+            raw_input("prompt")
+
+        # stitch = [(t, val) for t in t_range for f in val]
 
         mjd.append(1e5)
         livetime.append(total_t)
 
-        self.season_f = interp1d(t_range, f, kind="linear")
+        self.season_f = interp1d(stitch_t, stitch_f, kind="linear")
 
         self.mjd_to_livetime = interp1d(mjd, livetime, kind="linear")
         self.livetime_to_mjd = interp1d(livetime, mjd, kind="linear")

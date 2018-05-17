@@ -4,6 +4,7 @@ import scipy.interpolate
 import cPickle as Pickle
 from shared import gamma_precision, SoB_spline_path
 from core.energy_PDFs import PowerLaw
+from data.tools import data_loader
 
 
 sin_dec_bins = np.unique(np.concatenate([
@@ -144,8 +145,8 @@ def make_spline(seasons):
     for season in seasons:
         print "Making splines for", season["Name"]
         path = SoB_spline_path(season)
-        exp = np.load(season["exp_path"])
-        mc = np.load(season["mc_path"])
+        exp = data_loader(season["exp_path"])
+        mc = data_loader(season["mc_path"])
 
         splines = create_2d_splines(exp, mc)
 
@@ -169,6 +170,7 @@ def load_spline(season):
         res = Pickle.load(f)
 
     return res
-
-# from data.icecube_pointsource_7year import ps_7year
-# make_spline(ps_7year)
+#
+# from data.icecube_pointsource_7_year import ps_7year
+# from data.icecube_gfu_2point5_year import gfu_2point5
+# make_spline(gfu_2point5)

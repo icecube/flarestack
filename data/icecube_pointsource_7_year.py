@@ -50,34 +50,40 @@ IC86_1_dict = {
 IC86_1_dict.update(ps_dict)
 
 
-IC86_2012_dict = {
-    "Name": "IC86_2012",
-    "exp_path": data_dir + "IC86-2012_exp_v2.npy",
+IC86_234_dict = {
+    "Name": "IC86_234",
+    "exp_path": [
+        data_dir + "IC86-2012_exp_v2.npy",
+        data_dir + "IC86-2013_exp_v2.npy",
+        data_dir + "IC86-2014_exp_v2.npy"
+        ],
     "mc_path": data_dir + "IC86-2012_corrected_MC_v2.npy",
-    "grl_path": data_dir + "IC86-2012_GRL.npy"
+    "grl_path": [
+        data_dir + "IC86-2012_GRL.npy",
+        data_dir + "IC86-2013_GRL.npy",
+        data_dir + "IC86-2014_GRL.npy"
+    ]
 }
-IC86_2012_dict.update(ps_dict)
+IC86_234_dict.update(ps_dict)
 
-
-IC86_2013_dict = {
-    "Name": "IC86_2013",
-    "exp_path": data_dir + "IC86-2013_exp_v2.npy",
-    "mc_path": data_dir + "IC86-2012_corrected_MC_v2.npy",
-    "grl_path": data_dir + "IC86-2013_GRL.npy"
-}
-IC86_2013_dict.update(ps_dict)
-
-IC86_2014_dict = {
-    "Name": "IC86_2014",
-    "exp_path": data_dir + "IC86-2014_exp_v2.npy",
-    "mc_path": data_dir + "IC86-2012_corrected_MC_v2.npy",
-    "grl_path": data_dir + "IC86-2014_GRL.npy"
-}
-IC86_2014_dict.update(ps_dict)
+# IC86_2013_dict = {
+#     "Name": "IC86_2013",
+#     "exp_path": data_dir + "IC86-2013_exp_v2.npy",
+#     "mc_path": data_dir + "IC86-2012_corrected_MC_v2.npy",
+#     "grl_path": data_dir + "IC86-2013_GRL.npy"
+# }
+# IC86_2013_dict.update(ps_dict)
+#
+# IC86_2014_dict = {
+#     "Name": "IC86_2014",
+#     "exp_path": data_dir + "IC86-2014_exp_v2.npy",
+#     "mc_path": data_dir + "IC86-2012_corrected_MC_v2.npy",
+#     "grl_path": data_dir + "IC86-2014_GRL.npy"
+# }
+# IC86_2014_dict.update(ps_dict)
 
 ps_7year = [
-    IC40_dict, IC59_dict, IC79_dict, IC86_1_dict, IC86_2012_dict,
-    IC86_2013_dict, IC86_2014_dict
+    IC40_dict, IC59_dict, IC79_dict, IC86_1_dict, IC86_234_dict,
 ]
 
 # ps_7year = [IC79_dict, IC86_1_dict]

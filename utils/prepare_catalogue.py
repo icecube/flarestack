@@ -87,13 +87,13 @@ def custom_sources(ra, dec, weight, distance, ref_time,
         ra, dtype=cat_dtype)
 
     sources['ra'] = np.array([np.deg2rad(ra)])
-    sources['dec'] = np.arcsin(np.array([np.deg2rad(dec)]))
+    sources['dec'] = np.deg2rad(np.array([dec]))
 
     # If some sources are to be brighter than others, a non-uniform weight
     # array can be passed. This array is normalised, such that the mean
     # weight is 1.
     sources['Relative Injection Weight'] = np.array([weight]) * float(len(
-        weight))/np.sum(weight)
+        np.array([weight])))/np.sum(weight)
 
     # The source distance can be provided, in arbitrary units. The injector
     # and reconstructor will weight sources according to 1/ (distance ^ 2).

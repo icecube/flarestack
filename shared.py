@@ -18,6 +18,7 @@ output_dir = fs_scratch_dir + "output/"
 log_dir = fs_scratch_dir + "logs/"
 
 catalogue_dir = input_dir + "catalogues/"
+transients_dir = catalogue_dir + "transients/"
 analysis_dir = input_dir + "analysis/"
 dataset_dir = input_dir + "data/"
 livetime_dir = dataset_dir + "livetime/"

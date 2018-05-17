@@ -9,9 +9,9 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_pointsource_7_year import ps_7year
+from data.icecube_gfu_2point5_year import gfu_2point5, ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
-from utils.prepare_catalogue import custom_sources
+from utils.prepare_catalogue import custom_sources, ps_catalogue_name
 from utils.skylab_reference import skylab_7year_sensitivity
 from scipy.interpolate import interp1d
 from cluster import run_desy_cluster as rd
@@ -31,8 +31,13 @@ catalogue = custom_sources(
     dec=65.15,
     weight=1.,
     distance=1.,
-    ref_time=
+    ref_time=57507.00,
+    start_time=57507.00,
+    end_time=57595.00,
+    name="1ES_1959+650"
 )
+
+cat_path = ps_catalogue_name(0.0)
 
 source = np.load(cat_path)
 
@@ -52,7 +57,7 @@ max_window = 100.
 
 llh_time = {
     "Name": "FixedRefBox",
-    "Fixed Ref Time (MJD)": t_s,
+    "Fixed Ref Time (MJD)": 57507.00,
     "Pre-Window": 0.,
     "Post-Window": max_window
 }
@@ -105,7 +110,7 @@ for i, llh_kwargs in enumerate([no_flare]):
 
         mh_dict = {
             "name": full_name,
-            "datasets": ps_7year,
+            "datasets": gfu_2point5,
             "catalogue": cat_path,
             "inj kwargs": inj_kwargs,
             "llh kwargs": llh_kwargs,
@@ -129,7 +134,7 @@ for i, llh_kwargs in enumerate([no_flare]):
         # rd.submit_to_cluster(pkl_file, n_jobs=2000)
 
         mh = MinimisationHandler(mh_dict)
-        mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
+        mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=500)
 
         del mh
 

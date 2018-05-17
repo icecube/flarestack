@@ -7,15 +7,16 @@ import sys
 from config import scratch_path
 from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
     log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,\
-    SoB_spline_dir, analysis_dir, dataset_dir, livetime_dir, illustration_dir
+    SoB_spline_dir, analysis_dir, dataset_dir, livetime_dir, illustration_dir,\
+    transients_dir
 from utils.prepare_catalogue import make_single_sources
 from utils.create_acceptance_functions import make_acceptance_f
 from utils.skylab_reference import download_ref
 from utils.make_SoB_splines import make_spline
 
-from data.icecube_pointsource_7_year import ps_7year
+from data.icecube_gfu_2point5_year import txs_sample
 
-all_data = ps_7year
+all_data = txs_sample
 
 if __name__ == "__main__":
     print "\n \n"
