@@ -7,13 +7,13 @@ from core.energy_PDFs import PowerLaw
 from data.tools import data_loader
 
 
-sin_dec_bins = np.unique(np.concatenate([
-            np.linspace(-1., -0.9, 2 + 1),
-            np.linspace(-0.9, -0.2, 8 + 1),
-            np.linspace(-0.2, 0.2, 15 + 1),
-            np.linspace(0.2, 0.9, 12 + 1),
-            np.linspace(0.9, 1., 2 + 1),
-        ]))
+# sin_dec_bins = np.unique(np.concatenate([
+#             np.linspace(-1., -0.9, 2 + 1),
+#             np.linspace(-0.9, -0.2, 8 + 1),
+#             np.linspace(-0.2, 0.2, 15 + 1),
+#             np.linspace(0.2, 0.9, 12 + 1),
+#             np.linspace(0.9, 1., 2 + 1),
+#         ]))
 
 energy_bins = np.linspace(1., 10., 40 + 1)
 
@@ -35,7 +35,7 @@ gamma_points = np.arange(0.7, 4.3, 0.1)
 gamma_support_points = set([_around(i) for i in gamma_points])
 
 
-def create_2d_hist(sin_dec, log_e, weights):
+def create_2d_hist(sin_dec, log_e, sin_dec_bins, weights):
     """Creates a 2D histogram for a set of data (Experimental or Monte
     Carlo), in which the dataset is binned by sin(Declination) and
     Log(Energy). Weights the histogram by the values in the weights array.
@@ -60,7 +60,7 @@ def create_2d_hist(sin_dec, log_e, weights):
     return hist_2d
 
 
-def create_2d_ratio_spline(exp, mc, gamma):
+def create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
     """Creates 2D histograms for both data and MC, in which the seasons
     are binned by Sin(Declination) and Log(Energy/GeV). Each histogram is
     normalised in Sin(Declination) bands. Then creates a histogram of the
@@ -77,10 +77,10 @@ def create_2d_ratio_spline(exp, mc, gamma):
     :return: 2D spline function
     """
 
-    bkg_hist = create_2d_hist(exp["sinDec"], exp["logE"],
+    bkg_hist = create_2d_hist(exp["sinDec"], exp["logE"], sin_dec_bins,
                               weights=np.ones_like(exp["logE"]))
 
-    sig_hist = create_2d_hist(np.sin(mc["trueDec"]), mc["logE"],
+    sig_hist = create_2d_hist(np.sin(mc["trueDec"]), mc["logE"], sin_dec_bins,
                               weights=energy_pdf.weight_mc(mc, gamma))
 
     # Produces an array containing True if x > 0, False otherwise
@@ -114,7 +114,7 @@ def create_2d_ratio_spline(exp, mc, gamma):
     return spline
 
 
-def create_2d_splines(exp, mc):
+def create_2d_splines(exp, mc, sin_dec_bins):
     """If gamma will not be fit, then calculates the Log(Signal/Background)
     2D PDF for the fixed value self.default_gamma. Fits a spline to each
     histogram, and saves the spline in a dictionary.
@@ -130,7 +130,7 @@ def create_2d_splines(exp, mc):
     splines = dict()
 
     for gamma in gamma_support_points:
-        splines[gamma] = create_2d_ratio_spline(exp, mc, gamma)
+        splines[gamma] = create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma)
 
     return splines
 
@@ -148,7 +148,9 @@ def make_spline(seasons):
         exp = data_loader(season["exp_path"])
         mc = data_loader(season["mc_path"])
 
-        splines = create_2d_splines(exp, mc)
+        sin_dec_bins = season["sinDec bins"]
+
+        splines = create_2d_splines(exp, mc, sin_dec_bins)
 
         print "Saving to", path
 

@@ -147,32 +147,37 @@ def plot_fit_results(results, path, labels, inj=None):
 
     n_dim = len(results)
 
-    fig = plt.figure()
+    try:
 
-    fig.set_size_inches(7, n_dim*3)
-    fig.subplots_adjust(hspace=.5)
+        fig = plt.figure()
 
-    for i, row in enumerate(results):
+        fig.set_size_inches(7, n_dim*3)
+        fig.subplots_adjust(hspace=.5)
 
-        label = labels[i]
+        for i, row in enumerate(results):
 
-        plt.subplot(n_dim, 1, i+1)
-        plt.hist(row, histtype="step", normed=True, bins=20, color="blue")
-        plt.axvline(np.median(row), linestyle="--", color="blue",
-                    label="Median")
-        plt.title(label)
+            label = labels[i]
 
-        if inj is not None and label == "n_s":
-            n_s = 0
-            for val in inj.itervalues():
-                n_s += val["n_s"]
-            plt.axvline(n_s, linestyle="--", color="orange", label="Injection")
-        elif inj is not None:
-            val = inj.itervalues().next()[label]
-            plt.axvline(val, linestyle="--", color="orange",
-                        label="Injection")
+            plt.subplot(n_dim, 1, i+1)
+            plt.hist(row, histtype="step", normed=True, bins=20, color="blue")
+            plt.axvline(np.median(row), linestyle="--", color="blue",
+                        label="Median")
+            plt.title(label)
 
-        plt.legend()
+            if inj is not None and label == "n_s":
+                n_s = 0
+                for val in inj.itervalues():
+                    n_s += val["n_s"]
+                plt.axvline(n_s, linestyle="--", color="orange", label="Injection")
+            elif inj is not None:
+                val = inj.itervalues().next()[label]
+                plt.axvline(val, linestyle="--", color="orange",
+                            label="Injection")
 
-    plt.savefig(path)
-    plt.close()
+            plt.legend()
+
+        plt.savefig(path)
+        plt.close()
+
+    except ValueError:
+        pass

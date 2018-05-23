@@ -65,15 +65,6 @@ class TimePDF:
             ])
             f.extend([0., 1., 1., 0.])
 
-            # if t_range != sorted(t_range):
-            #     print t_range[-8:]
-            #     print run
-            #
-            #     for j in range(3):
-            #         print np.sort(self.grl, order="start")[i + j - 1]
-            #
-            #     raw_input("prompt")
-
         stitch_t = [t_range[0]]
         stitch_f = [1.]
         for i, t in enumerate(t_range[1:]):

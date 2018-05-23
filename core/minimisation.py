@@ -25,7 +25,7 @@ class MinimisationHandler:
     """
     n_trials_default = 1000
 
-    def __init__(self, mh_dict, cleanup=False):
+    def __init__(self, mh_dict):
 
         sources = np.load(mh_dict["catalogue"])
 
@@ -77,8 +77,12 @@ class MinimisationHandler:
 
         # self.clean_true_param_values()
 
-        if cleanup:
-            self.clean_pickles()
+    def clear(self):
+
+        self.injectors.clear()
+        self.llhs.clear()
+
+        del self
 
     def dump_results(self, results, scale, seed):
         """Takes the results of a set of trials, and saves the dictionary as
@@ -420,6 +424,8 @@ class MinimisationHandler:
 
     def run_flare(self, n_trials=n_trials_default, scale=1.):
 
+        time_key = self.seasons[0]["MJD Time Key"]
+
         seed = int(random.random() * 10 ** 8)
         np.random.seed(seed)
 
@@ -468,10 +474,12 @@ class MinimisationHandler:
                     spatial_coincident_data = data[mask]
 
                     t_mask = np.logical_and(
-                        np.greater(spatial_coincident_data["timeMJD"],
-                                   llh.time_pdf.sig_t0(source)),
-                        np.less(spatial_coincident_data["timeMJD"],
-                                llh.time_pdf.sig_t1(source))
+                        np.greater(
+                            spatial_coincident_data[time_key],
+                            llh.time_pdf.sig_t0(source)),
+                        np.less(
+                            spatial_coincident_data[time_key],
+                            llh.time_pdf.sig_t1(source))
                     )
 
                     coincident_data = spatial_coincident_data[t_mask]
@@ -488,13 +496,16 @@ class MinimisationHandler:
 
                         new_entry = dict(season)
                         new_entry["Coincident Data"] = coincident_data
+                        new_entry["Start (MJD)"] = llh.time_pdf.t0
+                        new_entry["End (MJD)"] = llh.time_pdf.t1
 
                         # Identify significant events (S/B > 1)
 
                         significant = llh.find_significant_events(
                             coincident_data, source)
 
-                        new_entry["Significant Times"] = significant["timeMJD"]
+                        new_entry["Significant Times"] = significant[time_key]
+
                         new_entry["N_all"] = len(data)
 
                         datasets[name][season["Name"]] = new_entry
@@ -560,8 +571,8 @@ class MinimisationHandler:
                             data = full_data[name]
 
                             flare_veto = np.logical_or(
-                                np.less(coincident_data["timeMJD"], t_start),
-                                np.greater(coincident_data["timeMJD"], t_end))
+                                np.less(coincident_data[time_key], t_start),
+                                np.greater(coincident_data[time_key], t_end))
                             # flare_veto = np.zeros_like(coincident_data["timeMJD"])
 
                             if np.sum(~flare_veto) > 0:
@@ -584,8 +595,8 @@ class MinimisationHandler:
 
                                 # n_all = len(data[~full_flare_veto])
                                 n_all = np.sum(~np.logical_or(
-                                    np.less(data["timeMJD"], t_s),
-                                    np.greater(data["timeMJD"], t_e)
+                                    np.less(data[time_key], t_s),
+                                    np.greater(data[time_key], t_e)
                                 ))
 
                                 if n_all > 0:
@@ -664,6 +675,11 @@ class MinimisationHandler:
                     results[source]["TS"].append(max_ts)
 
             results["TS"].append(stacked_ts)
+
+        mem_use = str(
+            float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
+        print ""
+        print 'Memory usage max: %s (Gb)' % mem_use
 
         full_ts = results["TS"]
 

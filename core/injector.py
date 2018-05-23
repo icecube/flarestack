@@ -172,6 +172,7 @@ class Injector:
 
             # Rotates the Monte Carlo events onto the source_path
             sim_ev = self.rotate_to_source(sim_ev, source['ra'], source['dec'])
+            sim_ev = np.array(sim_ev, dtype=self._raw_data.dtype)
 
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.

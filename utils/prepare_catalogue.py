@@ -8,6 +8,7 @@ arbitrary number of sources.
 
 import numpy as np
 import time
+import os
 from sys import stdout
 from shared import catalogue_dir
 
@@ -45,7 +46,7 @@ def single_source(sindec):
 
 
 def ps_catalogue_name(sindec):
-    return catalogue_dir + "single_source_sindec_" + '{0:.2f}'.format(sindec)\
+    return catalogue_dir + "single_source/sindec_" + '{0:.2f}'.format(sindec)\
            + ".npy"
 
 
@@ -55,6 +56,11 @@ def make_single_sources():
 
     sindecs = np.linspace(1.00, -1.00, 41)
     print sindecs, "\n"
+
+    try:
+        os.makedirs(os.path.dirname(ps_catalogue_name(0.0)))
+    except OSError:
+        pass
 
     for sindec in sindecs:
         cat = single_source(sindec)
@@ -68,10 +74,11 @@ def make_single_sources():
     print "Single Source catalogues created!", "\n"
 
 
-def custom_sources(ra, dec, weight, distance, ref_time,
-                   start_time, end_time, name):
+def custom_sources(name, ra, dec, weight, distance, ref_time=np.nan,
+                   start_time=np.nan, end_time=np.nan):
     """Creates a catalogue array,
 
+    :param name: Source Name
     :param ra: Right Ascension (Degrees)
     :param dec: Declination (Degrees)
     :param weight: Relative Weights for Source Injection
@@ -79,12 +86,10 @@ def custom_sources(ra, dec, weight, distance, ref_time,
     :param ref_time: Reference Time (MJD)
     :param start_time: Start Time for window (MJD)
     :param end_time: End Time for window (MJD)
-    :param name: Source Name
+
     :return: Catalogue Array
     """
-
-    sources = np.empty_like(
-        ra, dtype=cat_dtype)
+    sources = np.empty(np.array([ra]).__len__(), dtype=cat_dtype)
 
     sources['ra'] = np.array([np.deg2rad(ra)])
     sources['dec'] = np.deg2rad(np.array([dec]))

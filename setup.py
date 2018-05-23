@@ -15,8 +15,9 @@ from utils.skylab_reference import download_ref
 from utils.make_SoB_splines import make_spline
 
 from data.icecube_gfu_2point5_year import txs_sample
+from data.icecube_diffuse_8year import diffuse_8year
 
-all_data = txs_sample
+all_data = txs_sample + diffuse_8year
 
 if __name__ == "__main__":
     print "\n \n"
@@ -51,7 +52,8 @@ if __name__ == "__main__":
 
     for dir in [input_dir, storage_dir, output_dir, log_dir, catalogue_dir,
                 acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir, livetime_dir,
-                SoB_spline_dir, analysis_dir, dataset_dir, illustration_dir]:
+                SoB_spline_dir, analysis_dir, dataset_dir, illustration_dir,
+                transients_dir]:
         if not os.path.isdir(dir):
             print "Making Directory:", dir
             os.makedirs(dir)

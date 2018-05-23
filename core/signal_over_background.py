@@ -12,13 +12,7 @@ class SoB:
         self.season = season
 
         # Bins for sin declination (not evenly spaced)
-        self.sin_dec_bins = np.unique(np.concatenate([
-            np.linspace(-1., -0.9, 2 + 1),
-            np.linspace(-0.9, -0.2, 8 + 1),
-            np.linspace(-0.2, 0.2, 15 + 1),
-            np.linspace(0.2, 0.9, 12 + 1),
-            np.linspace(0.9, 1., 2 + 1),
-        ]))
+        self.sin_dec_bins = self.season["sinDec bins"]
 
         # If provided in kwargs, sets whether the spectral index (gamma)
         # should be included as a fit parameter. If this is not specified,

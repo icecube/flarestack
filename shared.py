@@ -61,12 +61,17 @@ def SoB_spline_path(season):
     return SoB_spline_dir + season["Data Sample"] + "/" + \
            season["Name"] + '.pkl'
 
-def fit_setup(llh_kwargs, sources, flare=False):
 
+def fit_setup(llh_kwargs, sources, flare=False):
     # The default value for n_s is 1. It can be between 0 and 1000.
     p0 = [1.]
+
     bounds = [(0.0, 1000.)]
     names = ["n_s"]
+
+    if "Fit Negative n_s?" in llh_kwargs.keys():
+        if llh_kwargs["Fit Negative n_s?"]:
+            bounds = [(-100., 1000.)]
 
     # If weights are to be fitted, then each source has an independent
     # n_s in the same 0-1000 range.

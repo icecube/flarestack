@@ -178,13 +178,16 @@ class ResultsHandler:
             print scale,
             ts_array = np.array(self.results[scale]["TS"])
             frac = float(len(ts_array[ts_array > bkg_median])) / (float(len(ts_array)))
-            print "Fraction of overfluctuations is", "{0:.2f}".format(frac)
-            y.append(frac)
-            x_acc.append(x)
+            print "Fraction of overfluctuations is", "{0:.2f}".format(frac),
+            print "(", len(ts_array), ")"
 
-            self.make_plots(scale)
+            if len(ts_array) > 1:
+                y.append(frac)
+                x_acc.append(scale)
 
-        x = np.array(x)
+                self.make_plots(scale)
+
+        x = np.array(x_acc)
 
         x_flux = k_to_flux(x)
 

@@ -238,7 +238,8 @@ class LLH(SoB):
         #
         #         raw_input("prompt")
 
-        llh_value = np.sum([np.log(abs(y)) for y in x])
+        llh_value = np.sum(
+            [np.sign(n_s[i]) * np.log(y) for i, y in enumerate(x)])
 
         llh_value += self.assume_background(all_n_j, n_mask, n_all)
 

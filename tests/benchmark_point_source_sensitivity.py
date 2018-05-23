@@ -64,8 +64,8 @@ for sindec in sindecs:
         "inj kwargs": inj_kwargs,
         "llh kwargs": llh_kwargs,
         "scale": scale,
-        "n_trials": 30,
-        "n_steps": 15
+        "n_trials": 5,
+        "n_steps": 10
     }
 
     analysis_path = analysis_dir + subname
@@ -80,10 +80,11 @@ for sindec in sindecs:
     with open(pkl_file, "wb") as f:
         Pickle.dump(mh_dict, f)
 
-    rd.submit_to_cluster(pkl_file, n_jobs=1000)
+    # rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
-    # mh = MinimisationHandler(mh_dict)
-    # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"])
+    mh = MinimisationHandler(mh_dict)
+    mh.iterate_run(mh_dict["scale"], n_steps=1)
+    mh.clear()
 
     analyses.append(mh_dict)
 
@@ -109,15 +110,14 @@ ax1.set_xlim(xmin=-1., xmax=1.)
 # ax1.set_ylim(ymin=1.e-13, ymax=1.e-10)
 ax1.grid(True, which='both')
 ax1.semilogy(nonposy='clip')
-ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{"
-               r"-1}$ ]",
+ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]",
                fontsize=12)
 
 plt.title('7-year Point Source Sensitivity')
 
 ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
-ratios = sens / skylab_7year_sensitivity(sindecs)
+ratios = np.array(sens) / skylab_7year_sensitivity(sindecs)
 
 ax2.scatter(sindecs, ratios, color="black")
 ax2.plot(sindecs, ratios, linestyle="--", color="red")

@@ -2,7 +2,7 @@ from shared import dataset_dir
 from icecube_pointsource_7_year import ps_7year
 import numpy as np
 
-data_dir = dataset_dir + "gfu_160518/"
+gfu_data_dir = dataset_dir + "gfu_160518/"
 
 gfu_dict = {
     "Data Sample": "gfu_2point5_year",
@@ -16,12 +16,12 @@ gfu_dict = {
     "MJD Time Key": "time",
     "Name": "GFU_2point5",
     "exp_path": [
-        data_dir + "SplineMPEmax.MuEx.IC86-2015.npy",
-        data_dir + "SplineMPEmax.MuEx.IC86-2016.npy",
-        data_dir + "SplineMPEmax.MuEx.IC86-2017.npy"
+        gfu_data_dir + "SplineMPEmax.MuEx.IC86-2015.npy",
+        gfu_data_dir + "SplineMPEmax.MuEx.IC86-2016.npy",
+        gfu_data_dir + "SplineMPEmax.MuEx.IC86-2017.npy"
     ],
-    "mc_path": data_dir + "SplineMPEmax.MuEx.MC.npy",
-    "grl_path": data_dir + "SplineMPEmax.MuEx.GRL.npy"
+    "mc_path": gfu_data_dir + "SplineMPEmax.MuEx.MC.npy",
+    "grl_path": gfu_data_dir + "SplineMPEmax.MuEx.GRL.npy"
 }
 
 gfu_2point5 = [gfu_dict]
