@@ -91,8 +91,60 @@ class Chi2_LeftTruncated(object):
                '\t Scale    = {0:7.2f}\n'.format(self._f.args[2]) + \
                '\t KS       = {0:7.2%}'.format(self._ks)
 
+class Double_Chi2(object):
+    """ A class similar to the ones from scipy.stats
+       allowing to fit left-truncated chi^2 distributions.
+    """
 
-def plot_background_ts_distribution(ts_array, path):
+    def __init__(self, data):
+        """ Fit the given ensemble of measurements with a chi^2 function.
+
+        `data` is a list of test statistics values.
+        `cut` defines where the distribution is truncated.
+        """
+
+        data_left = data[data <= 0.]
+        data_right = data[data > 0.]
+        N_all = len(data)
+
+        f_under = float(len(data_left))/float(N_all)
+        f_over = float(len(data_right)) / float(N_all)
+
+        print N_all - len(data_right + data_left)
+
+        N_left = len(data_left)
+
+        # four parameters will be fitted: dof x 2, scale x 2
+        p_start = [2., 2., 1., 1.]
+        p_bounds = [(0., None),
+                    (0., None),# dof > 0
+                    (1e-5, 1e5),
+                    (1e-5, 1e5)]  # shape ~ free
+
+        # define the fit function: likelihood for 2 chi^2 distributions,
+        # one for positive values and another for negative
+
+        def func(p):
+
+            left = f_under * scipy.stats.chi2(p[0], loc=0., scale=p[2])
+            right = f_over * scipy.stats.chi2(p[1], loc=0., scale=p[3])
+
+            loglh = left.logpdf(data_left).sum() + \
+                    right.logpdf(data_right).sum()
+
+            return -loglh
+
+        res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
+
+        if not res.success:
+            print 'Chi2 fit did not converge! Result is likely garbage.'
+
+        # self._q_left = N_left / float(N_all)
+        self._f = scipy.stats.chi2(*res.x)
+        self._ks = scipy.stats.kstest(data_right, self._f.cdf)[0]
+
+
+def plot_background_ts_distribution(ts_array, path, bounded=True):
     ts_array = np.array(ts_array)
     ts_array = ts_array[~np.isnan(ts_array)]
 
@@ -112,16 +164,21 @@ def plot_background_ts_distribution(ts_array, path):
     five_sigma = 0.999999713349
 
     try:
-        chi2 = Chi2_LeftTruncated(ts_array)
-        df = chi2._f.args[0]
-        loc = chi2._f.args[1]
-        scale = chi2._f.args[2]
-        xrange = np.linspace(
-            min([np.min(ts_array), loc]), np.max(ts_array), 100
-        )
-        plt.plot(xrange, scipy.stats.chi2.pdf(xrange, df, loc, scale))
+        if bounded:
+            chi2 = Chi2_LeftTruncated(ts_array)
+            df = chi2._f.args[0]
+            loc = chi2._f.args[1]
+            scale = chi2._f.args[2]
+            xrange = np.linspace(
+                min([np.min(ts_array), loc]), np.max(ts_array), 100
+            )
+            plt.plot(xrange, scipy.stats.chi2.pdf(xrange, df, loc, scale))
 
-        disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
+            disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
+
+        else:
+            chi2 = Double_Chi2(ts_array)
+            raw_input("prompt")
 
     except ValueError:
         disc_potential = np.nan

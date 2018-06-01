@@ -40,13 +40,13 @@ llh_kwargs = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
+    "Fit Negative n_s?": True
 }
 
-name = "tests/ps_sens"
+name = "tests/improved_ps_sens"
 
 # sindecs = np.linspace(0.90, -0.90, 13)
-# sindecs = np.linspace(0.75, -0.75, 7)
-sindecs = np.linspace(0.5, -0.5, 3)
+sindecs = np.linspace(0.75, -0.75, 7)
 sens = []
 
 analyses = []
@@ -81,15 +81,15 @@ for sindec in sindecs:
     with open(pkl_file, "wb") as f:
         Pickle.dump(mh_dict, f)
 
-    # rd.submit_to_cluster(pkl_file, n_jobs=5000)
+    # rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
-    mh = MinimisationHandler(mh_dict)
-    mh.iterate_run(mh_dict["scale"], n_steps=10, n_trials=mh_dict["n_trials"])
-    mh.clear()
+    # mh = MinimisationHandler(mh_dict)
+    # mh.iterate_run(mh_dict["scale"], n_steps=100)
+    # mh.clear()
 
     analyses.append(mh_dict)
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for rh_dict in analyses:
     rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],

@@ -36,6 +36,11 @@ class ResultsHandler:
         else:
             self.make_plots = self.noflare_plots
 
+        try:
+            self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
+        except KeyError:
+            self.negative_n_s = False
+
         p0, bounds, names = fit_setup(llh_kwargs, sources, self.flare)
         self.param_names = names
         self.bounds = bounds
@@ -158,14 +163,16 @@ class ResultsHandler:
                 self.results[float(sub_dir_name)] = merged_data
 
         if len(self.results.keys()) == 0:
-            raise Exception("No data was found by ResultsHandler object!")
+            print "No data was found by ResultsHandler object!"
+            return
 
     def find_sensitivity(self):
 
         try:
             bkg_dict = self.results[0.0]
         except KeyError:
-            raise Exception("No key equal to '0.0'")
+            print "No key equal to '0.0'"
+            return
 
         bkg_ts = bkg_dict["TS"]
 
@@ -240,10 +247,12 @@ class ResultsHandler:
         try:
             bkg_dict = self.results[0.0]
         except KeyError:
-            raise Exception("No key equal to '0.0'")
+            print "No key equal to '0.0'"
+            return
 
         bkg_ts = bkg_dict["TS"]
-        disc_threshold = plot_background_ts_distribution(bkg_ts, ts_path)
+        disc_threshold = plot_background_ts_distribution(bkg_ts, ts_path,
+                                                         self)
         bkg_median = np.median(bkg_ts)
         x = sorted(self.results.keys())
         y = []

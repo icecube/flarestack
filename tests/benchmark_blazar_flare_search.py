@@ -73,14 +73,24 @@ no_flare = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
-    "Flare Search?": False
+    "Flare Search?": False,
+    "Fit Negative n_s?": False
+}
+
+no_flare_negative = {
+    "LLH Energy PDF": llh_energy,
+    "LLH Time PDF": llh_time,
+    "Fit Gamma?": True,
+    "Flare Search?": False,
+    "Fit Negative n_s?": True
 }
 
 flare_with_energy = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
-    "Flare Search?": True
+    "Flare Search?": True,
+    "Fit Negative n_s?": False
 }
 
 src_res = dict()
@@ -89,10 +99,11 @@ lengths = np.linspace(0.0, 1.0, 11)[1:] * max_window
 
 # lengths = [0.5 * max_window]
 
-for i, llh_kwargs in enumerate([no_flare, flare_with_energy]):
+for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
+                                flare_with_energy]):
 
-    label = ["Time-Integrated", "Flare"][i]
-    f_name = ["fixed_box", "flare_fit_gamma"][i]
+    label = ["Time-Integrated", "Time-Integrated (negative n_s)", "Flare"][i]
+    f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
 
     flare_name = name + f_name + "/"
 
@@ -147,7 +158,7 @@ for i, llh_kwargs in enumerate([no_flare, flare_with_energy]):
 
         print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=2000)
+        rd.submit_to_cluster(pkl_file, n_jobs=2000)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
@@ -172,6 +183,10 @@ for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
             rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                                 rh_dict["catalogue"])
 
+            # The uptime noticeably deviates from 100%, because the detector
+            # was undergoing tests for 25 hours on May 5th/6th 2016. Thus,
+            # particularly for short flares, the sensitivity appears to
+            # improve as a function of time unless this is taken into account.
             injection_time = rh_dict["inj kwargs"]["Injection Time PDF"]
 
             inj_time = 0.

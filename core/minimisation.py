@@ -14,7 +14,8 @@ from core.injector import Injector
 from core.llh import LLH, FlareLLH
 from core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results
-from shared import name_pickle_output_dir, fit_setup, inj_dir_name
+from shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
+    plot_output_dir
 
 
 class MinimisationHandler:
@@ -50,6 +51,11 @@ class MinimisationHandler:
             self.run = self.run_flare
         else:
             self.run = self.run_stacked
+
+        try:
+            self.brute = self.llh_kwargs["Brute Seed?"]
+        except KeyError:
+            self.brute = False
 
         # For each season, we create an independent injector and a
         # likelihood, using the source list along with the sets of energy/time
@@ -257,17 +263,25 @@ class MinimisationHandler:
             #         {'type': 'ineq', 'fun': lambda x: constraint(x)}
             #     }
 
-            res = scipy.optimize.minimize(
-                f, self.p0, bounds=self.bounds)
+            if self.brute:
 
-            # print res
-            # raw_input("prompt")
+                brute_range = [
+                    (max(x, -30), min(y, 30)) for (x, y) in self.bounds]
+
+                start_seed = scipy.optimize.brute(
+                    f, ranges=brute_range, finish=None, Ns=40)
+            else:
+                start_seed = self.p0
+
+            res = scipy.optimize.minimize(
+                f, start_seed, bounds=self.bounds)
 
             flag = res.status
             vals = res.x
             ts = -res.fun
             # If the minimiser does not converge, repeat with brute force
-            if flag > 0:
+            if flag == 1:
+
                 vals = scipy.optimize.brute(f, ranges=self.bounds,
                                             finish=None)
                 ts = -f(vals)
@@ -279,10 +293,10 @@ class MinimisationHandler:
                 # vals = res.x
                 # ts = -res.fun
 
-                for j, val in enumerate(vals):
+                for j, val in enumerate(list(vals)):
                     param_vals[j].append(val)
 
-                ts_vals.append(float(ts))
+                ts_vals.append(float(ts) * np.sign(vals[0]))
                 flags.append(flag)
 
         mem_use = str(
@@ -709,13 +723,16 @@ class MinimisationHandler:
 
     def scan_likelihood(self, scale=1):
 
-        f = self.run(scale)
+        g = self.run_trial(scale)
 
-        n_range = np.linspace(1, 200, 1e4)
+        p0 = self.p0
+
+        n_range = np.linspace(-50., 50, 1e3)
         y = []
 
-        for n in tqdm(n_range):
-            new = f([n])
+        for n in n_range:
+
+            new = g([n] + p0[1:])
             try:
                 y.append(new[0][0])
             except IndexError:
@@ -723,7 +740,8 @@ class MinimisationHandler:
 
         plt.figure()
         plt.plot(n_range, y)
-        plt.savefig("llh_scan.pdf")
+        plt.savefig(plot_output_dir(self.name) + "llh_scan_" + str(scale) +
+                    ".pdf")
         plt.close()
 
         min_y = np.min(y)
@@ -748,7 +766,6 @@ class MinimisationHandler:
             u_lim = ">" + str(max(n_range))
 
         print "One Sigma interval between", l_lim, "and", u_lim
-
 
     def check_flare_background_rate(self):
 

@@ -27,7 +27,6 @@ energy_pdf = PowerLaw()
 
 azimuth_bins = np.linspace(0., 2*np.pi, 181)
 sin_dec_bins = np.linspace(-1., 1., 11)
-print sin_dec_bins
 
 def create_2d_hist(sin_dec, az, sin_dec_bins, weights):
     """Creates a 2D histogram for a set of data (Experimental or Monte
@@ -115,20 +114,37 @@ def azimuth_proxy(data, season_dict):
 
     res = t % sidereal_day
 
-    az = (2 * np.pi - data["ra"]) + 2 * np.pi * res
+    az_offset = 2.54199002505 + 2.907
 
-    az[az > 2 * np.pi] -= 2 * np.pi
-    # az[az > 2 * np.pi] -= 2 * np.pi
+    az = az_offset + 2 * np.pi * res - data["ra"]
+    #
+    # az = (0.5 * np.pi
 
-    az[az < 0] += 2 * np.pi
+    while np.sum(az > 2 * np.pi) > 0:
+        az[az > 2 * np.pi] -= 2 * np.pi
+
+    while np.sum(az < 0) > 0:
+        az[az < 0] += 2 * np.pi
 
     if "azimuth" in data.dtype.names:
 
         plt.figure()
-        plt.hist(az - data["azimuth"])
+        plt.hist(az - data["azimuth"], bins=180)
+
+        # indices = np.linspace(1, len(az), 1000)
+        #
+        # mask = np.zeros(len(az), dtype=np.bool)
+        #
+        # for j in indices:
+        #     mask[j - 1] = 1
+        #
+        # # print mask[:10]
+        #
+        # plt.scatter(az[mask], data["azimuth"][mask])
 
         plt.savefig(plots_dir + "azimuth/hist.pdf")
         plt.close()
+        raw_input("prompt")
 
     # return data["azimuth"]
 
@@ -229,7 +245,7 @@ def plot_ratio(seasons):
 
             spline = scipy.interpolate.RectBivariateSpline(
                 az_bin_center, sin_bin_center, hist_2d.T,
-                kx=3, ky=1, s=2.)
+                kx=3, ky=1, s=0)
 
             plt.figure()
             ax = plt.subplot(111)
@@ -309,6 +325,8 @@ def plot_ratio(seasons):
             ax1.fill_between(mids, fills, med_bkg, facecolor='red',
                              alpha=0.5)
 
+            ax1.set_ylim(ymin=0.0)
+
             plt.title(title)
             plt.legend()
             plt.xlabel("Azimuth")
@@ -330,5 +348,5 @@ def plot_ratio(seasons):
             plt.savefig(root + title + " 1D.pdf")
             plt.close()
 
-plot_ratio(txs_sample)
-# plot_ratio(gfu_2point5)
+# plot_ratio(txs_sample)
+plot_ratio(gfu_2point5)

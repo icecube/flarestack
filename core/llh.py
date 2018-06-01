@@ -238,10 +238,34 @@ class LLH(SoB):
         #
         #         raw_input("prompt")
 
-        llh_value = np.sum(
-            [np.sign(n_s[i]) * np.log(y) for i, y in enumerate(x)])
+        # llh_value = np.sign(n_s[0]) * np.sum(
+        #     [np.log(max(y, -1e-10*np.sign(n_s[0]))) for y in x])
 
-        llh_value += self.assume_background(all_n_j, n_mask, n_all)
+        #
+        #
+        if np.sum(x <= 0.) > 0:
+            llh_value = -50. - self.assume_background(
+                all_n_j, n_mask, n_all)
+
+            # print n_s, n_all, np.sign(n_s), x[x <= 0.]
+            #
+            # raw_input("prompt")
+
+        else:
+            llh_value = np.sum(
+                [np.log(y) for y in x])
+
+            llh_value += self.assume_background(
+                all_n_j, n_mask, n_all)
+
+        # print llh_value
+
+
+        # raw_input("prompt")
+
+        # if llh_value > 0:
+        #     print n_s, llh_value
+        #     raw_input("prompt")
 
         # Definition of test statistic
         return 2. * llh_value

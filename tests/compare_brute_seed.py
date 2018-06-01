@@ -36,7 +36,7 @@ zero_bound = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Flare Search?": False,
-    "Fit Negative n_s?": False
+    "Brute Seed?": False
 }
 
 negative_bound = {
@@ -44,13 +44,13 @@ negative_bound = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Flare Search?": False,
-    "Fit Negative n_s?": True
+    "Brute Seed?": True
 }
 
-name = "tests/negative_n_s/"
+name = "tests/brute_seed/"
 
 sindecs = np.linspace(0.90, -0.90, 13)
-# sindecs = np.linspace(0.5, -0.5, 3)
+# sindecs = np.linspace(0.5, -0.5, 2)
 # sindecs = [0.0]
 
 length = 100.
@@ -59,8 +59,7 @@ length = 100.
 analyses = dict()
 
 for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
-
-    label = ["Zero-bound", "Negative-bound"][i]
+    label = ["Default-seed", "Brute-seed"][i]
 
     src_res = dict()
 
@@ -81,7 +80,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
             "Poisson Smear?": True,
         }
 
-        scale = flux_to_k(skylab_7year_sensitivity(sindec)) * (40)
+        scale = flux_to_k(skylab_7year_sensitivity(sindec)) * 40
 
         mh_dict = {
             "name": full_name,
@@ -106,7 +105,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        rd.submit_to_cluster(pkl_file, n_jobs=2000)
+        # rd.submit_to_cluster(pkl_file, n_jobs=2000)
 
         # mh = MinimisationHandler(mh_dict)
 
@@ -114,7 +113,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
         #     for j in np.linspace(0., scale, 3):
         #         mh.scan_likelihood(j)
         # if i > 0:
-        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=100)
+        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=10)
 
         src_res[sindec] = mh_dict
 
