@@ -19,6 +19,9 @@ class ResultsHandler:
         sources = np.load(cat_path)
 
         self.name = name
+
+        print name
+
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(name)
         self.plot_dir = plot_output_dir(name)
@@ -40,6 +43,8 @@ class ResultsHandler:
             self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
         except KeyError:
             self.negative_n_s = False
+        #
+        # print "negative_ns", self.negative_n_s
 
         p0, bounds, names = fit_setup(llh_kwargs, sources, self.flare)
         self.param_names = names
@@ -251,8 +256,9 @@ class ResultsHandler:
             return
 
         bkg_ts = bkg_dict["TS"]
+
         disc_threshold = plot_background_ts_distribution(bkg_ts, ts_path,
-                                                         self)
+                                                         self.negative_n_s)
         bkg_median = np.median(bkg_ts)
         x = sorted(self.results.keys())
         y = []
@@ -313,7 +319,7 @@ class ResultsHandler:
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = self.plot_dir + "ts_distributions/" + str(scale) + ".pdf"
-        plot_background_ts_distribution(ts_array, ts_path)
+        plot_background_ts_distribution(ts_array, ts_path, self.negative_n_s)
 
         param_path = self.plot_dir + "params/" + str(scale) + ".pdf"
 

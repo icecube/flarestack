@@ -158,7 +158,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
         print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        rd.submit_to_cluster(pkl_file, n_jobs=2000)
+        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)

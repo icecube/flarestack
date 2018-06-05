@@ -44,9 +44,9 @@ llh_kwargs = {
 
 name = "tests/ps_sens"
 
-# sindecs = np.linspace(0.90, -0.90, 13)
+sindecs = np.linspace(0.90, -0.90, 13)
 # sindecs = np.linspace(0.75, -0.75, 7)
-sindecs = np.linspace(0.5, -0.5, 3)
+# sindecs = np.linspace(0.5, -0.5, 3)
 sens = []
 
 analyses = []
@@ -66,7 +66,7 @@ for sindec in sindecs:
         "llh kwargs": llh_kwargs,
         "scale": scale,
         "n_trials": 5,
-        "n_steps": 10
+        "n_steps": 15
     }
 
     analysis_path = analysis_dir + subname
@@ -83,9 +83,9 @@ for sindec in sindecs:
 
     # rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
-    mh = MinimisationHandler(mh_dict)
-    mh.iterate_run(mh_dict["scale"], n_steps=10, n_trials=mh_dict["n_trials"])
-    mh.clear()
+    # mh = MinimisationHandler(mh_dict)
+    # mh.iterate_run(mh_dict["scale"], n_steps=10, n_trials=mh_dict["n_trials"])
+    # mh.clear()
 
     analyses.append(mh_dict)
 
@@ -120,7 +120,7 @@ ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
 ratios = np.array(sens) / skylab_7year_sensitivity(sindecs)
 
-ax2.scatter(sindecs, ratios, color="black")
+ax2.scatter(sindecs, ratios, color="red")
 ax2.plot(sindecs, ratios, linestyle="--", color="red")
 ax2.set_ylabel(r"ratio", fontsize=12)
 ax2.set_xlabel(r"sin($\delta$)", fontsize=12)

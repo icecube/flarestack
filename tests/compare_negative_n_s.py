@@ -106,7 +106,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        rd.submit_to_cluster(pkl_file, n_jobs=2000)
+        # rd.submit_to_cluster(pkl_file, n_jobs=2000)
 
         # mh = MinimisationHandler(mh_dict)
 
@@ -120,7 +120,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
 
     analyses[label] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 plt.figure()
 ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
@@ -128,8 +128,12 @@ ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
 plt.title("Sensitivity for " + str(int(max_window)) + " day window")
 
 all_sens = []
+all_fracs = []
+
+print len(analyses)
 
 for i, (label, src_res) in enumerate(analyses.iteritems()):
+
 
     cols = ["b", "orange", "g"]
 
@@ -138,14 +142,27 @@ for i, (label, src_res) in enumerate(analyses.iteritems()):
     disc_pots = []
 
     for (sindec, rh_dict) in sorted(src_res.iteritems()):
+
+        try:
         #
-        rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                            rh_dict["catalogue"])
-        sens.append(rh.sensitivity)
-        disc_pots.append(rh.disc_potential)
+            rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
+                                rh_dict["catalogue"])
+            sens.append(rh.sensitivity)
+            disc_pots.append(rh.disc_potential)
+        except EOFError:
+            sens.append(np.nan)
+            disc_pots.append(np.nan)
+
         fracs.append(sindec)
 
-    ax1.plot(fracs, sens, label=label, color=cols[i])
+    mask = ~np.isnan(sens)
+
+    fracs = np.array(fracs)
+    sens = np.array(sens)
+    disc_pots = np.array(disc_pots)
+
+    ax1.plot(fracs[mask], sens[mask], label=label, color=cols[i])
+    ax1.plot(fracs[mask], disc_pots[mask], linestyle="--", color=cols[i])
 
     all_sens.append(sens)
 
@@ -162,9 +179,11 @@ ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
 ratios = np.array(all_sens[1]) / np.array(all_sens[0])
 
-ax2.scatter(sindecs, ratios, color="black")
-ax2.plot(sindecs, ratios, linestyle="--", color="red")
-ax2.set_ylabel(r"ratio", fontsize=12)
+mask = ~np.isnan(ratios)
+
+ax2.scatter(sindecs[mask], ratios[mask], color="red")
+ax2.plot(sindecs[mask], ratios[mask], color="red")
+ax2.set_ylabel(r"Ratio", fontsize=12)
 ax2.set_xlabel(r"sin($\delta$)", fontsize=12)
 #
 ax1.set_xlim(xmin=-1.0, xmax=1.0)
