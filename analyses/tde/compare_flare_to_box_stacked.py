@@ -1,20 +1,10 @@
-"""
-Script to reproduce the analysis of the 1ES 1959+650 blazar, as described in
-https://wiki.icecube.wisc.edu/index.php/1ES_1959_Analysis.
-
-The script can be used to verify that the flare search method, as implemented
-here, is capable of matching previous flare search methods.
-"""
-
 import numpy as np
 import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_diffuse_8year import diffuse_8year
-from data.icecube_gfu_2point5_year import gfu_2point5
-from shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
-from utils.prepare_catalogue import custom_sources, ps_catalogue_name
+from data.icecube_pointsource_7_year import ps_7year
+from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.skylab_reference import skylab_7year_sensitivity
 from cluster import run_desy_cluster as rd
 import matplotlib
@@ -22,34 +12,18 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
 
-name = "tests/1ES_blazar_benchmark/"
+name = "analyses/tde/compare_flare_to_box_stacked/"
 
 analyses = dict()
 
-# A description of the source can be found on tevcat, with ra/dec and redshift
-# http://tevcat.uchicago.edu/?mode=1;id=79
-
 # Start and end time of flare in MJD
-t_start = 57506.00
-t_end = 57595.00
+t_start = 55740.00
+t_end = 55840.00
 
-# Ra and dec of source
-ra = 300.00
-dec = 65.15
-
-# Creates the .npy source catalogue
-catalogue = custom_sources(
-    name="1ES_1959+650",
-    ra=ra,
-    dec=dec,
-    weight=1.,
-    distance=1.,
-    start_time=t_start,
-    end_time=t_end,
-)
-
-cat_path = transients_dir + "1ES_1959+650.npy"
-np.save(cat_path, catalogue)
+cat_path = catalogue_dir + "TDEs/Jetted_TDE_catalogue.npy"
+# cat_path = catalogue_dir + "TDEs/individual_TDEs/Swift J1644+57_catalogue.npy"
+# cat_path = catalogue_dir + "TDEs/individual_TDEs/Swift J1644+57_catalogue.npy"
+catalogue = np.load(cat_path)
 
 max_window = float(t_end - t_start)
 
@@ -67,20 +41,25 @@ llh_time = {
     "Post-Window": max_window
 }
 
+# llh_time = {
+#     "Name": "Steady"
+# }
+
 llh_energy = injection_energy
 
 no_flare = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
+    "Fit Gamma?": False,
     "Flare Search?": False,
-    "Fit Negative n_s?": False
+    "Fit Negative n_s?": False,
+    "Brute?": True
 }
 
 no_flare_negative = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
+    # "Fit Gamma?": True,
     "Flare Search?": False,
     "Fit Negative n_s?": True
 }
@@ -95,13 +74,12 @@ flare_with_energy = {
 
 src_res = dict()
 
-lengths = np.array(sorted([0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * \
+lengths = np.array(sorted([0.05] + list(np.linspace(0.0, 1.0, 11)))[2:]) * \
                  max_window
 
 # lengths = [0.5 * max_window]
 
-for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
-                                flare_with_energy]):
+for i, llh_kwargs in enumerate([no_flare, no_flare_negative]):
 
     label = ["Time-Integrated", "Time-Integrated (negative n_s)", "Flare"][i]
     f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
@@ -123,18 +101,18 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
             "Poisson Smear?": True,
         }
 
-        scale = flux_to_k(skylab_7year_sensitivity(np.sin(dec))
-                          * (50 * max_window / flare_length))
+        scale = flux_to_k(skylab_7year_sensitivity(np.sin(0.))
+                          * (25 * max_window / flare_length))
 
         mh_dict = {
             "name": full_name,
-            "datasets": gfu_2point5,
+            "datasets": ps_7year[-2:-1],
             "catalogue": cat_path,
             "inj kwargs": inj_kwargs,
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 1,
-            "n_steps": 15
+            "n_steps": 10
         }
 
         analysis_path = analysis_dir + full_name
@@ -159,10 +137,10 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
         print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
-
+        rd.submit_to_cluster(pkl_file, n_jobs=2000)
+        #
         # mh = MinimisationHandler(mh_dict)
-        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
+        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=100)
         # mh.clear()
         res[flare_length] = mh_dict
 
@@ -197,19 +175,13 @@ for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
                 inj_time += time.effective_injection_time(catalogue)
 
             sens[i].append(rh.sensitivity * float(length) * 60 * 60 * 24)
-            disc_pots[i].append(rh.disc_potential *
-                                float(length) * 60 * 60 * 24)
+            # disc_pots[i].append(rh.disc_potential *
+            #                     float(length) * 60 * 60 * 24)
             sens_livetime[i].append(rh.sensitivity * inj_time)
-            disc_pots_livetime[i].append(rh.disc_potential * inj_time)
+            # disc_pots_livetime[i].append(rh.disc_potential * inj_time)
             fracs[i].append(length)
 
         except OSError:
-            pass
-
-        except KeyError:
-            pass
-
-        except EOFError:
             pass
 
     labels.append(f_type)
@@ -226,7 +198,7 @@ for j, s in enumerate([sens, sens_livetime]):
 
     for i, f in enumerate(fracs):
         plt.plot(f, s[i], label=labels[i], color=cols[i])
-        plt.plot(f, d[i], linestyle="--", color=cols[i])
+        # plt.plot(f, d[i], linestyle="--", color=cols[i])
 
     label = ["", "(Livetime-adjusted)"][j]
 

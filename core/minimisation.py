@@ -341,6 +341,9 @@ class MinimisationHandler:
         llh_functions = dict()
         n_all = dict()
 
+        src = np.sort(self.sources, order="Distance")
+        dist_weight = src["Distance"] ** -2
+
         for season in self.seasons:
             dataset = self.injectors[season["Name"]].create_dataset(scale)
             llh_f = self.llhs[season["Name"]].create_llh_function(dataset)
@@ -359,27 +362,42 @@ class MinimisationHandler:
 
             for i, season in enumerate(self.seasons):
                 llh = self.llhs[season["Name"]]
-                acc = llh.acceptance(self.sources, params)
+                acc = []
 
                 time_weights = []
 
-                for source in self.sources:
+                for source in src:
 
                     time_weights.append(llh.time_pdf.effective_injection_time(
                         source))
+                    acc.append(llh.acceptance(source, params))
 
-                w = acc * (self.sources["Distance"] ** -2) * np.array(
-                    time_weights)
+                acc = np.array(acc).T
+
+                w = acc * dist_weight * np.array(time_weights)
+                acc = np.array(acc).T
+                # print acc, dist_weight, time_weights
+                # print w
+                # print src
+                # raw_input("prompt")
+
+                # print acc, self.sources["Distance"] ** -2
 
                 w = w[:, np.newaxis]
 
-                for j, ind_w in enumerate(w):
+                for j, ind_w in enumerate(w.T):
                     weights_matrix[i][j] = ind_w
+
+                # print weights_matrix
 
             weights_matrix /= np.sum(weights_matrix)
 
-            # for i, row in enumerate(weights_matrix):
-            #     print "Season", i, np.sum(row)
+            # print weights_matrix
+            # #
+            # # print self.sources.dtype.names
+            # #
+            # for i, row in enumerate(weights_matrix.T):
+            #     print "Source", i, src[i], np.sum(row)
             #
             # raw_input("prompt")
 
@@ -740,9 +758,11 @@ class MinimisationHandler:
 
         plt.figure()
         plt.plot(n_range, y)
-        plt.savefig(plot_output_dir(self.name) + "llh_scan_" + str(scale) +
-                    ".pdf")
+        path = plot_output_dir(self.name) + "llh_scan_" + str(scale) + ".pdf"
+        plt.savefig(path)
         plt.close()
+
+        print "Saved to", path
 
         min_y = np.min(y)
         print "Minimum value of", min_y,
@@ -786,7 +806,7 @@ class MinimisationHandler:
 
                 # Loops over each source in catalogue
 
-                for source in self.sources:
+                for source in np.sorted(self.sources, order="Distance"):
 
                     # Identify spatially- and temporally-coincident data
 

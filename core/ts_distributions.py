@@ -7,6 +7,53 @@ import matplotlib.pyplot as plt
 import scipy.optimize, scipy.stats
 
 
+class Chi2:
+
+    """ A class similar to the ones from scipy.stats
+       allowing to fit left-truncated chi^2 distributions.
+    """
+
+    def __init__(self, data):
+        """ Fit the given ensemble of measurements with a chi^2 function.
+
+        `data` is a list of test statistics values.
+        `cut` defines where the distribution is truncated.
+        """
+
+        data -= min(data)
+
+        # three parameters will be fitted: dof, location, scale
+        p_start = [2., 1.]
+        p_bounds = [(0., None),  # dof > 0
+                    # (min(data), 0.),  # location < 0 for 'truncated'
+                    # effect
+                    (1e-5, 1e5)]  # shape ~ free
+
+        # define the fit function: likelihood for chi^2 distribution,
+        # plus knowledge about the amount of truncated data
+        def func(p):
+
+            dist = scipy.stats.chi2(p[0], loc=0., scale=p[1])
+            loglh = dist.logpdf(data).sum()
+            print loglh
+
+            return -loglh
+
+        res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
+
+        if not res.success:
+            print 'Chi2 fit did not converge! Result is likely garbage.'
+
+        # self._q_left = N_left / float(N_all)
+        self._cut = 0.
+        self._f = scipy.stats.chi2(res.x[0], loc=min(data), scale=res.x[1])
+        self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
+        self.ndof = res.x[0]
+        self.loc = min(data)
+        self.scale = res.x[1]
+
+
+
 class Chi2_LeftTruncated(object):
     """ A class similar to the ones from scipy.stats
        allowing to fit left-truncated chi^2 distributions.
@@ -48,6 +95,9 @@ class Chi2_LeftTruncated(object):
         self._cut = cut
         self._f = scipy.stats.chi2(*res.x)
         self._ks = scipy.stats.kstest(data_right, self._f.cdf)[0]
+        self.ndof = res.x[0]
+        self.loc = res.x[1]
+        self.scale = res.x[2]
 
     def pdf(self, x):
         """ Probability density function.
@@ -160,12 +210,15 @@ class Double_Chi2(object):
 class Chi2_one_side:
 
     def __init__(self, data):
-        p_start = [2., 1.]
-        p_bounds = [(1e-9, None),  # dof > 0
-                    (1e-5, 1e5)]  # shape ~ free
+        p_start = [2., -1., 1.]
+        p_start = [2.]
+        p_bounds = [(0., None),  # dof > 0
+                    ]
+                    # (1e-5, 1e5)]  # shape ~ free
 
         def func(p):
-            loglh = scipy.stats.chi2(p[0], loc=0, scale=p[1]).logpdf(data).sum()
+            loglh = scipy.stats.chi2(p[0], loc=0., scale=1.).logpdf(
+                data).sum()
             return -loglh
 
         res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
@@ -174,44 +227,102 @@ class Chi2_one_side:
         self._f = scipy.stats.chi2(*res.x)
         self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
 
-def plot_background_ts_distribution(ts_array, path, negative_n_s=False):
+
+class Chi2_one_side_free:
+
+    def __init__(self, data):
+        p_start = [2., -1., 1.]
+        p_start = [2., 0., 1.]
+        p_bounds = [(0., None),  # dof > 0
+                    (None, 0.),  # location < 0 for 'truncated' effect
+                    (1e-5, 1e5)# shape ~ free
+                    ]
+                    # (1e-5, 1e5)]  # shape ~ free
+
+        def func(p):
+            loglh = scipy.stats.chi2(p[0], loc=p[1], scale=p[2]).logpdf(
+                data).sum()
+            return -loglh
+
+        res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
+
+        self._cut = 0.
+        self._f = scipy.stats.chi2(*res.x)
+        self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
+        self.ndof = res.x[0]
+        self.loc = res.x[1]
+        self.scale = res.x[2]
+
+def plot_background_ts_distribution(ts_array, path, flare=False):
     ts_array = np.array(ts_array)
     ts_array = ts_array[~np.isnan(ts_array)]
+    weights = np.ones_like(ts_array) * 1. / float(len(ts_array))
+    med = np.median(ts_array)
 
-    weights = np.ones_like(ts_array) * 1./float(len(ts_array))
+    raw_five_sigma = 0.999999713349
 
     mask = ts_array > 0.
-
-    frac_over = float(len(ts_array[mask]))/(float(len(ts_array)))
-    frac_under = 1. - frac_over
-
-    # print np.sum(np.isnan(ts_array))
 
     try:
         os.makedirs(os.path.dirname(path))
     except OSError:
         pass
 
-    n_bins = 20
+    if flare:
 
-    plt.figure()
-    plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
-             bins=20, lw=2, histtype='step',
-             color=['black', "grey"],
-             label=['TS > 0', "TS <= 0"],
-             weights=[weights[mask], weights[:np.sum(~mask)]],
-             stacked=True)
+        frac_over = 1.
+        frac_under = 0.
 
-    five_sigma = (0.999999713349 - frac_under) / (1. - frac_under)
+        n_bins = 20
 
-    plt.axhline(frac_over * (1-five_sigma), color="r", linestyle="--")
+        plt.figure()
+        plt.hist(ts_array,
+                 bins=20, lw=2, histtype='step',
+                 color='black',
+                 weights=weights,
+                 )
+
+        five_sigma = raw_five_sigma
+
+        # chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
+        chi2 = Chi2_LeftTruncated(ts_array)
+        df = chi2.ndof
+        loc = chi2.loc
+        scale = chi2.scale
+
+    else:
+
+        frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
+        frac_under = 1. - frac_over
+
+        n_bins = 20
+
+        plt.figure()
+        plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
+                 bins=20, lw=2, histtype='step',
+                 color=['black', "grey"],
+                 label=['TS > 0', "TS <= 0"],
+                 weights=[weights[mask], weights[:np.sum(~mask)]],
+                 stacked=True)
+
+        five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
+
+        chi2 = Chi2_one_side(ts_array[ts_array > 0.])
+
+        df = chi2._f.args[0]
+        # loc = chi2._f.args[1]
+        loc = 0.
+        try:
+            scale = chi2._f.args[2]
+        except IndexError:
+            scale = 1.
+    #
+    # print chi2
+    # raw_input("prompt")
+
+    plt.axhline(frac_over * (1 - five_sigma), color="r", linestyle="--")
 
     max_ts = np.max(ts_array)
-
-    chi2 = Chi2_one_side(ts_array[ts_array > 0.])
-    df = chi2._f.args[0]
-    loc = 0.
-    scale = chi2._f.args[1]
 
     disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
 
@@ -230,44 +341,11 @@ def plot_background_ts_distribution(ts_array, path, negative_n_s=False):
 
     plt.axvline(disc_potential, color="r", label=r"5 $\sigma$ Threshold")
     plt.annotate(
-        '{:.1f}'.format(100 * frac_under) + "% of data <= 0. \n" +
+        '{:.1f}'.format(100 * frac_under) + "% of data in delta. \n" +
         r"$\chi^{2}$ Distribution:" + "\n   * d.o.f.=" + \
-        '{:.2f}'.format(df) + ",\n   * scale=" + '{:.2f}'.format(scale),
+        '{:.2f}'.format(df) + ",\n  * loc=" + '{:.2f}'.format(loc) + " \n"
+        " * scale=" + '{:.2f}'.format(scale),
         xy=(0.3, 0.8), xycoords="axes fraction")
-
-    # try:
-    #     if not negative_n_s:
-    #         chi2 = Chi2_LeftTruncated(ts_array)
-    #         df = chi2._f.args[0]
-    #         loc = chi2._f.args[1]
-    #         scale = chi2._f.args[2]
-    #         xrange = np.linspace(
-    #             min([np.min(ts_array), loc]), np.max(ts_array), 100
-    #         )
-    #
-    #         plt.plot(xrange, scipy.stats.chi2.pdf(xrange, df, loc, scale))
-    #
-    #         disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
-    #
-    #     else:
-    #         plt.hist(ts_array[ts_array < 0.], bins=20, lw=2, histtype='step',
-    #                  color='black',
-    #                  label='Test Stat', normed=True)
-    #         print "Trying Double chi2"
-    #         chi2 = Double_Chi2(ts_array)
-    #
-    #         x_left = np.linspace(np.min(ts_array), -0., 100)
-    #
-    #         plt.plot(x_left, chi2._f_left.pdf(-x_left))
-    #
-    #         x_right = np.linspace(0., np.max(ts_array), 100)
-    #
-    #         plt.plot(x_right, chi2._f_right.pdf(x_right))
-    #
-    #         disc_potential = chi2._f_right.ppf(five_sigma * chi2._frac_over)
-    #
-    # except KeyError:
-    #     disc_potential = np.nan
 
     yrange = min(1. / (float(len(ts_array)) * n_bins),
                  scipy.stats.chi2.pdf(disc_potential, df, loc, scale))

@@ -12,6 +12,7 @@ from cluster import run_desy_cluster as rd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from core.time_PDFs import TimePDF
 
 
 TDEs = ["Swift J1644+57"]
@@ -129,57 +130,115 @@ for tde in TDEs:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            rd.submit_to_cluster(pkl_file, n_jobs=2000)
+            # rd.submit_to_cluster(pkl_file, n_jobs=2000)
 
             # mh = MinimisationHandler(mh_dict)
             # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
 
             res[flare_length] = mh_dict
 
-        src_res[label] = res
+            inj_time = 0.
+
+            for season in mh_dict["datasets"]:
+                time = TimePDF.create(injection_time, season)
+                inj_time += time.effective_injection_time(source)
+
+            print "Injecting for", flare_length, "Livetime", inj_time / (
+                        60. * 60. * 24.)
+
+        if label != "Flare (fixed Gamma)":
+            src_res[label] = res
 
     analyses[tde] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (tde, src_res) in analyses.iteritems():
-    plt.figure()
-    ax1 = plt.subplot(111)
 
-    cols = ["r", "g", "b"]
+    sens = [[] for _ in src_res]
+    sens_livetime = [[] for _ in src_res]
+    fracs = [[] for _ in src_res]
+    disc_pots = [[] for _ in src_res]
+    disc_pots_livetime = [[] for _ in src_res]
+
+    labels = []
 
     for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
         if f_type != "Flare (fixed Gamma)":
-            sens = []
-            fracs = []
-            disc_pots = []
 
             for (length, rh_dict) in sorted(res.iteritems()):
                 try:
-                    rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
+                    rh = ResultsHandler(rh_dict["name"],
+                                        rh_dict["llh kwargs"],
                                         rh_dict["catalogue"])
-                    sens.append(rh.sensitivity * float(length) * 60 * 60 * 24)
-                    disc_pots.append(rh.disc_potential *
-                                     float(length) * 60 * 60 * 24)
-                    fracs.append(length)
+
+                    catalogue = np.load(rh_dict["catalogue"])
+
+                    # The uptime noticeably deviates from 100%, because the detector
+                    # was undergoing tests for 25 hours on May 5th/6th 2016. Thus,
+                    # particularly for short flares, the sensitivity appears to
+                    # improve as a function of time unless this is taken into account.
+                    injection_time = rh_dict["inj kwargs"]["Injection Time PDF"]
+
+                    inj_time = 0.
+
+                    for season in rh_dict["datasets"]:
+                        time = TimePDF.create(injection_time, season)
+                        inj_time += time.effective_injection_time(catalogue)
+
+                    sens[i].append(
+                        rh.sensitivity * float(length) * 60 * 60 * 24)
+                    disc_pots[i].append(rh.disc_potential *
+                                        float(length) * 60 * 60 * 24)
+                    sens_livetime[i].append(rh.sensitivity * inj_time)
+                    disc_pots_livetime[i].append(
+                        rh.disc_potential * inj_time)
+                    fracs[i].append(length)
 
                 except OSError:
                     pass
 
-            plt.plot(fracs, sens, label=f_type, color=cols[i])
-        # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
+        labels.append(f_type)
 
-    ax1.grid(True, which='both')
-    # ax1.semilogy(nonposy='clip')
-    ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$]",
-                   fontsize=12)
-    ax1.set_xlabel(r"Flare Length (days)")
-    # ax1.set_xscale("log")
-    # ax1.set_xlim(0, 1.0)
+            # plt.plot(fracs, sens, label=f_type, color=cols[i])
+            # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-    plt.title("Flare in " + str(int(max_window)) + " day window")
+    for j, s in enumerate([sens, sens_livetime]):
 
-    ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
-    plt.savefig(plot_output_dir(name) + "/" + tde.replace(" ", "")  + "/flare_vs_box.pdf")
-    plt.close()
+        d = [disc_pots, disc_pots_livetime][j]
+
+        for k, y in enumerate([s, d]):
+
+            plt.figure()
+            ax1 = plt.subplot(111)
+
+            cols = ["r", "g", "b"]
+            linestyle = ["-", "--"][k]
+
+            max_window = max(max(fracs))
+
+            for l, f in enumerate(fracs):
+                plt.plot(f, y[l], label=labels[l], linestyle=linestyle,
+                         color=cols[l])
+
+            label = ["", "(Livetime-adjusted)"][j]
+
+            ax1.grid(True, which='both')
+            # ax1.semilogy(nonposy='clip')
+            ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$]", fontsize=12)
+            ax1.set_xlabel(r"Flare Length (days)")
+            # ax1.set_xscale("log")
+
+            print y
+
+            ax1.set_ylim(0.95 * min([min(x) for x in np.array(y)]),
+                         1.1 * max([max(x) for x in np.array(y)]))
+
+            plt.title("Flare in " + str(max_window) + " day window")
+
+            ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+            plt.savefig(plot_output_dir(name) + "/" + tde.replace(" ", "") +
+                        "/flare_vs_box" + label + "_" +
+                        ["sens", "disc"][k] + ".pdf")
+            plt.close()

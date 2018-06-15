@@ -132,7 +132,7 @@ xticklabels = ax1.get_xticklabels()
 plt.setp(xticklabels, visible=False)
 plt.subplots_adjust(hspace=0.001)
 
-# ratio_interp = interp1d(sindecs, ratios)
+# ratio_interp = interp1d(sindecs, sens_ratios)
 #
 # interp_range = np.linspace(np.min(sindecs),
 #                            np.max(sindecs), 1000)

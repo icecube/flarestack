@@ -1,20 +1,10 @@
-"""
-Script to reproduce the analysis of the 1ES 1959+650 blazar, as described in
-https://wiki.icecube.wisc.edu/index.php/1ES_1959_Analysis.
-
-The script can be used to verify that the flare search method, as implemented
-here, is capable of matching previous flare search methods.
-"""
-
 import numpy as np
 import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_diffuse_8year import diffuse_8year
-from data.icecube_gfu_2point5_year import gfu_2point5
-from shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
-from utils.prepare_catalogue import custom_sources, ps_catalogue_name
+from data.icecube_pointsource_7_year import ps_7year
+from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.skylab_reference import skylab_7year_sensitivity
 from cluster import run_desy_cluster as rd
 import matplotlib
@@ -22,7 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
 
-name = "tests/1ES_blazar_benchmark/"
+name = "tests/tde_compare_flare_to_box/"
 
 analyses = dict()
 
@@ -30,26 +20,11 @@ analyses = dict()
 # http://tevcat.uchicago.edu/?mode=1;id=79
 
 # Start and end time of flare in MJD
-t_start = 57506.00
-t_end = 57595.00
+t_start = 55752.00
+t_end = 55852.00
 
-# Ra and dec of source
-ra = 300.00
-dec = 65.15
-
-# Creates the .npy source catalogue
-catalogue = custom_sources(
-    name="1ES_1959+650",
-    ra=ra,
-    dec=dec,
-    weight=1.,
-    distance=1.,
-    start_time=t_start,
-    end_time=t_end,
-)
-
-cat_path = transients_dir + "1ES_1959+650.npy"
-np.save(cat_path, catalogue)
+cat_path = catalogue_dir + "TDEs/individual_TDEs/Swift J1644+57_catalogue.npy"
+catalogue = np.load(cat_path)
 
 max_window = float(t_end - t_start)
 
@@ -123,12 +98,12 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
             "Poisson Smear?": True,
         }
 
-        scale = flux_to_k(skylab_7year_sensitivity(np.sin(dec))
-                          * (50 * max_window / flare_length))
+        scale = flux_to_k(skylab_7year_sensitivity(np.sin(catalogue["dec"]))
+                          * (35 * max_window / flare_length))
 
         mh_dict = {
             "name": full_name,
-            "datasets": gfu_2point5,
+            "datasets": ps_7year[-2:-1],
             "catalogue": cat_path,
             "inj kwargs": inj_kwargs,
             "llh kwargs": llh_kwargs,
@@ -162,13 +137,13 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
         # rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
         # mh = MinimisationHandler(mh_dict)
-        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
+        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
         # mh.clear()
         res[flare_length] = mh_dict
 
     src_res[label] = res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 sens_livetime = [[] for _ in src_res]
@@ -219,28 +194,31 @@ for j, s in enumerate([sens, sens_livetime]):
 
     d = [disc_pots, disc_pots_livetime][j]
 
-    plt.figure()
-    ax1 = plt.subplot(111)
+    for k, y in enumerate([s, d]):
 
-    cols = ["r", "g", "b"]
+        plt.figure()
+        ax1 = plt.subplot(111)
 
-    for i, f in enumerate(fracs):
-        plt.plot(f, s[i], label=labels[i], color=cols[i])
-        plt.plot(f, d[i], linestyle="--", color=cols[i])
+        cols = ["r", "g", "b"]
+        linestyle = ["-", "--"][k]
 
-    label = ["", "(Livetime-adjusted)"][j]
+        for i, f in enumerate(fracs):
+            plt.plot(f, y[i], label=labels[i], linestyle=linestyle,
+                     color=cols[i])
 
-    ax1.grid(True, which='both')
-    ax1.semilogy(nonposy='clip')
-    ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$] " + label,
-                   fontsize=12)
-    ax1.set_xlabel(r"Flare Length (days)")
-    # ax1.set_xscale("log")
-    # ax1.set_ylim(0.95 * min([min(x) for x in s]),
-    #              1.1 * max([max(x) for x in s]))
+        label = ["", "(Livetime-adjusted)"][j]
 
-    plt.title("Flare in " + str(int(max_window)) + " day window")
+        ax1.grid(True, which='both')
+        # ax1.semilogy(nonposy='clip')
+        ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$]", fontsize=12)
+        ax1.set_xlabel(r"Flare Length (days)")
+        # ax1.set_xscale("log")
+        ax1.set_ylim(0.95 * min([min(x) for x in y]),
+                     1.1 * max([max(x) for x in y]))
 
-    ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
-    plt.savefig(plot_output_dir(name) + "/flare_vs_box" + label + ".pdf")
-    plt.close()
+        plt.title("Flare in " + str(int(max_window)) + " day window")
+
+        ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+        plt.savefig(plot_output_dir(name) + "/flare_vs_box" + label + "_" +
+                    ["sens", "disc"][k] + ".pdf")
+        plt.close()

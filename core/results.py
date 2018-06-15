@@ -70,6 +70,7 @@ class ResultsHandler:
         self.find_sensitivity()
         self.find_disc_potential()
 
+
     def clean_merged_data(self):
         try:
             for f in os.listdir(self.merged_dir):
@@ -189,7 +190,8 @@ class ResultsHandler:
         for scale in x:
             print scale,
             ts_array = np.array(self.results[scale]["TS"])
-            frac = float(len(ts_array[ts_array > bkg_median])) / (float(len(ts_array)))
+            frac = float(len(ts_array[ts_array > bkg_median])) / (float(len(
+                ts_array)))
             print "Fraction of overfluctuations is", "{0:.2f}".format(frac),
             print "(", len(ts_array), ")"
 
@@ -258,7 +260,7 @@ class ResultsHandler:
         bkg_ts = bkg_dict["TS"]
 
         disc_threshold = plot_background_ts_distribution(bkg_ts, ts_path,
-                                                         self.negative_n_s)
+                                                         flare=self.flare)
         bkg_median = np.median(bkg_ts)
         x = sorted(self.results.keys())
         y = []
@@ -319,7 +321,8 @@ class ResultsHandler:
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = self.plot_dir + "ts_distributions/" + str(scale) + ".pdf"
-        plot_background_ts_distribution(ts_array, ts_path, self.negative_n_s)
+        plot_background_ts_distribution(ts_array, ts_path,
+                                        flare=self.flare)
 
         param_path = self.plot_dir + "params/" + str(scale) + ".pdf"
 
@@ -341,7 +344,7 @@ class ResultsHandler:
             ts_array = np.array(self.results[scale][source]["TS"])
             ts_path = self.plot_dir + source + "/ts_distributions/" + str(
                 scale) + ".pdf"
-            plot_background_ts_distribution(ts_array, ts_path)
+            plot_background_ts_distribution(ts_array, ts_path, flare=self.flare)
 
             param_path = self.plot_dir + source + "/params/" + str(scale) + \
                          ".pdf"

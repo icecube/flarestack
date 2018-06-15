@@ -145,14 +145,18 @@ class LLH(SoB):
         else:
             SoB_energy_cache = None
 
-        n_mask = np.zeros(len(self.sources))
+        n_mask = np.ones(len(data), dtype=np.bool)
 
-        for i, source in enumerate(self.sources):
+        for i, source in enumerate(np.sort(self.sources, order="Distance")):
 
             s_mask = self.select_spatially_coincident_data(data, [source])
 
+            # print np.sum(n_mask)
+            n_mask *= ~s_mask
+            # print np.sum(n_mask)
+            # print np.sum(s_mask)
             coincident_data = data[s_mask]
-            n_mask[i] = np.sum(s_mask)
+            # n_mask[i] = np.sum(s_mask)
 
             if len(coincident_data) > 0:
 
@@ -177,15 +181,22 @@ class LLH(SoB):
 
                     SoB_energy_cache.append(energy_cache)
 
+            # print n_mask
+
+        n_mask = np.sum(~n_mask)
+
+        SoB_spacetime = np.array(SoB_spacetime)
+
         def test_statistic(params, weights):
+
             return self.calculate_test_statistic(
-                params, weights, n_all, SoB_spacetime,
+                params, weights, n_all, n_mask, SoB_spacetime,
                 SoB_energy_cache)
 
         return test_statistic
 
     def calculate_test_statistic(self, params, weights,
-                                 n_all, SoB_spacetime,
+                                 n_all, n_mask, SoB_spacetime,
                                  SoB_energy_cache=None):
         """Calculates the test statistic, given the parameters. Uses numexpr
         for faster calculations.
@@ -200,12 +211,8 @@ class LLH(SoB):
             n_s = np.array(params[:-1])
             gamma = params[-1]
 
-            SoB_energy = np.array([self.estimate_energy_weights(gamma, x) for x
-                                in SoB_energy_cache])
-
-            # SoB_energy = [self.estimate_energy_weights(gamma,
-            #                                            SoB_energy_cache[0])]
-
+            SoB_energy = np.array([self.estimate_energy_weights(gamma, x)
+                                   for x in SoB_energy_cache])
         # If using energy information but with a fixed value of gamma,
         # sets the weights as equal to those for the provided gamma value.
         elif SoB_energy_cache is not None:
@@ -221,54 +228,46 @@ class LLH(SoB):
         # the season
         all_n_j = (n_s * weights).T
 
-        n_mask = np.array([len(x) for x in SoB_spacetime])
-
         x = 1. + ((all_n_j/n_all) * (SoB_energy * np.array(SoB_spacetime) -
                                      1.))[0]
-
-        # for i, y in enumerate(x):
-        #     if y > 0.:
-        #         pass
-        #     else:
-        #         print y
-        #         print all_n_j
-        #         print n_all
-        #         print SoB_energy[0][i]
-        #         print np.array(SoB_spacetime)[0][i]
-        #
-        #         raw_input("prompt")
-
-        # llh_value = np.sign(n_s[0]) * np.sum(
-        #     [np.log(max(y, -1e-10*np.sign(n_s[0]))) for y in x])
-
-        #
-        #
-        if np.sum(x <= 0.) > 0:
+        # print np.less_equal(x.all(), 0.)
+        if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
             llh_value = -50. - self.assume_background(
                 all_n_j, n_mask, n_all)
 
-            # print n_s, n_all, np.sign(n_s), x[x <= 0.]
-            #
-            # raw_input("prompt")
-
         else:
+
             llh_value = np.sum(
-                [np.log(y) for y in x])
+                [np.sum(np.log(y)) for y in x])
+            # print llh_value,
 
             llh_value += self.assume_background(
                 all_n_j, n_mask, n_all)
-
-        # print llh_value
-
-
-        # raw_input("prompt")
-
-        # if llh_value > 0:
-        #     print n_s, llh_value
-        #     raw_input("prompt")
+            # print llh_value
 
         # Definition of test statistic
         return 2. * llh_value
+
+    def assume_background(self, n_s, n_coincident, n_all):
+        """To save time with likelihood calculation, it can be assumed that
+        all events defined as "non-coincident", because of distance in space
+        and time to the source, are in fact background events. This is
+        equivalent to setting S=0 for all non-coincident events. IN this
+        case, the likelihood can be calculated as the product of the number
+        of non-coincident events, and the likelihood of an event which has S=0.
+
+        :param n_s: Array of expected number of events
+        :param n_coincident: Number of events that were not assumed to have S=0
+        :param n_all: The total number of events
+        :return: Log Likelihood value for the given
+        """
+
+        # print n_all, n_coincident, n_s, np.sum(n_s[0]), np.log1p(-np.sum(n_s) /
+        #                                                     n_all)
+        #
+        # print (n_all - n_coincident) * np.log1p((-np.sum(n_s) / n_all))
+
+        return (n_all - n_coincident) * np.sum(np.log1p((-n_s / n_all)))
 
 # ==============================================================================
 # Signal PDF
@@ -420,22 +419,6 @@ class LLH(SoB):
             # raw_input("prompt")
 
         return val
-
-    def assume_background(self, n_s, n_coincident, n_all):
-        """To save time with likelihood calculation, it can be assumed that
-        all events defined as "non-coincident", because of distance in space
-        and time to the source, are in fact background events. This is
-        equivalent to setting S=0 for all non-coincident events. IN this
-        case, the likelihood can be calculated as the product of the number
-        of non-coincident events, and the likelihood of an event which has S=0.
-
-        :param n_s: Array of expected number of events
-        :param n_coincident: Number of events that were not assumed to have S=0
-        :param n_all: The total number of events
-        :return: Log Likelihood value for the given
-        """
-
-        return (n_all - n_coincident) * np.sum(np.log1p((-n_s / n_all)))
 
 
 class FlareLLH(LLH):

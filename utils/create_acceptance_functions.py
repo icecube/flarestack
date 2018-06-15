@@ -30,12 +30,22 @@ def make_acceptance_f(all_data):
         acc = np.ones((len(dec_range), len(gamma_vals)), dtype=np.float)
 
         for i, dec in enumerate(dec_range):
-            # Sets a declination band 5 degrees above and below the source
-            min_dec = dec_edges[i]
-            max_dec = dec_edges[i+1]
 
+            # Sets half width of band
+            dec_width = np.deg2rad(5.)
+
+            # Sets a declination band 5 degrees above and below the source
+            min_dec = max(-np.pi / 2., dec - dec_width)
+            max_dec = min(np.pi / 2., dec + dec_width)
             # Gives the solid angle coverage of the sky for the band
             omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+
+            # # Sets a declination band 5 degrees above and below the source
+            # min_dec = dec_edges[i]
+            # max_dec = dec_edges[i+1]
+            #
+            # # Gives the solid angle coverage of the sky for the band
+            # omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
 
             band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
                                            np.less(mc["trueDec"], max_dec))

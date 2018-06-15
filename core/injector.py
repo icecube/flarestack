@@ -72,6 +72,7 @@ class Injector:
         :return: omega: Solid Angle of the chosen band
         :return: band_mask: The mask which removes events outside band
         """
+
         # Sets half width of band
         dec_width = np.deg2rad(5.)
 
@@ -128,8 +129,13 @@ class Injector:
             # All injection fluxes are given in terms of k, equal to 1e-9
             inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
 
+            dist_weight = source["Distance"]**-2/np.mean(
+                self.sources["Distance"]**-2)
+
+            # dist_weight = source["Distance"]**-2
+
             # Calculate the fluence, using the effective injection time.
-            fluence = inj_flux * eff_inj_time * (source["Distance"] ** -2)
+            fluence = inj_flux * eff_inj_time * dist_weight
 
             # Recalculates the oneweights to account for the declination
             # band, and the relative distance of the sources.
@@ -153,7 +159,13 @@ class Injector:
             else:
                 n_s = int(n_inj)
 
-            # print "Expected", n_inj, "events, injecting", n_s, "events."
+            # print source["Distance"]**-2, \
+            #     np.sum((self.mc_weights[band_mask] / omega)), \
+            #     eff_inj_time
+
+
+            # print "Expecting", n_inj, "Injecting", n_s
+            # print source
 
             if n_s < 1:
                 continue
@@ -190,6 +202,7 @@ class Injector:
                 (sig_events, sim_ev[list(self._raw_data.dtype.names)]))
 
         # print "Expecting", n_tot_exp, "Injecting", len(sig_events)
+        # raw_input("prompt")
 
         return sig_events
 
