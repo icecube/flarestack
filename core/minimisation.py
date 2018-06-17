@@ -57,6 +57,18 @@ class MinimisationHandler:
         except KeyError:
             self.brute = False
 
+        try:
+            self.fit_weights = self.llh_kwargs["Fit Weights?"]
+        except KeyError:
+            self.fit_weights = False
+
+        print "Fit Weights?", self.fit_weights
+
+        if self.fit_weights:
+            self.run_trial = self.run_fit_weight_trial
+        else:
+            self.run_trial = self.run_fixed_weight_trial
+
         # For each season, we create an independent injector and a
         # likelihood, using the source list along with the sets of energy/time
         # PDFs provided in inj_kwargs and llh_kwargs.
@@ -187,40 +199,6 @@ class MinimisationHandler:
         with open(file_name, "wb") as f:
             Pickle.dump(inj_dict, f)
 
-    # def clean_pickles(self):
-    #     """This function will remove all pre-existing pickle files in the
-    #     output directory, to prevent contamination if the minimisation
-    #     handler arguments are run with different arguments. By default,
-    #     it is not run. The argument cleanup=True must be provided for this
-    #     function to be called. In any case, the user is required to confirm
-    #     the deletion.
-    #     """
-    #
-    #     cmd = "rm -rf " + self.pickle_output_dir + "*"
-    #
-    #     print "All saved pickle data will be removed, using the following " \
-    #           "command:"
-    #     print
-    #     print "\t", cmd
-    #     print
-    #     print "Is this correct? (y/n)"
-    #
-    #     x = ""
-    #
-    #     while x not in ["y", "n"]:
-    #         x = raw_input("")
-    #
-    #     if x == "y":
-    #         os.system(cmd)
-
-    # def clean_true_param_values(self):
-    #     inj_dir = inj_dir_name(self.name)
-    #     names = os.listdir(inj_dir)
-    #
-    #     for name in names:
-    #         path = inj_dir + name
-    #         os.remove(path)
-
     def iterate_run(self, scale=1, n_steps=5, n_trials=50):
 
         scale_range = np.linspace(0., scale, n_steps)[1:]
@@ -245,23 +223,10 @@ class MinimisationHandler:
         print "Generating", n_trials, "trials!"
 
         for i in range(int(n_trials)):
-            f = self.run_trial(scale)
+            raw_f = self.run_trial(scale)
 
-            # seed = scipy.optimize.brute(f, ranges=self.bounds)
-            #
-            # print seed
-            # raw_input("prompt")
-
-            # if "Gamma" in self.param_names:
-            #     con = (
-            #         {'type': 'ineq', 'fun': lambda x: constraint(x)},
-            #         {'type': 'ineq', 'fun': lambda x: x[1] - 1.},
-            #         {'type': 'ineq', 'fun': lambda x: 4. - x[1]}
-            #     )
-            # else:
-            #     con = {
-            #         {'type': 'ineq', 'fun': lambda x: constraint(x)}
-            #     }
+            def llh_f(scale):
+                return -np.sum(raw_f(scale))
 
             if self.brute:
 
@@ -269,34 +234,42 @@ class MinimisationHandler:
                     (max(x, -30), min(y, 30)) for (x, y) in self.bounds]
 
                 start_seed = scipy.optimize.brute(
-                    f, ranges=brute_range, finish=None, Ns=40)
+                    llh_f, ranges=brute_range, finish=None, Ns=40)
             else:
                 start_seed = self.p0
 
             res = scipy.optimize.minimize(
-                f, start_seed, bounds=self.bounds)
+                llh_f, start_seed, bounds=self.bounds)
 
             flag = res.status
             vals = res.x
-            ts = -res.fun
+            # ts = -res.fun
             # If the minimiser does not converge, repeat with brute force
             if flag == 1:
 
-                vals = scipy.optimize.brute(f, ranges=self.bounds,
+                vals = scipy.optimize.brute(llh_f, ranges=self.bounds,
                                             finish=None)
-                ts = -f(vals)
-
-                # except KeyError:
-                #     res = None
+                # ts = -llh_f(vals)
 
             if res is not None:
-                # vals = res.x
-                # ts = -res.fun
 
                 for j, val in enumerate(list(vals)):
                     param_vals[j].append(val)
 
-                ts_vals.append(float(ts) * np.sign(vals[0]))
+                best_llh = raw_f(vals)
+
+                if self.fit_weights:
+
+                    ts = np.sum([
+                        llh_val * np.sign(vals[j])
+                        for j, llh_val in enumerate(best_llh)])
+
+                else:
+                    ts = np.sign(vals[0]) * np.sum(best_llh)
+                    # print best_llh, vals[0], ts
+                    # raw_input("prompt")
+
+                ts_vals.append(ts)
                 flags.append(flag)
 
         mem_use = str(
@@ -336,7 +309,7 @@ class MinimisationHandler:
 
         self.dump_injection_values(scale)
 
-    def run_trial(self, scale=1.):
+    def run_fixed_weight_trial(self, scale=1.):
 
         llh_functions = dict()
         n_all = dict()
@@ -375,31 +348,13 @@ class MinimisationHandler:
                 acc = np.array(acc).T
 
                 w = acc * dist_weight * np.array(time_weights)
-                acc = np.array(acc).T
-                # print acc, dist_weight, time_weights
-                # print w
-                # print src
-                # raw_input("prompt")
-
-                # print acc, self.sources["Distance"] ** -2
 
                 w = w[:, np.newaxis]
 
                 for j, ind_w in enumerate(w.T):
                     weights_matrix[i][j] = ind_w
 
-                # print weights_matrix
-
             weights_matrix /= np.sum(weights_matrix)
-
-            # print weights_matrix
-            # #
-            # # print self.sources.dtype.names
-            # #
-            # for i, row in enumerate(weights_matrix.T):
-            #     print "Source", i, src[i], np.sum(row)
-            #
-            # raw_input("prompt")
 
             # Having created the weight matrix, loops over each season of
             # data and evaluates the TS function for that season
@@ -411,46 +366,71 @@ class MinimisationHandler:
                 ts_val += f(params, w)
                 # print ts_val
 
-            # raw_input("prompt")
+            return ts_val
 
-            return -ts_val
+        return f_final
 
-        # def constraint(params):
-        #     weights_matrix = np.ones([len(self.seasons), len(self.sources)])
-        #
-        #     for i, season in enumerate(self.seasons):
-        #         llh = self.llhs[season["Name"]]
-        #         acc = llh.acceptance(self.sources, params)
-        #
-        #         time_weights = []
-        #
-        #         for source in self.sources:
-        #             time_weights.append(llh.time_pdf.effective_injection_time(
-        #                 source))
-        #
-        #         w = acc * (self.sources["Distance"] ** -2) * np.array(
-        #             time_weights)
-        #
-        #         w = w[:, np.newaxis]
-        #
-        #         for j, ind_w in enumerate(w):
-        #             weights_matrix[i][j] = ind_w
-        #
-        #     weights_matrix /= np.sum(weights_matrix)
-        #
-        #     satisfy = True
-        #
-        #     for i, season in enumerate(sorted(self.seasons)):
-        #         n_s = weights_matrix[i] * params[0]
-        #
-        #         n_max = n_all[season["Name"]]
-        #
-        #         if abs(n_s) < n_max:
-        #             pass
-        #         else:
-        #             satisfy = False
-        #
-        #     return satisfy
+    def run_fit_weight_trial(self, scale):
+        llh_functions = dict()
+        n_all = dict()
+
+        src = np.sort(self.sources, order="Distance")
+        dist_weight = src["Distance"] ** -2
+
+        for season in self.seasons:
+            dataset = self.injectors[season["Name"]].create_dataset(scale)
+            llh_f = self.llhs[season["Name"]].create_llh_function(dataset)
+            llh_functions[season["Name"]] = llh_f
+            n_all[season["Name"]] = len(dataset)
+
+        def f_final(params):
+
+            # Creates a matrix fixing the fraction of the total signal that
+            # is expected in each Source+Season pair. The matrix is
+            # normalised to 1, so that for a given total n_s, the expectation
+            # for the ith season for the jth source is given by:
+            #  n_exp = n_s * weight_matrix[i][j]
+
+            weights_matrix = np.ones([len(self.seasons), len(self.sources)])
+
+            for i, season in enumerate(self.seasons):
+                llh = self.llhs[season["Name"]]
+                acc = []
+
+                time_weights = []
+
+                for source in src:
+                    time_weights.append(
+                        llh.time_pdf.effective_injection_time(
+                            source))
+                    acc.append(llh.acceptance(source, params))
+
+                acc = np.array(acc).T
+
+                w = acc * dist_weight * np.array(time_weights)
+
+                w = w[:, np.newaxis]
+
+                for j, ind_w in enumerate(w.T):
+                    weights_matrix[i][j] = ind_w
+
+            for row in weights_matrix.T:
+                row /= np.sum(row)
+
+            # weights_matrix /= np.sum(weights_matrix)
+
+            # Having created the weight matrix, loops over each season of
+            # data and evaluates the TS function for that season
+
+            ts_val = 0
+            for i, (name, f) in enumerate(
+                    sorted(llh_functions.iteritems())):
+                w = weights_matrix[i][:, np.newaxis]
+                # print i, name, w, ts_val,
+                ts_val += f(params, w)
+                # print ts_val
+
+            return ts_val
 
         return f_final
 
@@ -619,11 +599,11 @@ class MinimisationHandler:
                                     season_dict["Start (MJD)"])
                                 flare_length = t_e - t_s
 
-                                # t_s_min = max(llh.time_pdf.sig_t0(source),
-                                #               season_dict["Start (MJD)"])
-                                # t_e_max = min(llh.time_pdf.sig_t1(source),
-                                #               season_dict["End (MJD)"])
-                                # max_flare = t_e_max - t_s_min
+                                t_s_min = max(llh.time_pdf.sig_t0(source),
+                                              season_dict["Start (MJD)"])
+                                t_e_max = min(llh.time_pdf.sig_t1(source),
+                                              season_dict["End (MJD)"])
+                                max_flare = t_e_max - t_s_min
 
                                 # n_all = len(data[~full_flare_veto])
                                 n_all = np.sum(~np.logical_or(
@@ -636,8 +616,8 @@ class MinimisationHandler:
                                 else:
                                     print t_start, t_end, t_s, t_e, max_flare
 
-                                # marginalisation = flare_length / max_flare
-                                marginalisation = 1.
+                                marginalisation = flare_length / max_flare
+                                # marginalisation = 1.
 
                                 llh_kwargs = dict(self.llh_kwargs)
                                 llh_kwargs["LLH Time PDF"] = None
@@ -741,51 +721,73 @@ class MinimisationHandler:
 
     def scan_likelihood(self, scale=1):
 
-        g = self.run_trial(scale)
+        f = self.run_trial(scale)
 
-        p0 = self.p0
+        def g(x):
+            return -np.sum(f(x))
+        #
+        # g = self.run_trial(scale)
+        #
+        res = scipy.optimize.minimize(
+            g, self.p0, bounds=self.bounds)
 
-        n_range = np.linspace(-50., 50, 1e3)
-        y = []
+        print res.x
+        #
+        # raw_input("prompt")
 
-        for n in n_range:
+        plt.figure(figsize=(8, 4 + 2*len(self.p0)))
 
-            new = g([n] + p0[1:])
+        for i, bounds in enumerate(self.bounds):
+            plt.subplot(len(self.p0), 1, 1 + i)
+
+            best = list(res.x)
+
+            n_range = np.linspace(max(bounds[0], -100),
+                                  min(bounds[1], 100), 1e2)
+            y = []
+
+            for n in n_range:
+
+                best[i] = n
+
+                new = g(best)
+                try:
+                    y.append(new[0][0])
+                except IndexError:
+                    y.append(new)
+
+            plt.plot(n_range, y)
+            plt.xlabel(self.param_names[i])
+
+            print "PARAM:", self.param_names[i]
+            min_y = np.min(y)
+            print "Minimum value of", min_y,
+
+            min_index = y.index(min_y)
+            min_n = n_range[min_index]
+            print "at", min_n
+
+            l_y = np.array(y[:min_index])
             try:
-                y.append(new[0][0])
-            except IndexError:
-                y.append(new)
+                l_y = min(l_y[l_y > (min_y + 0.5)])
+                l_lim = n_range[y.index(l_y)]
+            except ValueError:
+                l_lim = 0
 
-        plt.figure()
-        plt.plot(n_range, y)
+            u_y = np.array(y[min_index:])
+            try:
+                u_y = min(u_y[u_y > (min_y + 0.5)])
+                u_lim = n_range[y.index(u_y)]
+            except ValueError:
+                u_lim = ">" + str(max(n_range))
+
+            print "One Sigma interval between", l_lim, "and", u_lim
+
         path = plot_output_dir(self.name) + "llh_scan_" + str(scale) + ".pdf"
         plt.savefig(path)
         plt.close()
 
         print "Saved to", path
-
-        min_y = np.min(y)
-        print "Minimum value of", min_y,
-
-        min_index = y.index(min_y)
-        min_n = n_range[min_index]
-        print "at", min_n
-
-        l_y = np.array(y[:min_index])
-        try:
-            l_y = min(l_y[l_y > (min_y + 0.5)])
-            l_lim = n_range[y.index(l_y)]
-        except ValueError:
-            l_lim = 0
-
-        u_y = np.array(y[min_index:])
-        try:
-            u_y = min(u_y[u_y > (min_y + 0.5)])
-            u_lim = n_range[y.index(u_y)]
-        except ValueError:
-            u_lim = ">" + str(max(n_range))
-
-        print "One Sigma interval between", l_lim, "and", u_lim
 
     def check_flare_background_rate(self):
 

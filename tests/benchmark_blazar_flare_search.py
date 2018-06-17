@@ -168,7 +168,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
     src_res[label] = res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 sens_livetime = [[] for _ in src_res]
@@ -219,28 +219,31 @@ for j, s in enumerate([sens, sens_livetime]):
 
     d = [disc_pots, disc_pots_livetime][j]
 
-    plt.figure()
-    ax1 = plt.subplot(111)
+    for k, y in enumerate([s, d]):
 
-    cols = ["r", "g", "b"]
+        plt.figure()
+        ax1 = plt.subplot(111)
 
-    for i, f in enumerate(fracs):
-        plt.plot(f, s[i], label=labels[i], color=cols[i])
-        plt.plot(f, d[i], linestyle="--", color=cols[i])
+        cols = ["r", "g", "b"]
+        linestyle = ["-", "--"][k]
 
-    label = ["", "(Livetime-adjusted)"][j]
+        for i, f in enumerate(fracs):
+            plt.plot(f, y[i], label=labels[i], linestyle=linestyle,
+                     color=cols[i])
 
-    ax1.grid(True, which='both')
-    ax1.semilogy(nonposy='clip')
-    ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$] " + label,
-                   fontsize=12)
-    ax1.set_xlabel(r"Flare Length (days)")
-    # ax1.set_xscale("log")
-    # ax1.set_ylim(0.95 * min([min(x) for x in s]),
-    #              1.1 * max([max(x) for x in s]))
+        label = ["", "(Livetime-adjusted)"][j]
 
-    plt.title("Flare in " + str(int(max_window)) + " day window")
+        ax1.grid(True, which='both')
+        # ax1.semilogy(nonposy='clip')
+        ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$]", fontsize=12)
+        ax1.set_xlabel(r"Flare Length (days)")
+        # ax1.set_xscale("log")
+        ax1.set_ylim(0.95 * min([min(x) for x in y]),
+                     1.1 * max([max(x) for x in y]))
 
-    ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
-    plt.savefig(plot_output_dir(name) + "/flare_vs_box" + label + ".pdf")
-    plt.close()
+        plt.title("Flare in " + str(int(max_window)) + " day window")
+
+        ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+        plt.savefig(plot_output_dir(name) + "/flare_vs_box" + label + "_" +
+                    ["sens", "disc"][k] + ".pdf")
+        plt.close()

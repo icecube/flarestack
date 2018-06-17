@@ -12,7 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
 
-name = "analyses/tde/compare_flare_to_box_stacked/"
+name = "analyses/tde/compare_fitting_weights/"
 
 analyses = dict()
 
@@ -47,41 +47,49 @@ llh_time = {
 
 llh_energy = injection_energy
 
-no_flare = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": False,
-    "Flare Search?": False,
-    "Fit Negative n_s?": False
-}
+# fit_weights_neg = {
+#     "LLH Energy PDF": llh_energy,
+#     "LLH Time PDF": llh_time,
+#     "Fit Gamma?": True,
+#     "Fit Negative n_s?": True,
+#     "Fit Weights?": True
+# }
+#
+# fixed_weights_neg = {
+#     "LLH Energy PDF": llh_energy,
+#     "LLH Time PDF": llh_time,
+#     "Fit Gamma?": True,
+#     "Fit Negative n_s?": True,
+#     "Fit Weights?": False
+# }
 
-no_flare_negative = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    # "Fit Gamma?": True,
-    "Flare Search?": False,
-    "Fit Negative n_s?": True
-}
-
-flare_with_energy = {
+fit_weights = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
-    "Flare Search?": True,
-    "Fit Negative n_s?": False
+    "Fit Negative n_s?": True,
+    # "Fit Weights?": True
 }
+
+fixed_weights = {
+    "LLH Energy PDF": llh_energy,
+    "LLH Time PDF": llh_time,
+    "Fit Gamma?": True,
+    "Fit Negative n_s?": True,
+    "Fit Weights?": False
+}
+
 
 src_res = dict()
 
-lengths = np.array(sorted([0.05] + list(np.linspace(0.0, 1.0, 11)))[2:]) * \
+lengths = np.array(sorted([0.05] + list(np.linspace(0.0, 1.0, 3)))[1:]) * \
                  max_window
 
 # lengths = [0.5 * max_window]
 
-for i, llh_kwargs in enumerate([no_flare, no_flare_negative]):
-
-    label = ["Time-Integrated", "Time-Integrated (negative n_s)", "Flare"][i]
-    f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
+for i, llh_kwargs in enumerate([fit_weights, fixed_weights]):
+    label = ["Fit Weights", "Fixed Weights"][i]
+    f_name = ["fit_weights", "fixed_weights"][i]
 
     flare_name = name + f_name + "/"
 
@@ -102,6 +110,8 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative]):
 
         scale = flux_to_k(skylab_7year_sensitivity(np.sin(0.))
                           * (25 * max_window / flare_length))
+
+        print scale
 
         mh_dict = {
             "name": full_name,
@@ -136,16 +146,18 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative]):
 
         print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        rd.submit_to_cluster(pkl_file, n_jobs=2000)
+        # rd.submit_to_cluster(pkl_file, n_jobs=2000)
         #
-        # mh = MinimisationHandler(mh_dict)
-        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=100)
+        mh = MinimisationHandler(mh_dict)
+        mh.scan_likelihood(scale=100)
+        raw_input("done")
+        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=10)
         # mh.clear()
         res[flare_length] = mh_dict
 
     src_res[label] = res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 sens_livetime = [[] for _ in src_res]

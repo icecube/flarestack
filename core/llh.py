@@ -226,24 +226,48 @@ class LLH(SoB):
 
         # Calculates the expected number of signal events for each source in
         # the season
-        all_n_j = (n_s * weights).T
+        all_n_j = (n_s * weights.T[0])
+        #
+        # x = 1. + ((all_n_j/n_all) * (SoB_energy * SoB_spacetime.T  -
+        #                              1.))
 
-        x = 1. + ((all_n_j/n_all) * (SoB_energy * np.array(SoB_spacetime) -
-                                     1.))[0]
+        x = np.array([1. + (n_j/n_all) * (
+                SoB_energy[i] * SoB_spacetime[i] - 1.)
+                for i, n_j in enumerate(all_n_j)])
+
+        # print x[0][:10]
+        # print SoB_energy[0][:10], SoB_energy[0].shape
+        # print SoB_energy_cache[0][:10]
+        # print SoB_spacetime[0][:10]
+
         # print np.less_equal(x.all(), 0.)
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
-            llh_value = -50. - self.assume_background(
-                all_n_j, n_mask, n_all)
+            # llh_value = -50. - self.assume_background(
+            #     all_n_j, n_mask, n_all)
+            llh_value = -50.
 
         else:
 
-            llh_value = np.sum(
-                [np.sum(np.log(y)) for y in x])
+            # llh_value = np.sum(
+            #     [np.sum(np.log(y)) for y in x])
+
+            llh_value = np.array([np.sum(np.log(y)) for y in x])
+
             # print llh_value,
+            #
+            # print "adding"
 
             llh_value += self.assume_background(
                 all_n_j, n_mask, n_all)
             # print llh_value
+            #
+            # raw_input("prompt")
+
+        # print self.alt_calculate_test_statistic(params, weights,
+        #                              n_all, n_mask, SoB_spacetime,
+        #                              SoB_energy_cache)
+        # print 2 * llh_value
+        # raw_input("compare")
 
         # Definition of test statistic
         return 2. * llh_value
@@ -261,13 +285,7 @@ class LLH(SoB):
         :param n_all: The total number of events
         :return: Log Likelihood value for the given
         """
-
-        # print n_all, n_coincident, n_s, np.sum(n_s[0]), np.log1p(-np.sum(n_s) /
-        #                                                     n_all)
-        #
-        # print (n_all - n_coincident) * np.log1p((-np.sum(n_s) / n_all))
-
-        return (n_all - n_coincident) * np.sum(np.log1p((-n_s / n_all)))
+        return (n_all - n_coincident) * np.log1p(-n_s / n_all)
 
 # ==============================================================================
 # Signal PDF

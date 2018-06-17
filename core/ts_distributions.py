@@ -270,39 +270,40 @@ def plot_background_ts_distribution(ts_array, path, flare=False):
 
     if flare:
 
-        frac_over = 1.
-        frac_under = 0.
+        frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
+        frac_under = 1. - frac_over
 
-        n_bins = 20
+        n_bins = 100
 
         plt.figure()
-        plt.hist(ts_array,
-                 bins=20, lw=2, histtype='step',
-                 color='black',
-                 weights=weights,
-                 )
+        plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
+                 bins=n_bins, lw=2, histtype='step',
+                 color=['black', "grey"],
+                 label=['TS > 0', "TS <= 0"],
+                 normed=True,
+                 stacked=True)
 
-        five_sigma = raw_five_sigma
+        five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
 
-        # chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
-        chi2 = Chi2_LeftTruncated(ts_array)
-        df = chi2.ndof
-        loc = chi2.loc
-        scale = chi2.scale
+        chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
+
+        df = chi2._f.args[0]
+        loc = chi2._f.args[1]
+        scale = chi2._f.args[2]
 
     else:
 
         frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
         frac_under = 1. - frac_over
 
-        n_bins = 20
+        n_bins = 100
 
         plt.figure()
         plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
-                 bins=20, lw=2, histtype='step',
+                 bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
                  label=['TS > 0', "TS <= 0"],
-                 weights=[weights[mask], weights[:np.sum(~mask)]],
+                 normed=True,
                  stacked=True)
 
         five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
@@ -310,12 +311,10 @@ def plot_background_ts_distribution(ts_array, path, flare=False):
         chi2 = Chi2_one_side(ts_array[ts_array > 0.])
 
         df = chi2._f.args[0]
-        # loc = chi2._f.args[1]
         loc = 0.
-        try:
-            scale = chi2._f.args[2]
-        except IndexError:
-            scale = 1.
+        scale = 1.
+        # except IndexError:
+        #     scale = 1.
     #
     # print chi2
     # raw_input("prompt")
@@ -350,7 +349,7 @@ def plot_background_ts_distribution(ts_array, path, flare=False):
     yrange = min(1. / (float(len(ts_array)) * n_bins),
                  scipy.stats.chi2.pdf(disc_potential, df, loc, scale))
 
-    plt.ylim((0.5 * yrange, 1.))
+    # plt.ylim((0.5 * yrange, max()))
     plt.yscale("log")
     # plt.grid()
     plt.xlabel(r"Test Statistic ($\lambda$)")
