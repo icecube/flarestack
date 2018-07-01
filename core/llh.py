@@ -63,7 +63,7 @@ class LLH():
 
             self.SoB_spline_2Ds = load_spline(self.season)
 
-            print "Loaded", len(self.SoB_spline_2Ds), "Splines."
+            # print "Loaded", len(self.SoB_spline_2Ds), "Splines."
 
         # If a time PDF is to be used, a dictionary must be provided in kwargs
         time_dict = kwargs["LLH Time PDF"]

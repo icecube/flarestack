@@ -214,8 +214,6 @@ def load_spline(season):
 def load_bkg_spatial_spline(season):
     path = bkg_spline_path(season)
 
-    print "Loading from", path
-
     with open(path) as f:
         res = Pickle.load(f)
 

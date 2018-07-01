@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from shared import name_pickle_output_dir, plot_output_dir, k_to_flux, \
     fit_setup, inj_dir_name
 from ts_distributions import plot_background_ts_distribution, plot_fit_results
+from utils.neutrino_astronomy import calculate_astronomy
 
 
 class ResultsHandler:
@@ -16,7 +17,7 @@ class ResultsHandler:
     def __init__(self, name, llh_kwargs, cat_path, show_inj=False,
                  cleanup=False):
 
-        sources = np.load(cat_path)
+        self.sources = np.sort(np.load(cat_path), order="Distance (Mpc)")
 
         self.name = name
 
@@ -44,7 +45,7 @@ class ResultsHandler:
         #
         # print "negative_ns", self.negative_n_s
 
-        p0, bounds, names = fit_setup(llh_kwargs, sources, self.flare)
+        p0, bounds, names = fit_setup(llh_kwargs, self.sources, self.flare)
         self.param_names = names
         self.bounds = bounds
         self.p0 = p0
@@ -71,6 +72,31 @@ class ResultsHandler:
         except RuntimeError:
             pass
 
+    def astro_values(self, e_pdf_dict):
+        """Function to convert the values calculated for sensitivity and
+        discovery potential, which are given in terms of flux at the
+        detector, to physical quantities for a source of mean luminosity. The
+        fluxes are integrated over an energy range, either specified in
+        e_pdf_dict, or by default between 100GeV and 10PeV. They are then
+        scaled by the luminosity distance to source, giving the mean
+        luminosity of the sources in the catalogue. The assumption is that
+        the sources are standard candles, so this value would be the same for
+        each source, and is thus only calculated once. To convert further from
+        this mean luminosity to the luminosity of a specific source,
+        the values must be multiplied by the "relative injection weight" of
+        the source, which has a mean of 1.
+
+        :param e_pdf_dict: Dictionary containing energy PDF information
+        :return: Values for the neutrino luminosity sensitivity and
+        discovery potential
+        """
+
+        astro_sens = calculate_astronomy(self.sensitivity, e_pdf_dict,
+                                         self.sources)
+        astro_disc = calculate_astronomy(self.disc_potential, e_pdf_dict,
+                                         self.sources)
+
+        return astro_sens, astro_disc
 
     def clean_merged_data(self):
         try:
@@ -287,7 +313,7 @@ class ResultsHandler:
             return value
 
         [best_a, best_b] = scipy.optimize.curve_fit(
-            f, x, y,  p0=[0.001, 0.])[0]
+            f, x, y,  p0=[1./max(x), 0.])[0]
 
         def best_f(x):
             return f(x, best_a, best_b)
