@@ -3,19 +3,67 @@ import astro
 import numpy as np
 import scipy.interpolate
 import cPickle as Pickle
-from signal_over_background import SoB
+# from signal_over_background import SoB
 from shared import acceptance_path
 from time_PDFs import TimePDF
+from utils.make_SoB_splines import load_spline, load_bkg_spatial_spline
+from data.tools import data_loader
+from energy_PDFs import EnergyPDF
 
 
-class LLH(SoB):
+class LLH():
     """General  LLH class.
     """
 
     def __init__(self, season, sources, splines=None, **kwargs):
         # print "Initialising LLH for", season["Name"]
-        SoB.__init__(self, season, splines, **kwargs)
+        # SoB.__init__(self, season, splines, **kwargs)
+        self.season = season
         self.sources = sources
+
+        # Bins for sin declination (not evenly spaced)
+        self.sin_dec_bins = self.season["sinDec bins"]
+
+        # If provided in kwargs, sets whether the spectral index (gamma)
+        # should be included as a fit parameter. If this is not specified,
+        # the default is to not fit gamma.
+        try:
+            self.fit_gamma = kwargs["Fit Gamma?"]
+        except KeyError:
+            self.fit_gamma = False
+
+        e_pdf_dict = kwargs["LLH Energy PDF"]
+
+        if e_pdf_dict is not None:
+            self.energy_pdf = EnergyPDF.create(e_pdf_dict)
+            # Bins for energy Log(E/GeV)
+            self.energy_bins = np.linspace(1., 10., 40 + 1)
+
+            # Sets precision for energy SoB
+            self.precision = .1
+
+            # If there is an LLH energy pdf specified, uses that gamma as the
+            # default for weighting the detector acceptance.
+            self.default_gamma = self.energy_pdf.gamma
+
+        # Checks gamma is not being fit without an energy PDF provided
+        elif self.fit_gamma:
+            raise Exception("LLH has been set to fit gamma, "
+                            "but no Energy PDF has been provided")
+
+        # If gamma is not a fit parameter, and no energy PDF has been
+        # provided, sets a default value of gamma = 2.
+        else:
+            self.default_gamma = 2.
+
+        self.bkg_spatial = load_bkg_spatial_spline(self.season)
+
+        if e_pdf_dict is not None:
+            print "Loading Log(Signal/Background) Splines."
+
+            self.SoB_spline_2Ds = load_spline(self.season)
+
+            print "Loaded", len(self.SoB_spline_2Ds), "Splines."
 
         # If a time PDF is to be used, a dictionary must be provided in kwargs
         time_dict = kwargs["LLH Time PDF"]
@@ -24,21 +72,15 @@ class LLH(SoB):
 
         self.acceptance_f = self.create_acceptance_function()
 
-    # def create_acceptance_function(self):
-    #     """Creates a 2D linear interpolation of the acceptance of the detector
-    #     for the given season, as a function of declination and gamma. Returns
-    #     this interpolation function.
-    #
-    #     :return: 2D linear interpolation
-    #     """
-    #     dec_bins = np.load(
-    #         self.season['aw_path'] + '_bins_dec.npy')
-    #     gamma_bins = np.load(
-    #         self.season['aw_path'] + '_bins_gamma.npy')
-    #     values = np.load(self.season['aw_path'] + '_values.npy')
-    #     f = scipy.interpolate.interp2d(
-    #         dec_bins, gamma_bins, values, kind='linear')
-    #     return f
+    def _around(self, value):
+        """Produces an array in which the precision of the value
+        is rounded to the nearest integer. This is then multiplied
+        by the precision, and the new value is returned.
+
+        :param value: value to be processed
+        :return: value after processed
+        """
+        return np.around(float(value) / self.precision) * self.precision
 
     def create_acceptance_function(self):
         """Creates a 2D linear interpolation of the acceptance of the detector

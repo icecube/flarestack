@@ -32,6 +32,7 @@ illustration_dir = plots_dir + "illustrations/"
 
 acc_f_dir = input_dir + "acceptance_functions/"
 SoB_spline_dir = input_dir + "SoB_splines/"
+bkg_spline_dir = input_dir + "bkg_splines/"
 
 skylab_ref_dir = input_dir + "skylab_reference/"
 
@@ -59,6 +60,11 @@ def acceptance_path(season):
 
 def SoB_spline_path(season):
     return SoB_spline_dir + season["Data Sample"] + "/" + \
+           season["Name"] + '.pkl'
+
+
+def bkg_spline_path(season):
+    return bkg_spline_dir + season["Data Sample"] + "/" + \
            season["Name"] + '.pkl'
 
 

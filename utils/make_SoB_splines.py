@@ -2,7 +2,7 @@ import numpy as np
 import os
 import scipy.interpolate
 import cPickle as Pickle
-from shared import gamma_precision, SoB_spline_path
+from shared import gamma_precision, SoB_spline_path, bkg_spline_path
 from core.energy_PDFs import PowerLaw
 from data.tools import data_loader
 
@@ -135,6 +135,28 @@ def create_2d_splines(exp, mc, sin_dec_bins):
     return splines
 
 
+def create_bkg_spatial_spline(exp, sin_dec_bins):
+    """Creates the spatial PDF for background.
+    Generates a histogram for the exp. distribution in sin declination.
+    Fits a spline function to the distribution, giving a spatial PDF.
+    Returns this spatial PDF.
+
+    :param exp: Experimental data (background)
+    :return: Background spline function
+    """
+    sin_dec_range = (np.min(sin_dec_bins), np.max(sin_dec_bins))
+    hist, bins = np.histogram(
+        exp['sinDec'], density=True, bins=sin_dec_bins, range=sin_dec_range)
+
+    bins = np.concatenate([bins[:1], bins, bins[-1:]])
+    hist = np.concatenate([hist[:1], hist, hist[-1:]])
+
+    bkg_spline = scipy.interpolate.InterpolatedUnivariateSpline(
+                            (bins[1:] + bins[:-1]) / 2.,
+                            np.log(hist), k=2)
+    return bkg_spline
+
+
 def make_spline(seasons):
 
     print "Splines will be made to calculate the Signal/Background ratio of " \
@@ -145,6 +167,9 @@ def make_spline(seasons):
     for season in seasons:
         print "Making splines for", season["Name"]
         path = SoB_spline_path(season)
+
+        bkg_path = bkg_spline_path(season)
+
         exp = data_loader(season["exp_path"])
         mc = data_loader(season["mc_path"])
 
@@ -162,9 +187,32 @@ def make_spline(seasons):
         with open(path, "wb") as f:
             Pickle.dump(splines, f)
 
+        bkg_spline = create_bkg_spatial_spline(exp, sin_dec_bins)
+
+        print "Saving to", bkg_path
+
+        try:
+            os.makedirs(os.path.dirname(bkg_path))
+        except OSError:
+            pass
+
+        with open(bkg_path, "wb") as f:
+            Pickle.dump(bkg_spline, f)
+
 
 def load_spline(season):
     path = SoB_spline_path(season)
+
+    print "Loading from", path
+
+    with open(path) as f:
+        res = Pickle.load(f)
+
+    return res
+
+
+def load_bkg_spatial_spline(season):
+    path = bkg_spline_path(season)
 
     print "Loading from", path
 
