@@ -93,7 +93,7 @@ class Injector:
 
         return mc[band_mask], omega, band_mask
 
-    def inject_signal(self, scale=1.):
+    def inject_signal(self, scale):
         """Randomly select simulated events from the Monte Carlo dataset to
         simulate a signal for each source. The source flux can be scaled by
         the scale parameter.
@@ -104,19 +104,17 @@ class Injector:
         mc = self._mc
         # Creates empty signal event array
         sig_events = np.empty((0, ), dtype=self._raw_data.dtype)
-                              # dtype=[("ra", np.float), ("sinDec", np.float),
-                              #        ("sigma", np.float), ("logE", np.float),
-                              #        ("dec", np.float),
-                              #        (self.season["MJD Time Key"], np.float),
-                              #        ])
 
         n_tot_exp = 0
+
+        dist_scale = np.sum(self.sources["Distance (Mpc)"]**-2)
 
         if scale not in self.ref_fluxes.keys():
             self.ref_fluxes[scale] = dict()
 
         # Loop over each source to be simulated
-        for source in self.sources:
+        for i, source in enumerate(
+                np.sort(self.sources, order="Distance (Mpc)")):
 
             # Selects MC events lying in a +/- 5 degree declination band
             source_mc, omega, band_mask = self.select_mc_band(mc, source)
@@ -129,10 +127,9 @@ class Injector:
             # All injection fluxes are given in terms of k, equal to 1e-9
             inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
 
-            dist_weight = source["Distance"]**-2/np.mean(
-                self.sources["Distance"]**-2)
+            # dist_weight = (source["Distance (Mpc)"]/dist_scale)**-2
 
-            # dist_weight = source["Distance"]**-2
+            dist_weight = (source["Distance (Mpc)"]**-2) / dist_scale
 
             # Calculate the fluence, using the effective injection time.
             fluence = inj_flux * eff_inj_time * dist_weight
@@ -159,14 +156,6 @@ class Injector:
             else:
                 n_s = int(n_inj)
 
-            # print source["Distance"]**-2, \
-            #     np.sum((self.mc_weights[band_mask] / omega)), \
-            #     eff_inj_time
-
-
-            # print "Expecting", n_inj, "Injecting", n_s
-            # print source
-
             if n_s < 1:
                 continue
 
@@ -192,21 +181,13 @@ class Injector:
             sim_ev[self.season["MJD Time Key"]] = \
                 self.time_pdf.simulate_times(source, n_s)
 
-            # print sig_events.dtype.names
-
-            # print sim_ev[self.season["MJD Time Key"]]
-            # raw_input("prompt")
-
             # Joins the new events to the signal events
             sig_events = np.concatenate(
                 (sig_events, sim_ev[list(self._raw_data.dtype.names)]))
 
-        # print "Expecting", n_tot_exp, "Injecting", len(sig_events)
-        # raw_input("prompt")
-
         return sig_events
 
-    def create_dataset(self, scale=1):
+    def create_dataset(self, scale):
         """Create a dataset based on scrambled data for background, and Monte
         Carlo simulation for signal. Returns the composite dataset. The source
         flux can be scaled by the scale parameter.

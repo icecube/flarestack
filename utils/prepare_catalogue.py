@@ -18,7 +18,7 @@ cat_dtype = [
     ("Ref Time (MJD)", np.float),
     ("Start Time (MJD)", np.float),
     ("End Time (MJD)", np.float),
-    ("Distance", np.float), ('Name', 'a30'),
+    ('Distance (Mpc)', np.float), ('Name', 'a30'),
 ]
 
 
@@ -36,7 +36,7 @@ def single_source(sindec):
     sources['ra'] = np.array([np.deg2rad(180.)])
     sources['dec'] = np.arcsin(sindec)
     sources['Relative Injection Weight'] = np.array([1.])
-    sources['Distance'] = np.array([1.0])
+    sources['Distance (Mpc)'] = np.array([1.0])
     sources['Ref Time (MJD)'] = (np.array([ref_time]))
     sources['Start Time (MJD)'] = (np.array([ref_time - 50]))
     sources['End Time (MJD)'] = (np.array([ref_time + 100]))
@@ -103,7 +103,7 @@ def custom_sources(name, ra, dec, weight, distance, ref_time=np.nan,
     # The source distance can be provided, in arbitrary units. The injector
     # and reconstructor will weight sources according to 1/ (distance ^ 2).
 
-    sources['Distance'] = np.array([distance])
+    sources['Distance (Mpc)'] = np.array([distance])
 
     # The source reference time can be arbitrarily defined, for example as
     # the discovery date or the date of lightcurve peak. It is important that

@@ -147,7 +147,8 @@ class LLH(SoB):
 
         n_mask = np.ones(len(data), dtype=np.bool)
 
-        for i, source in enumerate(np.sort(self.sources, order="Distance")):
+        for i, source in enumerate(np.sort(self.sources,
+                                           order="Distance (Mpc)")):
 
             s_mask = self.select_spatially_coincident_data(data, [source])
 

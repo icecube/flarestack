@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, interp2d
 from shared import skylab_ref_dir
 
 root_url = "https://icecube.wisc.edu/~coenders/"
@@ -24,7 +24,7 @@ def download_ref():
         os.system(cmd)
 
 
-def skylab_7year_sensitivity(sindec=0.0):
+def skylab_7year_sensitivity(sindec=0.0, gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
     analysis sensitivity. Then converts given values for sin(declination to
     the equivalent skylab sensitivity. Adds values for Sindec = +/- 1,
@@ -36,11 +36,18 @@ def skylab_7year_sensitivity(sindec=0.0):
     skylab_sens_path = skylab_ref_dir + "sens.npy"
     data = np.load(skylab_sens_path)
     sindecs = np.sin(np.array([x[0] for x in data]))
+    gammas = [1.0, 2.0, 3.0]
 
     # The sensitivities here are given in units TeV ^ -gamma per cm2 per s
     # The sensitivities used in this code are GeV ^-1 per cm2 per s
     # The conversion is thus (TeV/Gev) ^ (1 - gamma) , i.e 10 ** 3(1-gamma)
-    sens = np.array([x[2] for x in data]) * 10 ** 3
+    # sens = np.array([x[2] * 10 ** 3 for x in data])
+    # sens = np.array([x for x in data for y * 10 ** 3 in x for x in data])
+    sens = np.array([list(x)[1:] for x in data]) * 10 ** 3
+    scaling = np.array([10 ** (3 * (i - 1)) for i in range(3)])
+    sens *= scaling
+    # sens = np.array([x, y, z] for [s, x, y, z] in data)
+    # print data[0], sens, data[0] * scaling
 
     # Extend range of sensitivity to +/- 1 through approximation,
     # by 1d-extrapolation of first/last pair
@@ -55,9 +62,9 @@ def skylab_7year_sensitivity(sindec=0.0):
     sens = np.append(sens[0] + lower_diff, sens)
     sens = np.append(sens, sens[-1] + upper_diff)
 
-    sens_ref = interp1d(sindecs, sens)
+    sens_ref = interp2d(sindecs, gammas, np.log(sens))
 
-    return sens_ref(sindec)
+    return np.exp(sens_ref(sindec, gamma))
 
 
 def skylab_7year_discovery(sindec=0.0):

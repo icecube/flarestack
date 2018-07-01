@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
+from utils.neutrino_astronomy import fluence_integral
 
 analyses = dict()
 
@@ -22,7 +23,7 @@ max_window = float(t_end - t_start)
 
 # Initialise Injectors/LLHs
 
-injection_energy = {
+llh_energy = {
     "Name": "Power Law",
     "Gamma": 2.0,
 }
@@ -37,8 +38,6 @@ llh_time = {
 # llh_time = {
 #     "Name": "Steady"
 # }
-
-llh_energy = injection_energy
 
 fit_weights = {
     "LLH Energy PDF": llh_energy,
@@ -64,50 +63,64 @@ fixed_weights_negative = {
     "Fit Weights?": False
 }
 
-flare = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": True,
-    "Fit Negative n_s?": False
-}
+# flare = {
+#     "LLH Energy PDF": llh_energy,
+#     "LLH Time PDF": llh_time,
+#     "Fit Gamma?": True,
+#     "Flare Search?": True,
+#     "Fit Negative n_s?": False
+# }
+
+max_window = 100
+
+max_window_s = max_window * 60 * 60 * 24
+
+
+gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7, 2.9]
+gammas = [2.0, 2.3]
 
 cat_res = dict()
 
-for cat in ["gold", "jetted"]:
+cats = ["gold", "jetted"]
+cats = ["jetted"]
 
-    name = "analyses/tde/compare_fitting_weights/" + cat + "/"
+for cat in cats:
+
+    name = "analyses/tde/compare_spectral_indices/" + cat + "/"
 
     cat_path = catalogue_dir + "TDEs/TDE_" + cat + "_catalogue.npy"
     catalogue = np.load(cat_path)
 
     src_res = dict()
 
-    lengths = np.array(
-        sorted([0.03, 0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * max_window
+    closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
 
     # lengths = [0.5 * max_window]
 
-    for i, llh_kwargs in enumerate([fixed_weights,
+    for i, llh_kwargs in enumerate([
                                     fixed_weights_negative,
-                                    fit_weights,
-                                    flare
+                                    # fit_weights,
                                     ]):
-        label = ["Fixed Weights", "Fixed Weights (Negative n_s)",
+        label = ["Fixed Weights (Negative n_s)",
                  "Fit Weights", "Flare Search", ][i]
-        f_name = ["fixed_weights", "fixed_weights_neg",
+        f_name = ["fixed_weights_neg",
                   "fit_weights", "flare"][i]
 
         flare_name = name + f_name + "/"
 
         res = dict()
 
-        for flare_length in lengths:
 
-            full_name = flare_name + str(flare_length) + "/"
+
+        for gamma in gammas:
+
+            full_name = flare_name + str(gamma) + "/"
 
             injection_time = dict(llh_time)
-            injection_time["Post-Window"] = flare_length
+
+            injection_energy = dict(llh_energy)
+            injection_energy["E Min"] = 10000
+            injection_energy["Gamma"] = gamma
 
             inj_kwargs = {
                 "Injection Energy PDF": injection_energy,
@@ -115,7 +128,9 @@ for cat in ["gold", "jetted"]:
                 "Poisson Smear?": True,
             }
 
-            scale = 20 * max_window / flare_length
+            scale = flux_to_k(skylab_7year_sensitivity(
+                np.sin(closest_src["dec"]), gamma=gamma
+            ) * 50)
 
             # print scale
 
@@ -126,8 +141,8 @@ for cat in ["gold", "jetted"]:
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
-                "n_trials": 5,
-                "n_steps": 15
+                "n_trials": 10,
+                "n_steps": 5
             }
 
             analysis_path = analysis_dir + full_name
@@ -142,32 +157,22 @@ for cat in ["gold", "jetted"]:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            injection_time = mh_dict["inj kwargs"]["Injection Time PDF"]
-
-            inj_time = 0.
-
-            for season in mh_dict["datasets"]:
-                time = TimePDF.create(injection_time, season)
-                inj_time += time.effective_injection_time(catalogue)
-
-            print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
-
             # rd.submit_to_cluster(pkl_file, n_jobs=2000)
-            # #
-            # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
-            # mh.clear()
-            res[flare_length] = mh_dict
+            #
+            mh = MinimisationHandler(mh_dict)
+            mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=10)
+            mh.clear()
+            res[gamma] = mh_dict
 
         src_res[label] = res
 
     cat_res[cat] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (cat, src_res) in cat_res.iteritems():
 
-    name = "analyses/tde/compare_fitting_weights/" + cat + "/"
+    name = "analyses/tde/compare_spectral_indices/" + cat + "/"
 
     sens = [[] for _ in src_res]
     sens_livetime = [[] for _ in src_res]
@@ -178,15 +183,12 @@ for (cat, src_res) in cat_res.iteritems():
     labels = []
 
     for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
-        for (length, rh_dict) in sorted(res.iteritems()):
+        for (gamma, rh_dict) in sorted(res.iteritems()):
             try:
                 rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                                     rh_dict["catalogue"])
 
-                # The uptime noticeably deviates from 100%, because the detector
-                # was undergoing tests for 25 hours on May 5th/6th 2016. Thus,
-                # particularly for short flares, the sensitivity appears to
-                # improve as a function of time unless this is taken into account.
+                # The uptime can noticeably devaiate from 100%
                 injection_time = rh_dict["inj kwargs"]["Injection Time PDF"]
 
                 inj_time = 0.
@@ -195,12 +197,22 @@ for (cat, src_res) in cat_res.iteritems():
                     time = TimePDF.create(injection_time, season)
                     inj_time += time.effective_injection_time(catalogue)
 
-                sens[i].append(rh.sensitivity * float(length) * 60 * 60 * 24)
+                sens[i].append(rh.sensitivity * fluence_integral(gamma).value *
+                               max_window_s)
+
                 disc_pots[i].append(rh.disc_potential *
-                                    float(length) * 60 * 60 * 24)
-                sens_livetime[i].append(rh.sensitivity * inj_time)
-                disc_pots_livetime[i].append(rh.disc_potential * inj_time)
-                fracs[i].append(length)
+                                    fluence_integral(gamma).value
+                                    * max_window_s)
+
+                sens_livetime[i].append(rh.sensitivity *
+                                        fluence_integral(gamma).value
+                                        * inj_time)
+                disc_pots_livetime[i].append(rh.disc_potential *
+                                        fluence_integral(gamma).value
+                                             * inj_time)
+                fracs[i].append(gamma)
+
+                print rh.sensitivity * inj_time
 
             except OSError:
                 pass
@@ -228,15 +240,17 @@ for (cat, src_res) in cat_res.iteritems():
 
             ax1.grid(True, which='both')
             # ax1.semilogy(nonposy='clip')
-            ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$]", fontsize=12)
-            ax1.set_xlabel(r"Flare Length (days)")
-            # ax1.set_xscale("log")
+            ax1.set_ylabel(r"Fluence [GeV "
+                           r"cm$^{-2}$]", fontsize=12)
+            ax1.set_xlabel(r"Gamma")
+            ax1.set_yscale("log")
             ax1.set_ylim(0.95 * min([min(x) for x in y]),
                          1.1 * max([max(x) for x in y]))
 
-            plt.title("Flare in " + str(int(max_window)) + " day window")
+            plt.title("Time-Integrated Emission in " + str(int(max_window)) +
+                      " day window")
 
             ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
-            plt.savefig(plot_output_dir(name) + "/flare_vs_box" + label + "_" +
-                        ["sens", "disc"][k] + ".pdf")
+            plt.savefig(plot_output_dir(name) + "/spectral_index_" + label +
+                        "_" + ["sens", "disc"][k] + ".pdf")
             plt.close()

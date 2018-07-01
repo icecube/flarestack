@@ -20,8 +20,6 @@ class ResultsHandler:
 
         self.name = name
 
-        print name
-
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(name)
         self.plot_dir = plot_output_dir(name)
@@ -68,7 +66,10 @@ class ResultsHandler:
         self.merge_pickle_data()
 
         self.find_sensitivity()
-        self.find_disc_potential()
+        try:
+            self.find_disc_potential()
+        except RuntimeError:
+            pass
 
 
     def clean_merged_data(self):
@@ -193,6 +194,7 @@ class ResultsHandler:
             frac = float(len(ts_array[ts_array > bkg_median])) / (float(len(
                 ts_array)))
             print "Fraction of overfluctuations is", "{0:.2f}".format(frac),
+            print "above", "{0:.2f}".format(bkg_median),
             print "(", len(ts_array), ")"
 
             if len(ts_array) > 1:
@@ -214,9 +216,10 @@ class ResultsHandler:
             return value
 
         best_a = scipy.optimize.curve_fit(
-            f, x, y,  p0=[0.1])[0][0]
+            f, x, y,  p0=[1./max(x)])[0][0]
 
         # print "best_a", best_a
+        # raw_input("prompt")
 
         def best_f(x):
             return f(x, best_a)

@@ -28,7 +28,7 @@ class MinimisationHandler:
 
     def __init__(self, mh_dict):
 
-        sources = np.load(mh_dict["catalogue"])
+        sources = np.sort(np.load(mh_dict["catalogue"]), order="Distance (Mpc)")
 
         self.name = mh_dict["name"]
         self.pickle_output_dir = name_pickle_output_dir(self.name)
@@ -73,8 +73,6 @@ class MinimisationHandler:
         # likelihood, using the source list along with the sets of energy/time
         # PDFs provided in inj_kwargs and llh_kwargs.
         for season in self.seasons:
-            self.injectors[season["Name"]] = Injector(season, sources,
-                                                      **self.inj_kwargs)
 
             if not self.flare:
                 self.llhs[season["Name"]] = LLH(season, sources,
@@ -82,6 +80,9 @@ class MinimisationHandler:
             else:
                 self.llhs[season["Name"]] = FlareLLH(season, sources,
                                                      **self.llh_kwargs)
+
+            self.injectors[season["Name"]] = Injector(season, sources,
+                                                  **self.inj_kwargs)
 
         p0, bounds, names = fit_setup(self.llh_kwargs, sources, self.flare)
 
@@ -309,13 +310,46 @@ class MinimisationHandler:
 
         self.dump_injection_values(scale)
 
+    def make_weight_matrix(self, params):
+
+        # Creates a matrix fixing the fraction of the total signal that
+        # is expected in each Source+Season pair. The matrix is
+        # normalised to 1, so that for a given total n_s, the expectation
+        # for the ith season for the jth source is given by:
+        #  n_exp = n_s * weight_matrix[i][j]
+
+        src = np.sort(self.sources, order="Distance (Mpc)")
+        dist_weight = src["Distance (Mpc)"] ** -2
+
+        weights_matrix = np.ones([len(self.seasons), len(self.sources)])
+
+        for i, season in enumerate(self.seasons):
+            llh = self.llhs[season["Name"]]
+            acc = []
+
+            time_weights = []
+
+            for source in src:
+                time_weights.append(llh.time_pdf.effective_injection_time(
+                    source))
+                acc.append(llh.acceptance(source, params))
+
+            acc = np.array(acc).T
+
+            w = acc * dist_weight * np.array(time_weights)
+
+            w = w[:, np.newaxis]
+
+            for j, ind_w in enumerate(w.T):
+                weights_matrix[i][j] = ind_w
+
+        weights_matrix /= np.sum(weights_matrix)
+        return weights_matrix
+
     def run_fixed_weight_trial(self, scale=1.):
 
         llh_functions = dict()
         n_all = dict()
-
-        src = np.sort(self.sources, order="Distance")
-        dist_weight = src["Distance"] ** -2
 
         for season in self.seasons:
             dataset = self.injectors[season["Name"]].create_dataset(scale)
@@ -325,36 +359,7 @@ class MinimisationHandler:
 
         def f_final(params):
 
-            # Creates a matrix fixing the fraction of the total signal that
-            # is expected in each Source+Season pair. The matrix is
-            # normalised to 1, so that for a given total n_s, the expectation
-            # for the ith season for the jth source is given by:
-            #  n_exp = n_s * weight_matrix[i][j]
-
-            weights_matrix = np.ones([len(self.seasons), len(self.sources)])
-
-            for i, season in enumerate(self.seasons):
-                llh = self.llhs[season["Name"]]
-                acc = []
-
-                time_weights = []
-
-                for source in src:
-
-                    time_weights.append(llh.time_pdf.effective_injection_time(
-                        source))
-                    acc.append(llh.acceptance(source, params))
-
-                acc = np.array(acc).T
-
-                w = acc * dist_weight * np.array(time_weights)
-
-                w = w[:, np.newaxis]
-
-                for j, ind_w in enumerate(w.T):
-                    weights_matrix[i][j] = ind_w
-
-            weights_matrix /= np.sum(weights_matrix)
+            weights_matrix = self.make_weight_matrix(params)
 
             # Having created the weight matrix, loops over each season of
             # data and evaluates the TS function for that season
@@ -362,9 +367,7 @@ class MinimisationHandler:
             ts_val = 0
             for i, (name, f) in enumerate(sorted(llh_functions.iteritems())):
                 w = weights_matrix[i][:, np.newaxis]
-                # print i, name, w, ts_val,
                 ts_val += f(params, w)
-                # print ts_val
 
             return ts_val
 
@@ -374,8 +377,8 @@ class MinimisationHandler:
         llh_functions = dict()
         n_all = dict()
 
-        src = np.sort(self.sources, order="Distance")
-        dist_weight = src["Distance"] ** -2
+        src = np.sort(self.sources, order="Distance (Mpc)")
+        dist_weight = src["Distance (Mpc)"] ** -2
 
         for season in self.seasons:
             dataset = self.injectors[season["Name"]].create_dataset(scale)
@@ -808,7 +811,7 @@ class MinimisationHandler:
 
                 # Loops over each source in catalogue
 
-                for source in np.sorted(self.sources, order="Distance"):
+                for source in np.sorted(self.sources, order="Distance (Mpc)"):
 
                     # Identify spatially- and temporally-coincident data
 

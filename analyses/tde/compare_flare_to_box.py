@@ -12,7 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
 
-name = "tests/tde_compare_flare_to_box/"
+name = "analyses/tde/compare_flare_to_box/"
 
 analyses = dict()
 
@@ -70,8 +70,8 @@ flare_with_energy = {
 
 src_res = dict()
 
-lengths = np.array(sorted([0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * \
-                 max_window
+lengths = np.array(
+    sorted([0.03, 0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * max_window
 
 # lengths = [0.5 * max_window]
 
@@ -101,6 +101,8 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
         scale = flux_to_k(skylab_7year_sensitivity(np.sin(catalogue["dec"]))
                           * (35 * max_window / flare_length))
 
+        print scale, scale * flare_length / max_window
+
         mh_dict = {
             "name": full_name,
             "datasets": ps_7year[-2:-1],
@@ -108,7 +110,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
             "inj kwargs": inj_kwargs,
             "llh kwargs": llh_kwargs,
             "scale": scale,
-            "n_trials": 1,
+            "n_trials": 5,
             "n_steps": 15
         }
 
@@ -134,7 +136,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
         print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
+        # rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
