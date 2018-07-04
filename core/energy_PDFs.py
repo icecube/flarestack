@@ -1,8 +1,17 @@
+"""This script contains the EnergyPDF classes, that are used for weighting
+events based on a given energy PDF.
+
+"""
+
 import numexpr
 import numpy as np
 
+
 class EnergyPDF:
     subclasses = {}
+
+    def __init__(self):
+        pass
 
     @classmethod
     def register_subclass(cls, energy_pdf_name):
@@ -32,12 +41,15 @@ class PowerLaw(EnergyPDF):
     """
 
     def __init__(self, e_pdf_dict=dict()):
+        """Creates a PowerLaw object, which is an energy PDF based on a power
+        law. The power law is generated from e_pdf_dict, which can specify a
+        spectral index (Gamma), as well as an optional minimum energy (E Min)
+        and a maximum energy (E Max)
 
+        :param e_pdf_dict: Dictionary containing parameters
+        """
         if "Gamma" in e_pdf_dict.keys():
             self.gamma = float(e_pdf_dict["Gamma"])
-
-            # print "Energy PDF created. A Power Law was selected with gamma=" + \
-            #       str(self.gamma) + "."
 
         if "E Min" in e_pdf_dict.keys():
             self.e_min = e_pdf_dict["E Min"]

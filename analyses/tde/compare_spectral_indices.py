@@ -62,13 +62,13 @@ fixed_weights_negative = {
     "Fit Weights?": False
 }
 
-# flare = {
-#     "LLH Energy PDF": llh_energy,
-#     "LLH Time PDF": llh_time,
-#     "Fit Gamma?": True,
-#     "Flare Search?": True,
-#     "Fit Negative n_s?": False
-# }
+flare = {
+    "LLH Energy PDF": llh_energy,
+    "LLH Time PDF": llh_time,
+    "Fit Gamma?": True,
+    "Flare Search?": True,
+    "Fit Negative n_s?": False
+}
 
 max_window = 100
 
@@ -100,7 +100,8 @@ for cat in cats:
 
     for i, llh_kwargs in enumerate([fixed_weights_negative,
                                     fixed_weights,
-                                    fit_weights
+                                    fit_weights,
+                                    flare
                                     ]):
         label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
                  "Fit Weights", "Flare Search", ][i]
@@ -140,7 +141,7 @@ for cat in cats:
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
-                "n_trials": 10,
+                "n_trials": 1,
                 "n_steps": 15
             }
 
@@ -156,7 +157,8 @@ for cat in cats:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            rd.submit_to_cluster(pkl_file, n_jobs=200)
+
+            # rd.submit_to_cluster(pkl_file, n_jobs=2000)
             #
             # mh = MinimisationHandler(mh_dict)
             # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=200)
@@ -241,8 +243,9 @@ for (cat, src_res) in cat_res.iteritems():
 
             label = ["", "(Livetime-adjusted)", "energy"][j]
 
-            y_label = [r"Fluence [GeV cm$^{-2}$]", r"Fluence [GeV cm$^{-2}$]",
-                       r"Total Isotropic-Equivalent $E_{\nu}$ (erg)"]
+            y_label = [r"Total Fluence [GeV cm$^{-2}$]",
+                       r"Total Fluence [GeV cm$^{-2}$]",
+                       r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
 
             ax1.grid(True, which='both')
             ax1.set_ylabel(y_label[j], fontsize=12)

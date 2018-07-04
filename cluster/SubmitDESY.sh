@@ -8,8 +8,6 @@
 #$ -l h_cpu=23:59:00
 #$ -l h_rss=4.5G
 ##
-##Force OS = SL5/6
-#$ -l os=sl6
 ##
 ##(send mail on job's end and abort)
 #$ -m a
