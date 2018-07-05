@@ -70,8 +70,11 @@ flare_with_energy = {
 
 src_res = dict()
 
-lengths = np.array(
-    sorted([0.03, 0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * max_window
+# lengths = np.array(
+#     sorted([00.03, 0.05] + list(np.linspace(0.0, 1.0, 4)))[1:])
+#  * max_window
+
+lengths = np.logspace(-2, 0, 5) * max_window
 
 # lengths = [0.5 * max_window]
 
@@ -101,7 +104,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
         scale = flux_to_k(skylab_7year_sensitivity(np.sin(catalogue["dec"]))
                           * (35 * max_window / flare_length))
 
-        print scale, scale * flare_length / max_window
+        # print scale, scale * flare_length / max_window
 
         mh_dict = {
             "name": full_name,
@@ -110,7 +113,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
             "inj kwargs": inj_kwargs,
             "llh kwargs": llh_kwargs,
             "scale": scale,
-            "n_trials": 5,
+            "n_trials": 1,
             "n_steps": 15
         }
 
@@ -134,9 +137,9 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
             time = TimePDF.create(injection_time, season)
             inj_time += time.effective_injection_time(catalogue)
 
-        print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
+        # print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=1000)
+        rd.submit_to_cluster(pkl_file, n_jobs=500)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
@@ -145,7 +148,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
     src_res[label] = res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 sens_livetime = [[] for _ in src_res]
@@ -212,7 +215,8 @@ for j, s in enumerate([sens, sens_livetime]):
 
         ax1.grid(True, which='both')
         # ax1.semilogy(nonposy='clip')
-        ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$]", fontsize=12)
+        ax1.set_ylabel(r"Time-Integrated Flux [ GeV$^{-1}$ cm$^{-2}$]",
+                       fontsize=12)
         ax1.set_xlabel(r"Flare Length (days)")
         # ax1.set_xscale("log")
         ax1.set_ylim(0.95 * min([min(x) for x in y]),

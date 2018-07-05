@@ -95,10 +95,12 @@ flare_with_energy = {
 
 src_res = dict()
 
-lengths = np.array(sorted([0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * \
-                 max_window
+# lengths = np.array(sorted([0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * \
+#                  max_window
 
 # lengths = [0.5 * max_window]
+
+lengths = np.logspace(-2, 0, 5) * max_window
 
 for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
                                 flare_with_energy]):
@@ -159,7 +161,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
         print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
+        # rd.submit_to_cluster(pkl_file, n_jobs=500)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
@@ -168,7 +170,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
     src_res[label] = res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 sens_livetime = [[] for _ in src_res]
@@ -235,7 +237,8 @@ for j, s in enumerate([sens, sens_livetime]):
 
         ax1.grid(True, which='both')
         # ax1.semilogy(nonposy='clip')
-        ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$]", fontsize=12)
+        ax1.set_ylabel(r"Time-Integrated Flux[ GeV$^{-1}$ cm$^{-2}$]",
+                       fontsize=12)
         ax1.set_xlabel(r"Flare Length (days)")
         # ax1.set_xscale("log")
         ax1.set_ylim(0.95 * min([min(x) for x in y]),
