@@ -5,8 +5,8 @@
 ##
 ##(the running time for this job)
 
-#$ -l h_cpu=23:59:00
-#$ -l h_rss=4.5G
+#$ -l h_cpu=07:59:00
+#$ -l h_rss=5.0G
 ##
 ##
 ##(send mail on job's end and abort)

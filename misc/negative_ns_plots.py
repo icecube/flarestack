@@ -24,6 +24,7 @@ plt.hist(data, weights=weight, bins=50)
 plt.axvline(np.median(data), color="red", linestyle="--")
 plt.xlabel("TS")
 plt.yscale("log")
+plt.tight_layout()
 plt.savefig(standard_path)
 plt.close()
 
@@ -39,12 +40,13 @@ plt.hist(data, weights=weight, bins=50)
 plt.axvline(np.median(data), color="red", linestyle="--")
 plt.xlabel("TS")
 plt.yscale("log")
+plt.tight_layout()
 plt.savefig(unbound_path)
 plt.close()
 
 standard_llh_path = illustration_dir + "llh_standard.png"
 
-x = np.linspace(0, 50, 500)
+x = np.linspace(0, 10, 500)
 
 cut = -7.
 
@@ -62,6 +64,8 @@ plt.plot(x, f(x))
 plt.scatter(0., 0., color="r", marker="*", s=100, zorder=3)
 plt.ylabel(r"$\Delta$ LLH")
 plt.xlabel(r"$n_{s}$")
+plt.xlim(-11, 11)
+plt.tight_layout()
 plt.savefig(standard_llh_path)
 plt.close()
 
@@ -76,7 +80,40 @@ plt.scatter(x[best_index], min(f(x)), color="r", marker="*", s=100, zorder=3)
 plt.axvline(cut, color="b", linestyle="--", zorder=2)
 plt.ylabel(r"$\Delta$ LLH")
 plt.xlabel(r"$n_{s}$")
+plt.xlim(-11, 11)
+plt.tight_layout()
 plt.savefig(unbound_llh_path)
+plt.close()
+
+
+def extension(x):
+    return 50. - x
+
+
+def alt_f(x):
+    mask = x > cut
+    res = np.ones_like(x)
+    res[mask] = f(x[mask])
+    res[~mask] = extension(x[~mask])
+
+    return res
+
+
+corrected_llh_path = illustration_dir + "llh_corrected.png"
+
+
+full_x = np.linspace(-10, 10, 500)
+
+
+plt.figure()
+plt.plot(full_x, alt_f(full_x), zorder=1)
+plt.scatter(x[best_index], min(f(x)), color="r", marker="*", s=100, zorder=3)
+# plt.axvline(cut, color="b", linestyle="--", zorder=2)
+plt.ylabel(r"$\Delta$ LLH")
+plt.xlabel(r"$n_{s}$")
+plt.xlim(-11, 11)
+plt.tight_layout()
+plt.savefig(corrected_llh_path)
 plt.close()
 
 

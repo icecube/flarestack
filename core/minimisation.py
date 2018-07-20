@@ -62,8 +62,6 @@ class MinimisationHandler:
         except KeyError:
             self.fit_weights = False
 
-        print "Fit Weights?", self.fit_weights
-
         if self.fit_weights:
             self.run_trial = self.run_fit_weight_trial
         else:
@@ -540,27 +538,30 @@ class MinimisationHandler:
 
                 all_times = np.array(sorted(all_times))
 
-                # print "In total", len(all_times), "of", n_tot
-
                 # Minimum flare duration (days)
-                min_flare = 1.
+                min_flare = 0.25
 
-                t_s_min = float(min([llh.time_pdf.sig_t0(source)
-                                    for llh in self.llhs.itervalues()]))
+                t_s_min = float(min([llh.time_pdf.sig_t0(src)
+                                     for llh in self.llhs.itervalues()]))
 
-                t_e_max = float(max([llh.time_pdf.sig_t1(source)
-                                    for llh in self.llhs.itervalues()]))
+                t_e_max = float(max([llh.time_pdf.sig_t1(src)
+                                     for llh in self.llhs.itervalues()]))
 
-                max_flare = t_e_max - t_s_min
+                search_window = t_e_max - t_s_min
+
+                if "Max Flare" in self.llh_kwargs["LLH Time PDF"].keys():
+                    max_flare = self.llh_kwargs["LLH Time PDF"]["Max Flare"]
+
+                else:
+                    max_flare = search_window
 
                 pairs = []
 
                 for x in all_times:
                     for y in all_times:
                         if y > (x + min_flare):
-                            pairs.append((x, y))
-
-                all_pairs = [(x, y) for x in all_times for y in all_times if y > x]
+                            if y < (x + max_flare):
+                                pairs.append((x, y))
 
                 if len(pairs) > 0:
 
@@ -574,6 +575,9 @@ class MinimisationHandler:
                         flare_length = t_end - t_start
 
                         overall_marginalisation = flare_length / max_flare
+
+                        # print overall_marginalisation
+
                         w = np.ones(len(source_dict))
 
                         llhs = dict()
@@ -602,11 +606,15 @@ class MinimisationHandler:
                                     season_dict["Start (MJD)"])
                                 flare_length = t_e - t_s
 
-                                t_s_min = max(llh.time_pdf.sig_t0(source),
+                                t_s_min = max(llh.time_pdf.sig_t0(src),
                                               season_dict["Start (MJD)"])
-                                t_e_max = min(llh.time_pdf.sig_t1(source),
+                                t_e_max = min(llh.time_pdf.sig_t1(src),
                                               season_dict["End (MJD)"])
-                                max_flare = t_e_max - t_s_min
+                                max_season_flare = min(
+                                    t_e_max - t_s_min, max_flare)
+
+                                print t_e_max - t_s_min, max_flare
+                                raw_input("prompt")
 
                                 # n_all = len(data[~full_flare_veto])
                                 n_all = np.sum(~np.logical_or(
@@ -617,23 +625,33 @@ class MinimisationHandler:
                                 if n_all > 0:
                                     pass
                                 else:
-                                    print t_start, t_end, t_s, t_e, max_flare
+                                    print t_start, t_end, t_s, t_e, \
+                                        max_season_flare
 
-                                marginalisation = flare_length / max_flare
+                                # marginalisation = flare_length / \
+                                #                   max_season_flare
+
+                                marginalisation = 1.
+
+                                # print max_season_flare, marginalisation
+                                # raw_input("prompt")
+
+                                # print marginalisation
+
                                 # marginalisation = 1.
 
-                                llh_kwargs = dict(self.llh_kwargs)
-                                llh_kwargs["LLH Time PDF"] = None
+                                # llh_kwargs = dict(self.llh_kwargs)
+                                # llh_kwargs["LLH Time PDF"] = None
+                                #
+                                # flare_llh = llh.create_flare(season_dict, src,
+                                #                              **llh_kwargs)
 
-                                flare_llh = llh.create_flare(season_dict, src,
-                                                             **llh_kwargs)
-
-                                flare_f = flare_llh.create_llh_function(
+                                flare_f = llh.create_flare_llh_function(
                                     coincident_data, flare_veto, n_all,
-                                    marginalisation)
+                                    src, marginalisation)
 
                                 llhs[season_dict["Name"]] = {
-                                    "llh": flare_llh,
+                                    # "llh": flare_llh,
                                     "f": flare_f,
                                     "flare length": flare_length
                                 }

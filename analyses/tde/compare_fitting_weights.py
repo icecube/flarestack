@@ -74,7 +74,9 @@ flare = {
 
 cat_res = dict()
 
-for cat in ["gold", "jetted"]:
+lengths = np.logspace(-2, 0, 5) * max_window
+
+for cat in ["jetted"]:
 
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
@@ -83,12 +85,10 @@ for cat in ["gold", "jetted"]:
 
     src_res = dict()
 
-    lengths = np.array(
-        sorted([0.03, 0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * max_window
-
     # lengths = [0.5 * max_window]
 
-    for i, llh_kwargs in enumerate([fixed_weights,
+    for i, llh_kwargs in enumerate([
+                                    fixed_weights,
                                     fixed_weights_negative,
                                     fit_weights,
                                     flare
@@ -115,7 +115,7 @@ for cat in ["gold", "jetted"]:
                 "Poisson Smear?": True,
             }
 
-            scale = 20 * max_window / flare_length
+            scale = 60 * max_window / flare_length
 
             # print scale
 
@@ -152,11 +152,12 @@ for cat in ["gold", "jetted"]:
 
             print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-            # rd.submit_to_cluster(pkl_file, n_jobs=2000)
+            # rd.submit_to_cluster(pkl_file, n_jobs=5000)
             # #
             # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
             # mh.clear()
+
             res[flare_length] = mh_dict
 
         src_res[label] = res
@@ -177,7 +178,15 @@ for (cat, src_res) in cat_res.iteritems():
 
     labels = []
 
+    cat_path = catalogue_dir + "TDEs/TDE_" + cat + "_catalogue.npy"
+    catalogue = np.load(cat_path)
+
+    src_1_frac = min(catalogue["Distance (Mpc)"])**-2/np.sum(
+        catalogue["Distance (Mpc)"] ** -2
+    )
+
     for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
+
         for (length, rh_dict) in sorted(res.iteritems()):
             try:
                 rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
@@ -198,8 +207,9 @@ for (cat, src_res) in cat_res.iteritems():
                 sens[i].append(rh.sensitivity * float(length) * 60 * 60 * 24)
                 disc_pots[i].append(rh.disc_potential *
                                     float(length) * 60 * 60 * 24)
-                sens_livetime[i].append(rh.sensitivity * inj_time)
-                disc_pots_livetime[i].append(rh.disc_potential * inj_time)
+                sens_livetime[i].append(rh.sensitivity * inj_time * src_1_frac)
+                disc_pots_livetime[i].append(rh.disc_potential * inj_time
+                                             * src_1_frac)
                 fracs[i].append(length)
 
             except OSError:
@@ -217,7 +227,7 @@ for (cat, src_res) in cat_res.iteritems():
             plt.figure()
             ax1 = plt.subplot(111)
 
-            cols = ["r", "g", "b", "orange"]
+            cols = ["orange", "g", "b", "r"]
             linestyle = ["-", "--"][k]
 
             for i, f in enumerate(fracs):
@@ -228,7 +238,8 @@ for (cat, src_res) in cat_res.iteritems():
 
             ax1.grid(True, which='both')
             # ax1.semilogy(nonposy='clip')
-            ax1.set_ylabel(r"Fluence [ GeV$^{-1}$ cm$^{-2}$]", fontsize=12)
+            ax1.set_ylabel(r"Time-Integrated Flux [ GeV$^{-1}$ cm$^{-2}$]",
+                           fontsize=12)
             ax1.set_xlabel(r"Flare Length (days)")
             # ax1.set_xscale("log")
             ax1.set_ylim(0.95 * min([min(x) for x in y]),

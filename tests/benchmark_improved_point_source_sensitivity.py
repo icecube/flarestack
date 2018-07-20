@@ -6,7 +6,8 @@ from core.results import ResultsHandler
 from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.prepare_catalogue import ps_catalogue_name
-from utils.skylab_reference import skylab_7year_sensitivity
+from utils.skylab_reference import skylab_7year_sensitivity, \
+    skylab_7year_discovery
 from scipy.interpolate import interp1d
 from cluster import run_desy_cluster as rd
 import matplotlib
@@ -45,9 +46,9 @@ llh_kwargs = {
 
 name = "tests/improved_ps_sens"
 
-# sindecs = np.linspace(0.90, -0.90, 13)
-sindecs = np.linspace(0.75, -0.75, 7)
-sens = []
+sindecs = np.linspace(0.90, -0.90, 13)
+# sindecs = [0.90, 0.0, -0.90]
+# sindecs = np.linspace(-0.75, 0.75, 7)
 
 analyses = []
 
@@ -56,7 +57,7 @@ for sindec in sindecs:
 
     subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
 
-    scale = flux_to_k(skylab_7year_sensitivity(sindec)) * 2
+    scale = flux_to_k(skylab_7year_sensitivity(sindec)) * 5
 
     mh_dict = {
         "name": subname,
@@ -65,8 +66,8 @@ for sindec in sindecs:
         "inj kwargs": inj_kwargs,
         "llh kwargs": llh_kwargs,
         "scale": scale,
-        "n_trials": 5,
-        "n_steps": 10
+        "n_trials": 10,
+        "n_steps": 15
     }
 
     analysis_path = analysis_dir + subname
@@ -81,7 +82,7 @@ for sindec in sindecs:
     with open(pkl_file, "wb") as f:
         Pickle.dump(mh_dict, f)
 
-    # rd.submit_to_cluster(pkl_file, n_jobs=1000)
+    rd.submit_to_cluster(pkl_file, n_jobs=3000)
 
     # mh = MinimisationHandler(mh_dict)
     # mh.iterate_run(mh_dict["scale"], n_steps=100)
@@ -91,21 +92,28 @@ for sindec in sindecs:
 
 rd.wait_for_cluster()
 
-for rh_dict in analyses:
+sens = []
+disc_pots = []
+
+for i, rh_dict in enumerate(analyses):
     rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                         rh_dict["catalogue"])
     sens.append(rh.sensitivity)
+    disc_pots.append(rh.disc_potential)
 
 plot_range = np.linspace(-0.99, 0.99, 1000)
 
 plt.figure()
 ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
-ax1.plot(sindecs, skylab_7year_sensitivity(sindecs),
+ax1.plot(sindecs, skylab_7year_sensitivity(sindecs), color="blue",
          label=r"7-year Point Source analysis")
 
+ax1.plot(sindecs, sens, color='orange', label="Flarestack")
+
+ax1.plot(sindecs, skylab_7year_discovery(sindecs), color="blue", linestyle="--")
+
 ax1.plot(
-    sindecs, sens, color='black',
-    label='FlareStack')
+    sindecs, disc_pots, color='orange', linestyle="--")
 
 ax1.set_xlim(xmin=-1., xmax=1.)
 # ax1.set_ylim(ymin=1.e-13, ymax=1.e-10)
@@ -118,10 +126,14 @@ plt.title('7-year Point Source Sensitivity')
 
 ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
-ratios = np.array(sens) / skylab_7year_sensitivity(sindecs)
+sens_ratios = np.array(sens) / skylab_7year_sensitivity(sindecs)
 
-ax2.scatter(sindecs, ratios, color="black")
-ax2.plot(sindecs, ratios, linestyle="--", color="red")
+disc_ratios = np.array(disc_pots) / skylab_7year_discovery(sindecs)
+
+ax2.scatter(sindecs, sens_ratios, color="red")
+ax2.plot(sindecs, sens_ratios, color="red")
+ax2.scatter(sindecs, disc_ratios, color="k")
+ax2.plot(sindecs, disc_ratios, color="k", linestyle="--")
 ax2.set_ylabel(r"ratio", fontsize=12)
 ax2.set_xlabel(r"sin($\delta$)", fontsize=12)
 #

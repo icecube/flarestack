@@ -88,9 +88,6 @@ class Chi2_LeftTruncated(object):
 
         res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
 
-        if not res.success:
-            print 'Chi2 fit did not converge! Result is likely garbage.'
-
         # self._q_left = N_left / float(N_all)
         self._cut = cut
         self._f = scipy.stats.chi2(*res.x)
@@ -98,6 +95,7 @@ class Chi2_LeftTruncated(object):
         self.ndof = res.x[0]
         self.loc = res.x[1]
         self.scale = res.x[2]
+        self._res = res
 
     def pdf(self, x):
         """ Probability density function.
@@ -196,10 +194,9 @@ class Double_Chi2(object):
             return -loglh
 
         res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
-        print res.x
 
-        if not res.success:
-            print 'Chi2 fit did not converge! Result is likely garbage.'
+        # if not res.success:
+        #     print 'Chi2 fit did not converge! Result is likely garbage.'
 
         self._f_left = scipy.stats.chi2(res.x[0], loc=0., scale=res.x[2])
         self._f_right = scipy.stats.chi2(res.x[1], loc=0., scale=res.x[3])
@@ -226,34 +223,39 @@ class Chi2_one_side:
         self._cut = 0.
         self._f = scipy.stats.chi2(*res.x)
         self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
+        self._res = res
 
 
 class Chi2_one_side_free:
 
     def __init__(self, data):
+        # p_start = [4., -1., 1.]
         p_start = [2., -1., 1.]
-        p_start = [2., 0., 1.]
         p_bounds = [(0., None),  # dof > 0
-                    (None, 0.),  # location < 0 for 'truncated' effect
+                    (None, -0),  # location < 0 for 'truncated' effect
                     (1e-5, 1e5)# shape ~ free
                     ]
                     # (1e-5, 1e5)]  # shape ~ free
 
         def func(p):
-            loglh = scipy.stats.chi2(p[0], loc=p[1], scale=p[2]).logpdf(
+            loglh = scipy.stats.chi2(p[0], loc=p[1]-1e-8, scale=p[2]).logpdf(
                 data).sum()
+            # print loglh, p
             return -loglh
 
         res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
 
+        # print res
+
         self._cut = 0.
+        self._res = res
         self._f = scipy.stats.chi2(*res.x)
         self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
         self.ndof = res.x[0]
         self.loc = res.x[1]
         self.scale = res.x[2]
 
-def plot_background_ts_distribution(ts_array, path, flare=False):
+def plot_background_ts_distribution(ts_array, path, fit_truncated=False):
     ts_array = np.array(ts_array)
     ts_array = ts_array[~np.isnan(ts_array)]
     weights = np.ones_like(ts_array) * 1. / float(len(ts_array))
@@ -268,10 +270,9 @@ def plot_background_ts_distribution(ts_array, path, flare=False):
     except OSError:
         pass
 
-    if flare:
+    frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
 
-        frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
-        frac_under = 1. - frac_over
+    if (fit_truncated) and (frac_over > 0.6):
 
         n_bins = 100
 
@@ -283,17 +284,41 @@ def plot_background_ts_distribution(ts_array, path, flare=False):
                  normed=True,
                  stacked=True)
 
+        chi2 = Chi2_LeftTruncated(ts_array)
+
+        # frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
+
+        # print chi2._res.success
+        # raw_input("prompt")
+
+        if chi2._res.success:
+
+            frac_over = 1.
+
+            df = chi2._f.args[0]
+            loc = chi2._f.args[1]
+            scale = chi2._f.args[2]
+
+        else:
+            chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
+            df = chi2._f.args[0]
+            loc = chi2._f.args[1]
+            scale = chi2._f.args[2]
+
+            if not chi2._res.success:
+                chi2 = Chi2_one_side(ts_array[ts_array > 0.])
+                df = chi2._f.args[0]
+                loc = 0.
+                scale = 1.
+
+        # print chi2._res
+        #
+        # raw_input("prompt")
+
+        frac_under = 1. - frac_over
         five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
 
-        chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
-
-        df = chi2._f.args[0]
-        loc = chi2._f.args[1]
-        scale = chi2._f.args[2]
-
     else:
-
-        frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
         frac_under = 1. - frac_over
 
         n_bins = 100

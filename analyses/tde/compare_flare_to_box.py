@@ -74,11 +74,12 @@ src_res = dict()
 #     sorted([00.03, 0.05] + list(np.linspace(0.0, 1.0, 4)))[1:])
 #  * max_window
 
-lengths = np.logspace(-2, 0, 5) * max_window
+lengths = np.logspace(-2, 0, 9) * max_window
 
 # lengths = [0.5 * max_window]
 
-for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
+for i, llh_kwargs in enumerate([
+    no_flare, no_flare_negative,
                                 flare_with_energy]):
 
     label = ["Time-Integrated", "Time-Integrated (negative n_s)", "Flare"][i]
@@ -102,7 +103,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
         }
 
         scale = flux_to_k(skylab_7year_sensitivity(np.sin(catalogue["dec"]))
-                          * (35 * max_window / flare_length))
+                          * (50 * max_window / flare_length))
 
         # print scale, scale * flare_length / max_window
 
@@ -139,7 +140,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
         # print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        rd.submit_to_cluster(pkl_file, n_jobs=500)
+        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
@@ -148,7 +149,7 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
     src_res[label] = res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 sens_livetime = [[] for _ in src_res]
@@ -159,6 +160,7 @@ disc_pots_livetime = [[] for _ in src_res]
 labels = []
 
 for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
+
     for (length, rh_dict) in sorted(res.iteritems()):
         try:
             rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],

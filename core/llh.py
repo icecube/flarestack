@@ -178,6 +178,11 @@ class LLH():
         return ~veto
 
     def create_llh_function(self, data):
+        """Creates a likelihood function to minimise, based on the dataset.
+
+        :param data: Dataset
+        :return: LLH function that can be minimised
+        """
         n_all = float(len(data))
         SoB_spacetime = []
 
@@ -194,12 +199,8 @@ class LLH():
 
             s_mask = self.select_spatially_coincident_data(data, [source])
 
-            # print np.sum(n_mask)
             n_mask *= ~s_mask
-            # print np.sum(n_mask)
-            # print np.sum(s_mask)
             coincident_data = data[s_mask]
-            # n_mask[i] = np.sum(s_mask)
 
             if len(coincident_data) > 0:
 
@@ -270,47 +271,24 @@ class LLH():
         # Calculates the expected number of signal events for each source in
         # the season
         all_n_j = (n_s * weights.T[0])
-        #
-        # x = 1. + ((all_n_j/n_all) * (SoB_energy * SoB_spacetime.T  -
-        #                              1.))
 
         x = np.array([1. + (n_j/n_all) * (
                 SoB_energy[i] * SoB_spacetime[i] - 1.)
                 for i, n_j in enumerate(all_n_j)])
 
-        # print x[0][:10]
-        # print SoB_energy[0][:10], SoB_energy[0].shape
-        # print SoB_energy_cache[0][:10]
-        # print SoB_spacetime[0][:10]
-
-        # print np.less_equal(x.all(), 0.)
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
-            # llh_value = -50. - self.assume_background(
-            #     all_n_j, n_mask, n_all)
-            llh_value = -50.
+            llh_value = -50. + n_s
 
         else:
 
-            # llh_value = np.sum(
-            #     [np.sum(np.log(y)) for y in x])
-
             llh_value = np.array([np.sum(np.log(y)) for y in x])
-
-            # print llh_value,
-            #
-            # print "adding"
 
             llh_value += self.assume_background(
                 all_n_j, n_mask, n_all)
-            # print llh_value
-            #
-            # raw_input("prompt")
 
-        # print self.alt_calculate_test_statistic(params, weights,
-        #                              n_all, n_mask, SoB_spacetime,
-        #                              SoB_energy_cache)
-        # print 2 * llh_value
-        # raw_input("compare")
+            if np.logical_and(np.sum(n_s) < 0, np.sum(llh_value) < np.sum(
+                    -50. + n_s)):
+                llh_value = -50. + n_s
 
         # Definition of test statistic
         return 2. * llh_value
@@ -357,9 +335,6 @@ class LLH():
 
         else:
             sig_pdf = space_term
-
-        # print sig_pdf
-        # raw_input("prompt")
 
         return sig_pdf
 
@@ -464,35 +439,23 @@ class LLH():
             S1 = energy_SoB_cache[g1]
             S2 = energy_SoB_cache[g2]
 
-            # print "S0", S0[:5]
-            # print "S1", S1[:5]
-            # print "S2", S2[:5]
-
             val = numexpr.evaluate(
                 "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
                 " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
             )
-
-            # print np.log(val[:5])
-            #
-            # print g0, g1, g2, gamma
-            #
-            # raw_input("prompt")
 
         return val
 
 
 class FlareLLH(LLH):
 
-    def create_llh_function(self, data, flare_veto, n_all,
-                            marginalisation):
+    def create_flare_llh_function(self, data, flare_veto, n_all, source,
+                                  marginalisation):
 
         coincident_data = data[~flare_veto]
 
-        n_mask = len(coincident_data)
-
-        sig = self.signal_spatial(self.sources, coincident_data)
-        bkg = self.background_spatial(self.sources, coincident_data)
+        sig = self.signal_spatial(source, coincident_data)
+        bkg = self.background_spatial(source, coincident_data)
         SoB_spacetime = sig/bkg
         del sig
         del bkg

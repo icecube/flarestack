@@ -24,7 +24,7 @@ def download_ref():
         os.system(cmd)
 
 
-def skylab_7year_sensitivity(sindec=0.0, gamma=2.0):
+def skylab_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
     analysis sensitivity. Then converts given values for sin(declination to
     the equivalent skylab sensitivity. Adds values for Sindec = +/- 1,
@@ -45,7 +45,11 @@ def skylab_7year_sensitivity(sindec=0.0, gamma=2.0):
     # sens = np.array([x for x in data for y * 10 ** 3 in x for x in data])
     sens = np.array([list(x)[1:] for x in data]) * 10 ** 3
     scaling = np.array([10 ** (3 * (i - 1)) for i in range(3)])
+    # scaling = 1
     sens *= scaling
+
+    # print sindecs, sindec
+
     # sens = np.array([x, y, z] for [s, x, y, z] in data)
     # print data[0], sens, data[0] * scaling
 
@@ -62,9 +66,12 @@ def skylab_7year_sensitivity(sindec=0.0, gamma=2.0):
     sens = np.append(sens[0] + lower_diff, sens)
     sens = np.append(sens, sens[-1] + upper_diff)
 
-    sens_ref = interp2d(sindecs, gammas, np.log(sens))
+    sens_ref = interp2d(np.array(sindecs), np.array(gammas), np.log(sens))
 
-    return np.exp(sens_ref(sindec, gamma))
+    if np.array(sindec).ndim > 0:
+        return np.array([np.exp(sens_ref(x, gamma))[0] for x in sindec])
+    else:
+        return np.exp(sens_ref(sindec, gamma))
 
 
 def skylab_7year_discovery(sindec=0.0):
@@ -101,3 +108,5 @@ def skylab_7year_discovery(sindec=0.0):
     disc_ref = interp1d(sindecs, disc)
 
     return disc_ref(sindec)
+
+skylab_7year_sensitivity()

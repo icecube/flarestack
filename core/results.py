@@ -42,6 +42,11 @@ class ResultsHandler:
             self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
         except KeyError:
             self.negative_n_s = False
+
+        try:
+            self.fit_weights = llh_kwargs["Fit Weights?"]
+        except KeyError:
+            self.fit_weights = False
         #
         # print "negative_ns", self.negative_n_s
 
@@ -67,10 +72,8 @@ class ResultsHandler:
         self.merge_pickle_data()
 
         self.find_sensitivity()
-        try:
-            self.find_disc_potential()
-        except RuntimeError:
-            pass
+
+        self.find_disc_potential()
 
     def astro_values(self, e_pdf_dict):
         """Function to convert the values calculated for sensitivity and
@@ -229,6 +232,8 @@ class ResultsHandler:
 
                 self.make_plots(scale)
 
+            # raw_input("prompt")
+
         x = np.array(x_acc)
 
         x_flux = k_to_flux(x)
@@ -288,8 +293,12 @@ class ResultsHandler:
 
         bkg_ts = bkg_dict["TS"]
 
-        disc_threshold = plot_background_ts_distribution(bkg_ts, ts_path,
-                                                         flare=self.flare)
+        fit_truncated = ~np.logical_and(
+            not self.flare, not self.fit_weights
+        )
+
+        disc_threshold = plot_background_ts_distribution(
+            bkg_ts, ts_path, fit_truncated=fit_truncated)
         bkg_median = np.median(bkg_ts)
         x = sorted(self.results.keys())
         y = []
@@ -312,8 +321,10 @@ class ResultsHandler:
             value = 0.5 * (np.tanh(a*x - b) + 1.)
             return value
 
+        print max(x)
+
         [best_a, best_b] = scipy.optimize.curve_fit(
-            f, x, y,  p0=[1./max(x), 0.])[0]
+            f, x, y,  p0=[1./max(x), 2])[0]
 
         def best_f(x):
             return f(x, best_a, best_b)
@@ -351,7 +362,7 @@ class ResultsHandler:
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = self.plot_dir + "ts_distributions/" + str(scale) + ".pdf"
         plot_background_ts_distribution(ts_array, ts_path,
-                                        flare=self.flare)
+                                        fit_truncated=self.fit_weights)
 
         param_path = self.plot_dir + "params/" + str(scale) + ".pdf"
 
@@ -370,10 +381,14 @@ class ResultsHandler:
         sources = [x for x in self.results[scale].keys() if x != "TS"]
 
         for source in sources:
+
+            # print self.results[scale]["TS"]
             ts_array = np.array(self.results[scale][source]["TS"])
             ts_path = self.plot_dir + source + "/ts_distributions/" + str(
                 scale) + ".pdf"
-            plot_background_ts_distribution(ts_array, ts_path, flare=self.flare)
+
+            plot_background_ts_distribution(ts_array, ts_path,
+                                            fit_truncated=self.flare)
 
             param_path = self.plot_dir + source + "/params/" + str(scale) + \
                          ".pdf"

@@ -64,7 +64,8 @@ llh_time = {
     "Name": "FixedRefBox",
     "Fixed Ref Time (MJD)": t_start,
     "Pre-Window": 0.,
-    "Post-Window": max_window
+    "Post-Window": max_window,
+    "Max Flare": 21.
 }
 
 llh_energy = injection_energy
@@ -85,7 +86,7 @@ no_flare_negative = {
     "Fit Negative n_s?": True
 }
 
-flare_with_energy = {
+flare = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
@@ -102,8 +103,9 @@ src_res = dict()
 
 lengths = np.logspace(-2, 0, 5) * max_window
 
-for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
-                                flare_with_energy]):
+for i, llh_kwargs in enumerate([no_flare,
+                                no_flare_negative,
+                                flare]):
 
     label = ["Time-Integrated", "Time-Integrated (negative n_s)", "Flare"][i]
     f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
@@ -161,16 +163,19 @@ for i, llh_kwargs in enumerate([no_flare, no_flare_negative,
 
         print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=500)
+        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
         # mh.clear()
+
+        # raw_input("prompt")
+
         res[flare_length] = mh_dict
 
     src_res[label] = res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 sens_livetime = [[] for _ in src_res]
