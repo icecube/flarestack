@@ -122,7 +122,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     etot = (si * area * e_integral).to(u.erg/u.s)
 
-    astro_res["Total Luminosity (erg/s)"] = etot.value
+    astro_res["Mean Luminosity (erg/s)"] = etot.value
 
     print "The required neutrino luminosity was", etot
 

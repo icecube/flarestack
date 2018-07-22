@@ -3,7 +3,7 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_pointsource_7_year import ps_7year
+from data.icecube_gfu_2point5_year import txs_sample
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.skylab_reference import skylab_7year_sensitivity
 from cluster import run_desy_cluster as rd
@@ -11,14 +11,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
+from utils.custom_seasons import custom_dataset
 
 analyses = dict()
-
-# Start and end time of flare in MJD
-t_start = 55740.00
-t_end = 55840.00
-
-max_window = float(t_end - t_start)
 
 # Initialise Injectors/LLHs
 
@@ -28,15 +23,8 @@ llh_energy = {
 }
 
 llh_time = {
-    "Name": "FixedRefBox",
-    "Fixed Ref Time (MJD)": t_start,
-    "Pre-Window": 0.,
-    "Post-Window": max_window
+    "Name": "FixedEndBox"
 }
-
-# llh_time = {
-#     "Name": "Steady"
-# }
 
 fit_weights = {
     "LLH Energy PDF": llh_energy,
@@ -62,28 +50,15 @@ fixed_weights_negative = {
     "Fit Weights?": False
 }
 
-flare = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": True,
-    "Fit Negative n_s?": False
-}
-
-max_window = 100
-
-max_window_s = max_window * 60 * 60 * 24
-
-
-gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7, 2.9]
-# gammas = [2.0, 2.3]
+gammas = [1.8, 2.0, 2.1, 2.3, 2.5, 2.7]
+gammas = [2.0, 2.3]
 # gammas = [1.99, 2.0, 2.02]
 # gammas = [2.5, 2.7, 2.9]
 
 cat_res = dict()
 
 cats = ["gold", "jetted"]
-# cats = ["jetted"]
+cats = ["jetted"]
 
 for cat in cats:
 
@@ -101,7 +76,7 @@ for cat in cats:
     for i, llh_kwargs in enumerate([fixed_weights_negative,
                                     fixed_weights,
                                     fit_weights,
-                                    flare
+                                    # flare
                                     ]):
         label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
                  "Fit Weights", "Flare Search", ][i]
@@ -132,17 +107,17 @@ for cat in cats:
                 np.sin(closest_src["dec"]), gamma=gamma
             ) * 50)
 
-            # print scale
 
             mh_dict = {
                 "name": full_name,
-                "datasets": ps_7year[-2:-1],
+                "datasets": custom_dataset(txs_sample, catalogue,
+                                           llh_kwargs["LLH Time PDF"]),
                 "catalogue": cat_path,
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
                 "n_trials": 1,
-                "n_steps": 15
+                "n_steps": 10
             }
 
             analysis_path = analysis_dir + full_name
@@ -157,11 +132,12 @@ for cat in cats:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-
-            # rd.submit_to_cluster(pkl_file, n_jobs=2000)
+            # rd.submit_to_cluster(pkl_file, n_jobs=500)
             #
             # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=200)
+            # # mh.scan_likelihood(0.0)
+            # # raw_input("prompt")
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
             # mh.clear()
             res[gamma] = mh_dict
 
@@ -169,16 +145,14 @@ for cat in cats:
 
     cat_res[cat] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
-for (cat, src_res) in cat_res.iteritems():
+for (cat_name, src_res) in cat_res.iteritems():
 
-    name = "analyses/tde/compare_spectral_indices/" + cat + "/"
+    name = "analyses/tde/compare_spectral_indices/" + cat_name + "/"
 
-    sens = [[] for _ in src_res]
     sens_livetime = [[] for _ in src_res]
     fracs = [[] for _ in src_res]
-    disc_pots = [[] for _ in src_res]
     disc_pots_livetime = [[] for _ in src_res]
     sens_e = [[] for _ in src_res]
     disc_e = [[] for _ in src_res]
@@ -196,24 +170,25 @@ for (cat, src_res) in cat_res.iteritems():
 
                 inj_time = 0.
 
+                cat = np.load(rh_dict["catalogue"])
+
                 for season in rh_dict["datasets"]:
                     time = TimePDF.create(injection_time, season)
-                    inj_time += time.effective_injection_time(catalogue)
+                    inj_time += np.mean([
+                        time.effective_injection_time(src) for src in cat])
 
                 astro_sens, astro_disc = rh.astro_values(
                     rh_dict["inj kwargs"]["Injection Energy PDF"])
 
                 key = "Total Fluence (GeV^{-1} cm^{-2} s^{-1})"
 
-                e_key = "Total Luminosity (erg/s)"
+                e_key = "Mean Luminosity (erg/s)"
 
-                sens[i].append(astro_sens[key] * max_window_s)
-                disc_pots[i].append(astro_disc[key] * max_window_s)
                 sens_livetime[i].append(astro_sens[key] * inj_time)
                 disc_pots_livetime[i].append(astro_disc[key] * inj_time)
 
-                sens_e[i].append(astro_sens[e_key] * max_window_s)
-                disc_e[i].append(astro_disc[e_key] * max_window_s)
+                sens_e[i].append(astro_sens[e_key] * inj_time)
+                disc_e[i].append(astro_disc[e_key] * inj_time)
 
                 fracs[i].append(gamma)
 
@@ -225,40 +200,80 @@ for (cat, src_res) in cat_res.iteritems():
         labels.append(f_type)
         # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-    for j, s in enumerate([sens, sens_livetime, sens_e]):
+    for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
+                                          [disc_pots_livetime, disc_e]]):
 
-        d = [disc_pots, disc_pots_livetime, disc_e][j]
+        plt.figure()
+        ax1 = plt.subplot(111)
 
-        for k, y in enumerate([s, d]):
+        ax2 = ax1.twinx()
 
-            plt.figure()
-            ax1 = plt.subplot(111)
+        cols = ["r", "g", "b", "orange"]
+        linestyle = ["-", "--"][j]
 
-            cols = ["r", "g", "b", "orange"]
-            linestyle = ["-", "--"][k]
+        for i, f in enumerate(fracs):
+            ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
+                     color=cols[i])
+            ax2.plot(f, energy[i], linestyle=linestyle,
+                     color=cols[i])
 
-            for i, f in enumerate(fracs):
-                plt.plot(f, y[i], label=labels[i], linestyle=linestyle,
-                         color=cols[i])
+        y_label = [r"Total Fluence [GeV cm$^{-2}$]",
+                   r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
 
-            label = ["", "(Livetime-adjusted)", "energy"][j]
+        ax1.grid(True, which='both')
+        ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
+        ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
+        ax1.set_xlabel(r"Gamma")
+        ax1.set_yscale("log")
+        ax2.set_yscale("log")
 
-            y_label = [r"Total Fluence [GeV cm$^{-2}$]",
-                       r"Total Fluence [GeV cm$^{-2}$]",
-                       r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
-
-            ax1.grid(True, which='both')
-            ax1.set_ylabel(y_label[j], fontsize=12)
-            ax1.set_xlabel(r"Gamma")
-            ax1.set_yscale("log")
-            ax1.set_ylim(0.95 * min([min(x) for x in y]),
+        for k, ax in enumerate([ax1, ax2]):
+            y = [fluence, energy][k]
+            ax.set_ylim(0.95 * min([min(x) for x in y]),
                          1.1 * max([max(x) for x in y]))
 
-            plt.title("Time-Integrated Emission in " + str(int(max_window)) +
-                      " day window")
+        plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
+                  " for " + cat_name + " TDEs.")
 
-            ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
-            plt.tight_layout()
-            plt.savefig(plot_output_dir(name) + "/spectral_index_" + label +
-                        "_" + ["sens", "disc"][k] + ".pdf")
-            plt.close()
+        ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+        plt.tight_layout()
+        plt.savefig(plot_output_dir(name) + "/spectral_index_" +
+                    ["sens", "disc"][j] + "_" + cat_name + ".pdf")
+        plt.close()
+
+    # for j, s in enumerate([sens_livetime, sens_e]):
+    #
+    #     d = [disc_pots_livetime, disc_e][j]
+    #
+    #     for k, y in enumerate([s, d]):
+    #
+    #         plt.figure()
+    #         ax1 = plt.subplot(111)
+    #
+    #         cols = ["r", "g", "b", "orange"]
+    #         linestyle = ["-", "--"][k]
+    #
+    #         for i, f in enumerate(fracs):
+    #             plt.plot(f, y[i], label=labels[i], linestyle=linestyle,
+    #                      color=cols[i])
+    #
+    #         label = ["", "energy"][j]
+    #
+    #         y_label = [r"Total Fluence [GeV cm$^{-2}$]",
+    #                    r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
+    #
+    #         ax1.grid(True, which='both')
+    #         ax1.set_ylabel(y_label[j], fontsize=12)
+    #         ax1.set_xlabel(r"Gamma")
+    #         ax1.set_yscale("log")
+    #         ax1.set_ylim(0.95 * min([min(x) for x in y]),
+    #                      1.1 * max([max(x) for x in y]))
+    #
+    #         plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][k] +
+    #                   " for " + cat_name + " TDEs.")
+    #
+    #         ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+    #         plt.tight_layout()
+    #         plt.savefig(plot_output_dir(name) + "/spectral_index_" + label +
+    #                     "_" + ["sens", "disc"][k] + ".pdf")
+    #         plt.close()

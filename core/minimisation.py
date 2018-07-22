@@ -308,7 +308,7 @@ class MinimisationHandler:
 
         self.dump_injection_values(scale)
 
-    def make_weight_matrix(self, params):
+    def make_fixed_weight_matrix(self, params):
 
         # Creates a matrix fixing the fraction of the total signal that
         # is expected in each Source+Season pair. The matrix is
@@ -357,7 +357,16 @@ class MinimisationHandler:
 
         def f_final(params):
 
-            weights_matrix = self.make_weight_matrix(params)
+            # If n_s is less than or equal to 0, set gamma to be 3.7 (equal to
+            # atmospheric background). This is continuous at n_s=0, but fixes
+            # relative weights of sources/seasons for negative n_s values.
+
+            if (len(params) > 1) and (not params[0] > 0):
+                params[1] = 3.7
+
+            # Calculate relative contribution of each source/season
+
+            weights_matrix = self.make_fixed_weight_matrix(params)
 
             # Having created the weight matrix, loops over each season of
             # data and evaluates the TS function for that season
@@ -365,7 +374,7 @@ class MinimisationHandler:
             ts_val = 0
             for i, (name, f) in enumerate(sorted(llh_functions.iteritems())):
                 w = weights_matrix[i][:, np.newaxis]
-                ts_val += f(params, w)
+                ts_val += np.sum(f(params, w))
 
             return ts_val
 
@@ -436,6 +445,18 @@ class MinimisationHandler:
         return f_final
 
     def run_flare(self, n_trials=n_trials_default, scale=1.):
+        """Runs iterations of a flare search, and dumps results as pickle files.
+        For stacking of multiple soyrces, due to computational constraints,
+        each flare is minimised entirely independently. The TS values from
+        each flare is then summed to give an overall TS value. The results
+        for each source are stored separately.
+
+        :param n_trials: Number of trials to perform
+        :param scale: Flux scale
+        """
+
+        # Selects the key corresponding to time for the given IceCube dataset
+        # (enables use of different data samples)
 
         time_key = self.seasons[0]["MJD Time Key"]
 
@@ -444,7 +465,7 @@ class MinimisationHandler:
 
         print "Running", n_trials, "trials"
 
-        # Initialises lists for all values that will need ti be stored,
+        # Initialises lists for all values that will need to be stored,
         # in order to verify that the minimisation is working successfuly
 
         results = {
@@ -459,7 +480,7 @@ class MinimisationHandler:
 
         # Loop over trials
 
-        for i in range(int(n_trials)):
+        for _ in range(int(n_trials)):
 
             datasets = dict()
 
@@ -525,6 +546,8 @@ class MinimisationHandler:
 
             stacked_ts = 0.0
 
+            # Minimisation of each source
+
             for (source, source_dict) in datasets.iteritems():
 
                 src = self.sources[self.sources["Name"] == source]
@@ -541,19 +564,22 @@ class MinimisationHandler:
                 # Minimum flare duration (days)
                 min_flare = 0.25
 
-                t_s_min = float(min([llh.time_pdf.sig_t0(src)
-                                     for llh in self.llhs.itervalues()]))
-
-                t_e_max = float(max([llh.time_pdf.sig_t1(src)
-                                     for llh in self.llhs.itervalues()]))
-
-                search_window = t_e_max - t_s_min
+                search_window = np.sum([
+                    llh.time_pdf.effective_injection_time(src)
+                    for llh in self.llhs.itervalues()]
+                )
 
                 if "Max Flare" in self.llh_kwargs["LLH Time PDF"].keys():
-                    max_flare = self.llh_kwargs["LLH Time PDF"]["Max Flare"]
+                    # Maximum flare given in days, here converted to seconds
+                    max_flare = self.llh_kwargs["LLH Time PDF"]["Max Flare"] * (
+                        60 * 60 * 24
+                    )
 
                 else:
                     max_flare = search_window
+
+                # Loop over all flares, and check which combinations have a
+                # flare length between the maximum and minimum values
 
                 pairs = []
 
@@ -572,13 +598,20 @@ class MinimisationHandler:
                         t_start = pair[0]
                         t_end = pair[1]
 
-                        flare_length = t_end - t_start
+                        flare_time = np.array(
+                            (t_start, t_end),
+                            dtype=[
+                                ("Start Time (MJD)", np.float),
+                                ("End Time (MJD)", np.float),
+                            ]
+                        )
+
+                        flare_length = np.sum([
+                            llh.time_pdf.effective_injection_time(flare_time)
+                            for llh in self.llhs.itervalues()]
+                        )
 
                         overall_marginalisation = flare_length / max_flare
-
-                        # print overall_marginalisation
-
-                        w = np.ones(len(source_dict))
 
                         llhs = dict()
 
@@ -591,8 +624,8 @@ class MinimisationHandler:
 
                             flare_veto = np.logical_or(
                                 np.less(coincident_data[time_key], t_start),
-                                np.greater(coincident_data[time_key], t_end))
-                            # flare_veto = np.zeros_like(coincident_data["timeMJD"])
+                                np.greater(coincident_data[time_key], t_end)
+                            )
 
                             if np.sum(~flare_veto) > 0:
 
@@ -604,19 +637,7 @@ class MinimisationHandler:
                                 t_e = max(
                                     min(t_end, season_dict["End (MJD)"]),
                                     season_dict["Start (MJD)"])
-                                flare_length = t_e - t_s
 
-                                t_s_min = max(llh.time_pdf.sig_t0(src),
-                                              season_dict["Start (MJD)"])
-                                t_e_max = min(llh.time_pdf.sig_t1(src),
-                                              season_dict["End (MJD)"])
-                                max_season_flare = min(
-                                    t_e_max - t_s_min, max_flare)
-
-                                print t_e_max - t_s_min, max_flare
-                                raw_input("prompt")
-
-                                # n_all = len(data[~full_flare_veto])
                                 n_all = np.sum(~np.logical_or(
                                     np.less(data[time_key], t_s),
                                     np.greater(data[time_key], t_e)
@@ -628,27 +649,14 @@ class MinimisationHandler:
                                     print t_start, t_end, t_s, t_e, \
                                         max_season_flare
 
-                                # marginalisation = flare_length / \
-                                #                   max_season_flare
-
                                 marginalisation = 1.
 
-                                # print max_season_flare, marginalisation
-                                # raw_input("prompt")
-
-                                # print marginalisation
-
-                                # marginalisation = 1.
-
-                                # llh_kwargs = dict(self.llh_kwargs)
-                                # llh_kwargs["LLH Time PDF"] = None
-                                #
-                                # flare_llh = llh.create_flare(season_dict, src,
-                                #                              **llh_kwargs)
+                                # flare_f = llh.create_flare_llh_function(
+                                #     coincident_data, flare_veto, n_all,
+                                #     src, marginalisation)
 
                                 flare_f = llh.create_flare_llh_function(
-                                    coincident_data, flare_veto, n_all,
-                                    src, marginalisation)
+                                    coincident_data, flare_veto, n_all, src)
 
                                 llhs[season_dict["Name"]] = {
                                     # "llh": flare_llh,
@@ -748,11 +756,10 @@ class MinimisationHandler:
             return -np.sum(f(x))
         #
         # g = self.run_trial(scale)
-        #
+
         res = scipy.optimize.minimize(
             g, self.p0, bounds=self.bounds)
 
-        print res.x
         #
         # raw_input("prompt")
 
@@ -874,7 +881,6 @@ class MinimisationHandler:
             for source in self.sources:
 
                 print "Livetime", llh.time_pdf.effective_injection_time(source)
-
 
 
 if __name__ == '__main__':

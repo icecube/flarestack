@@ -272,12 +272,43 @@ class LLH():
         # the season
         all_n_j = (n_s * weights.T[0])
 
-        x = np.array([1. + (n_j/n_all) * (
-                SoB_energy[i] * SoB_spacetime[i] - 1.)
-                for i, n_j in enumerate(all_n_j)])
+        x = []
+
+        for i, n_j in enumerate(all_n_j):
+            if n_s < 0:
+                # print True
+                x.append(1 + ((n_j / n_all) * (SoB_spacetime[i] - 1.)))
+                # raw_input("prompt")
+
+            else:
+                # print False
+                x.append(1 + ((n_j / n_all) * (
+                    SoB_energy[i] * SoB_spacetime[i] - 1.)))
+
+        # print np.sum([np.sum(y) for y in x])
+        # print np.sum([np.sum(y) for y in SoB_spacetime])
+        # print np.sum(n_j)
+
+        # llh_value = np.array([np.sum(np.log(y)) for y in x])
+
+        # print min([min(y) for y in x])
+        #
+        # print n_j, n_all, n_s, all_n_j, llh_value
+        # raw_input("prompt")
+
+        # print x
+        #
+        # x -= np.array([1. + (n_j/n_all) * (
+        #         SoB_energy[i] * SoB_spacetime[i] - 1.)
+        #         for i, n_j in enumerate(all_n_j)])
+        #
+        # print x
+        # print n_s
+        # raw_input("prompt")
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
-            llh_value = -50. + n_s
+            # print "Infinite",
+            llh_value = -50. + all_n_j
 
         else:
 
@@ -286,9 +317,16 @@ class LLH():
             llh_value += self.assume_background(
                 all_n_j, n_mask, n_all)
 
-            if np.logical_and(np.sum(n_s) < 0, np.sum(llh_value) < np.sum(
-                    -50. + n_s)):
-                llh_value = -50. + n_s
+            # print "Normal",
+
+            if np.logical_and(np.sum(all_n_j) < 0, np.sum(llh_value) < np.sum(
+                    -50. + all_n_j)):
+                llh_value = -50. + all_n_j
+                # print "Too high",
+
+        # print llh_value
+        # print params
+        # raw_input("prompt")
 
         # Definition of test statistic
         return 2. * llh_value
@@ -324,8 +362,6 @@ class LLH():
         :return: Array of Signal Spacetime PDF values
         """
         space_term = self.signal_spatial(source, cut_data)
-
-        # print space_term,
 
         if hasattr(self, "time_pdf"):
             time_term = self.time_pdf.signal_f(
@@ -449,8 +485,7 @@ class LLH():
 
 class FlareLLH(LLH):
 
-    def create_flare_llh_function(self, data, flare_veto, n_all, source,
-                                  marginalisation):
+    def create_flare_llh_function(self, data, flare_veto, n_all, source):
 
         coincident_data = data[~flare_veto]
 
@@ -477,14 +512,13 @@ class FlareLLH(LLH):
 
         def test_statistic(params, weights):
             return self.calculate_flare_test_statistic(
-                params, weights, n_all, marginalisation, SoB_spacetime,
+                params, weights, n_all, SoB_spacetime,
                 SoB_energy_cache)
 
         return test_statistic
 
     def calculate_flare_test_statistic(self, params, weights, n_all,
-                                       marginalisation, SoB_spacetime,
-                                       SoB_energy_cache=None):
+                                       SoB_spacetime, SoB_energy_cache=None):
         """Calculates the test statistic, given the parameters. Uses numexpr
         for faster calculations.
 
@@ -527,13 +561,7 @@ class FlareLLH(LLH):
             1 + ((n_j/n_all) * (SoB_energy * SoB_spacetime)))))
 
         # Account for the events in the veto region, by assuming they have S/B=0
-
         llh_value += self.assume_background(n_j, n_mask, n_all)
-
-        # Account for increased trials of shorter time windows with
-        # marginalisation factor
-
-        llh_value += np.log(marginalisation)
 
         # Definition of test statistic
         return 2. * llh_value

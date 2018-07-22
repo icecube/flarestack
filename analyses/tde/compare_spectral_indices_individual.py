@@ -3,7 +3,7 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_pointsource_7_year import ps_7year
+from data.icecube_gfu_2point5_year import txs_sample
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.skylab_reference import skylab_7year_sensitivity
 from cluster import run_desy_cluster as rd
@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
+from utils.custom_seasons import custom_dataset
 
 analyses = dict()
 
@@ -95,7 +96,7 @@ winter_flare_injection_time = {
 }
 
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7, 2.9]
-gammas = [1.8, 2.0, 2.3, 2.5]
+gammas = [1.8, 2.0, 2.3]
 # gammas = [2.0, 2.3]
 # gammas = [1.99, 2.0, 2.02]
 # gammas = [2.5, 2.7, 2.9]
@@ -104,10 +105,16 @@ name_root = "analyses/tde/compare_spectral_indices_individual/"
 
 cat_res = dict()
 
-cats = ["Swift J1644+57", "Swift J2058+05"]
+cats = [
+    "Swift J1644+57",
+    "Swift J2058+05",
+    "ASASSN-14li",
+    "ASASSN-15lh",
+    # "XMMSL1 J0740-85"
+        ]
 # cats = ["jetted"]
 
-for cat in cats:
+for j, cat in enumerate(cats):
 
     name = name_root + cat.replace(" ", "") + "/"
 
@@ -152,7 +159,8 @@ for cat in cats:
 
             mh_dict = {
                 "name": full_name,
-                "datasets": ps_7year[-3:-1],
+                "datasets": custom_dataset(txs_sample, catalogue,
+                                           llh_kwargs["LLH Time PDF"]),
                 "catalogue": cat_path,
                 "inj kwargs": inj,
                 "llh kwargs": llh_kwargs,
@@ -175,10 +183,10 @@ for cat in cats:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            rd.submit_to_cluster(pkl_file, n_jobs=2000)
+            # rd.submit_to_cluster(pkl_file, n_jobs=500)
             #
             # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=100)
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=5)
             # mh.clear()
             res[gamma] = mh_dict
 
@@ -186,7 +194,7 @@ for cat in cats:
 
     cat_res[cat] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (cat, src_res) in cat_res.iteritems():
 
@@ -225,7 +233,7 @@ for (cat, src_res) in cat_res.iteritems():
 
                 key = "Total Fluence (GeV^{-1} cm^{-2} s^{-1})"
 
-                e_key = "Total Luminosity (erg/s)"
+                e_key = "Mean Luminosity (erg/s)"
 
                 sens[i].append(astro_sens[key] * inj_time)
                 disc_pots[i].append(astro_disc[key] * inj_time)
