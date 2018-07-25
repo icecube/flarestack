@@ -3,7 +3,8 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_gfu_2point5_year import txs_sample
+from data.icecube_gfu_2point5_year import txs_sample, gfu_2point5
+from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.skylab_reference import skylab_7year_sensitivity
 from cluster import run_desy_cluster as rd
@@ -45,20 +46,21 @@ fixed_weights = {
 fixed_weights_negative = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
+    "Fit Gamma?": False,
     "Fit Negative n_s?": True,
     "Fit Weights?": False
 }
 
 gammas = [1.8, 2.0, 2.1, 2.3, 2.5, 2.7]
-gammas = [2.0, 2.3]
+gammas = [1.8, 2.0, 2.3]
+# gammas = [1.8, 2.0, 2.3]
 # gammas = [1.99, 2.0, 2.02]
 # gammas = [2.5, 2.7, 2.9]
 
 cat_res = dict()
 
 cats = ["gold", "jetted"]
-cats = ["jetted"]
+cats = ["gold"]
 
 for cat in cats:
 
@@ -105,7 +107,7 @@ for cat in cats:
 
             scale = flux_to_k(skylab_7year_sensitivity(
                 np.sin(closest_src["dec"]), gamma=gamma
-            ) * 50)
+            ) * 60)
 
 
             mh_dict = {
@@ -116,7 +118,7 @@ for cat in cats:
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
-                "n_trials": 1,
+                "n_trials": 10,
                 "n_steps": 10
             }
 
@@ -132,12 +134,10 @@ for cat in cats:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            # rd.submit_to_cluster(pkl_file, n_jobs=500)
+            rd.submit_to_cluster(pkl_file, n_jobs=100)
             #
             # mh = MinimisationHandler(mh_dict)
-            # # mh.scan_likelihood(0.0)
-            # # raw_input("prompt")
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=50)
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=2)
             # mh.clear()
             res[gamma] = mh_dict
 
@@ -145,7 +145,7 @@ for cat in cats:
 
     cat_res[cat] = src_res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for (cat_name, src_res) in cat_res.iteritems():
 
@@ -233,9 +233,9 @@ for (cat_name, src_res) in cat_res.iteritems():
                          1.1 * max([max(x) for x in y]))
 
         plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
-                  " for " + cat_name + " TDEs.")
+                  " for " + cat_name + " TDEs")
 
-        ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+        ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
         plt.tight_layout()
         plt.savefig(plot_output_dir(name) + "/spectral_index_" +
                     ["sens", "disc"][j] + "_" + cat_name + ".pdf")

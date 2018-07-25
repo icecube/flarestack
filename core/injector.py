@@ -19,11 +19,18 @@ class Injector:
         self._raw_data = data_loader(season["exp_path"])
 
         self._mc = data_loader(season["mc_path"])
-        self.sources = sources
-        self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
-        self.mc_weights = self.energy_pdf.weight_mc(self._mc)
+
         self.time_pdf = TimePDF.create(kwargs["Injection Time PDF"],
                                        season)
+
+        mask = np.array([self.time_pdf.effective_injection_time(src) > 0 for
+                         src in sources])
+
+        self.sources = sources[mask]
+
+        self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
+        self.mc_weights = self.energy_pdf.weight_mc(self._mc)
+
 
         if "Poisson Smear?" in kwargs.keys():
             self.poisson_smear = kwargs["Poisson Smear?"]
@@ -116,13 +123,13 @@ class Injector:
         for i, source in enumerate(
                 np.sort(self.sources, order="Distance (Mpc)")):
 
-            # Selects MC events lying in a +/- 5 degree declination band
-            source_mc, omega, band_mask = self.select_mc_band(mc, source)
-
             # Calculate the effective injection time for simulation. Equal to
             # the overlap between the season and the injection time PDF for
             # the source, scaled if the injection PDF is not uniform in time.
             eff_inj_time = self.time_pdf.effective_injection_time(source)
+
+            # Selects MC events lying in a +/- 5 degree declination band
+            source_mc, omega, band_mask = self.select_mc_band(mc, source)
 
             # All injection fluxes are given in terms of k, equal to 1e-9
             inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
@@ -148,6 +155,8 @@ class Injector:
             if source["Name"] not in self.ref_fluxes[scale].keys():
                 self.ref_fluxes[scale][source["Name"]] = n_inj
 
+            print self.season["Name"], source["Name"], "expecting", n_inj,
+
             # Simulates poisson noise around the expectation value n_inj. If
             # n_s = 0, skips simulation step.
             if self.poisson_smear:
@@ -155,6 +164,8 @@ class Injector:
             # If there is no poisson noise, rounds n_s down to nearest integer
             else:
                 n_s = int(n_inj)
+
+            print "injecting", n_s
 
             if n_s < 1:
                 continue

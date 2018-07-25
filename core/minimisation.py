@@ -59,6 +59,13 @@ class MinimisationHandler:
 
         try:
             self.fit_weights = self.llh_kwargs["Fit Weights?"]
+
+            if "Negative n_s?" in self.llh_kwargs.keys():
+                if self.llh_kwargs["Negative n_s?"]:
+                    raise Exception("Attempted to mix fitting weights with "
+                                    "negatve n_s. The likelihood is not set "
+                                    "up for this case!")
+
         except KeyError:
             self.fit_weights = False
 
@@ -133,7 +140,12 @@ class MinimisationHandler:
             name = source["Name"]
             n_inj = 0
             for inj in self.injectors.itervalues():
-                n_inj += inj.ref_fluxes[scale][name]
+                try:
+                    n_inj += inj.ref_fluxes[scale][name]
+
+                # If source not overlapping season, will not be in dict
+                except KeyError:
+                    pass
 
             default = {
                 "n_s": n_inj
@@ -259,9 +271,7 @@ class MinimisationHandler:
 
                 if self.fit_weights:
 
-                    ts = np.sum([
-                        llh_val * np.sign(vals[j])
-                        for j, llh_val in enumerate(best_llh)])
+                    ts = np.sum(best_llh)
 
                 else:
                     ts = np.sign(vals[0]) * np.sum(best_llh)
@@ -355,11 +365,13 @@ class MinimisationHandler:
             llh_functions[season["Name"]] = llh_f
             n_all[season["Name"]] = len(dataset)
 
-        def f_final(params):
+        def f_final(raw_params):
 
             # If n_s is less than or equal to 0, set gamma to be 3.7 (equal to
             # atmospheric background). This is continuous at n_s=0, but fixes
             # relative weights of sources/seasons for negative n_s values.
+
+            params = list(raw_params)
 
             if (len(params) > 1) and (not params[0] > 0):
                 params[1] = 3.7
@@ -372,9 +384,9 @@ class MinimisationHandler:
             # data and evaluates the TS function for that season
 
             ts_val = 0
-            for i, (name, f) in enumerate(sorted(llh_functions.iteritems())):
+            for i, season in enumerate(self.seasons):
                 w = weights_matrix[i][:, np.newaxis]
-                ts_val += np.sum(f(params, w))
+                ts_val += np.sum(llh_functions[season["Name"]](params, w))
 
             return ts_val
 
@@ -417,7 +429,7 @@ class MinimisationHandler:
 
                 acc = np.array(acc).T
 
-                w = acc * dist_weight * np.array(time_weights)
+                w = acc * np.array(time_weights)
 
                 w = w[:, np.newaxis]
 
@@ -433,12 +445,9 @@ class MinimisationHandler:
             # data and evaluates the TS function for that season
 
             ts_val = 0
-            for i, (name, f) in enumerate(
-                    sorted(llh_functions.iteritems())):
+            for i, season in enumerate(self.seasons):
                 w = weights_matrix[i][:, np.newaxis]
-                # print i, name, w, ts_val,
-                ts_val += f(params, w)
-                # print ts_val
+                ts_val += llh_functions[season["Name"]](params, w)
 
             return ts_val
 
@@ -646,14 +655,7 @@ class MinimisationHandler:
                                 if n_all > 0:
                                     pass
                                 else:
-                                    print t_start, t_end, t_s, t_e, \
-                                        max_season_flare
-
-                                marginalisation = 1.
-
-                                # flare_f = llh.create_flare_llh_function(
-                                #     coincident_data, flare_veto, n_all,
-                                #     src, marginalisation)
+                                    print t_start, t_end, t_s, t_e
 
                                 flare_f = llh.create_flare_llh_function(
                                     coincident_data, flare_veto, n_all, src)

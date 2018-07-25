@@ -15,11 +15,21 @@ class LLH():
     """General  LLH class.
     """
 
-    def __init__(self, season, sources, splines=None, **kwargs):
-        # print "Initialising LLH for", season["Name"]
-        # SoB.__init__(self, season, splines, **kwargs)
+    def __init__(self, season, sources, **kwargs):
         self.season = season
-        self.sources = sources
+
+        # If a time PDF is to be used, a dictionary must be provided in kwargs
+        time_dict = kwargs["LLH Time PDF"]
+        if time_dict is not None:
+            self.time_pdf = TimePDF.create(time_dict, season)
+            mask = np.array(
+                [self.time_pdf.effective_injection_time(src) > 0 for
+                 src in sources]
+            )
+            self.sources = sources[mask]
+
+        else:
+            self.sources = sources
 
         # Bins for sin declination (not evenly spaced)
         self.sin_dec_bins = self.season["sinDec bins"]
@@ -65,11 +75,6 @@ class LLH():
 
             # print "Loaded", len(self.SoB_spline_2Ds), "Splines."
 
-        # If a time PDF is to be used, a dictionary must be provided in kwargs
-        time_dict = kwargs["LLH Time PDF"]
-        if time_dict is not None:
-            self.time_pdf = TimePDF.create(time_dict, season)
-
         self.acceptance_f = self.create_acceptance_function()
 
     def _around(self, value):
@@ -101,7 +106,6 @@ class LLH():
         f = scipy.interpolate.interp2d(
             dec_bins, gamma_bins, values.T, kind='linear')
         return f
-
 
     def acceptance(self, source, params=None):
         """Calculates the detector acceptance for a given source, using the
@@ -211,14 +215,14 @@ class LLH():
                 del sig
                 del bkg
 
-                # If an llh energy PDF has been provided, calculate the SoB values
-                # for the coincident data, and stores it in a cache.
+                # If an llh energy PDF has been provided, calculate the SoB
+                # values for the coincident data, and stores it in a cache.
                 if SoB_energy_cache is not None:
                     energy_cache = self.create_SoB_energy_cache(coincident_data)
 
                     # If gamma is not going to be fit, replaces the SoB energy
-                    # cache with the weight array corresponding to the gamma provided
-                    # in the llh energy PDF
+                    # cache with the weight array corresponding to the gamma
+                    # provided in the llh energy PDF
                     if not self.fit_gamma:
                         energy_cache = self.estimate_energy_weights(
                             self.default_gamma, energy_cache)
@@ -270,44 +274,24 @@ class LLH():
 
         # Calculates the expected number of signal events for each source in
         # the season
-        all_n_j = (n_s * weights.T[0])
+        all_n_j = (n_s * weights.T[0])[weights.T[0] > 0.]
 
         x = []
 
+        # If n_s if negative, then removes the energy term from the likelihood
+
         for i, n_j in enumerate(all_n_j):
-            if n_s < 0:
-                # print True
+            if np.sum(n_s) < 0:
                 x.append(1 + ((n_j / n_all) * (SoB_spacetime[i] - 1.)))
-                # raw_input("prompt")
 
             else:
-                # print False
                 x.append(1 + ((n_j / n_all) * (
                     SoB_energy[i] * SoB_spacetime[i] - 1.)))
 
-        # print np.sum([np.sum(y) for y in x])
-        # print np.sum([np.sum(y) for y in SoB_spacetime])
-        # print np.sum(n_j)
-
-        # llh_value = np.array([np.sum(np.log(y)) for y in x])
-
-        # print min([min(y) for y in x])
-        #
-        # print n_j, n_all, n_s, all_n_j, llh_value
-        # raw_input("prompt")
-
-        # print x
-        #
-        # x -= np.array([1. + (n_j/n_all) * (
-        #         SoB_energy[i] * SoB_spacetime[i] - 1.)
-        #         for i, n_j in enumerate(all_n_j)])
-        #
-        # print x
-        # print n_s
+        # print min([min(y) for y in x]), max([max(y) for y in x])
         # raw_input("prompt")
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
-            # print "Infinite",
             llh_value = -50. + all_n_j
 
         else:
@@ -317,19 +301,12 @@ class LLH():
             llh_value += self.assume_background(
                 all_n_j, n_mask, n_all)
 
-            # print "Normal",
-
-            if np.logical_and(np.sum(all_n_j) < 0, np.sum(llh_value) < np.sum(
-                    -50. + all_n_j)):
+            if np.logical_and(np.sum(all_n_j) < 0,
+                              np.sum(llh_value) < np.sum(-50. + all_n_j)):
                 llh_value = -50. + all_n_j
-                # print "Too high",
-
-        # print llh_value
-        # print params
-        # raw_input("prompt")
 
         # Definition of test statistic
-        return 2. * llh_value
+        return 2. * np.sum(llh_value)
 
     def assume_background(self, n_s, n_coincident, n_all):
         """To save time with likelihood calculation, it can be assumed that
