@@ -157,18 +157,6 @@ class TimePDF:
         min_int = self.product_integral(self.sig_t0(source), source)
         fraction = max_int - min_int
 
-        # t_range = np.linspace(self.t0, self.t1, 10)
-        # print self.mjd_to_livetime(t_range)
-        # print t_range[-1], self.t1
-        # print self.mjd_to_livetime(t_range[-1]), self.mjd_to_livetime(self.t1)
-        # print self.signal_integral(self.t1, source)
-        # print self.livetime
-        # print self.mjd_to_livetime(self.t1)/self.livetime
-        # print self.sig_t0(source), self.sig_t1(source)
-        #
-        # print max_int, min_int, fraction
-        # raw_input("prompt")
-
         t_range = np.linspace(self.sig_t0(source), self.sig_t1(source), 1e4)
         cumu = (self.product_integral(t_range, source) - min_int) / fraction
 

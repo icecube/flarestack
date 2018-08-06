@@ -165,7 +165,7 @@ for j, cat in enumerate(cats):
                 "inj kwargs": inj,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
-                "n_trials": 1,
+                "n_trials": 5,
                 "n_steps": 10
             }
 
@@ -183,7 +183,7 @@ for j, cat in enumerate(cats):
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            # rd.submit_to_cluster(pkl_file, n_jobs=500)
+            rd.submit_to_cluster(pkl_file, n_jobs=500)
             #
             # mh = MinimisationHandler(mh_dict)
             # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=5)
@@ -194,7 +194,7 @@ for j, cat in enumerate(cats):
 
     cat_res[cat] = src_res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for (cat, src_res) in cat_res.iteritems():
 
@@ -220,13 +220,13 @@ for (cat, src_res) in cat_res.iteritems():
                 # The uptime can noticeably devaiate from 100%
                 inj = rh_dict["inj kwargs"]["Injection Time PDF"]
 
-                cat = np.load(rh_dict["catalogue"])
+                catalogue = np.load(rh_dict["catalogue"])
 
                 inj_time = 0.
 
                 for season in rh_dict["datasets"]:
                     time = TimePDF.create(inj, season)
-                    inj_time += time.effective_injection_time(cat)
+                    inj_time += time.effective_injection_time(catalogue)
 
                 astro_sens, astro_disc = rh.astro_values(
                     rh_dict["inj kwargs"]["Injection Energy PDF"])
@@ -251,43 +251,84 @@ for (cat, src_res) in cat_res.iteritems():
         labels.append(f_type)
         # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-    for j, s in enumerate([sens, sens_e]):
+    for j, [fluence, energy] in enumerate([[sens, sens_e],
+                                          [disc_pots, disc_e]]):
 
-        d = [disc_pots, disc_e][j]
+        plt.figure()
+        ax1 = plt.subplot(111)
 
-        for k, y in enumerate([s, d]):
+        ax2 = ax1.twinx()
 
-            plt.figure()
-            ax1 = plt.subplot(111)
+        cols = ["r", "g", "b", "orange"]
+        linestyle = ["-", "--"][j]
 
-            cols = ["b", "orange", "green"]
-            linestyle = ["-", "--"][k]
+        for i, f in enumerate(fracs):
+            ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
+                     color=cols[i])
+            ax2.plot(f, energy[i], linestyle=linestyle,
+                     color=cols[i])
 
-            for i, f in enumerate(fracs):
-                plt.plot(f, y[i], label=labels[i], linestyle=linestyle,
-                         color=cols[i])
+        y_label = [r"Total Fluence [GeV cm$^{-2}$]",
+                   r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
 
-            label = ["", "energy"][j]
+        ax1.grid(True, which='both')
+        ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
+        ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
+        ax1.set_xlabel(r"Gamma")
+        ax1.set_yscale("log")
+        ax2.set_yscale("log")
 
-            y_label = [r"Total Fluence [GeV cm$^{-2}$]",
-                       r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
-
-            ax1.grid(True, which='both')
-            ax1.set_ylabel(y_label[j], fontsize=12)
-            ax1.set_xlabel(r"Gamma")
-            ax1.set_yscale("log")
-            ax1.set_ylim(0.95 * min([min(x) for x in y]),
+        for k, ax in enumerate([ax1, ax2]):
+            y = [fluence, energy][k]
+            ax.set_ylim(0.95 * min([min(x) for x in y]),
                          1.1 * max([max(x) for x in y]))
 
-            print y
+        plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
+                  " for " + cat)
 
-            plt.title("Time-Integrated Emission")
+        ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
+        plt.tight_layout()
+        plt.savefig(plot_output_dir(name) + "/spectral_index_" +
+                    ["sens", "disc"][j] + "_" + cat + ".pdf")
+        plt.close()
 
-            ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
-            plt.tight_layout()
-
-            print label, k
-
-            plt.savefig(plot_output_dir(name) + "/spectral_index_" + label +
-                        "_" + ["sens", "disc"][k] + ".pdf")
-            plt.close()
+    # for j, s in enumerate([sens, sens_e]):
+    #
+    #     d = [disc_pots, disc_e][j]
+    #
+    #     for k, y in enumerate([s, d]):
+    #
+    #         plt.figure()
+    #         ax1 = plt.subplot(111)
+    #
+    #         cols = ["b", "orange", "green"]
+    #         linestyle = ["-", "--"][k]
+    #
+    #         for i, f in enumerate(fracs):
+    #             plt.plot(f, y[i], label=labels[i], linestyle=linestyle,
+    #                      color=cols[i])
+    #
+    #         label = ["", "energy"][j]
+    #
+    #         y_label = [r"Total Fluence [GeV cm$^{-2}$]",
+    #                    r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
+    #
+    #         ax1.grid(True, which='both')
+    #         ax1.set_ylabel(y_label[j], fontsize=12)
+    #         ax1.set_xlabel(r"Gamma")
+    #         ax1.set_yscale("log")
+    #         ax1.set_ylim(0.95 * min([min(x) for x in y]),
+    #                      1.1 * max([max(x) for x in y]))
+    #
+    #         print y
+    #
+    #         plt.title("Time-Integrated Emission")
+    #
+    #         ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+    #         plt.tight_layout()
+    #
+    #         print label, k
+    #
+    #         plt.savefig(plot_output_dir(name) + "/spectral_index_" + label +
+    #                     "_" + ["sens", "disc"][k] + ".pdf")
+    #         plt.close()

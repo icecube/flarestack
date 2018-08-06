@@ -4,10 +4,6 @@ import random
 import os
 import argparse
 import cPickle as Pickle
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 # from tqdm import tqdm
 import scipy.optimize
 from core.injector import Injector
@@ -63,8 +59,8 @@ class MinimisationHandler:
             if "Negative n_s?" in self.llh_kwargs.keys():
                 if self.llh_kwargs["Negative n_s?"]:
                     raise Exception("Attempted to mix fitting weights with "
-                                    "negatve n_s. The likelihood is not set "
-                                    "up for this case!")
+                                    "negative n_s. The code is not able to "
+                                    "handle this setup!")
 
         except KeyError:
             self.fit_weights = False
@@ -436,8 +432,9 @@ class MinimisationHandler:
                 for j, ind_w in enumerate(w.T):
                     weights_matrix[i][j] = ind_w
 
-            for row in weights_matrix.T:
-                row /= np.sum(row)
+            for i, row in enumerate(weights_matrix.T):
+                if np.sum(row) > 0:
+                    row /= np.sum(row)
 
             # weights_matrix /= np.sum(weights_matrix)
 
@@ -751,6 +748,11 @@ class MinimisationHandler:
         self.dump_injection_values(scale)
 
     def scan_likelihood(self, scale=1):
+
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.cm as cm
 
         f = self.run_trial(scale)
 

@@ -1,5 +1,66 @@
+"""File containing links to data samples used (pointsource tracks).
+
+Path to local copy of point source tracks, downloaded on 24/04/18 from
+/data/ana .. /current, with the following readme:
+
+    This directory contains a patched version of Stefan Coenders' original npy
+    files prepared for the 7yr time integrated paper (version-002p00).
+    IC40 through IC86 2011 are exactly the same as used in the paper.
+
+    The files contain some track events which overlap with the MESE sample,
+    but not all MESE events are present. Do not use these file if you want
+    to perform MESE + PS style analysis.
+
+    IC86 2012-2014 has one small patch to fix a known bug in the original files:
+
+    FIX - updated per event angular uncertainties for IC86 2012-2014 files
+
+    This fix is done by
+
+    (1) applying median angular resolution from bootstrap method in cases
+    where the sigma paraboloid fit fails
+    (2) apply the pull correction splines from Asen's time dependent
+    unblinding as they are currently our best pull correction of
+    the 7yr sample. See: https://docushare.icecube.wisc.edu/dsweb/Get/Document-
+    77805/christov_PSCall_27.6.2016.pdf
+
+    Below is a description of all the years and their corresponding files.
+
+    Josh - Nov 6, 2017
+
+    IC40:
+      Data File  IC40_exp.npy
+      MC File    IC40_corrected_MC.npy
+
+    IC59:
+      Data File  IC59_exp.npy
+      MC File    IC59_corrected_MC.npy
+
+    IC79:
+      Data File  IC79b_exp.npy
+      MC File    IC79b_corrected_MC.npy
+
+    IC86, 2011:
+      Data File  IC86_exp.npy
+      MC File    IC86_corrected_MC.npy
+
+    IC86, 2012:
+      Data File  IC86-2012_exp_v2.npy
+      MC File    IC86-2012_corrected_MC_v2.npy
+
+    IC86, 2013:
+      Data File  IC86-2013_exp_v2.npy
+      MC File    IC86-2013_corrected_MC_v2.npy
+
+    IC86, 2014:
+      Data File  IC86-2014_exp_v2.npy
+      MC File    IC86-2014_corrected_MC_v2.npy
+
+"""
+
 from shared import dataset_dir
 import numpy as np
+
 
 ps_data_dir = dataset_dir + "ps_tracks_240418/"
 
@@ -64,28 +125,11 @@ IC86_234_dict = {
         ps_data_dir + "IC86-2014_GRL.npy"
     ]
 }
-IC86_234_dict.update(ps_dict)
 
-# IC86_2013_dict = {
-#     "Name": "IC86_2013",
-#     "exp_path": diffuse_data_dir + "IC86-2013_exp_v2.npy",
-#     "mc_path": diffuse_data_dir + "IC86-2012_corrected_MC_v2.npy",
-#     "grl_path": diffuse_data_dir + "IC86-2013_GRL.npy"
-# }
-# IC86_2013_dict.update(ps_dict)
-#
-# IC86_2014_dict = {
-#     "Name": "IC86_2014",
-#     "exp_path": diffuse_data_dir + "IC86-2014_exp_v2.npy",
-#     "mc_path": diffuse_data_dir + "IC86-2012_corrected_MC_v2.npy",
-#     "grl_path": diffuse_data_dir + "IC86-2014_GRL.npy"
-# }
-# IC86_2014_dict.update(ps_dict)
+IC86_234_dict.update(ps_dict)
 
 ps_7year = [
     IC40_dict, IC59_dict, IC79_dict, IC86_1_dict, IC86_234_dict,
 ]
-
-# ps_7year = [IC79_dict, IC86_1_dict]
 
 ps_7986 = [IC79_dict, IC86_1_dict]

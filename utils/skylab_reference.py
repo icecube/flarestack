@@ -48,11 +48,6 @@ def skylab_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     # scaling = 1
     sens *= scaling
 
-    # print sindecs, sindec
-
-    # sens = np.array([x, y, z] for [s, x, y, z] in data)
-    # print data[0], sens, data[0] * scaling
-
     # Extend range of sensitivity to +/- 1 through approximation,
     # by 1d-extrapolation of first/last pair
 
@@ -108,5 +103,3 @@ def skylab_7year_discovery(sindec=0.0):
     disc_ref = interp1d(sindecs, disc)
 
     return disc_ref(sindec)
-
-skylab_7year_sensitivity()

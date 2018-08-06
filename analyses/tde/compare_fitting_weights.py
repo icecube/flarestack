@@ -14,18 +14,18 @@ from core.time_PDFs import TimePDF
 
 analyses = dict()
 
-# Start and end time of flare in MJD
-t_start = 55740.00
-t_end = 55840.00
-
-max_window = float(t_end - t_start)
-
 # Initialise Injectors/LLHs
 
 injection_energy = {
     "Name": "Power Law",
     "Gamma": 2.0,
 }
+
+# Start and end time of flare in MJD
+t_start = 55740.00
+t_end = 55840.00
+
+max_window = float(t_end - t_start)
 
 llh_time = {
     "Name": "FixedRefBox",
@@ -44,7 +44,6 @@ fit_weights = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
-    # "Fit Negative n_s?": True,
     "Fit Weights?": True
 }
 
@@ -76,7 +75,7 @@ cat_res = dict()
 
 lengths = np.logspace(-2, 0, 5) * max_window
 
-for cat in ["jetted"]:
+for cat in ["gold"]:
 
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
@@ -91,7 +90,7 @@ for cat in ["jetted"]:
                                     fixed_weights,
                                     fixed_weights_negative,
                                     fit_weights,
-                                    flare
+                                    # flare
                                     ]):
         label = ["Fixed Weights", "Fixed Weights (Negative n_s)",
                  "Fit Weights", "Flare Search", ][i]
@@ -121,7 +120,7 @@ for cat in ["jetted"]:
 
             mh_dict = {
                 "name": full_name,
-                "datasets": ps_7year[-2:-1],
+                "datasets": ps_7year[-3:-1],
                 "catalogue": cat_path,
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
@@ -152,11 +151,12 @@ for cat in ["jetted"]:
 
             print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
 
-            # rd.submit_to_cluster(pkl_file, n_jobs=5000)
+            # rd.submit_to_cluster(pkl_file, n_jobs=100)
             # #
             # mh = MinimisationHandler(mh_dict)
             # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
             # mh.clear()
+            # raw_input("prompt")
 
             res[flare_length] = mh_dict
 

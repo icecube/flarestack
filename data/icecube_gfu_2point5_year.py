@@ -1,3 +1,14 @@
+"""File containing links to data samples used (GFU).
+
+Path to local copy of point source tracks, downloaded on 16/05/18 from
+/data/ana .. /current, with the following readme:
+
+    * better pull-correction using splines, instead of polynomial fits
+
+This is the sample that was used for the original TXS analysis in 2017
+(NOT THE ONE THAT INCLUDED ADDITIONAL DATA UP TO SPRING 2018!)
+"""
+
 from shared import dataset_dir
 from icecube_pointsource_7_year import ps_7year
 import numpy as np

@@ -255,7 +255,7 @@ class Chi2_one_side_free:
         self.loc = res.x[1]
         self.scale = res.x[2]
 
-def plot_background_ts_distribution(ts_array, path, fit_truncated=False):
+def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
     ts_array = np.array(ts_array)
     ts_array = ts_array[~np.isnan(ts_array)]
     weights = np.ones_like(ts_array) * 1. / float(len(ts_array))
@@ -272,7 +272,7 @@ def plot_background_ts_distribution(ts_array, path, fit_truncated=False):
 
     frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
 
-    if (fit_truncated) and (frac_over > 0.6):
+    if ts_type == "Flare":
 
         n_bins = 100
 
@@ -284,12 +284,9 @@ def plot_background_ts_distribution(ts_array, path, fit_truncated=False):
                  normed=True,
                  stacked=True)
 
+        # chi2 = Chi2_LeftTruncated(ts_array)
         chi2 = Chi2_LeftTruncated(ts_array)
-
-        # frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
-
-        # print chi2._res.success
-        # raw_input("prompt")
+        frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
 
         if chi2._res.success:
 
@@ -311,14 +308,55 @@ def plot_background_ts_distribution(ts_array, path, fit_truncated=False):
                 loc = 0.
                 scale = 1.
 
-        # print chi2._res
-        #
+        frac_under = 1. - frac_over
+        five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
+
+    elif ts_type == "Fit Weights":
+
+        n_bins = 100
+
+        plt.figure()
+        plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
+                 bins=n_bins, lw=2, histtype='step',
+                 color=['black', "grey"],
+                 label=['TS > 0', "TS <= 0"],
+                 normed=True,
+                 stacked=True)
+
+        # chi2 = Chi2_LeftTruncated(ts_array)
+        chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
+        # frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
+
+        # print chi2._res.success
         # raw_input("prompt")
+
+        if chi2._res.success:
+
+            # frac_over = 1.
+
+            df = chi2._f.args[0]
+            loc = chi2._f.args[1]
+            scale = chi2._f.args[2]
+
+        else:
+            chi2 = Chi2_LeftTruncated(ts_array)
+            df = chi2._f.args[0]
+            loc = chi2._f.args[1]
+            scale = chi2._f.args[2]
+
+            if not chi2._res.success:
+                chi2 = Chi2_one_side(ts_array[ts_array > 0.])
+                df = chi2._f.args[0]
+                loc = 0.
+                scale = 1.
+
+            else:
+                frac_over = 1.
 
         frac_under = 1. - frac_over
         five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
 
-    else:
+    elif ts_type == "Standard":
         frac_under = 1. - frac_over
 
         n_bins = 100
@@ -338,6 +376,9 @@ def plot_background_ts_distribution(ts_array, path, fit_truncated=False):
         df = chi2._f.args[0]
         loc = 0.
         scale = 1.
+
+    else:
+        raise Exception("ts_type " + str(ts_type) + " not recognised!")
         # except IndexError:
         #     scale = 1.
     #

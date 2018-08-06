@@ -22,14 +22,8 @@ class LLH():
         time_dict = kwargs["LLH Time PDF"]
         if time_dict is not None:
             self.time_pdf = TimePDF.create(time_dict, season)
-            mask = np.array(
-                [self.time_pdf.effective_injection_time(src) > 0 for
-                 src in sources]
-            )
-            self.sources = sources[mask]
 
-        else:
-            self.sources = sources
+        self.sources = sources
 
         # Bins for sin declination (not evenly spaced)
         self.sin_dec_bins = self.season["sinDec bins"]
@@ -274,7 +268,7 @@ class LLH():
 
         # Calculates the expected number of signal events for each source in
         # the season
-        all_n_j = (n_s * weights.T[0])[weights.T[0] > 0.]
+        all_n_j = (n_s * weights.T[0])
 
         x = []
 

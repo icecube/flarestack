@@ -23,10 +23,7 @@ class Injector:
         self.time_pdf = TimePDF.create(kwargs["Injection Time PDF"],
                                        season)
 
-        mask = np.array([self.time_pdf.effective_injection_time(src) > 0 for
-                         src in sources])
-
-        self.sources = sources[mask]
+        self.sources = sources
 
         self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
         self.mc_weights = self.energy_pdf.weight_mc(self._mc)
@@ -155,7 +152,7 @@ class Injector:
             if source["Name"] not in self.ref_fluxes[scale].keys():
                 self.ref_fluxes[scale][source["Name"]] = n_inj
 
-            print self.season["Name"], source["Name"], "expecting", n_inj,
+            # print self.season["Name"], source["Name"], "expecting", n_inj,
 
             # Simulates poisson noise around the expectation value n_inj. If
             # n_s = 0, skips simulation step.
@@ -165,7 +162,8 @@ class Injector:
             else:
                 n_s = int(n_inj)
 
-            print "injecting", n_s
+            # print "injecting", n_s
+            # print dist_weight, eff_inj_time, (self.mc_weights[band_mask] / omega)
 
             if n_s < 1:
                 continue

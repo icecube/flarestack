@@ -38,15 +38,26 @@ class ResultsHandler:
         else:
             self.make_plots = self.noflare_plots
 
-        try:
-            self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
-        except KeyError:
-            self.negative_n_s = False
+        # Checks whether negative n_s is fit or not
+
+        # try:
+        #     self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
+        # except KeyError:
+        #     self.negative_n_s = False
 
         try:
             self.fit_weights = llh_kwargs["Fit Weights?"]
         except KeyError:
             self.fit_weights = False
+
+        # Sets default Chi2 distribution to fit to background trials
+
+        if self.fit_weights:
+            self.ts_type = "Fit Weights"
+        elif self.flare:
+            self.ts_type = "Flare"
+        else:
+            self.ts_type = "Standard"
         #
         # print "negative_ns", self.negative_n_s
 
@@ -59,6 +70,8 @@ class ResultsHandler:
             self.clean_merged_data()
 
         self.sensitivity = np.nan
+        self.bkg_median = np.nan
+        self.frac_over = np.nan
         self.disc_potential = np.nan
         self.extrapolated_sens = False
         self.extrapolated_disc = False
@@ -102,6 +115,7 @@ class ResultsHandler:
         return astro_sens, astro_disc
 
     def clean_merged_data(self):
+        """Function to clear cache of all data"""
         try:
             for f in os.listdir(self.merged_dir):
                 os.remove(self.merged_dir + f)
@@ -109,6 +123,11 @@ class ResultsHandler:
             pass
 
     def load_injection_values(self):
+        """Function to load the values used in injection, so that a
+        comparison to the fit results can be made.
+
+        :return: Dictionary of injected values.
+        """
 
         load_dir = inj_dir_name(self.name)
 
@@ -203,6 +222,19 @@ class ResultsHandler:
             return
 
     def find_sensitivity(self):
+        """Uses the results of the background trials to find the median TS
+        value, determining the sensitivity threshold. This sensitivity is
+        not necessarily zero, for example with negative n_s, fitting of
+        weights or the flare search method. Uses the values of
+        injection trials to fit an 1-exponential decay function to the
+        overfluctuations, allowing for calculation of the sensitivity.
+        Where the injected flux was not sufficient to reach the
+        sensitivity, extrapolation will be used instead of interpolation,
+        but this will obviously have larger associated errors. If
+        extrapolation is used, self.extrapolated_sens is set to true. In
+        either case, a plot of the overfluctuations as a function of the
+        injected signal will be made.
+        """
 
         try:
             bkg_dict = self.results[0.0]
@@ -213,6 +245,7 @@ class ResultsHandler:
         bkg_ts = bkg_dict["TS"]
 
         bkg_median = np.median(bkg_ts)
+        self.bkg_median = bkg_median
         x = sorted(self.results.keys())
         x_acc = []
         y = []
@@ -225,6 +258,9 @@ class ResultsHandler:
             print "Fraction of overfluctuations is", "{0:.2f}".format(frac),
             print "above", "{0:.2f}".format(bkg_median),
             print "(", len(ts_array), ")"
+
+            if scale == 0.0:
+                self.frac_over = frac
 
             if len(ts_array) > 1:
                 y.append(frac)
@@ -293,12 +329,8 @@ class ResultsHandler:
 
         bkg_ts = bkg_dict["TS"]
 
-        fit_truncated = ~np.logical_and(
-            not self.flare, not self.fit_weights
-        )
-
         disc_threshold = plot_background_ts_distribution(
-            bkg_ts, ts_path, fit_truncated=fit_truncated)
+            bkg_ts, ts_path, ts_type=self.ts_type)
         bkg_median = np.median(bkg_ts)
         x = sorted(self.results.keys())
         y = []
@@ -361,8 +393,9 @@ class ResultsHandler:
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = self.plot_dir + "ts_distributions/" + str(scale) + ".pdf"
+
         plot_background_ts_distribution(ts_array, ts_path,
-                                        fit_truncated=self.fit_weights)
+                                        ts_type=self.ts_type)
 
         param_path = self.plot_dir + "params/" + str(scale) + ".pdf"
 
@@ -375,8 +408,6 @@ class ResultsHandler:
                          self.param_names, inj=inj)
 
     def flare_plots(self, scale):
-        ts_array = np.array(self.results[scale]["TS"])
-        ts_path = self.plot_dir + "ts_distributions/" + str(scale) + ".pdf"
 
         sources = [x for x in self.results[scale].keys() if x != "TS"]
 
@@ -388,7 +419,7 @@ class ResultsHandler:
                 scale) + ".pdf"
 
             plot_background_ts_distribution(ts_array, ts_path,
-                                            fit_truncated=self.flare)
+                                            ts_type=self.ts_type)
 
             param_path = self.plot_dir + source + "/params/" + str(scale) + \
                          ".pdf"
