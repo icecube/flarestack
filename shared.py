@@ -38,7 +38,7 @@ skylab_ref_dir = input_dir + "skylab_reference/"
 
 
 gamma_range = [1., 4.]
-gamma_precision = .1
+gamma_precision = .025
 
 
 def name_pickle_output_dir(name):

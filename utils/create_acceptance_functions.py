@@ -13,7 +13,7 @@ dec_range = np.arcsin(sin_dec_range)
 dec_edges = np.arcsin(sin_edges)
 
 # gamma_vals = np.linspace(gamma_range[0], gamma_range[1], 31)
-gamma_vals = np.linspace(0.5, 5.5, 51)
+gamma_vals = np.linspace(0.5, 5.5, 201)
 
 def make_acceptance_f(all_data):
     e_pdf = PowerLaw()

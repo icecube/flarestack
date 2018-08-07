@@ -14,6 +14,14 @@ from shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
     plot_output_dir, scale_shortener
 
 
+def time_smear(inj):
+    inj_time = inj["Injection Time PDF"]
+    max_length = inj_time["Max Offset"] - inj_time["Min Offset"]
+    offset = np.random.random() * max_length + inj_time["Min Offset"]
+    inj_time["Offset"] = offset
+    return inj_time
+
+
 class MinimisationHandler:
     """Generic Class to handle both dataset creation and llh minimisation from
     experimental data and Monte Carlo simulation. Initilialised with a set of
@@ -44,12 +52,7 @@ class MinimisationHandler:
             self.time_smear = False
 
         if self.time_smear:
-            inj_time = inj["Injection Time PDF"]
-            max_length = inj_time["Max Offset"] - inj_time["Min Offset"]
-            offset = np.random.random() * max_length + inj_time["Min Offset"]
-            inj_time["Offset"] = offset
-
-            inj["Injection Time PDF"] = inj_time
+            inj["Injection Time PDF"] = time_smear(inj)
 
         self.inj_kwargs = inj
         self.llh_kwargs = mh_dict["llh kwargs"]
@@ -176,6 +179,19 @@ class MinimisationHandler:
                 fe = [inj.time_pdf.sig_t1(source)
                       for inj in self.injectors.itervalues()]
                 true_fe = max(fe)
+
+                if self.time_smear:
+                    inj_time = self.inj_kwargs["Injection Time PDF"]
+                    offset = inj_time["Offset"]
+                    true_fs -= offset
+                    true_fe -= offset
+
+                    min_offset = inj_time["Min Offset"]
+                    max_offset = inj_time["Max Offset"]
+                    med_offset = 0.5*(max_offset + min_offset)
+
+                    true_fs += med_offset
+                    true_fe += med_offset
 
                 true_l = true_fe - true_fs
 

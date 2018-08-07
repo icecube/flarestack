@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from shared import name_pickle_output_dir, plot_output_dir, k_to_flux, \
-    fit_setup, inj_dir_name
+    fit_setup, inj_dir_name, scale_shortener
 from ts_distributions import plot_background_ts_distribution, plot_fit_results
 from utils.neutrino_astronomy import calculate_astronomy
 
@@ -214,7 +214,7 @@ class ResultsHandler:
                 Pickle.dump(merged_data, mp)
 
             if len(merged_data.keys()) > 0:
-                self.results[float(sub_dir_name)] = merged_data
+                self.results[scale_shortener(float(sub_dir_name))] = merged_data
 
         if len(self.results.keys()) == 0:
             print "No data was found by ResultsHandler object!"
@@ -236,9 +236,9 @@ class ResultsHandler:
         """
 
         try:
-            bkg_dict = self.results[0.0]
+            bkg_dict = self.results[scale_shortener(0.0)]
         except KeyError:
-            print "No key equal to '0.0'"
+            print "No key equal to '0'"
             return
 
         bkg_ts = bkg_dict["TS"]
@@ -258,12 +258,12 @@ class ResultsHandler:
             print "above", "{0:.2f}".format(bkg_median),
             print "(", len(ts_array), ")"
 
-            if scale == 0.0:
+            if scale == scale_shortener(0.0):
                 self.frac_over = frac
 
             if len(ts_array) > 1:
                 y.append(frac)
-                x_acc.append(scale)
+                x_acc.append(float(scale))
 
                 self.make_plots(scale)
 
@@ -318,12 +318,12 @@ class ResultsHandler:
 
     def find_disc_potential(self):
 
-        ts_path = self.plot_dir + "ts_distributions/0.0.pdf"
+        ts_path = self.plot_dir + "ts_distributions/0.pdf"
 
         try:
-            bkg_dict = self.results[0.0]
+            bkg_dict = self.results[scale_shortener(0.0)]
         except KeyError:
-            print "No key equal to '0.0'"
+            print "No key equal to '0'"
             return
 
         bkg_ts = bkg_dict["TS"]
@@ -342,7 +342,7 @@ class ResultsHandler:
             print "Fraction of overfluctuations is", "{0:.2f}".format(frac)
             y.append(frac)
 
-        x = np.array(x)
+        x = np.array([float(s) for s in x])
 
         x_flux = k_to_flux(x)
 
@@ -424,12 +424,7 @@ class ResultsHandler:
                          ".pdf"
 
             if self.show_inj:
-                for key in self.inj.keys():
-                    if '{0:.4G}'.format(float(key)) == '{0:.4G}'.format(
-                            float(scale)):
-                        inj = self.inj[key]
-                        print inj
-                        raw_input("prompt")
+                inj = self.inj[str(scale)]
             else:
                 inj = None
 

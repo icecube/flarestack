@@ -19,7 +19,6 @@ energy_bins = np.linspace(1., 10., 40 + 1)
 
 energy_pdf = PowerLaw()
 
-
 def _around(value):
     """Produces an array in which the precision of the value
     is rounded to the nearest integer. This is then multiplied
@@ -31,7 +30,7 @@ def _around(value):
     return np.around(float(value) / gamma_precision) * gamma_precision
 
 
-gamma_points = np.arange(0.7, 4.3, 0.1)
+gamma_points = np.arange(0.7, 4.3, gamma_precision)
 gamma_support_points = set([_around(i) for i in gamma_points])
 
 

@@ -468,6 +468,14 @@ def plot_fit_results(results, path, labels, inj=None):
                 for val in inj.itervalues():
                     n_s += val["n_s"]
                 plt.axvline(n_s, linestyle="--", color="orange", label="Injection")
+
+            elif inj is not None and "(" in label:
+
+                keys = [x[:-1] for x in label.split("(")]
+                val = inj[keys[1]][keys[0]]
+                plt.axvline(val, linestyle="--", color="orange",
+                            label="Injection")
+
             elif inj is not None:
                 val = inj.itervalues().next()[label]
                 plt.axvline(val, linestyle="--", color="orange",

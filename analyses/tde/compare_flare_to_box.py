@@ -77,7 +77,7 @@ no_flare_negative = {
     "Fit Negative n_s?": True
 }
 
-flare_with_energy = {
+flare = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
@@ -87,16 +87,16 @@ flare_with_energy = {
 
 src_res = dict()
 
-lengths = np.logspace(-2, 0, 9) * max_window
+lengths = np.logspace(-2, 0, 3) * max_window
 
 for i, llh_kwargs in enumerate([no_flare,
                                 no_flare_negative,
-                                flare_with_energy
+                                flare
                                 ]):
 
     label = ["Time-Integrated", "Time-Integrated (negative n_s)",
              "Cluster Search"][i]
-    f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
+    f_name = ["fixed_box", "fixed_box_negative", "flare"][i]
 
     flare_name = name + f_name + "/"
 
@@ -134,7 +134,7 @@ for i, llh_kwargs in enumerate([no_flare,
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 1,
-            "n_steps": 15
+            "n_steps": 5
         }
 
         analysis_path = analysis_dir + full_name
@@ -149,7 +149,7 @@ for i, llh_kwargs in enumerate([no_flare,
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=500)
+        rd.submit_to_cluster(pkl_file, n_jobs=50)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=10)
@@ -159,7 +159,7 @@ for i, llh_kwargs in enumerate([no_flare,
 
     src_res[label] = res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]

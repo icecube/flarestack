@@ -75,8 +75,6 @@ fixed_weights_negative = {
 gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
 gammas = [1.8, 2.0, 2.3, 2.5, 2.7]
 gammas = [1.8, 2.0]
-# gammas = [1.99, 2.0, 2.02]
-# gammas = [2.5, 2.7, 2.9]
 
 # cats = ["gold", "jetted"]
 # # cats = ["jetted"]
@@ -108,11 +106,9 @@ for e_min in power_law_start_energy:
 
         closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
 
-        # lengths = [0.5 * max_window]
-
         for i, llh_kwargs in enumerate([fixed_weights_negative,
                                         fixed_weights,
-                                        # fit_weights,
+                                        fit_weights,
                                         # flare
                                         ]):
             label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
@@ -157,7 +153,7 @@ for e_min in power_law_start_energy:
                     "llh kwargs": llh_kwargs,
                     "scale": scale,
                     "n_trials": 20,
-                    "n_steps": 5
+                    "n_steps": 15
                 }
 
                 analysis_path = analysis_dir + full_name
@@ -173,14 +169,12 @@ for e_min in power_law_start_energy:
                     Pickle.dump(mh_dict, f)
 
                 # if label == "Fit Weights":
-                # rd.submit_to_cluster(pkl_file, n_jobs=50)
+                rd.submit_to_cluster(pkl_file, n_jobs=500)
 
-                #     print catalogue
-                # #
-                mh = MinimisationHandler(mh_dict)
-                mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
-                               n_trials=10)
-                mh.clear()
+                # mh = MinimisationHandler(mh_dict)
+                # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
+                #                n_trials=10)
+                # mh.clear()
 
                 res[gamma] = mh_dict
 
@@ -190,7 +184,7 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = cat_res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 
@@ -256,8 +250,6 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
 
                 if len(f) > 0:
 
-                    # print f, fluence
-
                     ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
                              color=cols[i])
                     ax2.plot(f, energy[i], linestyle=linestyle,
@@ -277,7 +269,7 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
                 y = [fluence, energy][k]
 
                 ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
-                             1.1 * max([max(x) for x in y if len(x) > 0]))
+                            1.1 * max([max(x) for x in y if len(x) > 0]))
 
             plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
                       " for " + cat_names[b] + " TDEs")
