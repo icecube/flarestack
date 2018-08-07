@@ -271,6 +271,11 @@ class Box(TimePDF):
         self.pre_window = self.t_dict["Pre-Window"]
         self.post_window = self.t_dict["Post-Window"]
 
+        if "Offset" in t_pdf_dict:
+            self.offset = self.t_dict["Offset"]
+            self.pre_window -= self.offset
+            self.post_window += self.offset
+
     def sig_t0(self, source):
         """Calculates the starting time for the window, equal to the
         source reference time in MJD minus the length of the pre-reference-time
@@ -403,6 +408,10 @@ class FixedEndBox(Box):
 
     def __init__(self, t_pdf_dict, season):
         TimePDF.__init__(self, t_pdf_dict, season)
+        if "Offset" in t_pdf_dict:
+            self.offset = self.t_dict["Offset"]
+        else:
+            self.offset = 0
 
     def sig_t0(self, source):
         """Calculates the starting time for the window, equal to the
@@ -413,7 +422,7 @@ class FixedEndBox(Box):
         :return: Time of Window Start
         """
 
-        t0 = source["Start Time (MJD)"]
+        t0 = source["Start Time (MJD)"] + self.offset
 
         return max(self.t0, t0)
 
@@ -426,6 +435,6 @@ class FixedEndBox(Box):
         :return: Time of Window End
         """
 
-        t1 = source["End Time (MJD)"]
+        t1 = source["End Time (MJD)"] + self.offset
 
         return min(t1, self.t1)

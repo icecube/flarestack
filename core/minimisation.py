@@ -33,7 +33,25 @@ class MinimisationHandler:
         self.seasons = mh_dict["datasets"]
         self.sources = sources
 
-        self.inj_kwargs = mh_dict["inj kwargs"]
+        # Checks whether signal injection should be done with a sliding PDF
+        # within a larger window, or remain fixed at the specified time
+
+        inj = dict(mh_dict["inj kwargs"])
+
+        try:
+            self.time_smear = inj["Injection Time PDF"]["Time Smear?"]
+        except KeyError:
+            self.time_smear = False
+
+        if self.time_smear:
+            inj_time = inj["Injection Time PDF"]
+            max_length = inj_time["Max Offset"] - inj_time["Min Offset"]
+            offset = np.random.random() * max_length + inj_time["Min Offset"]
+            inj_time["Offset"] = offset
+
+            inj["Injection Time PDF"] = inj_time
+
+        self.inj_kwargs = inj
         self.llh_kwargs = mh_dict["llh kwargs"]
 
         # Checks if the code should search for flares. By default, this is

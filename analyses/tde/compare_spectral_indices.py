@@ -179,14 +179,14 @@ for e_min in power_law_start_energy:
                     Pickle.dump(mh_dict, f)
 
                 # if label == "Fit Weights":
-                rd.submit_to_cluster(pkl_file, n_jobs=50)
+                # rd.submit_to_cluster(pkl_file, n_jobs=50)
 
                 #     print catalogue
                 # #
-                #     mh = MinimisationHandler(mh_dict)
-                #     # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=2)
-                #     mh.scan_likelihood(10.0)
-                #     raw_input("prompt")
+                # mh = MinimisationHandler(mh_dict)
+                # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=2)
+                # mh.scan_likelihood(10.0)
+                # raw_input("prompt")
                 # mh.clear()
 
                 res[gamma] = mh_dict
@@ -197,7 +197,7 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = cat_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 

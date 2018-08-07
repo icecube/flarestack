@@ -28,7 +28,6 @@ class Injector:
         self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
         self.mc_weights = self.energy_pdf.weight_mc(self._mc)
 
-
         if "Poisson Smear?" in kwargs.keys():
             self.poisson_smear = kwargs["Poisson Smear?"]
         else:
