@@ -14,7 +14,7 @@ from utils.neutrino_astronomy import calculate_astronomy
 
 class ResultsHandler:
 
-    def __init__(self, name, llh_kwargs, cat_path, show_inj=False,
+    def __init__(self, name, llh_kwargs, cat_path, show_inj=True,
                  cleanup=False):
 
         self.sources = np.sort(np.load(cat_path), order="Distance (Mpc)")
@@ -141,7 +141,6 @@ class ResultsHandler:
 
         return inj_values
 
-
     def merge_pickle_data(self):
 
         all_sub_dirs = [x for x in os.listdir(self.pickle_output_dir)
@@ -180,9 +179,9 @@ class ResultsHandler:
 
                 if "Parameters" in data.keys():
 
-                    if "Paramters" not in merged_data.keys():
+                    if "Parameters" not in merged_data.keys():
                         merged_data["Parameters"] = [
-                            [] for x in data["Parameters"]]
+                            [] for _ in data["Parameters"]]
 
                     for k, val in enumerate(data["Parameters"]):
                         try:

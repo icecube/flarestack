@@ -452,10 +452,13 @@ def plot_fit_results(results, path, labels, inj=None):
 
         for i, row in enumerate(results):
 
+            weights = np.ones(len(row))/float(len(row))
+
             label = labels[i]
 
             plt.subplot(n_dim, 1, i+1)
-            plt.hist(row, histtype="step", normed=True, bins=20, color="blue")
+            plt.hist(row, histtype="step", weights=weights,
+                     bins=100, color="blue")
             plt.axvline(np.median(row), linestyle="--", color="blue",
                         label="Median")
             plt.title(label)

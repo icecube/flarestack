@@ -21,9 +21,7 @@ def figsize(scale):
     fig_size = [fig_width,fig_height]
     return fig_size
 
-new_style = {                      # setup matplotlib to use latex for output
-    # "pgf.texsystem": "pdflatex",        # change this if using xetex or lautex
-    # "text.usetex": True,                # use LaTeX to write all text
+new_style = {
     "font.family": "serif",
     "axes.labelsize": 10,               # LaTeX default is 10pt font.
     "font.size": 10,
@@ -31,7 +29,7 @@ new_style = {                      # setup matplotlib to use latex for output
     "xtick.labelsize": 8,
     "ytick.labelsize": 8,
     "figure.figsize": figsize(0.9),     # default fig size of 0.9 textwidth
-    }
+ }
 mpl.rcParams.update(new_style)
 
 import matplotlib.pyplot as plt
@@ -76,7 +74,7 @@ fixed_weights_negative = {
 
 gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
 gammas = [1.8, 2.0, 2.3, 2.5, 2.7]
-# gammas = [1.8, 2.0]
+gammas = [1.8, 2.0]
 # gammas = [1.99, 2.0, 2.02]
 # gammas = [2.5, 2.7, 2.9]
 
@@ -87,9 +85,11 @@ cats = ["jetted"]
 cat_names = ["Jetted"]
 
 power_law_start_energy = [100, 10000, 100000]
-# power_law_start_energy = [10000]
+power_law_start_energy = [100]
 
 cutoff_dict = dict()
+
+injection_length = 100
 
 for e_min in power_law_start_energy:
 
@@ -112,7 +112,7 @@ for e_min in power_law_start_energy:
 
         for i, llh_kwargs in enumerate([fixed_weights_negative,
                                         fixed_weights,
-                                        fit_weights,
+                                        # fit_weights,
                                         # flare
                                         ]):
             label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
@@ -131,7 +131,7 @@ for e_min in power_law_start_energy:
                 injection_time = llh_time = {
                     "Name": "Box",
                     "Pre-Window": 0.,
-                    "Post-Window": 100
+                    "Post-Window": injection_length
                 }
 
                 injection_energy = dict(llh_energy)
@@ -148,12 +148,6 @@ for e_min in power_law_start_energy:
                     np.sin(closest_src["dec"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * (e_min/100.)**0.2
 
-
-                # print scale
-
-                # print ps_7year[-2:-1]
-                # raw_input("prompt")
-
                 mh_dict = {
                     "name": full_name,
                     "datasets": custom_dataset(txs_sample, catalogue,
@@ -163,7 +157,7 @@ for e_min in power_law_start_energy:
                     "llh kwargs": llh_kwargs,
                     "scale": scale,
                     "n_trials": 20,
-                    "n_steps": 15
+                    "n_steps": 5
                 }
 
                 analysis_path = analysis_dir + full_name
@@ -183,11 +177,10 @@ for e_min in power_law_start_energy:
 
                 #     print catalogue
                 # #
-                # mh = MinimisationHandler(mh_dict)
-                # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=2)
-                # mh.scan_likelihood(10.0)
-                # raw_input("prompt")
-                # mh.clear()
+                mh = MinimisationHandler(mh_dict)
+                mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
+                               n_trials=10)
+                mh.clear()
 
                 res[gamma] = mh_dict
 
@@ -223,19 +216,9 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
                 for (gamma, rh_dict) in sorted(res.iteritems()):
                     try:
                         rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                            rh_dict["catalogue"])
+                                            rh_dict["catalogue"], show_inj=True)
 
-                        # The uptime can noticeably devaiate from 100%
-                        injection_time = rh_dict["inj kwargs"]["Injection Time PDF"]
-
-                        inj_time = 0.
-
-                        cat = np.load(rh_dict["catalogue"])
-
-                        for season in rh_dict["datasets"]:
-                            time = TimePDF.create(injection_time, season)
-                            inj_time += np.mean([
-                                time.effective_injection_time(src) for src in cat])
+                        inj_time = injection_length * 60 * 60 * 24
 
                         astro_sens, astro_disc = rh.astro_values(
                             rh_dict["inj kwargs"]["Injection Energy PDF"])

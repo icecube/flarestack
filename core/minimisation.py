@@ -11,7 +11,7 @@ from core.llh import LLH, FlareLLH
 from core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results
 from shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
-    plot_output_dir
+    plot_output_dir, scale_shortener
 
 
 class MinimisationHandler:
@@ -132,9 +132,9 @@ class MinimisationHandler:
         :param seed: Random seed used for running of trials
         """
 
-        write_dir = self.pickle_output_dir + '{0:.4G}'.format(scale) + "/"
+        write_dir = self.pickle_output_dir + scale_shortener(scale) + "/"
 
-        # Tries to create the parent diretory, unless it already exists
+        # Tries to create the parent directory, unless it already exists
         try:
             os.makedirs(write_dir)
         except OSError:
@@ -155,7 +155,7 @@ class MinimisationHandler:
             n_inj = 0
             for inj in self.injectors.itervalues():
                 try:
-                    n_inj += inj.ref_fluxes[scale][name]
+                    n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
 
                 # If source not overlapping season, will not be in dict
                 except KeyError:
@@ -182,7 +182,7 @@ class MinimisationHandler:
                 sim = [
                     list(np.random.uniform(true_fs, true_fe,
                                       np.random.poisson(n_inj)))
-                    for i in range(1000)
+                    for _ in range(1000)
                 ]
 
                 s = []
@@ -220,7 +220,7 @@ class MinimisationHandler:
         except OSError:
             pass
 
-        file_name = inj_dir + str(scale) + ".pkl"
+        file_name = inj_dir + scale_shortener(scale) + ".pkl"
         with open(file_name, "wb") as f:
             Pickle.dump(inj_dict, f)
 
@@ -230,11 +230,8 @@ class MinimisationHandler:
 
         self.run(n_trials*10, scale=0.0)
 
-        # truth_dict = dict()
-
         for scale in scale_range:
             self.run(n_trials, scale)
-            # truth_dict[scale] = new
 
     def run_stacked(self, n_trials=n_trials_default, scale=1.):
 
@@ -302,7 +299,7 @@ class MinimisationHandler:
 
         n_inj = 0
         for inj in self.injectors.itervalues():
-            for val in inj.ref_fluxes[scale].itervalues():
+            for val in inj.ref_fluxes[scale_shortener(scale)].itervalues():
                 n_inj += val
         print ""
         print "Injected with an expectation of", n_inj, "events."

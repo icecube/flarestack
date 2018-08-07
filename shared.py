@@ -122,3 +122,13 @@ def flux_to_k(flux):
     :return: Flux scale (k)
     """
     return flux / k_flux_factor
+
+
+def scale_shortener(scale):
+    """Function to trim number of significant figures for flux scales when
+    required for dictionary keys or saving pickle files.
+
+    :param scale: Flux Scale
+    :return: Flux Scale to 4.s.f
+    """
+    return '{0:.4G}'.format(scale)

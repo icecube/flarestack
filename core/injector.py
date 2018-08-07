@@ -1,6 +1,6 @@
 import numpy as np
 import healpy as hp
-from shared import k_to_flux
+from shared import k_to_flux, scale_shortener
 from energy_PDFs import EnergyPDF
 from time_PDFs import TimePDF
 from data.tools import data_loader
@@ -34,10 +34,10 @@ class Injector:
             self.poisson_smear = True
 
         self.ref_fluxes = {
-            0.0: dict()
+            scale_shortener(0.0): dict()
         }
         for source in sources:
-            self.ref_fluxes[0.0][source["Name"]] = 0.0
+            self.ref_fluxes[scale_shortener(0.0)][source["Name"]] = 0.0
 
     def scramble_data(self):
         """Scrambles the raw dataset to "blind" the data. Assigns a flat Right
@@ -112,8 +112,10 @@ class Injector:
 
         dist_scale = np.sum(self.sources["Distance (Mpc)"]**-2)
 
-        if scale not in self.ref_fluxes.keys():
-            self.ref_fluxes[scale] = dict()
+        scale_key = scale_shortener(scale)
+
+        if scale_key not in self.ref_fluxes.keys():
+            self.ref_fluxes[scale_key] = dict()
 
         # Loop over each source to be simulated
         for i, source in enumerate(
@@ -148,8 +150,8 @@ class Injector:
 
             n_tot_exp += n_inj
 
-            if source["Name"] not in self.ref_fluxes[scale].keys():
-                self.ref_fluxes[scale][source["Name"]] = n_inj
+            if source["Name"] not in self.ref_fluxes[scale_key].keys():
+                self.ref_fluxes[scale_key][source["Name"]] = n_inj
 
             # print self.season["Name"], source["Name"], "expecting", n_inj,
 
@@ -163,6 +165,7 @@ class Injector:
 
             # print "injecting", n_s
             # print dist_weight, eff_inj_time, (self.mc_weights[band_mask] / omega)
+            # raw_input("prompt")
 
             if n_s < 1:
                 continue
