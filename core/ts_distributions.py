@@ -450,6 +450,18 @@ def plot_fit_results(results, path, labels, inj=None):
         fig.set_size_inches(7, n_dim*3)
         fig.subplots_adjust(hspace=.5)
 
+        # print len(results), labels
+        # print [x[:5] for x in results]
+        # fs = results[2]
+        # fe = results[3]
+        # fl = results[4]
+        #
+        # mask = (fe > 55690.) & (fe < 55700)
+        #
+        # print fs[mask][:5], fe[mask][:5], fl[mask][:5]
+        #
+        # raw_input("prompt")
+
         for i, row in enumerate(results):
 
             weights = np.ones(len(row))/float(len(row))

@@ -456,7 +456,8 @@ class LLH():
 
 class FlareLLH(LLH):
 
-    def create_flare_llh_function(self, data, flare_veto, n_all, source):
+    def create_flare_llh_function(self, data, flare_veto, n_all, source,
+                                  n_season):
 
         coincident_data = data[~flare_veto]
 
@@ -481,14 +482,14 @@ class FlareLLH(LLH):
         else:
             SoB_energy_cache = None
 
-        def test_statistic(params, weights):
+        def test_statistic(params):
             return self.calculate_flare_test_statistic(
-                params, weights, n_all, SoB_spacetime,
+                params, n_season, n_all, SoB_spacetime,
                 SoB_energy_cache)
 
         return test_statistic
 
-    def calculate_flare_test_statistic(self, params, weights, n_all,
+    def calculate_flare_test_statistic(self, params, n_season, n_all,
                                        SoB_spacetime, SoB_energy_cache=None):
         """Calculates the test statistic, given the parameters. Uses numexpr
         for faster calculations.
@@ -517,33 +518,30 @@ class FlareLLH(LLH):
             n_s = np.array(params)
             SoB_energy = 1.
 
-        # Calculates the expected number of signal events for each source in
-        # the season
-        n_j = n_s * weights
-
         if n_all > 0:
             pass
         else:
-            print n_all, n_j
+            print n_all, n_s
             raw_input("prompt")
 
         # print len(SoB_spacetime)
         # raw_input("prompt")
 
         if len(SoB_spacetime) > 0:
-
             # Evaluate the likelihood function for neutrinos close to each source
             llh_value = np.sum(np.log((
-                1 + ((n_j/n_all) * (SoB_energy * SoB_spacetime)))))
+                1 + ((n_s/n_all) * (SoB_energy * SoB_spacetime)))))
 
         else:
             llh_value = 0.
 
-        # Account for the events in the veto region, by assuming they have S/B=0
-        llh_value += self.assume_background(n_j, n_mask, n_all)
+        llh_value += self.assume_season_background(n_s, n_mask, n_season, n_all)
 
         # Definition of test statistic
         return 2. * llh_value
+
+    def assume_season_background(self, n_s, n_mask, n_season, n_all):
+        return (n_season - n_mask) * np.log1p(-n_s / n_all)
 
     def find_significant_events(self, coincident_data, source):
         """Finds events in the coincident dataset (spatially and temporally

@@ -355,10 +355,9 @@ class Box(TimePDF):
         :param source: Source to be considered
         :return: Effective Livetime in seconds
         """
-        season_length = self.livetime * (60 * 60 * 24)
         t0 = self.mjd_to_livetime(self.sig_t0(source))
         t1 = self.mjd_to_livetime(self.sig_t1(source))
-        time = season_length * (t1 - t0) / (self.t1 - self.t0)
+        time = (t1 - t0) * 60 * 60 * 24
 
         return max(time, 0.)
 
@@ -441,10 +440,27 @@ class FixedEndBox(Box):
 
 
 # from data.icecube_pointsource_7_year import ps_7year
+# from shared import catalogue_dir
 #
-# llh_time = {
-#     "Name": "FixedRefBox",
-#     "Ref Time (MJD)":
-# }
+# cat_path = catalogue_dir + "TDEs/individual_TDEs/Swift J1644+57_catalogue.npy"
+# catalogue = np.load(cat_path)
 #
-# TimePDF.create(time_dict, season)
+# for t in np.linspace(0, 500, 101):
+#     time_dict = {
+#         "Name": "FixedRefBox",
+#         "Fixed Ref Time (MJD)": 55650,
+#         "Pre-Window": 0,
+#         "Post-Window": t
+#     }
+#
+#     livetime = 0
+#     tot = 0
+#
+#     for season in ps_7year[-2:-1]:
+#         tpdf = TimePDF.create(time_dict, season)
+#         livetime += tpdf.effective_injection_time(
+#             catalogue
+#         )
+#         tot += tpdf.livetime
+#
+#     print t, livetime/(60*60*24), tot

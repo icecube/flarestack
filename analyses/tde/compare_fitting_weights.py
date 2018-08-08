@@ -197,9 +197,7 @@ for (cat, src_res) in cat_res.iteritems():
                 sens[i].append(rh.sensitivity * float(length) * 60 * 60 * 24)
                 disc_pots[i].append(rh.disc_potential *
                                     float(length) * 60 * 60 * 24)
-                sens_livetime[i].append(rh.sensitivity * inj_time * src_1_frac)
-                disc_pots_livetime[i].append(rh.disc_potential * inj_time
-                                             * src_1_frac)
+
                 fracs[i].append(length)
 
             except OSError:

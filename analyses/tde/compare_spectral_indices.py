@@ -49,17 +49,17 @@ fixed_weights_negative = {
 }
 
 gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
-gammas = [1.8, 2.0, 2.3, 2.5, 2.7]
-gammas = [1.8, 2.0]
+# gammas = [1.8, 2.0, 2.3, 2.5, 2.7]
+# gammas = [1.8, 2.0]
 
 # cats = ["gold", "jetted"]
 # # cats = ["jetted"]
 # cat_names = ["Jetted", "Golden"]
-cats = ["jetted"]
-cat_names = ["Jetted"]
+cats = ["jetted", "gold", "silver", "obscured"]
+# cat_names = ["Jetted"]
 
 power_law_start_energy = [100, 10000, 100000]
-power_law_start_energy = [100]
+# power_law_start_energy = [100]
 
 cutoff_dict = dict()
 
@@ -248,7 +248,7 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
                             1.1 * max([max(x) for x in y if len(x) > 0]))
 
             plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
-                      " for " + cat_names[b] + " TDEs")
+                      " for " + cat_name + " TDEs")
 
             ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
             plt.tight_layout()

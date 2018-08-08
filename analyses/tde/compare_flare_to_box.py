@@ -62,7 +62,11 @@ flare = {
 
 src_res = dict()
 
-lengths = np.logspace(-2, 0, 2) * max_window
+lengths = np.logspace(-2, 0, 9) * max_window
+print lengths
+lengths = np.logspace(-2, 0, 17) * max_window
+print lengths
+raw_input("prompt")
 
 for i, llh_kwargs in enumerate([
                                 no_flare,
@@ -110,7 +114,7 @@ for i, llh_kwargs in enumerate([
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 1,
-            "n_steps": 5
+            "n_steps": 15
         }
 
         analysis_path = analysis_dir + full_name
@@ -125,17 +129,16 @@ for i, llh_kwargs in enumerate([
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        rd.submit_to_cluster(pkl_file, n_jobs=50)
+        # rd.submit_to_cluster(pkl_file, n_jobs=12000)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=3)
         # mh.clear()
-        # raw_input("prompt")
         res[flare_length] = mh_dict
 
     src_res[label] = res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]
@@ -147,12 +150,15 @@ labels = []
 
 for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
-    # if f_type!="Time-Integrated (negative n_s)":
-    if True:
+    if f_type=="Time-Integrated (negative n_s)":
+    # if True:
         for (length, rh_dict) in sorted(res.iteritems()):
             try:
                 rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                                     rh_dict["catalogue"], show_inj=True)
+
+                raw_input("prompt")
+
 
                 inj_time = length * (60 * 60 * 24)
 

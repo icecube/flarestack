@@ -679,6 +679,19 @@ class MinimisationHandler:
 
                     overall_marginalisation = flare_length / max_flare
 
+                    # Each flare is evaluated accounting for the
+                    # background on the sky (the non-coincident
+                    # data), which is given by the number of
+                    # neutrinos on the sky during the given
+                    # flare. (NOTE THAT IT IS NOT EQUAL TO THE
+                    # NUMBER OF NEUTRINOS IN THE SKY OVER THE
+                    # ENTIRE SEARCH WINDOW)
+
+                    n_all = np.sum([np.sum(~np.logical_or(
+                        np.less(data[time_key], t_start),
+                        np.greater(data[time_key], t_end)))
+                                    for data in full_data.itervalues()])
+
                     llhs = dict()
 
                     # Loop over data seasons
@@ -702,6 +715,10 @@ class MinimisationHandler:
 
                         data = full_data[name]
 
+                        n_season = np.sum(~np.logical_or(
+                            np.less(data[time_key], t_start),
+                            np.greater(data[time_key], t_end)))
+
                         # Removes non-coincident data
 
                         flare_veto = np.logical_or(
@@ -719,19 +736,6 @@ class MinimisationHandler:
                             min(t_end, season_dict["End (MJD)"]),
                             season_dict["Start (MJD)"])
 
-                        # Each flare is evaluated accounting for the
-                        # background on the sky (the non-coincident
-                        # data), which is given by the number of
-                        # neutrinos on the sky during the given
-                        # flare. (NOTE THAT IT IS NOT EQUAL TO THE
-                        # NUMBER OF NEUTRINOS IN THE SKY OVER THE
-                        # ENTIRE SEARCH WINDOW)
-
-                        n_all = np.sum(~np.logical_or(
-                            np.less(data[time_key], t_s),
-                            np.greater(data[time_key], t_e)
-                        ))
-
                         # Checks to make sure that there are
                         # neutrinos in the sky at all. There should
                         # be, due to the definition of the flare window.
@@ -745,7 +749,7 @@ class MinimisationHandler:
                         # Creates the likelihood function for the flare
 
                         flare_f = llh.create_flare_llh_function(
-                            coincident_data, flare_veto, n_all, src)
+                            coincident_data, flare_veto, n_all, src, n_season)
 
                         llhs[season_dict["Name"]] = {
                             # "llh": flare_llh,
@@ -757,15 +761,15 @@ class MinimisationHandler:
 
                     def f_final(params):
 
-                        weights_matrix = np.ones(len(llhs))
+                        # weights_matrix = np.ones(len(llhs))
 
-                        for i, (name, llh_dict) in enumerate(
-                                sorted(llhs.iteritems())):
-                            T = llh_dict["flare length"]
-                            acc = llh.acceptance(src, params)
-                            weights_matrix[i] = T * acc
-
-                        weights_matrix /= np.sum(weights_matrix)
+                        # for i, (name, llh_dict) in enumerate(
+                        #         sorted(llhs.iteritems())):
+                        #     T = llh_dict["flare length"]
+                        #     acc = llh.acceptance(src, params)
+                        #     weights_matrix[i] = T * acc
+                        #
+                        # weights_matrix /= np.sum(weights_matrix)
 
                         # Marginalisation is done once, not per-season
 
@@ -774,10 +778,7 @@ class MinimisationHandler:
                         for i, (name, llh_dict) in enumerate(
                                 sorted(llhs.iteritems())):
 
-                            w = weights_matrix[i]
-
-                            if w > 0.:
-                                ts += llh_dict["f"](params, w)
+                            ts += llh_dict["f"](params)
 
                         return -ts
 
