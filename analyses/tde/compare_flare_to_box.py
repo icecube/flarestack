@@ -15,7 +15,7 @@ name = "analyses/tde/compare_flare_to_box/"
 analyses = dict()
 
 cat_path = catalogue_dir + "TDEs/individual_TDEs/Swift J1644+57_catalogue.npy"
-cat_path = catalogue_dir + "TDEs/individual_TDEs/XMMSL1 J0740-85_catalogue.npy"
+# cat_path = catalogue_dir + "TDEs/individual_TDEs/XMMSL1 J0740-85_catalogue.npy"
 catalogue = np.load(cat_path)
 
 t_start = catalogue["Start Time (MJD)"]
@@ -62,12 +62,12 @@ flare = {
 
 src_res = dict()
 
-lengths = np.logspace(-2, 0, 3) * max_window
+lengths = np.logspace(-2, 0, 2) * max_window
 
 for i, llh_kwargs in enumerate([
                                 no_flare,
-                                # no_flare_negative,
-                                # flare
+                                no_flare_negative,
+                                flare
                                 ]):
 
     label = ["Time-Integrated", "Time-Integrated (negative n_s)",
@@ -110,7 +110,7 @@ for i, llh_kwargs in enumerate([
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 1,
-            "n_steps": 15
+            "n_steps": 5
         }
 
         analysis_path = analysis_dir + full_name
@@ -125,17 +125,17 @@ for i, llh_kwargs in enumerate([
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=200)
+        rd.submit_to_cluster(pkl_file, n_jobs=50)
 
-        mh = MinimisationHandler(mh_dict)
-        mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=3)
-        mh.clear()
+        # mh = MinimisationHandler(mh_dict)
+        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=3)
+        # mh.clear()
         # raw_input("prompt")
         res[flare_length] = mh_dict
 
     src_res[label] = res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]

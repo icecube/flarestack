@@ -438,3 +438,13 @@ class FixedEndBox(Box):
         t1 = source["End Time (MJD)"] + self.offset
 
         return min(t1, self.t1)
+
+
+# from data.icecube_pointsource_7_year import ps_7year
+#
+# llh_time = {
+#     "Name": "FixedRefBox",
+#     "Ref Time (MJD)":
+# }
+#
+# TimePDF.create(time_dict, season)
