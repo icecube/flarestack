@@ -249,6 +249,8 @@ class ResultsHandler:
         x_acc = []
         y = []
 
+        x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
+
         for scale in x:
             print scale,
             ts_array = np.array(self.results[scale]["TS"])
@@ -334,6 +336,8 @@ class ResultsHandler:
         x = sorted(self.results.keys())
         y = []
 
+        x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
+
         for scale in x:
             print scale,
             ts_array = np.array(self.results[scale]["TS"])
@@ -351,8 +355,6 @@ class ResultsHandler:
         def f(x, a, b):
             value = 0.5 * (np.tanh(a*x - b) + 1.)
             return value
-
-        print max(x)
 
         [best_a, best_b] = scipy.optimize.curve_fit(
             f, x, y,  p0=[1./max(x), 2])[0]
@@ -379,7 +381,7 @@ class ResultsHandler:
         plt.axvline(self.disc_potential, lw=2, color="red")
         plt.ylim(0., 1.)
         plt.xlim(0., k_to_flux(max(xrange)))
-        plt.ylabel(r'Overfluctuations relative to 90\% of $\lambda_{bkg}$')
+        plt.ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
         plt.xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
         plt.savefig(savepath)
         plt.close()

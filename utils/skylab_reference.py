@@ -49,19 +49,17 @@ def skylab_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     sens *= scaling
 
     # Extend range of sensitivity to +/- 1 through approximation,
-    # by 1d-extrapolation of first/last pair
 
     sindecs = np.append(-1, sindecs)
     sindecs = np.append(sindecs, 1)
 
-    lower_diff = sens[0] - sens[1]
+    # lower_diff = sens[0] - sens[1]
+    #
+    # upper_diff = sens[-1] - sens[-2]
 
-    upper_diff = sens[-1] - sens[-2]
-
-    sens = np.append(sens[0] + lower_diff, sens)
-    sens = np.append(sens, sens[-1] + upper_diff)
-
-    sens_ref = interp2d(np.array(sindecs), np.array(gammas), np.log(sens))
+    sens = np.vstack((sens[0], sens))
+    sens = np.vstack((sens, sens[-1]))
+    sens_ref = interp2d(np.array(sindecs), np.array(gammas), np.log(sens.T))
 
     if np.array(sindec).ndim > 0:
         return np.array([np.exp(sens_ref(x, gamma))[0] for x in sindec])

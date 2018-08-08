@@ -9,31 +9,7 @@ from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.skylab_reference import skylab_7year_sensitivity
 from cluster import run_desy_cluster as rd
 import math
-import matplotlib as mpl
-mpl.use('Agg')
-
-def figsize(scale):
-    fig_width_pt = 469.755                          # Get this from LaTeX using \the\textwidth
-    inches_per_pt = 1.0/72.27                       # Convert pt to inch
-    golden_mean = (np.sqrt(5.0)-1.0)/2.0            # Aesthetic ratio (you could change this)
-    fig_width = fig_width_pt*inches_per_pt*scale    # width in inches
-    fig_height = fig_width*golden_mean              # height in inches
-    fig_size = [fig_width,fig_height]
-    return fig_size
-
-new_style = {
-    "font.family": "serif",
-    "axes.labelsize": 10,               # LaTeX default is 10pt font.
-    "font.size": 10,
-    "legend.fontsize": 8,               # Make the legend/label fonts a little smaller
-    "xtick.labelsize": 8,
-    "ytick.labelsize": 8,
-    "figure.figsize": figsize(0.9),     # default fig size of 0.9 textwidth
- }
-mpl.rcParams.update(new_style)
-
 import matplotlib.pyplot as plt
-from core.time_PDFs import TimePDF
 from utils.custom_seasons import custom_dataset
 
 analyses = dict()
@@ -169,7 +145,7 @@ for e_min in power_law_start_energy:
                     Pickle.dump(mh_dict, f)
 
                 # if label == "Fit Weights":
-                rd.submit_to_cluster(pkl_file, n_jobs=500)
+                # rd.submit_to_cluster(pkl_file, n_jobs=500)
 
                 # mh = MinimisationHandler(mh_dict)
                 # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
@@ -184,7 +160,7 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = cat_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 
@@ -217,7 +193,7 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
                         astro_sens, astro_disc = rh.astro_values(
                             rh_dict["inj kwargs"]["Injection Energy PDF"])
 
-                        key = "Total Fluence (GeV^{-1} cm^{-2} s^{-1})"
+                        key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
                         e_key = "Mean Luminosity (erg/s)"
 

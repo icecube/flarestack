@@ -141,16 +141,6 @@ for cat in ["gold"]:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            injection_time = mh_dict["inj kwargs"]["Injection Time PDF"]
-
-            inj_time = 0.
-
-            for season in mh_dict["datasets"]:
-                time = TimePDF.create(injection_time, season)
-                inj_time += time.effective_injection_time(catalogue)
-
-            print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
-
             # rd.submit_to_cluster(pkl_file, n_jobs=100)
             # #
             # mh = MinimisationHandler(mh_dict)

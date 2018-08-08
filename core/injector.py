@@ -164,7 +164,8 @@ class Injector:
                 n_s = int(n_inj)
 
             # print "injecting", n_s
-            # print dist_weight, eff_inj_time, (self.mc_weights[band_mask] / omega)
+            # print inj_flux, dist_weight, eff_inj_time/(60*60*24), np.sum(
+            #     self.mc_weights[ band_mask] / omega)
             # raw_input("prompt")
 
             if n_s < 1:

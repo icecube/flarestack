@@ -21,6 +21,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
+from astropy import units as u
+from astropy.coordinates import Distance
 
 name = "tests/1ES_blazar_benchmark/"
 
@@ -37,13 +39,20 @@ t_end = 57595.00
 ra = 300.00
 dec = 65.15
 
+# Distance to source -> z=0.048 according to TeVCat. With lambdaCDM, this gives:
+z = 0.048
+lumdist = Distance(z=z).to("Mpc").value
+
+print z, lumdist
+raw_input("prompt")
+
 # Creates the .npy source catalogue
 catalogue = custom_sources(
     name="1ES_1959+650",
     ra=ra,
     dec=dec,
     weight=1.,
-    distance=1.,
+    distance=214.4,
     start_time=t_start,
     end_time=t_end,
 )
@@ -96,16 +105,12 @@ flare = {
 
 src_res = dict()
 
-# lengths = np.array(sorted([0.05] + list(np.linspace(0.0, 1.0, 11)))[1:]) * \
-#                  max_window
-
-# lengths = [0.5 * max_window]
-
-lengths = np.logspace(-2, 0, 5) * max_window
+lengths = np.logspace(-2, 0, 3) * max_window
 
 for i, llh_kwargs in enumerate([no_flare,
                                 no_flare_negative,
-                                flare]):
+                                # flare
+                                ]):
 
     label = ["Time-Integrated", "Time-Integrated (negative n_s)", "Flare"][i]
     f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
@@ -118,8 +123,15 @@ for i, llh_kwargs in enumerate([no_flare,
 
         full_name = flare_name + str(flare_length) + "/"
 
-        injection_time = dict(llh_time)
-        injection_time["Post-Window"] = flare_length
+        injection_time = {
+            "Name": "FixedRefBox",
+            "Fixed Ref Time (MJD)": t_start,
+            "Pre-Window": 0,
+            "Post-Window": flare_length,
+            "Time Smear?": True,
+            "Min Offset": 0.,
+            "Max Offset": max_window - flare_length
+        }
 
         inj_kwargs = {
             "Injection Energy PDF": injection_energy,
@@ -153,17 +165,7 @@ for i, llh_kwargs in enumerate([no_flare,
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        injection_time = mh_dict["inj kwargs"]["Injection Time PDF"]
-
-        inj_time = 0.
-
-        for season in mh_dict["datasets"]:
-            time = TimePDF.create(injection_time, season)
-            inj_time += time.effective_injection_time(catalogue)
-
-        print "Injecting for", flare_length, "Livetime", inj_time/(60.*60.*24.)
-
-        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
+        # rd.submit_to_cluster(pkl_file, n_jobs=100)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
@@ -178,10 +180,10 @@ for i, llh_kwargs in enumerate([no_flare,
 # rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
-sens_livetime = [[] for _ in src_res]
 fracs = [[] for _ in src_res]
 disc_pots = [[] for _ in src_res]
-disc_pots_livetime = [[] for _ in src_res]
+sens_e = [[] for _ in src_res]
+disc_e = [[] for _ in src_res]
 
 labels = []
 
@@ -191,23 +193,17 @@ for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
             rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                                 rh_dict["catalogue"])
 
-            # The uptime noticeably deviates from 100%, because the detector
-            # was undergoing tests for 25 hours on May 5th/6th 2016. Thus,
-            # particularly for short flares, the sensitivity appears to
-            # improve as a function of time unless this is taken into account.
-            injection_time = rh_dict["inj kwargs"]["Injection Time PDF"]
+            inj_time = length * (60 * 60 * 24)
 
-            inj_time = 0.
+            astro_sens, astro_disc = rh.astro_values(
+                rh_dict["inj kwargs"]["Injection Energy PDF"])
 
-            for season in rh_dict["datasets"]:
-                time = TimePDF.create(injection_time, season)
-                inj_time += time.effective_injection_time(catalogue)
+            e_key = "Mean Luminosity (erg/s)"
 
-            sens[i].append(rh.sensitivity * float(length) * 60 * 60 * 24)
-            disc_pots[i].append(rh.disc_potential *
-                                float(length) * 60 * 60 * 24)
-            sens_livetime[i].append(rh.sensitivity * inj_time)
-            disc_pots_livetime[i].append(rh.disc_potential * inj_time)
+            sens[i].append(rh.sensitivity * inj_time)
+            disc_pots[i].append(rh.disc_potential * inj_time)
+            sens_e[i].append(astro_sens[e_key] * inj_time)
+            disc_e[i].append(astro_disc[e_key] * inj_time)
             fracs[i].append(length)
 
         except OSError:
@@ -222,36 +218,41 @@ for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
     labels.append(f_type)
     # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-for j, s in enumerate([sens, sens_livetime]):
+for j, [fluence, energy] in enumerate([[sens, sens_e],
+                                       [disc_pots, disc_e]]):
 
-    d = [disc_pots, disc_pots_livetime][j]
+    plt.figure()
+    ax1 = plt.subplot(111)
 
-    for k, y in enumerate([s, d]):
+    ax2 = ax1.twinx()
 
-        plt.figure()
-        ax1 = plt.subplot(111)
+    cols = ["#00A6EB", "#F79646", "g", "r"]
+    linestyle = ["-", "-"][j]
 
-        cols = ["r", "g", "b"]
-        linestyle = ["-", "--"][k]
+    for i, f in enumerate(fracs):
 
-        for i, f in enumerate(fracs):
-            plt.plot(f, y[i], label=labels[i], linestyle=linestyle,
+        if len(f) > 0:
+            ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
+                     color=cols[i])
+            ax2.plot(f, energy[i], linestyle=linestyle,
                      color=cols[i])
 
-        label = ["", "(Livetime-adjusted)"][j]
+    ax2.grid(True, which='both')
+    ax1.set_ylabel(r"Time-Integrated Flux[ GeV$^{-1}$ cm$^{-2}$]",
+                   fontsize=12)
+    ax2.set_xlabel(r"Flare Length (days)")
+    ax1.set_yscale("log")
+    ax2.set_yscale("log")
 
-        ax1.grid(True, which='both')
-        # ax1.semilogy(nonposy='clip')
-        ax1.set_ylabel(r"Time-Integrated Flux[ GeV$^{-1}$ cm$^{-2}$]",
-                       fontsize=12)
-        ax1.set_xlabel(r"Flare Length (days)")
-        # ax1.set_xscale("log")
-        ax1.set_ylim(0.95 * min([min(x) for x in y]),
-                     1.1 * max([max(x) for x in y]))
+    for k, ax in enumerate([ax1, ax2]):
+        y = [fluence, energy][k]
 
-        plt.title("Flare in " + str(int(max_window)) + " day window")
+        ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
+                    1.1 * max([max(x) for x in y if len(x) > 0]))
 
-        ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
-        plt.savefig(plot_output_dir(name) + "/flare_vs_box" + label + "_" +
-                    ["sens", "disc"][k] + ".pdf")
-        plt.close()
+    plt.title("Flare in " + str(int(max_window)) + " day window")
+
+    ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+    plt.savefig(plot_output_dir(name) + "/flare_vs_box_" +
+                catalogue["Name"][0] + "_" + ["sens", "disc"][k] + ".pdf")
+    plt.close()

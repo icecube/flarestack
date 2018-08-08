@@ -91,7 +91,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     tot_fluence = (flux * e_integral) / (u. GeV * u.cm ** 2 * u.s)
 
-    astro_res["Total Fluence (GeV^{-1} cm^{-2} s^{-1})"] = tot_fluence.value
+    astro_res["Total Fluence (GeV cm^{-2} s^{-1})"] = tot_fluence.value
 
     print "Total Fluence", tot_fluence
 

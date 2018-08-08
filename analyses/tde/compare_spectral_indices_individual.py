@@ -7,8 +7,6 @@ from data.icecube_gfu_2point5_year import txs_sample
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.skylab_reference import skylab_7year_sensitivity
 from cluster import run_desy_cluster as rd
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
 from utils.custom_seasons import custom_dataset

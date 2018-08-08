@@ -649,6 +649,17 @@ class MinimisationHandler:
                         )
 
                         overall_marginalisation = flare_length / max_flare
+                        # overall_marginalisation = 1.
+
+                        # day = 60 * 60 * 24
+                        #
+                        # print flare_length/day, max_flare/day,
+                        # print overall_marginalisation,
+                        # print t_start, t_end
+                        # print np.array([
+                        #     llh.time_pdf.effective_injection_time(flare_time)
+                        #     for llh in self.llhs.itervalues()])/day
+                        # raw_input("prompt")
 
                         llhs = dict()
 
@@ -664,26 +675,21 @@ class MinimisationHandler:
                                 np.greater(coincident_data[time_key], t_end)
                             )
 
-                            if np.sum(~flare_veto) > 0:
+                            llh = self.llhs[season_dict["Name"]]
 
-                                llh = self.llhs[season_dict["Name"]]
+                            t_s = min(
+                                max(t_start, season_dict["Start (MJD)"]),
+                                season_dict["End (MJD)"])
+                            t_e = max(
+                                min(t_end, season_dict["End (MJD)"]),
+                                season_dict["Start (MJD)"])
 
-                                t_s = min(
-                                    max(t_start, season_dict["Start (MJD)"]),
-                                    season_dict["End (MJD)"])
-                                t_e = max(
-                                    min(t_end, season_dict["End (MJD)"]),
-                                    season_dict["Start (MJD)"])
+                            n_all = np.sum(~np.logical_or(
+                                np.less(data[time_key], t_s),
+                                np.greater(data[time_key], t_e)
+                            ))
 
-                                n_all = np.sum(~np.logical_or(
-                                    np.less(data[time_key], t_s),
-                                    np.greater(data[time_key], t_e)
-                                ))
-
-                                if n_all > 0:
-                                    pass
-                                else:
-                                    print t_start, t_end, t_s, t_e
+                            if n_all > 0:
 
                                 flare_f = llh.create_flare_llh_function(
                                     coincident_data, flare_veto, n_all, src)
