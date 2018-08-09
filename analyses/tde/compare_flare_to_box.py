@@ -63,10 +63,8 @@ flare = {
 src_res = dict()
 
 lengths = np.logspace(-2, 0, 9) * max_window
-print lengths
-lengths = np.logspace(-2, 0, 17) * max_window
-print lengths
-raw_input("prompt")
+# lengths = np.logspace(-2, 0, 17) * max_window
+
 
 for i, llh_kwargs in enumerate([
                                 no_flare,
@@ -158,7 +156,6 @@ for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
                                     rh_dict["catalogue"], show_inj=True)
 
                 raw_input("prompt")
-
 
                 inj_time = length * (60 * 60 * 24)
 

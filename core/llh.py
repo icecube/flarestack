@@ -275,15 +275,17 @@ class LLH():
         # If n_s if negative, then removes the energy term from the likelihood
 
         for i, n_j in enumerate(all_n_j):
-            if np.sum(n_s) < 0:
+            # Switches off Energy term for negative n_s, which should in theory
+            # be a continuous change that does not alter the likelihood (as
+            # it is not included for n_s=0). However, it nonetheless seems to
+            # materially alter the TS distribution for positive values of
+            # n_s, by affecting the best fit position of the minimiser.
+            # So it is currently disabled.
+            if False:
                 x.append(1 + ((n_j / n_all) * (SoB_spacetime[i] - 1.)))
-
             else:
                 x.append(1 + ((n_j / n_all) * (
                     SoB_energy[i] * SoB_spacetime[i] - 1.)))
-
-        # print min([min(y) for y in x]), max([max(y) for y in x])
-        # raw_input("prompt")
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
             llh_value = -50. + all_n_j

@@ -7,8 +7,6 @@ from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.skylab_reference import skylab_7year_sensitivity
 from cluster import run_desy_cluster as rd
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
 
@@ -21,22 +19,9 @@ injection_energy = {
     "Gamma": 2.0,
 }
 
-# Start and end time of flare in MJD
-t_start = 55740.00
-t_end = 55840.00
-
-max_window = float(t_end - t_start)
-
 llh_time = {
-    "Name": "FixedRefBox",
-    "Fixed Ref Time (MJD)": t_start,
-    "Pre-Window": 0.,
-    "Post-Window": max_window
+    "Name": "FixedEndBox",
 }
-
-# llh_time = {
-#     "Name": "Steady"
-# }
 
 llh_energy = injection_energy
 
@@ -73,9 +58,13 @@ flare = {
 
 cat_res = dict()
 
+# Inject for, at most, 100 days
+
+max_window = 100
+
 lengths = np.logspace(-2, 0, 5) * max_window
 
-for cat in ["gold"]:
+for cat in ["jetted"]:
 
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 

@@ -4,14 +4,12 @@ import random
 import os
 import argparse
 import cPickle as Pickle
-# from tqdm import tqdm
 import scipy.optimize
 from core.injector import Injector
 from core.llh import LLH, FlareLLH
-from core.ts_distributions import plot_background_ts_distribution, \
-    plot_fit_results
 from shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
     plot_output_dir, scale_shortener
+import matplotlib.pyplot as plt
 
 
 def time_smear(inj):
@@ -104,7 +102,7 @@ class MinimisationHandler:
                                                      **self.llh_kwargs)
 
             self.injectors[season["Name"]] = Injector(season, sources,
-                                                  **self.inj_kwargs)
+                                                      **self.inj_kwargs)
 
         p0, bounds, names = fit_setup(self.llh_kwargs, sources, self.flare)
 
@@ -400,8 +398,8 @@ class MinimisationHandler:
 
             params = list(raw_params)
 
-            if (len(params) > 1) and (not params[0] > 0):
-                params[1] = 3.7
+            # if (len(params) > 1) and (params[0] < 0):
+            #     params[1] = 3.7
 
             # Calculate relative contribution of each source/season
 
@@ -752,7 +750,7 @@ class MinimisationHandler:
                             coincident_data, flare_veto, n_all, src, n_season)
 
                         llhs[season_dict["Name"]] = {
-                            # "llh": flare_llh,
+                            # "llh": unblind_llh,
                             "f": flare_f,
                             "flare length": flare_length
                         }
@@ -851,14 +849,22 @@ class MinimisationHandler:
 
         self.dump_injection_values(scale)
 
-    def scan_likelihood(self, scale=1):
+    def scan_likelihood(self, scale=1.):
+        """Generic wrapper to perform a likelihood scan a background scramble
+        with an injection of signal given by scale.
 
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        import matplotlib.cm as cm
-
+        :param scale: Flux scale to inject
+        """
         f = self.run_trial(scale)
+        self.scan(f)
+
+    def scan(self, f):
+        """Generic function to scan a likelihood based on a given likelihood
+        function f. Can be used for scan_likelihood (with a scramble),
+        or scan_unblind (which scans the real data).
+
+        :param f: Likelihood function
+        """
 
         def g(x):
             return -np.sum(f(x))
@@ -868,6 +874,8 @@ class MinimisationHandler:
         res = scipy.optimize.minimize(
             g, self.p0, bounds=self.bounds)
 
+        print "Scan results:"
+        print res
         #
         # raw_input("prompt")
 
@@ -919,7 +927,7 @@ class MinimisationHandler:
 
             print "One Sigma interval between", l_lim, "and", u_lim
 
-        path = plot_output_dir(self.name) + "llh_scan_" + str(scale) + ".pdf"
+        path = plot_output_dir(self.name) + "llh_scan.pdf"
         plt.savefig(path)
         plt.close()
 
@@ -996,8 +1004,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="Path for analysis pkl_file")
     cfg = parser.parse_args()
-
-    print cfg.file
 
     with open(cfg.file) as f:
         mh_dict = Pickle.load(f)

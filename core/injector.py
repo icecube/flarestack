@@ -20,13 +20,16 @@ class Injector:
 
         self._mc = data_loader(season["mc_path"])
 
-        self.time_pdf = TimePDF.create(kwargs["Injection Time PDF"],
-                                       season)
-
         self.sources = sources
 
-        self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
-        self.mc_weights = self.energy_pdf.weight_mc(self._mc)
+        try:
+            self.time_pdf = TimePDF.create(kwargs["Injection Time PDF"],
+                                           season)
+            self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
+            self.mc_weights = self.energy_pdf.weight_mc(self._mc)
+        except KeyError:
+            print "No Injection Arguments. Are you unblinding?"
+            pass
 
         if "Poisson Smear?" in kwargs.keys():
             self.poisson_smear = kwargs["Poisson Smear?"]
@@ -292,6 +295,25 @@ class Injector:
         ev = ev[non_mc].copy()
 
         return ev
+
+
+class MockUnblindedInjector(Injector):
+    """If the data is not really to be unblinded, then MockUnblindedInjector
+    should be called. In this case, the create_dataset function simply returns
+    one background scramble.
+    """
+
+    def __init__(self, season, sources, **kwargs):
+        self.season = season
+        self._raw_data = np.load(season["exp_path"])
+
+    def create_dataset(self):
+        """Returns a background scramble
+
+        :return: Scrambled data
+        """
+
+        return self.scramble_data()
 
 
 class UnblindedInjector(Injector):

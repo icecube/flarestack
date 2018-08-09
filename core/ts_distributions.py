@@ -208,7 +208,7 @@ class Chi2_one_side:
 
     def __init__(self, data):
         p_start = [2., -1., 1.]
-        p_start = [2.]
+        p_start = [1.3]
         p_bounds = [(0., None),  # dof > 0
                     ]
                     # (1e-5, 1e5)]  # shape ~ free
@@ -258,7 +258,6 @@ class Chi2_one_side_free:
 def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
     ts_array = np.array(ts_array)
     ts_array = ts_array[~np.isnan(ts_array)]
-    weights = np.ones_like(ts_array) * 1. / float(len(ts_array))
     med = np.median(ts_array)
 
     raw_five_sigma = 0.999999713349
@@ -284,7 +283,6 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
                  normed=True,
                  stacked=True)
 
-        # chi2 = Chi2_LeftTruncated(ts_array)
         chi2 = Chi2_LeftTruncated(ts_array)
         frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
 
@@ -382,8 +380,16 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
         # except IndexError:
         #     scale = 1.
     #
-    # print chi2
+    # print ts_type
+    # print chi2._res
+    # print Chi2_one_side(ts_array[ts_array > 0])._res
+    # print Chi2_one_side(ts_array[~(ts_array < 0)])._res
+    # print Chi2_one_side_free(ts_array[~(ts_array < 0)])._res
+    # print Chi2_LeftTruncated(ts_array)._res
     # raw_input("prompt")
+    # df = 1.31
+    # loc = 0.
+    # scale = 1.0
 
     plt.axhline(frac_over * (1 - five_sigma), color="r", linestyle="--")
 
