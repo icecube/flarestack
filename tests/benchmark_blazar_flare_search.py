@@ -43,9 +43,6 @@ dec = 65.15
 z = 0.048
 lumdist = Distance(z=z).to("Mpc").value
 
-print z, lumdist
-raw_input("prompt")
-
 # Creates the .npy source catalogue
 catalogue = custom_sources(
     name="1ES_1959+650",

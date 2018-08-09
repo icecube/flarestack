@@ -3,8 +3,7 @@ import cPickle as Pickle
 import numpy as np
 import math
 import scipy
-import matplotlib
-matplotlib.use('Agg')
+import scipy.stats
 import matplotlib.pyplot as plt
 from shared import name_pickle_output_dir, plot_output_dir, k_to_flux, \
     fit_setup, inj_dir_name, scale_shortener
@@ -352,17 +351,21 @@ class ResultsHandler:
 
         threshold = 0.5
 
-        def f(x, a, b):
-            value = 0.5 * (np.tanh(a*x - b) + 1.)
+        def f(x, a, b, c):
+            value = scipy.stats.gamma.cdf(x, a, b, c)
             return value
 
-        [best_a, best_b] = scipy.optimize.curve_fit(
-            f, x, y,  p0=[1./max(x), 2])[0]
+        res = scipy.optimize.curve_fit(
+            f, x, y,  p0=[6, -0.1 * max(x), 0.1 * max(x)])
+
+        best_a = res[0][0]
+        best_b = res[0][1]
+        best_c = res[0][2]
 
         def best_f(x):
-            return f(x, best_a, best_b)
+            return f(x, best_a, best_b, best_c)
 
-        sol = best_b/best_a
+        sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
 
         self.disc_potential = k_to_flux(sol)
 
