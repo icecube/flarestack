@@ -94,7 +94,7 @@ winter_flare_injection_time = {
 }
 
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7, 2.9]
-gammas = [1.8, 2.0, 2.3]
+gammas = [1.8, 2.0]
 # gammas = [2.0, 2.3]
 # gammas = [1.99, 2.0, 2.02]
 # gammas = [2.5, 2.7, 2.9]
@@ -107,9 +107,9 @@ cats = [
     "Swift J1644+57",
     "Swift J2058+05",
     "ASASSN-14li",
-    "ASASSN-15lh",
-    # "XMMSL1 J0740-85"
-        ]
+    "XMMSL1 J0740-85"
+    # "ASASSN-15lh",
+]
 # cats = ["jetted"]
 
 for j, cat in enumerate(cats):
@@ -125,8 +125,8 @@ for j, cat in enumerate(cats):
 
     for i, [inj_kwargs, llh_kwargs] in enumerate([
         [standard_inj_kwargs, standard_llh],
-        [winter_flare_injection_time, winter_flare_llh],
-        [murase_flare_inj_kwargs, murase_flare_llh]
+        # [winter_flare_injection_time, winter_flare_llh],
+        # [murase_flare_inj_kwargs, murase_flare_llh]
                                     ]):
 
         label = ["Time-Integrated", "10 Day Flare",
@@ -164,7 +164,7 @@ for j, cat in enumerate(cats):
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
                 "n_trials": 5,
-                "n_steps": 10
+                "n_steps": 5
             }
 
             # print scale
@@ -181,10 +181,10 @@ for j, cat in enumerate(cats):
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            rd.submit_to_cluster(pkl_file, n_jobs=500)
+            # rd.submit_to_cluster(pkl_file, n_jobs=500)
             #
             # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=5)
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=20)
             # mh.clear()
             res[gamma] = mh_dict
 
@@ -192,7 +192,7 @@ for j, cat in enumerate(cats):
 
     cat_res[cat] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (cat, src_res) in cat_res.iteritems():
 
@@ -229,7 +229,7 @@ for (cat, src_res) in cat_res.iteritems():
                 astro_sens, astro_disc = rh.astro_values(
                     rh_dict["inj kwargs"]["Injection Energy PDF"])
 
-                key = "Total Fluence (GeV^{-1} cm^{-2} s^{-1})"
+                key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
                 e_key = "Mean Luminosity (erg/s)"
 
@@ -269,7 +269,7 @@ for (cat, src_res) in cat_res.iteritems():
         y_label = [r"Total Fluence [GeV cm$^{-2}$]",
                    r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
 
-        ax1.grid(True, which='both')
+        ax2.grid(True, which='both')
         ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
         ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
         ax1.set_xlabel(r"Gamma")
@@ -281,8 +281,7 @@ for (cat, src_res) in cat_res.iteritems():
             ax.set_ylim(0.95 * min([min(x) for x in y]),
                          1.1 * max([max(x) for x in y]))
 
-        plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
-                  " for " + cat)
+        plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat)
 
         ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
         plt.tight_layout()

@@ -3,7 +3,10 @@ import os
 from shared import plots_dir
 import matplotlib.pyplot as plt
 import scipy.optimize, scipy.stats
+from scipy.stats import norm
 
+raw_five_sigma = norm.cdf(5)
+n_bins = 100
 
 class Chi2:
 
@@ -254,30 +257,13 @@ class Chi2_one_side_free:
         self.scale = res.x[2]
 
 
-def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
-    ts_array = np.array(ts_array)
-    ts_array = ts_array[~np.isnan(ts_array)]
-
-    print "TS distribution has", np.sum(np.isnan(ts_array)), "nan entries."
-
-    med = np.median(ts_array)
-
-    raw_five_sigma = 0.999999713349
+def fit_background_ts(ts_array, ts_type):
 
     mask = ts_array > 0.
-
-    try:
-        os.makedirs(os.path.dirname(path))
-    except OSError:
-        pass
-
     frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
 
     if ts_type == "Flare":
 
-        n_bins = 100
-
-        plt.figure()
         plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
                  bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
@@ -286,7 +272,6 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
                  stacked=True)
 
         chi2 = Chi2_LeftTruncated(ts_array)
-        frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
 
         if chi2._res.success:
 
@@ -308,14 +293,8 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
                 loc = 0.
                 scale = 1.
 
-        frac_under = 1. - frac_over
-        five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
-
     elif ts_type == "Fit Weights":
 
-        n_bins = 100
-
-        plt.figure()
         plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
                  bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
@@ -323,16 +302,9 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
                  normed=True,
                  stacked=True)
 
-        # chi2 = Chi2_LeftTruncated(ts_array)
         chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
-        # frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
-
-        # print chi2._res.success
-        # raw_input("prompt")
 
         if chi2._res.success:
-
-            # frac_over = 1.
 
             df = chi2._f.args[0]
             loc = chi2._f.args[1]
@@ -353,13 +325,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
             else:
                 frac_over = 1.
 
-        frac_under = 1. - frac_over
-        five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
-
     elif ts_type == "Standard":
-        frac_under = 1. - frac_over
-
-        n_bins = 100
 
         plt.figure()
         plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
@@ -369,8 +335,6 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
                  normed=True,
                  stacked=True)
 
-        five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
-
         chi2 = Chi2_one_side(ts_array[ts_array > 0.])
 
         df = chi2._f.args[0]
@@ -379,19 +343,32 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
 
     else:
         raise Exception("ts_type " + str(ts_type) + " not recognised!")
-        # except IndexError:
-        #     scale = 1.
-    #
-    # print ts_type
-    # print chi2._res
-    # print Chi2_one_side(ts_array[ts_array > 0])._res
-    # print Chi2_one_side(ts_array[~(ts_array < 0)])._res
-    # print Chi2_one_side_free(ts_array[~(ts_array < 0)])._res
-    # print Chi2_LeftTruncated(ts_array)._res
-    # raw_input("prompt")
-    # df = 1.31
-    # loc = 0.
-    # scale = 1.0
+
+    return df, loc, scale, frac_over
+
+
+def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
+                                    ts_val=None):
+    ts_array = np.array(ts_array)
+    ts_array = ts_array[~np.isnan(ts_array)]
+
+    if np.sum(np.isnan(ts_array)) > 0:
+        print "TS distribution has", np.sum(np.isnan(ts_array)), "nan entries."
+
+    med = np.median(ts_array)
+
+    fig = plt.figure()
+
+    df, loc, scale, frac_over = fit_background_ts(ts_array, ts_type)
+
+    frac_under = 1 - frac_over
+
+    five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
+
+    try:
+        os.makedirs(os.path.dirname(path))
+    except OSError:
+        pass
 
     plt.axhline(frac_over * (1 - five_sigma), color="r", linestyle="--")
 
@@ -410,32 +387,48 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
                 (scipy.stats.chi2.cdf(x, df, loc, scale)))
 
     plt.plot(xrange, 1. - integral(xrange), color="green", linestyle="--",
-             label=r"1 - $\int f(x)$")
+             label=r"1 - $\int f(x)$ (p-value)")
 
     plt.axvline(disc_potential, color="r", label=r"5 $\sigma$ Threshold")
+
     plt.annotate(
         '{:.1f}'.format(100 * frac_under) + "% of data in delta. \n" +
         r"$\chi^{2}$ Distribution:" + "\n   * d.o.f.=" + \
         '{:.2f}'.format(df) + ",\n  * loc=" + '{:.2f}'.format(loc) + " \n"
         " * scale=" + '{:.2f}'.format(scale),
-        xy=(0.3, 0.8), xycoords="axes fraction")
+        xy=(0.3, 0.7), xycoords="axes fraction", fontsize=8)
+
+    if ts_val is not None:
+        print "Quantifying TS:", "{:.2f}".format(ts_val)
+
+        if ts_val > np.median(ts_array):
+
+            val = (ts_val - frac_under) / (1. - frac_under)
+
+            cdf = frac_under + frac_over*scipy.stats.chi2.cdf(val, df, loc, scale)
+
+            sig = norm.ppf(cdf)
+
+        else:
+            cdf = 0.
+            sig = 0.
+
+        print "Pre-trial P-value is", "{:.2E}".format(1-cdf), 1-cdf
+        print "Significance is", "{:.2f}".format(sig), "Sigma"
+
+        plt.axvline(ts_val, color="purple",
+                    label="{:.2f}".format(ts_val) + " TS/" +
+                    "{:.2f}".format(sig) + r" $\sigma$")
 
     yrange = min(1. / (float(len(ts_array)) * n_bins),
                  scipy.stats.chi2.pdf(disc_potential, df, loc, scale))
 
-    # plt.ylim((0.5 * yrange, max()))
     plt.yscale("log")
-    # plt.grid()
     plt.xlabel(r"Test Statistic ($\lambda$)")
-    plt.legend()
+    plt.legend(loc="upper right")
     plt.savefig(path)
 
-    # if
-
     plt.close()
-    #
-    # print chi2, disc_potential, 1-frac_over
-    # raw_input("prompt")
 
     return disc_potential
 
@@ -457,18 +450,6 @@ def plot_fit_results(results, path, labels, inj=None):
 
         fig.set_size_inches(7, n_dim*3)
         fig.subplots_adjust(hspace=.5)
-
-        # print len(results), labels
-        # print [x[:5] for x in results]
-        # fs = results[2]
-        # fe = results[3]
-        # fl = results[4]
-        #
-        # mask = (fe > 55690.) & (fe < 55700)
-        #
-        # print fs[mask][:5], fe[mask][:5], fl[mask][:5]
-        #
-        # raw_input("prompt")
 
         for i, row in enumerate(results):
 

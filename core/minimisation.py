@@ -89,9 +89,9 @@ class MinimisationHandler:
             self.fit_weights = False
 
         if self.fit_weights:
-            self.run_trial = self.run_fit_weight_trial
+            self.run_trial = self.fit_weight_function
         else:
-            self.run_trial = self.run_fixed_weight_trial
+            self.run_trial = self.fixed_weight_function
 
         # Checks if data should be "mock-unblinded", where a fixed seed
         # background scramble is done for injection stage. Only calls to the
@@ -129,7 +129,7 @@ class MinimisationHandler:
 
         # Sets the default flux scale for finding sensitivity
         # Default value is 1 (Gev)^-1 (cm)^-2 (s)^-1
-        self.bkg_ts = None
+        # self.bkg_ts = None
 
         # self.clean_true_param_values()
 
@@ -396,7 +396,7 @@ class MinimisationHandler:
         weights_matrix /= np.sum(weights_matrix)
         return weights_matrix
 
-    def run_fixed_weight_trial(self, scale=1.):
+    def fixed_weight_function(self, scale=1.):
 
         llh_functions = dict()
         n_all = dict()
@@ -434,7 +434,7 @@ class MinimisationHandler:
 
         return f_final
 
-    def run_fit_weight_trial(self, scale):
+    def fit_weight_function(self, scale):
         llh_functions = dict()
         n_all = dict()
 
@@ -910,8 +910,7 @@ class MinimisationHandler:
 
             plt.plot(n_range, y)
             plt.xlabel(self.param_names[i])
-            # plt.ylabel(r"$-\log(\frac{\mathcal{L}}{\mathcal{L_{0}})$")
-            plt.ylabel(r"$-\log(\mathcal{L}/\mathcal{L}_{0})$")
+            plt.ylabel(r"$-2\log(\mathcal{L}/\mathcal{L}_{0})$")
 
 
             print "PARAM:", self.param_names[i]
@@ -951,6 +950,8 @@ class MinimisationHandler:
         plt.close()
 
         print "Saved to", path
+
+        return res
 
     def check_flare_background_rate(self):
 

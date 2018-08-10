@@ -85,7 +85,10 @@ class ResultsHandler:
 
         self.find_sensitivity()
 
-        self.find_disc_potential()
+        try:
+            self.find_disc_potential()
+        except RuntimeError:
+            pass
 
     def astro_values(self, e_pdf_dict):
         """Function to convert the values calculated for sensitivity and

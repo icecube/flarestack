@@ -28,10 +28,11 @@ unblind_llh = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": False,
-    "Flare Search?": True
+    "Flare Search?": False
 }
 
 name_root = "analyses/tde/unblind_individual_tdes/"
+bkg_ts_root = "analyses/tde/compare_spectral_indices_individual/"
 
 cat_res = dict()
 
@@ -46,6 +47,8 @@ for j, cat in enumerate(cats):
 
     name = name_root + cat.replace(" ", "") + "/"
 
+    bkg_ts = bkg_ts_root + cat.replace(" ", "") + "/negative_n_s/2.0/"
+
     cat_path = catalogue_dir + "TDEs/individual_TDEs/" + cat + "_catalogue.npy"
     catalogue = np.load(cat_path)
 
@@ -55,6 +58,7 @@ for j, cat in enumerate(cats):
                                    unblind_llh["LLH Time PDF"]),
         "catalogue": cat_path,
         "llh kwargs": unblind_llh,
+        "background TS": bkg_ts
     }
 
     ub = Unblinder(unblind_dict)
