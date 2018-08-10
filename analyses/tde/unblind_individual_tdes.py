@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import cPickle as Pickle
-from core.unblinder import Unblinder
+from core.unblinding import Unblinder
 from core.results import ResultsHandler
 from data.icecube_gfu_2point5_year import txs_sample
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
@@ -31,7 +31,7 @@ unblind_llh = {
     "Flare Search?": True
 }
 
-name_root = "analyses/tde/unblind_individual/"
+name_root = "analyses/tde/unblind_individual_tdes/"
 
 cat_res = dict()
 
@@ -58,7 +58,6 @@ for j, cat in enumerate(cats):
     }
 
     ub = Unblinder(unblind_dict)
-    ub.unblind()
 
     # rh = ResultsHandler(unblind_dict["name"], unblind_dict["llh kwargs"],
     #                     unblind_dict["catalogue"])

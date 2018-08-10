@@ -56,9 +56,9 @@ gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
 # # cats = ["jetted"]
 # cat_names = ["Jetted", "Golden"]
 cats = ["jetted", "gold", "silver", "obscured"]
-# cat_names = ["Jetted"]
+cat_names = ["Golden"]
 
-cats = ["jetted"]
+cats = ["gold"]
 
 power_law_start_energy = [100, 10000, 100000]
 power_law_start_energy = [100]
@@ -147,7 +147,7 @@ for e_min in power_law_start_energy:
                     Pickle.dump(mh_dict, f)
 
                 # if label == "Fit Weights":
-                # rd.submit_to_cluster(pkl_file, n_jobs=100)
+                rd.submit_to_cluster(pkl_file, n_jobs=100)
 
                 # mh = MinimisationHandler(mh_dict)
                 # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
@@ -162,7 +162,7 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = cat_res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 
@@ -182,8 +182,8 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
 
         for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
-            # if f_type == "Fit Weights":
-            if True:
+            if f_type == "Fit Weights":
+            # if True:
 
                 for (gamma, rh_dict) in sorted(res.iteritems()):
                     try:
@@ -250,9 +250,9 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
                             1.1 * max([max(x) for x in y if len(x) > 0]))
 
             plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
-                      " for " + cat_name + " TDEs")
+                      " for " + cat_names[b] + " TDEs")
 
-            ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
+            # ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
             plt.tight_layout()
             plt.savefig(plot_output_dir(name) + "/spectral_index_" +
                         "Emin=" + str(e_min) +

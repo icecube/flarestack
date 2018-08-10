@@ -1,6 +1,9 @@
 import sys
+import os
 import numpy as np
 from core.minimisation import MinimisationHandler
+from shared import plot_output_dir
+
 
 def confirm():
     print "Is this correct? (y/n)"
@@ -23,8 +26,17 @@ class Unblinder(MinimisationHandler):
         self.unblind_dict = unblind_dict
         unblind_dict["Mock Unblind"] = True
         unblind_dict["inj kwargs"] = {}
-        self.check_unblind()
+
+        # self.check_unblind()
         MinimisationHandler.__init__(self, unblind_dict)
+
+        # Minimise likelihood and produce likelihood scans
+        self.scan_likelihood()
+
+        print self.flare
+
+
+        raw_input("prompt")
 
     def check_unblind(self):
         print "\n"
@@ -73,4 +85,3 @@ class Unblinder(MinimisationHandler):
         print "\n"
         print "OK, you asked for it..."
         print "\n"
-        sys.exit()

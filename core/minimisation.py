@@ -1,11 +1,11 @@
 import numpy as np
 import resource
 import random
-import os
+import os, os.path
 import argparse
 import cPickle as Pickle
 import scipy.optimize
-from core.injector import Injector
+from core.injector import Injector, MockUnblindedInjector
 from core.llh import LLH, FlareLLH
 from shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
     plot_output_dir, scale_shortener
@@ -22,7 +22,7 @@ def time_smear(inj):
 
 class MinimisationHandler:
     """Generic Class to handle both dataset creation and llh minimisation from
-    experimental data and Monte Carlo simulation. Initilialised with a set of
+    experimental data and Monte Carlo simulation. Initialised with a set of
     IceCube datasets, a list of sources, and independent sets of arguments for
     the injector and the likelihood.
     """
@@ -67,10 +67,14 @@ class MinimisationHandler:
         else:
             self.run = self.run_stacked
 
+        # Checks if minimiser should be seeded from a brute scan
+
         try:
             self.brute = self.llh_kwargs["Brute Seed?"]
         except KeyError:
             self.brute = False
+
+        # Checks if source weights should be fitted individually
 
         try:
             self.fit_weights = self.llh_kwargs["Fit Weights?"]
@@ -89,6 +93,15 @@ class MinimisationHandler:
         else:
             self.run_trial = self.run_fixed_weight_trial
 
+        # Checks if data should be "mock-unblinded", where a fixed seed
+        # background scramble is done for injection stage. Only calls to the
+        # Unblinder class will have this attribute.
+
+        if hasattr(self, "unblind_dict"):
+            self.mock_unblind = mh_dict["Mock Unblind"]
+        else:
+            self.mock_unblind = False
+
         # For each season, we create an independent injector and a
         # likelihood, using the source list along with the sets of energy/time
         # PDFs provided in inj_kwargs and llh_kwargs.
@@ -101,8 +114,12 @@ class MinimisationHandler:
                 self.llhs[season["Name"]] = FlareLLH(season, sources,
                                                      **self.llh_kwargs)
 
-            self.injectors[season["Name"]] = Injector(season, sources,
-                                                      **self.inj_kwargs)
+            if self.mock_unblind:
+                self.injectors[season["Name"]] = MockUnblindedInjector(
+                    season, sources, **self.inj_kwargs)
+            else:
+                self.injectors[season["Name"]] = Injector(
+                    season, sources, **self.inj_kwargs)
 
         p0, bounds, names = fit_setup(self.llh_kwargs, sources, self.flare)
 
@@ -856,15 +873,6 @@ class MinimisationHandler:
         :param scale: Flux scale to inject
         """
         f = self.run_trial(scale)
-        self.scan(f)
-
-    def scan(self, f):
-        """Generic function to scan a likelihood based on a given likelihood
-        function f. Can be used for scan_likelihood (with a scramble),
-        or scan_unblind (which scans the real data).
-
-        :param f: Likelihood function
-        """
 
         def g(x):
             return -np.sum(f(x))
@@ -902,6 +910,9 @@ class MinimisationHandler:
 
             plt.plot(n_range, y)
             plt.xlabel(self.param_names[i])
+            # plt.ylabel(r"$-\log(\frac{\mathcal{L}}{\mathcal{L_{0}})$")
+            plt.ylabel(r"$-\log(\mathcal{L}/\mathcal{L}_{0})$")
+
 
             print "PARAM:", self.param_names[i]
             min_y = np.min(y)
@@ -928,6 +939,14 @@ class MinimisationHandler:
             print "One Sigma interval between", l_lim, "and", u_lim
 
         path = plot_output_dir(self.name) + "llh_scan.pdf"
+
+        plt.suptitle(os.path.basename(self.name[:-1]))
+
+        try:
+            os.makedirs(os.path.dirname(path))
+        except OSError:
+            pass
+
         plt.savefig(path)
         plt.close()
 

@@ -253,9 +253,13 @@ class Chi2_one_side_free:
         self.loc = res.x[1]
         self.scale = res.x[2]
 
+
 def plot_background_ts_distribution(ts_array, path, ts_type="Standard"):
     ts_array = np.array(ts_array)
     ts_array = ts_array[~np.isnan(ts_array)]
+
+    print "TS distribution has", np.sum(np.isnan(ts_array)), "nan entries."
+
     med = np.median(ts_array)
 
     raw_five_sigma = 0.999999713349

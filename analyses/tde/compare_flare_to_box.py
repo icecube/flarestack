@@ -148,14 +148,11 @@ labels = []
 
 for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
-    if f_type=="Time-Integrated (negative n_s)":
-    # if True:
+    if f_type!="Time-Integrated (negative n_s)":
         for (length, rh_dict) in sorted(res.iteritems()):
             try:
                 rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                                     rh_dict["catalogue"], show_inj=True)
-
-                raw_input("prompt")
 
                 inj_time = length * (60 * 60 * 24)
 
