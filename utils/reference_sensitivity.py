@@ -3,25 +3,11 @@ import numpy as np
 from scipy.interpolate import interp1d, interp2d
 from shared import skylab_ref_dir
 
-root_url = "https://icecube.wisc.edu/~coenders/"
-
 
 def download_ref():
     print
-    print "Downloading .npy files from", root_url
+    print "Please download or create a reference sensitivity file!"
     print
-
-    for file in os.listdir(skylab_ref_dir):
-        os.remove(skylab_ref_dir + file)
-
-    for name in ["sens", "disc"]:
-        file = name + ".npy "
-
-        cmd = "wget --user=icecube --password=skua -P " + skylab_ref_dir + \
-              " " + root_url + file
-
-        print cmd
-        os.system(cmd)
 
 
 def reference_sensitivity(sindec=np.array(0.0), gamma=2.0):
