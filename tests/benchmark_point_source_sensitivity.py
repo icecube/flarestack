@@ -6,8 +6,8 @@ from core.results import ResultsHandler
 from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.prepare_catalogue import ps_catalogue_name
-from utils.skylab_reference import skylab_7year_sensitivity,\
-    skylab_7year_discovery
+from utils.reference_sensitivity import reference_sensitivity,\
+    reference_7year_discovery_potential
 from scipy.interpolate import interp1d
 from cluster import run_desy_cluster as rd
 import matplotlib
@@ -56,7 +56,7 @@ for sindec in sindecs:
 
     subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
 
-    scale = flux_to_k(skylab_7year_sensitivity(sindec)) * 5
+    scale = flux_to_k(reference_sensitivity(sindec)) * 5
 
     mh_dict = {
         "name": subname,
@@ -104,12 +104,12 @@ plot_range = np.linspace(-0.99, 0.99, 1000)
 
 plt.figure()
 ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
-ax1.plot(sindecs, skylab_7year_sensitivity(sindecs), color="blue",
+ax1.plot(sindecs, reference_sensitivity(sindecs), color="blue",
          label=r"7-year Point Source analysis")
 
 ax1.plot(sindecs, sens, color='orange', label="Flarestack")
 
-ax1.plot(sindecs, skylab_7year_discovery(sindecs), color="blue", linestyle="--")
+ax1.plot(sindecs, reference_7year_discovery_potential(sindecs), color="blue", linestyle="--")
 
 ax1.plot(
     sindecs, disc_pots, color='orange', linestyle="--")
@@ -125,9 +125,9 @@ plt.title('7-year Point Source Sensitivity')
 
 ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
-sens_ratios = np.array(sens) / skylab_7year_sensitivity(sindecs)
+sens_ratios = np.array(sens) / reference_sensitivity(sindecs)
 
-disc_ratios = np.array(disc_pots) / skylab_7year_discovery(sindecs)
+disc_ratios = np.array(disc_pots) / reference_7year_discovery_potential(sindecs)
 
 ax2.scatter(sindecs, sens_ratios, color="red")
 ax2.plot(sindecs, sens_ratios, color="red")
@@ -150,7 +150,7 @@ plt.subplots_adjust(hspace=0.001)
 
 # ax1.plot(
 #     interp_range,
-#     skylab_7year_sensitivity(interp_range)*ratio_interp(interp_range),
+#     reference_sensitivity(interp_range)*ratio_interp(interp_range),
 #     color='red', linestyle="--", label="Ratio Interpolation")
 
 ax1.legend(loc='upper right', fancybox=True, framealpha=1.)

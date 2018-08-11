@@ -2,14 +2,12 @@ import numpy as np
 import scipy.interpolate
 import os
 import matplotlib
-import healpy as hp
 import numexpr
 import resource
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from data.icecube_gfu_2point5_year import gfu_2point5, ps_7year, txs_sample
-from data.icecube_diffuse_8year import diffuse_8year
-from data.tools import data_loader
+from data.icecube_gfu_2point5_year import gfu_2point5
+from utils.dataset_loader import data_loader
 from core.energy_PDFs import PowerLaw
 from shared import plots_dir
 import matplotlib.cm as cm

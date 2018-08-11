@@ -6,7 +6,7 @@ from core.results import ResultsHandler
 from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.prepare_catalogue import ps_catalogue_name
-from utils.skylab_reference import skylab_7year_sensitivity
+from utils.reference_sensitivity import reference_sensitivity
 from scipy.interpolate import interp1d
 from cluster import run_desy_cluster as rd
 import matplotlib
@@ -89,7 +89,7 @@ for sindec in sindecs:
             llh_kwargs = dict(raw_llh_kwargs)
             llh_kwargs["LLH Time PDF"] = time
 
-            scale = flux_to_k(skylab_7year_sensitivity(sindec)) * max_window
+            scale = flux_to_k(reference_sensitivity(sindec)) * max_window
 
             mh_dict = {
                 "name": full_name,

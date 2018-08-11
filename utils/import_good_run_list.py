@@ -38,13 +38,6 @@ for (season_dict, source_grl, text_grl) in sets:
 
         print new.dtype.names
 
-        # for
-
-        # new = np.array([new[new["run"] == y] for y in grl_ids],
-        #                dtype=new.dtype)
-
-
-
         for y in grl_ids:
             print type(new[new["run"] == y]), len(new[new["run"] == y])
 

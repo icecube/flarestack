@@ -6,7 +6,7 @@ from core.results import ResultsHandler
 from data.icecube_gfu_2point5_year import txs_sample, gfu_2point5
 from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
-from utils.skylab_reference import skylab_7year_sensitivity
+from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd
 import math
 import matplotlib.pyplot as plt
@@ -118,7 +118,7 @@ for e_min in power_law_start_energy:
                     "Poisson Smear?": True,
                 }
 
-                scale = flux_to_k(skylab_7year_sensitivity(
+                scale = flux_to_k(reference_sensitivity(
                     np.sin(closest_src["dec"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * (e_min/100.)**0.2
 

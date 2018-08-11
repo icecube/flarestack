@@ -6,7 +6,7 @@ from core.results import ResultsHandler
 from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.prepare_catalogue import ps_catalogue_name
-from utils.skylab_reference import skylab_7year_sensitivity
+from utils.reference_sensitivity import reference_sensitivity
 from scipy.interpolate import interp1d
 from cluster import run_desy_cluster as rd
 import matplotlib
@@ -80,7 +80,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
             "Poisson Smear?": True,
         }
 
-        scale = flux_to_k(skylab_7year_sensitivity(sindec)) * 40
+        scale = flux_to_k(reference_sensitivity(sindec)) * 40
 
         mh_dict = {
             "name": full_name,

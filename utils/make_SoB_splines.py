@@ -4,7 +4,7 @@ import scipy.interpolate
 import cPickle as Pickle
 from shared import gamma_precision, SoB_spline_path, bkg_spline_path
 from core.energy_PDFs import PowerLaw
-from data.tools import data_loader
+from utils.dataset_loader import data_loader
 
 
 # sin_dec_bins = np.unique(np.concatenate([

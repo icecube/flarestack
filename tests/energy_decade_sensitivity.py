@@ -6,8 +6,8 @@ from core.results import ResultsHandler
 from data.icecube_pointsource_7_year import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.prepare_catalogue import ps_catalogue_name
-from utils.skylab_reference import skylab_7year_sensitivity,\
-    skylab_7year_discovery
+from utils.reference_sensitivity import reference_sensitivity,\
+    reference_7year_discovery_potential
 from scipy.interpolate import interp1d
 from cluster import run_desy_cluster as rd
 import matplotlib
@@ -79,7 +79,7 @@ for sindec in sindecs:
 
         e_scale = np.exp(0.5*(e_center - parabola_min) ** 2)
 
-        scale = flux_to_k(skylab_7year_sensitivity(sindec)) * 100 * e_scale
+        scale = flux_to_k(reference_sensitivity(sindec)) * 100 * e_scale
 
         mh_dict = {
             "name": name,

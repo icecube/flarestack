@@ -24,7 +24,7 @@ def download_ref():
         os.system(cmd)
 
 
-def skylab_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
+def reference_sensitivity(sindec=np.array(0.0), gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
     analysis sensitivity. Then converts given values for sin(declination to
     the equivalent skylab sensitivity. Adds values for Sindec = +/- 1,
@@ -41,21 +41,14 @@ def skylab_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     # The sensitivities here are given in units TeV ^ -gamma per cm2 per s
     # The sensitivities used in this code are GeV ^-1 per cm2 per s
     # The conversion is thus (TeV/Gev) ^ (1 - gamma) , i.e 10 ** 3(1-gamma)
-    # sens = np.array([x[2] * 10 ** 3 for x in data])
-    # sens = np.array([x for x in data for y * 10 ** 3 in x for x in data])
     sens = np.array([list(x)[1:] for x in data]) * 10 ** 3
     scaling = np.array([10 ** (3 * (i - 1)) for i in range(3)])
-    # scaling = 1
     sens *= scaling
 
     # Extend range of sensitivity to +/- 1 through approximation,
 
     sindecs = np.append(-1, sindecs)
     sindecs = np.append(sindecs, 1)
-
-    # lower_diff = sens[0] - sens[1]
-    #
-    # upper_diff = sens[-1] - sens[-2]
 
     sens = np.vstack((sens[0], sens))
     sens = np.vstack((sens, sens[-1]))
@@ -67,7 +60,7 @@ def skylab_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
         return np.exp(sens_ref(sindec, gamma))
 
 
-def skylab_7year_discovery(sindec=0.0):
+def reference_7year_discovery_potential(sindec=0.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
     analysis discovery potential. Then converts given values for sin(
     declination to the equivalent skylab sensitivity. Adds values for Sindec

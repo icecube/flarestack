@@ -7,7 +7,6 @@ import cPickle as Pickle
 from shared import acceptance_path
 from time_PDFs import TimePDF
 from utils.make_SoB_splines import load_spline, load_bkg_spatial_spline
-from data.tools import data_loader
 from energy_PDFs import EnergyPDF
 
 

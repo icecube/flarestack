@@ -3,7 +3,7 @@ import healpy as hp
 from shared import k_to_flux, scale_shortener
 from energy_PDFs import EnergyPDF
 from time_PDFs import TimePDF
-from data.tools import data_loader
+from utils.dataset_loader import data_loader
 
 
 class Injector:

@@ -5,7 +5,7 @@ from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
 from data.icecube_gfu_2point5_year import txs_sample
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
-from utils.skylab_reference import skylab_7year_sensitivity
+from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
 from core.time_PDFs import TimePDF
@@ -155,7 +155,7 @@ for j, cat in enumerate(cats):
 
             full_name = flare_name + str(gamma) + "/"
 
-            scale = flux_to_k(skylab_7year_sensitivity(
+            scale = flux_to_k(reference_sensitivity(
                 np.sin(catalogue["dec"]), gamma=gamma) * 50)
 
             if i > 1:

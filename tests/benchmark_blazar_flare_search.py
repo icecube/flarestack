@@ -14,8 +14,8 @@ from core.results import ResultsHandler
 from data.icecube_diffuse_8year import diffuse_8year
 from data.icecube_gfu_2point5_year import gfu_2point5
 from shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
-from utils.prepare_catalogue import custom_sources, ps_catalogue_name
-from utils.skylab_reference import skylab_7year_sensitivity
+from utils.prepare_catalogue import custom_sources
+from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd
 import matplotlib
 matplotlib.use('Agg')
@@ -136,7 +136,7 @@ for i, llh_kwargs in enumerate([no_flare,
             "Poisson Smear?": True,
         }
 
-        scale = flux_to_k(skylab_7year_sensitivity(np.sin(dec))
+        scale = flux_to_k(reference_sensitivity(np.sin(dec))
                           * (50 * max_window / flare_length))
 
         mh_dict = {
