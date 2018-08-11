@@ -1,9 +1,7 @@
 # flarestack
 Code for unbinned likelihood analysis of astroparticle physics data.
 
+Both time-dependent and time-independent analyses can be performed, as well as a "flare-search" algorithm to find event clustering in time as well as space.
+
 Perform single-source analyses, as well as stacking of sources according to predefined weighting. 
 Also performs stacking analyses where the signal strength of each source is fit individually.
-
-Both time-dependent and time-independent analyses can be performed. 
-
-Additionally includes a "flare-search" algorithm to find event clustering in time as well as space.
