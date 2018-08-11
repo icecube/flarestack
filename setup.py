@@ -1,7 +1,3 @@
-# create FlareStack__Data
-# eval cvmfs ...
-# create virtualenv
-# Create Output Folder for plots
 import os
 import sys
 from config import scratch_path
