@@ -28,7 +28,11 @@ llh_time = {
 
 # Standard Time Integration
 
-standard_inj_time = llh_time
+standard_inj_time = {
+    "Name": "Box",
+    "Pre-Window": 0,
+    "Post-Window": 100
+}
 
 standard_inj_kwargs = {
     "Injection Time PDF": standard_inj_time,
@@ -41,6 +45,14 @@ standard_llh = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": True,
+    "Fit Weights?": False
+}
+
+standard_positive_llh = {
+    "LLH Energy PDF": llh_energy,
+    "LLH Time PDF": llh_time,
+    "Fit Gamma?": True,
+    "Fit Negative n_s?": False,
     "Fit Weights?": False
 }
 
@@ -105,12 +117,11 @@ cat_res = dict()
 
 cats = [
     "Swift J1644+57",
-    "Swift J2058+05",
-    "ASASSN-14li",
-    "XMMSL1 J0740-85"
+    # "Swift J2058+05",
+    # "ASASSN-14li",
+    # "XMMSL1 J0740-85"
     # "ASASSN-15lh",
 ]
-# cats = ["jetted"]
 
 for j, cat in enumerate(cats):
 
@@ -125,13 +136,16 @@ for j, cat in enumerate(cats):
 
     for i, [inj_kwargs, llh_kwargs] in enumerate([
         [standard_inj_kwargs, standard_llh],
-        # [winter_flare_injection_time, winter_flare_llh],
+        [standard_inj_kwargs, standard_positive_llh],
+        [winter_flare_injection_time, winter_flare_llh],
         # [murase_flare_inj_kwargs, murase_flare_llh]
                                     ]):
 
-        label = ["Time-Integrated", "10 Day Flare",
+        label = ["Time-Integrated (Negative n_s)",
+                 "Time-Integrated", "10 Day Flare",
                  "2 Day Flare"][i]
-        f_name = ["negative_n_s", "flare_winter", "flare_murase"][i]
+        f_name = ["negative_n_s", "positive_n_s", "flare_winter",
+                  "flare_murase"][i]
 
         flare_name = name + f_name + "/"
 
@@ -144,7 +158,8 @@ for j, cat in enumerate(cats):
             scale = flux_to_k(skylab_7year_sensitivity(
                 np.sin(catalogue["dec"]), gamma=gamma) * 50)
 
-            scale *= 10**i
+            if i > 1:
+                scale *= 10**(i-1)
 
             inj = dict(inj_kwargs)
 
@@ -164,7 +179,7 @@ for j, cat in enumerate(cats):
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
                 "n_trials": 5,
-                "n_steps": 5
+                "n_steps": 10
             }
 
             # print scale
@@ -181,10 +196,10 @@ for j, cat in enumerate(cats):
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            # rd.submit_to_cluster(pkl_file, n_jobs=500)
+            rd.submit_to_cluster(pkl_file, n_jobs=100)
             #
             # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=20)
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=10)
             # mh.clear()
             res[gamma] = mh_dict
 
@@ -192,7 +207,7 @@ for j, cat in enumerate(cats):
 
     cat_res[cat] = src_res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for (cat, src_res) in cat_res.iteritems():
 
@@ -213,18 +228,16 @@ for (cat, src_res) in cat_res.iteritems():
                 rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                                     rh_dict["catalogue"])
 
-                # raw_input("prompt")
-
-                # The uptime can noticeably devaiate from 100%
                 inj = rh_dict["inj kwargs"]["Injection Time PDF"]
 
-                catalogue = np.load(rh_dict["catalogue"])
+                if inj["Name"] == "Box":
+                    injection_length = float(inj["Pre-Window"]) + \
+                                       float(inj["Post-Window"])
 
-                inj_time = 0.
+                else:
+                    raise Exception("Unrecognised Time PDF calculation")
 
-                for season in rh_dict["datasets"]:
-                    time = TimePDF.create(inj, season)
-                    inj_time += time.effective_injection_time(catalogue)
+                inj_time = injection_length * 60 * 60 * 24
 
                 astro_sens, astro_disc = rh.astro_values(
                     rh_dict["inj kwargs"]["Injection Energy PDF"])
@@ -239,15 +252,12 @@ for (cat, src_res) in cat_res.iteritems():
                 sens_e[i].append(astro_sens[e_key] * inj_time)
                 disc_e[i].append(astro_disc[e_key] * inj_time)
 
-                # raw_input("prompt")
-
                 fracs[i].append(gamma)
 
             except OSError:
                 pass
 
         labels.append(f_type)
-        # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
     for j, [fluence, energy] in enumerate([[sens, sens_e],
                                           [disc_pots, disc_e]]):
@@ -260,11 +270,17 @@ for (cat, src_res) in cat_res.iteritems():
         cols = ["r", "g", "b", "orange"]
         linestyle = ["-", "--"][j]
 
-        for i, f in enumerate(fracs):
-            ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                     color=cols[i])
-            ax2.plot(f, energy[i], linestyle=linestyle,
-                     color=cols[i])
+        print fracs, fluence, labels, cols, energy
+
+        for l, f in enumerate(fracs):
+
+            try:
+                ax1.plot(f, fluence[l], label=labels[l], linestyle=linestyle,
+                         color=cols[l])
+                ax2.plot(f, energy[l], linestyle=linestyle,
+                         color=cols[l])
+            except ValueError:
+                pass
 
         y_label = [r"Total Fluence [GeV cm$^{-2}$]",
                    r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
@@ -278,8 +294,9 @@ for (cat, src_res) in cat_res.iteritems():
 
         for k, ax in enumerate([ax1, ax2]):
             y = [fluence, energy][k]
-            ax.set_ylim(0.95 * min([min(x) for x in y]),
-                         1.1 * max([max(x) for x in y]))
+
+            ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
+                        1.1 * max([max(x) for x in y if len(x) > 0]))
 
         plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat)
 

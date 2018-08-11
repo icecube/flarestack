@@ -28,7 +28,7 @@ unblind_llh = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": False,
-    "Flare Search?": False
+    "Flare Search?": True
 }
 
 name_root = "analyses/tde/unblind_individual_tdes/"

@@ -33,10 +33,14 @@ class Unblinder(MinimisationHandler):
         MinimisationHandler.__init__(self, unblind_dict)
 
         # Minimise likelihood and produce likelihood scans
-        self.res = self.scan_likelihood()
+        self.res_dict = self.run_trial(0)
+
+        print "\n"
+        print self.res_dict
+        print "\n"
 
         # Quantify the TS value significance
-        self.ts = -self.res["fun"] * np.sign(self.res["x"][0])
+        self.ts = self.res_dict["TS"][0]
 
         print "Test Statistic of:", self.ts
 
@@ -55,18 +59,25 @@ class Unblinder(MinimisationHandler):
         except KeyError:
             print "No Background TS Distribution specified.",
             print "Cannot assess significance of TS value."
+        # self.scan_likelihood()
 
     def compare_to_background_TS(self):
         print "Retrieving Background TS Distribution from", self.merged_dir
 
-        with open(self.merged_dir) as mp:
+        try:
 
-            merged_data = Pickle.load(mp)
+            with open(self.merged_dir) as mp:
 
-        ts_array = merged_data["TS"]
+                merged_data = Pickle.load(mp)
 
-        plot_background_ts_distribution(ts_array, self.output_file,
-                                        self.ts_type, self.ts)
+            ts_array = merged_data["TS"]
+
+            plot_background_ts_distribution(ts_array, self.output_file,
+                                            self.ts_type, self.ts)
+
+        except IOError:
+            print "No Background TS Distribution found"
+            pass
 
     def check_unblind(self):
         print "\n"

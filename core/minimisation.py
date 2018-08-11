@@ -10,6 +10,7 @@ from core.llh import LLH, FlareLLH
 from shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
     plot_output_dir, scale_shortener
 import matplotlib.pyplot as plt
+import types
 
 
 def time_smear(inj):
@@ -64,8 +65,10 @@ class MinimisationHandler:
 
         if self.flare:
             self.run = self.run_flare
+            self.run_trial = self.flare_trial
         else:
             self.run = self.run_stacked
+            self.run_trial = self.standard_trial
 
         # Checks if minimiser should be seeded from a brute scan
 
@@ -89,9 +92,9 @@ class MinimisationHandler:
             self.fit_weights = False
 
         if self.fit_weights:
-            self.run_trial = self.fit_weight_function
+            self.trial_function = self.fit_weight_function
         else:
-            self.run_trial = self.fixed_weight_function
+            self.trial_function = self.fixed_weight_function
 
         # Checks if data should be "mock-unblinded", where a fixed seed
         # background scramble is done for injection stage. Only calls to the
@@ -126,10 +129,6 @@ class MinimisationHandler:
         self.p0 = p0
         self.bounds = bounds
         self.param_names = names
-
-        # Sets the default flux scale for finding sensitivity
-        # Default value is 1 (Gev)^-1 (cm)^-2 (s)^-1
-        # self.bkg_ts = None
 
         # self.clean_true_param_values()
 
@@ -264,6 +263,53 @@ class MinimisationHandler:
         for scale in scale_range:
             self.run(n_trials, scale)
 
+    def standard_trial(self, scale):
+
+        raw_f = self.trial_function(scale)
+
+        def llh_f(scale):
+            return -np.sum(raw_f(scale))
+
+        if self.brute:
+
+            brute_range = [
+                (max(x, -30), min(y, 30)) for (x, y) in self.bounds]
+
+            start_seed = scipy.optimize.brute(
+                llh_f, ranges=brute_range, finish=None, Ns=40)
+        else:
+            start_seed = self.p0
+
+        res = scipy.optimize.minimize(
+            llh_f, start_seed, bounds=self.bounds)
+
+        flag = res.status
+        vals = res.x
+        # If the minimiser does not converge, repeat with brute force
+        if flag == 1:
+            vals = scipy.optimize.brute(llh_f, ranges=self.bounds,
+                                        finish=None)
+            # ts = -llh_f(vals)
+
+        best_llh = raw_f(vals)
+
+        if self.fit_weights:
+
+            ts = np.sum(best_llh)
+
+        else:
+            ts = np.sign(vals[0]) * np.sum(best_llh)
+
+        res_dict = {
+            "res": res,
+            "Parameters": vals,
+            "TS": ts,
+            "Flag": flag,
+            "f": llh_f
+        }
+
+        return res_dict
+
     def run_stacked(self, n_trials=n_trials_default, scale=1.):
 
         seed = int(random.random() * 10 ** 8)
@@ -276,52 +322,14 @@ class MinimisationHandler:
         print "Generating", n_trials, "trials!"
 
         for i in range(int(n_trials)):
-            raw_f = self.run_trial(scale)
 
-            def llh_f(scale):
-                return -np.sum(raw_f(scale))
+            res_dict = self.standard_trial(scale)
 
-            if self.brute:
+            for j, val in enumerate(list(res_dict["Parameters"])):
+                param_vals[j].append(val)
 
-                brute_range = [
-                    (max(x, -30), min(y, 30)) for (x, y) in self.bounds]
-
-                start_seed = scipy.optimize.brute(
-                    llh_f, ranges=brute_range, finish=None, Ns=40)
-            else:
-                start_seed = self.p0
-
-            res = scipy.optimize.minimize(
-                llh_f, start_seed, bounds=self.bounds)
-
-            flag = res.status
-            vals = res.x
-            # ts = -res.fun
-            # If the minimiser does not converge, repeat with brute force
-            if flag == 1:
-
-                vals = scipy.optimize.brute(llh_f, ranges=self.bounds,
-                                            finish=None)
-                # ts = -llh_f(vals)
-
-            if res is not None:
-
-                for j, val in enumerate(list(vals)):
-                    param_vals[j].append(val)
-
-                best_llh = raw_f(vals)
-
-                if self.fit_weights:
-
-                    ts = np.sum(best_llh)
-
-                else:
-                    ts = np.sign(vals[0]) * np.sum(best_llh)
-                    # print best_llh, vals[0], ts
-                    # raw_input("prompt")
-
-                ts_vals.append(ts)
-                flags.append(flag)
+            ts_vals.append(res_dict["TS"])
+            flags.append(res_dict["Flag"])
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
@@ -353,7 +361,7 @@ class MinimisationHandler:
         results = {
             "TS": ts_vals,
             "Parameters": param_vals,
-            "Flags": flags
+            "Flags": flags,
         }
 
         self.dump_results(results, scale, seed)
@@ -415,8 +423,8 @@ class MinimisationHandler:
 
             params = list(raw_params)
 
-            # if (len(params) > 1) and (params[0] < 0):
-            #     params[1] = 3.7
+            if (len(params) > 1) and (params[0] < 0):
+                params[1] = 3.7
 
             # Calculate relative contribution of each source/season
 
@@ -496,6 +504,299 @@ class MinimisationHandler:
 
         return f_final
 
+    def flare_trial(self, scale):
+
+        time_key = self.seasons[0]["MJD Time Key"]
+
+        datasets = dict()
+
+        full_data = dict()
+
+        results = dict()
+
+        # Loop over each data season
+
+        for season in self.seasons:
+
+            # Generate a scrambled dataset, and save it to the datasets
+            # dictionary. Loads the llh for the season.
+
+            data = self.injectors[season["Name"]].create_dataset(scale)
+            llh = self.llhs[season["Name"]]
+
+            full_data[season["Name"]] = data
+
+            # Loops over each source in catalogue
+
+            for source in self.sources:
+
+                # Identify spatially- and temporally-coincident data
+
+                mask = llh.select_spatially_coincident_data(data, [source])
+                spatial_coincident_data = data[mask]
+
+                t_mask = np.logical_and(
+                    np.greater(
+                        spatial_coincident_data[time_key],
+                        llh.time_pdf.sig_t0(source)),
+                    np.less(
+                        spatial_coincident_data[time_key],
+                        llh.time_pdf.sig_t1(source))
+                )
+
+                coincident_data = spatial_coincident_data[t_mask]
+
+                # Creates empty dictionary to save info
+
+                name = source["Name"]
+                if name not in datasets.keys():
+                    datasets[name] = dict()
+
+                # If there are events in the window...
+
+                if len(coincident_data) > 0:
+                    new_entry = dict(season)
+                    new_entry["Coincident Data"] = coincident_data
+                    new_entry["Start (MJD)"] = llh.time_pdf.t0
+                    new_entry["End (MJD)"] = llh.time_pdf.t1
+
+                    # Identify significant events (S/B > 1)
+
+                    significant = llh.find_significant_events(
+                        coincident_data, source)
+
+                    new_entry["Significant Times"] = significant[time_key]
+
+                    new_entry["N_all"] = len(data)
+
+                    datasets[name][season["Name"]] = new_entry
+
+        stacked_ts = 0.0
+
+        # Minimisation of each source
+
+        for (source, source_dict) in datasets.iteritems():
+
+            src = self.sources[self.sources["Name"] == source]
+
+            src_dict = dict()
+
+            # Create a full list of all significant times
+
+            all_times = []
+            n_tot = 0
+            for season_dict in source_dict.itervalues():
+                new_times = season_dict["Significant Times"]
+                all_times.extend(new_times)
+                n_tot += len(season_dict["Coincident Data"])
+
+            all_times = np.array(sorted(all_times))
+
+            # Minimum flare duration (days)
+            min_flare = 0.25
+            # Conversion to seconds
+            min_flare *= 60 * 60 * 24
+
+            # Length of search window in livetime
+
+            search_window = np.sum([
+                llh.time_pdf.effective_injection_time(src)
+                for llh in self.llhs.itervalues()]
+            )
+
+            # If a maximum flare length is specified, sets that here
+
+            if "Max Flare" in self.llh_kwargs["LLH Time PDF"].keys():
+                # Maximum flare given in days, here converted to seconds
+                max_flare = self.llh_kwargs["LLH Time PDF"]["Max Flare"] * (
+                        60 * 60 * 24
+                )
+
+            else:
+                max_flare = search_window
+
+            # Loop over all flares, and check which combinations have a
+            # flare length between the maximum and minimum values
+
+            pairs = []
+
+            for x in all_times:
+                for y in all_times:
+                    if y > x:
+                        pairs.append((x, y))
+
+            # If there is are no pairs meeting this criteria, skip
+
+            if len(pairs) == 0:
+                # print "Continuing because no pairs"
+                continue
+
+            all_res = []
+            all_ts = []
+            all_f = []
+
+            # Loop over each possible significant neutrino pair
+
+            for pair in pairs:
+                t_start = pair[0]
+                t_end = pair[1]
+
+                # Calculate the length of the neutrino flare in livetime
+
+                flare_time = np.array(
+                    (t_start, t_end),
+                    dtype=[
+                        ("Start Time (MJD)", np.float),
+                        ("End Time (MJD)", np.float),
+                    ]
+                )
+
+                flare_length = np.sum([
+                    llh.time_pdf.effective_injection_time(flare_time)
+                    for llh in self.llhs.itervalues()]
+                )
+
+                # If the flare is between the minimum and maximum length
+
+                if flare_length < min_flare:
+                    # print "Continuing because flare too short"
+                    continue
+                elif flare_length > max_flare:
+                    # print "Continuing because flare too long"
+                    continue
+
+                # Marginalisation term is length of flare in livetime
+                # divided by max flare length in livetime. Accounts
+                # for the additional short flares that can be fitted
+                # into a given window
+
+                overall_marginalisation = flare_length / max_flare
+
+                # Each flare is evaluated accounting for the
+                # background on the sky (the non-coincident
+                # data), which is given by the number of
+                # neutrinos on the sky during the given
+                # flare. (NOTE THAT IT IS NOT EQUAL TO THE
+                # NUMBER OF NEUTRINOS IN THE SKY OVER THE
+                # ENTIRE SEARCH WINDOW)
+
+                n_all = np.sum([np.sum(~np.logical_or(
+                    np.less(data[time_key], t_start),
+                    np.greater(data[time_key], t_end)))
+                                for data in full_data.itervalues()])
+
+                llhs = dict()
+
+                # Loop over data seasons
+
+                for i, (name, season_dict) in enumerate(
+                        sorted(source_dict.iteritems())):
+
+                    llh = self.llhs[season_dict["Name"]]
+
+                    # Check that flare overlaps with season
+
+                    inj_time = llh.time_pdf.effective_injection_time(
+                        flare_time
+                    )
+
+                    if not inj_time > 0:
+                        continue
+
+                    coincident_data = season_dict["Coincident Data"]
+
+                    data = full_data[name]
+
+                    n_season = np.sum(~np.logical_or(
+                        np.less(data[time_key], t_start),
+                        np.greater(data[time_key], t_end)))
+
+                    # Removes non-coincident data
+
+                    flare_veto = np.logical_or(
+                        np.less(coincident_data[time_key], t_start),
+                        np.greater(coincident_data[time_key], t_end)
+                    )
+
+                    # Checks to make sure that there are
+                    # neutrinos in the sky at all. There should
+                    # be, due to the definition of the flare window.
+
+                    if n_all > 0:
+                        pass
+                    else:
+                        raise Exception("Events are leaking "
+                                        "somehow!")
+
+                    # Creates the likelihood function for the flare
+
+                    flare_f = llh.create_flare_llh_function(
+                        coincident_data, flare_veto, n_all, src, n_season)
+
+                    llhs[season_dict["Name"]] = {
+                        "f": flare_f,
+                        "flare length": flare_length
+                    }
+
+                # From here, we have normal minimisation behaviour
+
+                def f_final(params):
+
+                    # Marginalisation is done once, not per-season
+
+                    ts = 2 * np.log(overall_marginalisation)
+
+                    for llh_dict in llhs.itervalues():
+                        ts += llh_dict["f"](params)
+
+                    return -ts
+
+                res = scipy.optimize.fmin_l_bfgs_b(
+                    f_final, self.p0, bounds=self.bounds,
+                    approx_grad=True)
+
+                all_res.append(res)
+                all_ts.append(-res[1])
+                all_f.append(f_final)
+
+            max_ts = max(all_ts)
+            stacked_ts += max_ts
+            index = all_ts.index(max_ts)
+
+            best_start = pairs[index][0]
+            best_end = pairs[index][1]
+
+            best_time = np.array(
+                (best_start, best_end),
+                dtype=[
+                    ("Start Time (MJD)", np.float),
+                    ("End Time (MJD)", np.float),
+                ]
+            )
+
+            best_length = np.sum([
+                llh.time_pdf.effective_injection_time(best_time)
+                for llh in self.llhs.itervalues()]
+            ) / (60 * 60 * 24)
+
+            best = [x for x in all_res[index][0]] + [
+                best_start, best_end, best_length
+            ]
+
+            src_dict["Parameters"] = best
+
+            src_dict["TS"] = max_ts
+            src_dict["res"] = all_res[index]
+            src_dict["f"] = all_f[index]
+
+            results[source] = src_dict
+
+            del all_res, all_f, all_times
+
+        results["TS"] = stacked_ts
+
+        return results
+
     def run_flare(self, n_trials=n_trials_default, scale=1.):
         """Runs iterations of a flare search, and dumps results as pickle files.
         For stacking of multiple soyrces, due to computational constraints,
@@ -509,8 +810,6 @@ class MinimisationHandler:
 
         # Selects the key corresponding to time for the given IceCube dataset
         # (enables use of different data samples)
-
-        time_key = self.seasons[0]["MJD Time Key"]
 
         seed = int(random.random() * 10 ** 8)
         np.random.seed(seed)
@@ -527,313 +826,25 @@ class MinimisationHandler:
         for source in self.sources:
             results[source["Name"]] = {
                 "TS": [],
-                "Parameters": [[] for x in self.param_names]
+                "Parameters": [[] for _ in self.param_names]
             }
 
         # Loop over trials
 
         for _ in range(int(n_trials)):
 
-            datasets = dict()
+            res_dict = self.flare_trial(scale)
 
-            full_data = dict()
+            print res_dict
 
-            # Loop over each data season
+            for source in self.sources:
+                key = source["Name"]
+                results[key]["TS"].append(res_dict[key]["TS"])
 
-            for season in self.seasons:
+                for k, val in enumerate(res_dict[key]["Parameters"]):
+                    results[key]["Parameters"][k].append(val)
 
-                # Generate a scrambled dataset, and save it to the datasets
-                # dictionary. Loads the llh for the season.
-
-                data = self.injectors[season["Name"]].create_dataset(scale)
-                llh = self.llhs[season["Name"]]
-
-                full_data[season["Name"]] = data
-
-                # Loops over each source in catalogue
-
-                for source in self.sources:
-
-                    # Identify spatially- and temporally-coincident data
-
-                    mask = llh.select_spatially_coincident_data(data, [source])
-                    spatial_coincident_data = data[mask]
-
-                    t_mask = np.logical_and(
-                        np.greater(
-                            spatial_coincident_data[time_key],
-                            llh.time_pdf.sig_t0(source)),
-                        np.less(
-                            spatial_coincident_data[time_key],
-                            llh.time_pdf.sig_t1(source))
-                    )
-
-                    coincident_data = spatial_coincident_data[t_mask]
-
-                    # Creates empty dictionary to save info
-
-                    name = source["Name"]
-                    if name not in datasets.keys():
-                        datasets[name] = dict()
-
-                    # If there are events in the window...
-
-                    if len(coincident_data) > 0:
-
-                        new_entry = dict(season)
-                        new_entry["Coincident Data"] = coincident_data
-                        new_entry["Start (MJD)"] = llh.time_pdf.t0
-                        new_entry["End (MJD)"] = llh.time_pdf.t1
-
-                        # Identify significant events (S/B > 1)
-
-                        significant = llh.find_significant_events(
-                            coincident_data, source)
-
-                        new_entry["Significant Times"] = significant[time_key]
-
-                        new_entry["N_all"] = len(data)
-
-                        datasets[name][season["Name"]] = new_entry
-
-            stacked_ts = 0.0
-
-            # Minimisation of each source
-
-            for (source, source_dict) in datasets.iteritems():
-
-                src = self.sources[self.sources["Name"] == source]
-
-                # Create a full list of all significant times
-
-                all_times = []
-                n_tot = 0
-                for season_dict in source_dict.itervalues():
-                    new_times = season_dict["Significant Times"]
-                    all_times.extend(new_times)
-                    n_tot += len(season_dict["Coincident Data"])
-
-                all_times = np.array(sorted(all_times))
-
-                # Minimum flare duration (days)
-                min_flare = 0.25
-                # Conversion to seconds
-                min_flare *= 60 * 60 * 24
-
-                # Length of search window in livetime
-
-                search_window = np.sum([
-                    llh.time_pdf.effective_injection_time(src)
-                    for llh in self.llhs.itervalues()]
-                )
-
-                # If a maximum flare length is specified, sets that here
-
-                if "Max Flare" in self.llh_kwargs["LLH Time PDF"].keys():
-                    # Maximum flare given in days, here converted to seconds
-                    max_flare = self.llh_kwargs["LLH Time PDF"]["Max Flare"] * (
-                        60 * 60 * 24
-                    )
-
-                else:
-                    max_flare = search_window
-
-                # Loop over all flares, and check which combinations have a
-                # flare length between the maximum and minimum values
-
-                pairs = []
-
-                for x in all_times:
-                    for y in all_times:
-                        if y > x:
-                            pairs.append((x, y))
-
-                # If there is are no pairs meeting this criteria, skip
-
-                if len(pairs) == 0:
-                    # print "Continuing because no pairs"
-                    continue
-
-                all_res = []
-                all_ts = []
-
-                # Loop over each possible significant neutrino pair
-
-                for pair in pairs:
-                    t_start = pair[0]
-                    t_end = pair[1]
-
-                    # Calculate the length of the neutrino flare in livetime
-
-                    flare_time = np.array(
-                        (t_start, t_end),
-                        dtype=[
-                            ("Start Time (MJD)", np.float),
-                            ("End Time (MJD)", np.float),
-                        ]
-                    )
-
-                    flare_length = np.sum([
-                        llh.time_pdf.effective_injection_time(flare_time)
-                        for llh in self.llhs.itervalues()]
-                    )
-
-                    # If the flare is between the minimum and maximum length
-
-                    if flare_length < min_flare:
-                        # print "Continuing because flare too short"
-                        continue
-                    elif flare_length > max_flare:
-                        # print "Continuing because flare too long"
-                        continue
-
-                    # Marginalisation term is length of flare in livetime
-                    # divided by max flare length in livetime. Accounts
-                    # for the additional short flares that can be fitted
-                    # into a given window
-
-                    overall_marginalisation = flare_length / max_flare
-
-                    # Each flare is evaluated accounting for the
-                    # background on the sky (the non-coincident
-                    # data), which is given by the number of
-                    # neutrinos on the sky during the given
-                    # flare. (NOTE THAT IT IS NOT EQUAL TO THE
-                    # NUMBER OF NEUTRINOS IN THE SKY OVER THE
-                    # ENTIRE SEARCH WINDOW)
-
-                    n_all = np.sum([np.sum(~np.logical_or(
-                        np.less(data[time_key], t_start),
-                        np.greater(data[time_key], t_end)))
-                                    for data in full_data.itervalues()])
-
-                    llhs = dict()
-
-                    # Loop over data seasons
-
-                    for i, (name, season_dict) in enumerate(
-                            sorted(source_dict.iteritems())):
-
-                        llh = self.llhs[season_dict["Name"]]
-
-                        # Check that flare overlaps with season
-
-                        inj_time = llh.time_pdf.effective_injection_time(
-                            flare_time
-                        )
-
-                        if not inj_time > 0:
-                            # print "Continuing due to season having 0 overlap"
-                            continue
-
-                        coincident_data = season_dict["Coincident Data"]
-
-                        data = full_data[name]
-
-                        n_season = np.sum(~np.logical_or(
-                            np.less(data[time_key], t_start),
-                            np.greater(data[time_key], t_end)))
-
-                        # Removes non-coincident data
-
-                        flare_veto = np.logical_or(
-                            np.less(coincident_data[time_key], t_start),
-                            np.greater(coincident_data[time_key], t_end)
-                        )
-
-                        # Sets start and end time of overlap of flare
-                        # with given season.
-
-                        t_s = min(
-                            max(t_start, season_dict["Start (MJD)"]),
-                            season_dict["End (MJD)"])
-                        t_e = max(
-                            min(t_end, season_dict["End (MJD)"]),
-                            season_dict["Start (MJD)"])
-
-                        # Checks to make sure that there are
-                        # neutrinos in the sky at all. There should
-                        # be, due to the definition of the flare window.
-
-                        if n_all > 0:
-                            pass
-                        else:
-                            raise Exception("Events are leaking "
-                                            "somehow!")
-
-                        # Creates the likelihood function for the flare
-
-                        flare_f = llh.create_flare_llh_function(
-                            coincident_data, flare_veto, n_all, src, n_season)
-
-                        llhs[season_dict["Name"]] = {
-                            # "llh": unblind_llh,
-                            "f": flare_f,
-                            "flare length": flare_length
-                        }
-
-                    # From here, we have normal minimisation behaviour
-
-                    def f_final(params):
-
-                        # weights_matrix = np.ones(len(llhs))
-
-                        # for i, (name, llh_dict) in enumerate(
-                        #         sorted(llhs.iteritems())):
-                        #     T = llh_dict["flare length"]
-                        #     acc = llh.acceptance(src, params)
-                        #     weights_matrix[i] = T * acc
-                        #
-                        # weights_matrix /= np.sum(weights_matrix)
-
-                        # Marginalisation is done once, not per-season
-
-                        ts = 2 * np.log(overall_marginalisation)
-
-                        for i, (name, llh_dict) in enumerate(
-                                sorted(llhs.iteritems())):
-
-                            ts += llh_dict["f"](params)
-
-                        return -ts
-
-                    res = scipy.optimize.fmin_l_bfgs_b(
-                        f_final, self.p0, bounds=self.bounds,
-                        approx_grad=True)
-
-                    all_res.append(res)
-                    all_ts.append(-res[1])
-
-                max_ts = max(all_ts)
-                stacked_ts += max_ts
-                index = all_ts.index(max_ts)
-
-                best_start = pairs[index][0]
-                best_end = pairs[index][1]
-
-                best_time = np.array(
-                    (best_start, best_end),
-                    dtype=[
-                        ("Start Time (MJD)", np.float),
-                        ("End Time (MJD)", np.float),
-                    ]
-                )
-
-                best_length = np.sum([
-                    llh.time_pdf.effective_injection_time(best_time)
-                    for llh in self.llhs.itervalues()]
-                ) / (60 * 60 * 24)
-
-                best = [x for x in all_res[index][0]] + [
-                    best_start, best_end, best_length
-                ]
-
-                for k, val in enumerate(best):
-                    results[source]["Parameters"][k].append(val)
-
-                results[source]["TS"].append(max_ts)
-
-            results["TS"].append(stacked_ts)
+            results["TS"].append(results["TS"])
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
@@ -872,86 +883,95 @@ class MinimisationHandler:
 
         :param scale: Flux scale to inject
         """
-        f = self.run_trial(scale)
 
-        def g(x):
-            return -np.sum(f(x))
+        res_dict = self.run_trial(scale)
+
+        if self.flare:
+            scans = [(source, src_dict["res"], src_dict["f"]) for
+                     (source, src_dict) in
+                     res_dict.iteritems() if source not in ["TS"]]
+
+        else:
+            scans = [("", res_dict["res"], res_dict["f"])]
+
+        # #
+        # # g = self.trial_function(scale)
         #
-        # g = self.run_trial(scale)
-
-        res = scipy.optimize.minimize(
-            g, self.p0, bounds=self.bounds)
+        # res = scipy.optimize.minimize(
+        #     g, self.p0, bounds=self.bounds)
 
         print "Scan results:"
-        print res
+        print res_dict
         #
         # raw_input("prompt")
 
-        plt.figure(figsize=(8, 4 + 2*len(self.p0)))
+        for (name, res, g) in scans:
 
-        for i, bounds in enumerate(self.bounds):
-            plt.subplot(len(self.p0), 1, 1 + i)
+            plt.figure(figsize=(8, 4 + 2*len(self.p0)))
 
-            best = list(res.x)
+            for i, bounds in enumerate(self.bounds):
+                plt.subplot(len(self.p0), 1, 1 + i)
 
-            n_range = np.linspace(max(bounds[0], -100),
-                                  min(bounds[1], 100), 1e2)
-            y = []
+                best = list(res[0])
 
-            for n in n_range:
+                n_range = np.linspace(max(bounds[0], -100),
+                                      min(bounds[1], 100), 1e2)
+                y = []
 
-                best[i] = n
+                for n in n_range:
 
-                new = g(best)
+                    best[i] = n
+
+                    new = g(best)
+                    try:
+                        y.append(new[0][0])
+                    except IndexError:
+                        y.append(new)
+
+                plt.plot(n_range, y)
+                plt.xlabel(self.param_names[i])
+                plt.ylabel(r"$-2\log(\mathcal{L}/\mathcal{L}_{0})$")
+
+
+                print "PARAM:", self.param_names[i]
+                min_y = np.min(y)
+                print "Minimum value of", min_y,
+
+                min_index = y.index(min_y)
+                min_n = n_range[min_index]
+                print "at", min_n
+
+                l_y = np.array(y[:min_index])
                 try:
-                    y.append(new[0][0])
-                except IndexError:
-                    y.append(new)
+                    l_y = min(l_y[l_y > (min_y + 0.5)])
+                    l_lim = n_range[y.index(l_y)]
+                except ValueError:
+                    l_lim = 0
 
-            plt.plot(n_range, y)
-            plt.xlabel(self.param_names[i])
-            plt.ylabel(r"$-2\log(\mathcal{L}/\mathcal{L}_{0})$")
+                u_y = np.array(y[min_index:])
+                try:
+                    u_y = min(u_y[u_y > (min_y + 0.5)])
+                    u_lim = n_range[y.index(u_y)]
+                except ValueError:
+                    u_lim = ">" + str(max(n_range))
 
+                print "One Sigma interval between", l_lim, "and", u_lim
 
-            print "PARAM:", self.param_names[i]
-            min_y = np.min(y)
-            print "Minimum value of", min_y,
+            path = plot_output_dir(self.name) + name + "_llh_scan.pdf"
 
-            min_index = y.index(min_y)
-            min_n = n_range[min_index]
-            print "at", min_n
+            plt.suptitle(os.path.basename(self.name[:-1]))
 
-            l_y = np.array(y[:min_index])
             try:
-                l_y = min(l_y[l_y > (min_y + 0.5)])
-                l_lim = n_range[y.index(l_y)]
-            except ValueError:
-                l_lim = 0
+                os.makedirs(os.path.dirname(path))
+            except OSError:
+                pass
 
-            u_y = np.array(y[min_index:])
-            try:
-                u_y = min(u_y[u_y > (min_y + 0.5)])
-                u_lim = n_range[y.index(u_y)]
-            except ValueError:
-                u_lim = ">" + str(max(n_range))
+            plt.savefig(path)
+            plt.close()
 
-            print "One Sigma interval between", l_lim, "and", u_lim
+            print "Saved to", path
 
-        path = plot_output_dir(self.name) + "llh_scan.pdf"
-
-        plt.suptitle(os.path.basename(self.name[:-1]))
-
-        try:
-            os.makedirs(os.path.dirname(path))
-        except OSError:
-            pass
-
-        plt.savefig(path)
-        plt.close()
-
-        print "Saved to", path
-
-        return res
+        return res_dict
 
     def check_flare_background_rate(self):
 

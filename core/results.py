@@ -39,10 +39,10 @@ class ResultsHandler:
 
         # Checks whether negative n_s is fit or not
 
-        # try:
-        #     self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
-        # except KeyError:
-        #     self.negative_n_s = False
+        try:
+            self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
+        except KeyError:
+            self.negative_n_s = False
 
         try:
             self.fit_weights = llh_kwargs["Fit Weights?"]
@@ -55,6 +55,8 @@ class ResultsHandler:
             self.ts_type = "Fit Weights"
         elif self.flare:
             self.ts_type = "Flare"
+        elif self.negative_n_s:
+            self.ts_type = "Negative n_s"
         else:
             self.ts_type = "Standard"
         #

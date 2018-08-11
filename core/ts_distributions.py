@@ -146,64 +146,126 @@ class Double_Chi2(object):
     """
 
     def __init__(self, data):
-        """ Fit the given ensemble of measurements with a chi^2 function.
+        # p_start = [4., -1., 1.]
 
-        `data` is a list of test statistics values.
-        `cut` defines where the distribution is truncated.
-        """
+        med = np.median(data)
 
-        print "Running Double Chi2"
+        data_right = data[data > med]
 
-        data_left = data[data <= 0.]
-        data_right = data[data > 0.]
-        N_all = len(data)
+        data_left = data[data <= med]
 
-        print N_all, len(data_left), len(data_right)
-
-        f_under = float(len(data_left))/float(N_all)
-        f_over = float(len(data_right)) / float(N_all)
-
-        print f_under, f_over, f_under + f_over
-
-        N_left = len(data_left)
-
-        # four parameters will be fitted: dof x 2, scale x 2
-        p_start = [2., 2., f_under, f_over]
-        p_bounds = [(1e-9, None),
-                    (1e-9, None),# dof > 0
-                    (1e-5, 1e5),
-                    (1e-5, 1e5)]  # shape ~ free
-
-        # define the fit function: likelihood for 2 chi^2 distributions,
-        # one for positive values and another for negative
+        p_start = [2.]
+        p_bounds = [(0., None),  # dof > 0
+                    # (None, -0),  # location < 0 for 'truncated' effect
+                    #  shape ~ free
+                    ]
+                    # (1e-5, 1e5)]  # shape ~ free
 
         def func(p):
-            #
-            # print p
-
-            # left = scipy.stats.chi2(p[0], loc=0., scale=p[2])
-            right = scipy.stats.chi2(p[1], loc=0, scale=p[3])
-
-            # loglh = np.log(
-            #     f_under * left.pdf(-data_left).sum() +
-            #     f_over * right.pdf(data_right).sum()
-            # )
-
-            loglh = right.logpdf(data_right).sum()
-            # print loglh
-
+            loglh = scipy.stats.chi2(p[0], loc=med, scale=1).logpdf(
+                data_right).sum()
+            # print loglh, p
             return -loglh
 
         res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
 
-        # if not res.success:
-        #     print 'Chi2 fit did not converge! Result is likely garbage.'
+        # print res
 
-        self._f_left = scipy.stats.chi2(res.x[0], loc=0., scale=res.x[2])
-        self._f_right = scipy.stats.chi2(res.x[1], loc=0., scale=res.x[3])
+        self._cut = 0.
         self._res = res
-        self._frac_over = f_over
-        self.frac_under = f_under
+        self._f = scipy.stats.chi2(*res.x)
+        self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
+        self._df = res.x[0]
+        self._loc = med
+        self._scale = 1.
+
+        def func(p):
+            loglh = scipy.stats.chi2(p[0], loc=-med, scale=1).logpdf(
+                -data_left).sum()
+            # print loglh, p
+            return -loglh
+
+        res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
+
+        self.res_left = res
+        self._f_left = scipy.stats.chi2(*res.x)
+
+    # def __init__(self, data):
+    #     """ Fit the given ensemble of measurements with a chi^2 function.
+    #
+    #     `data` is a list of test statistics values.
+    #     `cut` defines where the distribution is truncated.
+    #     """
+
+        # print "Running Double Chi2"
+        #
+        # med = np.median(data)
+        #
+        # N_all = len(data)
+        #
+        # # print N_all, len(data_left), len(data_right)
+        # #
+        # # f_under = float(len(data_left))/float(N_all)
+        # # f_over = float(len(data_right)) / float(N_all)
+        # #
+        # # print f_under, f_over, f_under + f_over
+        # #
+        # # N_left = len(data_left)
+        #
+        # # four parameters will be fitted: dof x 2, scale x 2
+        # p_start = [2., 2., 0.5, 0.5, 0.]
+        # p_bounds = [(1e-9, None),
+        #             (1e-9, None),# dof > 0
+        #             (1e-5, 1),
+        #             (1e-5, 1e5),
+        #             (min(data), max(data))
+        #             ]  # shape ~ free
+        #
+        # # define the fit function: likelihood for 2 chi^2 distributions,
+        # # one for positive values and another for negative
+        #
+        # def func(p):
+        #     #
+        #     # print p
+        #
+        #     data_left = data[data <= p[4]]
+        #     data_right = data[data > p[4]]
+        #
+        #     f_under = float(len(data_left))/float(N_all)
+        #     f_over = float(len(data_right)) / float(N_all)
+        #
+        #     left = scipy.stats.chi2(p[0], loc=-p[4], scale=p[2])
+        #     right = scipy.stats.chi2(p[1], loc=p[4], scale=(1-p[2]))
+        #     # left = scipy.stats.chi2(p[0], loc=-p[4], scale=1)
+        #     # right = scipy.stats.chi2(p[1], loc=p[4], scale=1)
+        #
+        #     loglh = np.log(
+        #         f_under * left.pdf(-data_left).sum() +
+        #         f_over * right.pdf(data_right).sum()
+        #     )
+        #
+        #     # loglh += right.logpdf(data_right).sum()
+        #
+        #     # print loglh
+        #
+        #     return -loglh
+        #
+        # res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
+        #
+        # print res
+        # raw_input("prompt")
+        #
+        # # if not res.success:
+        # #     print 'Chi2 fit did not converge! Result is likely garbage.'
+        #
+        # self._f_left = scipy.stats.chi2(res.x[0], loc=0., scale=res.x[2])
+        # self._f = scipy.stats.chi2(res.x[1], loc=0., scale=res.x[3])
+        # self._res = res
+        # self._df = res.x[1]
+        # self._loc = 0.
+        # self._scale = res.x[3]
+        # self._frac_over = f_over
+        # self.frac_under = f_under
 
 class Chi2_one_side:
 
@@ -325,9 +387,24 @@ def fit_background_ts(ts_array, ts_type):
             else:
                 frac_over = 1.
 
+    elif ts_type == "Negative n_s":
+
+        plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
+                 bins=n_bins, lw=2, histtype='step',
+                 color=['black', "grey"],
+                 label=['TS > 0', "TS <= 0"],
+                 normed=True,
+                 stacked=True)
+
+        chi2 = Double_Chi2(ts_array)
+
+        df = chi2._f.args[0]
+        loc = np.median(ts_array)
+        scale = 1.
+
+
     elif ts_type == "Standard":
 
-        plt.figure()
         plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
                  bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
@@ -347,6 +424,38 @@ def fit_background_ts(ts_array, ts_type):
     return df, loc, scale, frac_over
 
 
+def plot_expanded_negative(ts_array, path):
+
+    plt.figure()
+    plt.hist([ts_array[ts_array > 0], ts_array[ts_array < 0]],
+             bins=n_bins, lw=2, histtype='step',
+             color=['black', "grey"],
+             label=['TS > 0', "TS <= 0"],
+             normed=True,
+             stacked=True)
+
+    med = np.median(ts_array)
+
+    chi2 = Double_Chi2(ts_array)
+
+    frac_over = 0.5
+
+    x_range = np.linspace(med, max(ts_array), 100)
+
+    plt.plot(x_range, frac_over * chi2._f.pdf(x_range),
+             color="blue", label=r"$\chi^{2}$ Distribution")
+
+    x_range = np.linspace(min(ts_array), med, 100)
+
+    plt.plot(x_range, frac_over * chi2._f_left.pdf(-x_range),
+             color="blue")
+
+    plt.yscale("log")
+    plt.xlabel(r"Test Statistic ($\lambda$)")
+    plt.legend(loc="upper right")
+    plt.savefig(path[:-4] + "_expanded.pdf")
+    plt.close()
+
 def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
                                     ts_val=None):
     ts_array = np.array(ts_array)
@@ -356,6 +465,9 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
         print "TS distribution has", np.sum(np.isnan(ts_array)), "nan entries."
 
     med = np.median(ts_array)
+
+    if med < 0.:
+        plot_expanded_negative(ts_array, path)
 
     fig = plt.figure()
 
@@ -376,9 +488,9 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
     disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
 
-    xrange = np.linspace(0., max(max_ts, disc_potential), 100)
+    x_range = np.linspace(0., max(max_ts, disc_potential), 100)
 
-    plt.plot(xrange, frac_over * scipy.stats.chi2.pdf(xrange, df, loc, scale),
+    plt.plot(x_range, frac_over * scipy.stats.chi2.pdf(x_range, df, loc, scale),
              color="blue", label=r"$\chi^{2}$ Distribution")
 
     def integral(x):
@@ -386,7 +498,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
         return (frac_under * np.sign(x) + frac_over *
                 (scipy.stats.chi2.cdf(x, df, loc, scale)))
 
-    plt.plot(xrange, 1. - integral(xrange), color="green", linestyle="--",
+    plt.plot(x_range, 1. - integral(x_range), color="green", linestyle="--",
              label=r"1 - $\int f(x)$ (p-value)")
 
     plt.axvline(disc_potential, color="r", label=r"5 $\sigma$ Threshold")
@@ -399,6 +511,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
         xy=(0.3, 0.7), xycoords="axes fraction", fontsize=8)
 
     if ts_val is not None:
+        print "\n"
         print "Quantifying TS:", "{:.2f}".format(ts_val)
 
         if ts_val > np.median(ts_array):
@@ -415,6 +528,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
         print "Pre-trial P-value is", "{:.2E}".format(1-cdf), 1-cdf
         print "Significance is", "{:.2f}".format(sig), "Sigma"
+        print "\n"
 
         plt.axvline(ts_val, color="purple",
                     label="{:.2f}".format(ts_val) + " TS/" +
@@ -427,7 +541,6 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     plt.xlabel(r"Test Statistic ($\lambda$)")
     plt.legend(loc="upper right")
     plt.savefig(path)
-
     plt.close()
 
     return disc_potential

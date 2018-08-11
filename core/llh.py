@@ -276,12 +276,12 @@ class LLH():
 
         for i, n_j in enumerate(all_n_j):
             # Switches off Energy term for negative n_s, which should in theory
-            # be a continuous change that does not alter the likelihood (as
-            # it is not included for n_s=0). However, it nonetheless seems to
-            # materially alter the TS distribution for positive values of
-            # n_s, by affecting the best fit position of the minimiser.
-            # So it is currently disabled.
-            if False:
+            # be a continuous change that does not alter the likelihood for
+            # n_s > 0(as it is not included for n_s=0). However,
+            # it nonetheless seems to  materially alter the TS distribution
+            # for positive values of n_s, by affecting the best fit position
+            # of the minimiser. So it is currently disabled.
+            if n_j < 0:
                 x.append(1 + ((n_j / n_all) * (SoB_spacetime[i] - 1.)))
             else:
                 x.append(1 + ((n_j / n_all) * (

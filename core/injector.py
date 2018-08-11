@@ -158,8 +158,7 @@ class Injector:
 
             # print self.season["Name"], source["Name"], "expecting", n_inj,
 
-            # Simulates poisson noise around the expectation value n_inj. If
-            # n_s = 0, skips simulation step.
+            # Simulates poisson noise around the expectation value n_inj.
             if self.poisson_smear:
                 n_s = np.random.poisson(n_inj)
             # If there is no poisson noise, rounds n_s down to nearest integer
@@ -171,6 +170,7 @@ class Injector:
             #     self.mc_weights[ band_mask] / omega)
             # raw_input("prompt")
 
+            #  If n_s = 0, skips simulation step.
             if n_s < 1:
                 continue
 

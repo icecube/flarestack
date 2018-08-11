@@ -147,7 +147,7 @@ for e_min in power_law_start_energy:
                     Pickle.dump(mh_dict, f)
 
                 # if label == "Fit Weights":
-                rd.submit_to_cluster(pkl_file, n_jobs=100)
+                # rd.submit_to_cluster(pkl_file, n_jobs=100)
 
                 # mh = MinimisationHandler(mh_dict)
                 # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
@@ -162,7 +162,7 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = cat_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 
@@ -182,8 +182,8 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
 
         for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
-            if f_type == "Fit Weights":
-            # if True:
+            # if f_type == "Fit Weights":
+            if True:
 
                 for (gamma, rh_dict) in sorted(res.iteritems()):
                     try:
@@ -252,9 +252,10 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
             plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
                       " for " + cat_names[b] + " TDEs")
 
-            # ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
+            ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
             plt.tight_layout()
             plt.savefig(plot_output_dir(name) + "/spectral_index_" +
                         "Emin=" + str(e_min) +
                         ["sens", "disc"][j] + "_" + cat_name + ".pdf")
             plt.close()
+
