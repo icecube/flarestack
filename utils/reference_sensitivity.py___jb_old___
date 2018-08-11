@@ -27,7 +27,7 @@ def download_ref():
 def reference_sensitivity(sindec=np.array(0.0), gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
     analysis sensitivity. Then converts given values for sin(declination to
-    the equivalent reference sensitivity. Adds values for Sindec = +/- 1,
+    the equivalent skylab sensitivity. Adds values for Sindec = +/- 1,
     equal to nearest known value.
 
     :param sindec: Sin(declination)
@@ -63,7 +63,7 @@ def reference_sensitivity(sindec=np.array(0.0), gamma=2.0):
 def reference_7year_discovery_potential(sindec=0.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
     analysis discovery potential. Then converts given values for sin(
-    declination to the equivalent reference sensitivity. Adds values for Sindec
+    declination to the equivalent skylab sensitivity. Adds values for Sindec
     = +/- 1, equal to nearest known value.
 
     :param sindec: Sin(declination)
