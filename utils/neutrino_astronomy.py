@@ -50,13 +50,14 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     f_cr_to_nu = 0.05
 
-    # Sets parameter for conversion of CR to X-Ray luminosity
-    baryon_loading = 100
+    # Integrate over flux to get dN/dt
 
     phi_power = 1 - gamma
 
     phi_integral = ((1. / phi_power) * (e_0 ** gamma) * (
             (e_max ** phi_power) - (e_min ** phi_power))).value * u.GeV
+
+    # Integrate over energy to get dE/dt
 
     if gamma == 2:
         e_integral = np.log(e_max / e_min) * (u.GeV ** 2)
@@ -70,10 +71,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
                 (e_max ** power) - (e_min ** power))
                       ).value * u.GeV ** 2
 
-    print "In total", (flux * phi_integral / (
-            u.GeV * u.cm ** 2 * u.s)).to(u.s ** -1 * u.cm ** -2)
-
-    int_dNdA = 0.
+    # Calculate fluence
 
     tot_fluence = (flux * e_integral) / (u. GeV * u.cm ** 2 * u.s)
 
@@ -96,7 +94,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     dNdA = (si * phi_integral).to(u.s ** -1 * u.cm ** -2)
 
-    int_dNdA += dNdA
+    # int_dNdA += dNdA
 
     N = dNdA * area
 
@@ -115,8 +113,5 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
     print "Assuming", '{:.3g}'.format(100 * f_cr_to_nu),
     print "% was transferred from CR to neutrinos,",
     print "we would require a total CR luminosity of", cr_e
-
-    print "With a baryonic loading factor of", baryon_loading,
-    print "we would expect an X-Ray luminosity of ", cr_e/baryon_loading
 
     return astro_res

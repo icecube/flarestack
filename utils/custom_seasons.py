@@ -19,9 +19,9 @@ def custom_dataset(dataset, sources, time_pdf):
     for season in dataset:
         time = TimePDF.create(time_pdf, season)
 
-        overap = np.sum([time.effective_injection_time(src) for src in sources])
+        overlap = np.sum([time.effective_injection_time(src) for src in sources])
 
-        if overap > 0:
+        if overlap > 0:
             relevant_seasons.append(season)
 
     return relevant_seasons
