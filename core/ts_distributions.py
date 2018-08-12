@@ -458,6 +458,12 @@ def plot_expanded_negative(ts_array, path):
 
 def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
                                     ts_val=None):
+
+    try:
+        os.makedirs(os.path.dirname(path))
+    except OSError:
+        pass
+
     ts_array = np.array(ts_array)
     ts_array = ts_array[~np.isnan(ts_array)]
 
@@ -476,11 +482,6 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     frac_under = 1 - frac_over
 
     five_sigma = (raw_five_sigma - frac_under) / (1. - frac_under)
-
-    try:
-        os.makedirs(os.path.dirname(path))
-    except OSError:
-        pass
 
     plt.axhline(frac_over * (1 - five_sigma), color="r", linestyle="--")
 
