@@ -279,7 +279,7 @@ class LLH():
             # n_s > 0(as it is not included for n_s=0). However,
             # it nonetheless seems to  materially alter the TS distribution
             # for positive values of n_s, by affecting the best fit position
-            # of the minimiser. So it is currently disabled.
+            # of the minimiser.
             if n_j < 0:
                 x.append(1 + ((n_j / n_all) * (SoB_spacetime[i] - 1.)))
             else:

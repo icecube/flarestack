@@ -4,8 +4,15 @@ import numpy as np
 import math
 from shared import catalogue_dir
 from astropy.coordinates import Distance
+from core.injector import Injector
 
 e_0 = 1 * u.GeV
+
+# Set parameters for conversion from CR luminosity to nu luminosity
+f_pi = 0.1
+waxmann_bachall = (3. / 8.) * f_pi
+
+f_cr_to_nu = 0.05
 
 
 def fluence_integral(gamma, e_min=100*u.GeV, e_max=10*u.PeV):
@@ -43,12 +50,6 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
         e_max = e_pdf_dict["E Max"] * u.GeV
     else:
         e_max = (10 * u.PeV).to(u.GeV)
-
-    # Set parameters for conversion from CR luminosity to nu luminosity
-    f_pi = 0.1
-    waxmann_bachall = (3./8.) * f_pi
-
-    f_cr_to_nu = 0.05
 
     # Integrate over flux to get dN/dt
 
@@ -115,3 +116,55 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
     print "we would require a total CR luminosity of", cr_e
 
     return astro_res
+
+
+def calculate_neutrinos(source, season, inj_kwargs):
+    inj = Injector(season, [source], **inj_kwargs)
+
+    print "\n"
+    print source["Name"], season["Name"]
+    print "\n"
+
+    energy_pdf = inj_kwargs["Injection Energy PDF"]
+
+    energy = energy_pdf["Energy Flux"] * inj.time_pdf.effective_injection_time(
+        source)
+
+    print "Neutrino Energy is", energy
+
+    lumdist = source["Distance (Mpc)"] * u.Mpc
+
+    print "Source is", lumdist, "away"
+
+    area = (4 * math.pi * (lumdist.to(u.cm)) ** 2)
+
+    nu_flu = energy.to(u.GeV)/area
+
+    print "Neutrino Fluence is", nu_flu
+
+    if "E Min" in energy_pdf.keys():
+        e_min = energy_pdf["E Min"] * u.GeV
+    else:
+        e_min = (100 * u.GeV)
+
+    if "E Max" in energy_pdf.keys():
+        e_max = energy_pdf["E Max"] * u.GeV
+    else:
+        e_max = (10 * u.PeV).to(u.GeV)
+
+    e_int = fluence_integral(energy_pdf["Gamma"], e_min, e_max)
+
+    flux_1GeV = nu_flu/e_int
+
+    print "Flux at 1GeV would be", flux_1GeV, "\n"
+
+    source_mc, omega, band_mask = inj.select_mc_band(inj._mc, source)
+
+    source_mc["ow"] = flux_1GeV * (inj.mc_weights[band_mask] / omega)
+    n_inj = np.sum(source_mc["ow"])
+
+    print ""
+
+    print "This corresponds to", n_inj, "neutrinos"
+
+    return n_inj
