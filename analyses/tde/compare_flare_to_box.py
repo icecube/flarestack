@@ -36,7 +36,9 @@ llh_time = {
 
 llh_energy = injection_energy
 
-no_flare = {
+# A standard time integration, with n_s >=0
+
+time_integrated = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
@@ -44,13 +46,17 @@ no_flare = {
     "Fit Negative n_s?": False
 }
 
-no_flare_negative = {
+# Time integration where n_s can be fit as negative or positive
+
+time_integrated_negative_n_s = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Flare Search?": False,
     "Fit Negative n_s?": True
 }
+
+# A flare search, looking for clustering in time and space
 
 flare = {
     "LLH Energy PDF": llh_energy,
@@ -65,12 +71,14 @@ src_res = dict()
 lengths = np.logspace(-2, 0, 9) * max_window
 # lengths = np.logspace(-2, 0, 17) * max_window
 
+# Loop over likelihood methods
 
-for i, llh_kwargs in enumerate([
-                                no_flare,
-                                no_flare_negative,
+for i, llh_kwargs in enumerate([time_integrated,
+                                time_integrated_negative_n_s,
                                 flare
                                 ]):
+
+    # Set plot labels and subdirectory names
 
     label = ["Time-Integrated", "Time-Integrated (negative n_s)",
              "Cluster Search"][i]
@@ -80,9 +88,15 @@ for i, llh_kwargs in enumerate([
 
     res = dict()
 
+    # Loop over different lengths for injection
+
     for flare_length in lengths:
 
         full_name = flare_name + str(flare_length) + "/"
+
+        # Use a box time PDF of length flare_length to inject signal.
+        # Randomly move this box within the search window, to average over
+        # livetime fluctuations/detector seasons.
 
         injection_time = {
             "Name": "FixedRefBox",
@@ -99,6 +113,8 @@ for i, llh_kwargs in enumerate([
             "Injection Time PDF": injection_time,
             "Poisson Smear?": True,
         }
+
+        # Sets a default flux scale for signal injection
 
         scale = flux_to_k(reference_sensitivity(np.sin(catalogue["dec"]))
                           * (50 * max_window / flare_length))
@@ -127,7 +143,11 @@ for i, llh_kwargs in enumerate([
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
+        # Run jobs on cluster
+
         # rd.submit_to_cluster(pkl_file, n_jobs=12000)
+
+        # Run locally
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=3)
@@ -135,6 +155,8 @@ for i, llh_kwargs in enumerate([
         res[flare_length] = mh_dict
 
     src_res[label] = res
+
+# Wait for cluster jobs to finish
 
 # rd.wait_for_cluster()
 
@@ -146,15 +168,25 @@ disc_e = [[] for _ in src_res]
 
 labels = []
 
+# Loop over likelihood methods
+
 for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
-    if f_type!="Time-Integrated (negative n_s)":
+    if f_type != "Time-Integrated (negative n_s)":
+
         for (length, rh_dict) in sorted(res.iteritems()):
             try:
+
+                # Calculate the sensitivity based on TS distributions
+
                 rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                                     rh_dict["catalogue"], show_inj=True)
 
+                # Length of injection in seconds
+
                 inj_time = length * (60 * 60 * 24)
+
+                # Convert flux to fluence and source energy
 
                 astro_sens, astro_disc = rh.astro_values(
                     rh_dict["inj kwargs"]["Injection Energy PDF"])
@@ -182,6 +214,8 @@ for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
         labels.append(f_type)
 
+# Loop over sensitivity/discovery potential
+
 for j, [fluence, energy] in enumerate([[sens, sens_e],
                                       [disc_pots, disc_e]]):
 
@@ -190,17 +224,21 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
 
     ax2 = ax1.twinx()
 
-    cols = ["#00A6EB", "#F79646", "g", "r"]
+    cols = ["#F79646", "#00A6EB", "g", "r"]
     linestyle = ["-", "-"][j]
 
     for i, f in enumerate(fracs):
 
         if len(f) > 0:
 
+            # Plot fluence on left y axis, and source energy on right y axis
+
             ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
                      color=cols[i])
             ax2.plot(f, energy[i], linestyle=linestyle,
                      color=cols[i])
+
+    # Set up plot
 
     ax2.grid(True, which='both')
     ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
@@ -209,10 +247,12 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
     ax1.set_yscale("log")
     ax2.set_yscale("log")
 
+    # Set limits and save
+
     for k, ax in enumerate([ax1, ax2]):
         y = [fluence, energy][k]
 
-        ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
+        ax.set_ylim(0.7 * min([min(x) for x in y if len(x) > 0]),
                     1.1 * max([max(x) for x in y if len(x) > 0]))
 
     plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + \

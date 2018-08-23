@@ -77,16 +77,23 @@ class MinimisationHandler:
         except KeyError:
             self.brute = False
 
+        # Checks if negative n_s should be used
+
+        try:
+            self.negative_n_s = self.llh_kwargs["Fit Negative n_s?"]
+        except KeyError:
+            self.negative_n_s = False
+
         # Checks if source weights should be fitted individually
 
         try:
             self.fit_weights = self.llh_kwargs["Fit Weights?"]
 
-            if "Negative n_s?" in self.llh_kwargs.keys():
-                if self.llh_kwargs["Negative n_s?"]:
-                    raise Exception("Attempted to mix fitting weights with "
-                                    "negative n_s. The code is not able to "
-                                    "handle this setup!")
+            # Checks to ensure fitting weights and negative n_s are not mixed
+
+            if self.negative_n_s:
+                raise Exception("Attempted to mix fitting weights with negative"
+                                " n_s. The code is not able to handle this!")
 
         except KeyError:
             self.fit_weights = False
@@ -283,22 +290,27 @@ class MinimisationHandler:
         res = scipy.optimize.minimize(
             llh_f, start_seed, bounds=self.bounds)
 
-        flag = res.status
         vals = res.x
+        flag = res.status
         # If the minimiser does not converge, repeat with brute force
         if flag == 1:
             vals = scipy.optimize.brute(llh_f, ranges=self.bounds,
                                         finish=None)
-            # ts = -llh_f(vals)
 
         best_llh = raw_f(vals)
 
-        if self.fit_weights:
+        if self.negative_n_s and (res.x[0] == 0.0):
 
-            ts = np.sum(best_llh)
+            bounds = list(self.bounds)
+            bounds[0] = (-1000., 0.)
 
-        else:
-            ts = np.sign(vals[0]) * np.sum(best_llh)
+            res = scipy.optimize.minimize(
+                llh_f, start_seed, bounds=bounds)
+
+            vals = [res.x[0]]
+            best_llh = res.fun
+
+        ts = np.sum(best_llh)
 
         res_dict = {
             "res": res,

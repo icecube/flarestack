@@ -56,12 +56,12 @@ gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
 # # cats = ["jetted"]
 # cat_names = ["Jetted", "Golden"]
 cats = ["jetted", "gold", "silver", "obscured"]
-cat_names = ["Golden"]
+# cat_names = ["Golden"]
 
-cats = ["gold"]
+# cats = ["silver", "obscured"]
 
 power_law_start_energy = [100, 10000, 100000]
-power_law_start_energy = [100]
+# power_law_start_energy = [100]
 
 cutoff_dict = dict()
 
@@ -130,7 +130,7 @@ for e_min in power_law_start_energy:
                     "inj kwargs": inj_kwargs,
                     "llh kwargs": llh_kwargs,
                     "scale": scale,
-                    "n_trials": 20,
+                    "n_trials": 5,
                     "n_steps": 15
                 }
 
@@ -146,8 +146,7 @@ for e_min in power_law_start_energy:
                 with open(pkl_file, "wb") as f:
                     Pickle.dump(mh_dict, f)
 
-                # if label == "Fit Weights":
-                # rd.submit_to_cluster(pkl_file, n_jobs=100)
+                # rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
                 # mh = MinimisationHandler(mh_dict)
                 # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
@@ -162,7 +161,7 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = cat_res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 
@@ -250,7 +249,7 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
                             1.1 * max([max(x) for x in y if len(x) > 0]))
 
             plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
-                      " for " + cat_names[b] + " TDEs")
+                      " for " + cat_name + " TDEs")
 
             ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
             plt.tight_layout()
