@@ -102,11 +102,11 @@ flare = {
 
 src_res = dict()
 
-lengths = np.logspace(-2, 0, 3) * max_window
+lengths = np.logspace(-2, 0, 5) * max_window
 
 for i, llh_kwargs in enumerate([no_flare,
                                 no_flare_negative,
-                                # flare
+                                flare
                                 ]):
 
     label = ["Time-Integrated", "Time-Integrated (negative n_s)", "Flare"][i]
@@ -186,31 +186,22 @@ labels = []
 
 for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
     for (length, rh_dict) in sorted(res.iteritems()):
-        try:
-            rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                rh_dict["catalogue"])
 
-            inj_time = length * (60 * 60 * 24)
+        rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
+                            rh_dict["catalogue"])
 
-            astro_sens, astro_disc = rh.astro_values(
-                rh_dict["inj kwargs"]["Injection Energy PDF"])
+        inj_time = length * (60 * 60 * 24)
 
-            e_key = "Mean Luminosity (erg/s)"
+        astro_sens, astro_disc = rh.astro_values(
+            rh_dict["inj kwargs"]["Injection Energy PDF"])
 
-            sens[i].append(rh.sensitivity * inj_time)
-            disc_pots[i].append(rh.disc_potential * inj_time)
-            sens_e[i].append(astro_sens[e_key] * inj_time)
-            disc_e[i].append(astro_disc[e_key] * inj_time)
-            fracs[i].append(length)
+        e_key = "Mean Luminosity (erg/s)"
 
-        except OSError:
-            pass
-
-        except KeyError:
-            pass
-
-        except EOFError:
-            pass
+        sens[i].append(rh.sensitivity * inj_time)
+        disc_pots[i].append(rh.disc_potential * inj_time)
+        sens_e[i].append(astro_sens[e_key] * inj_time)
+        disc_e[i].append(astro_disc[e_key] * inj_time)
+        fracs[i].append(length)
 
     labels.append(f_type)
     # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])

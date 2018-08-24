@@ -190,83 +190,6 @@ class Double_Chi2(object):
         self.res_left = res
         self._f_left = scipy.stats.chi2(*res.x)
 
-    # def __init__(self, data):
-    #     """ Fit the given ensemble of measurements with a chi^2 function.
-    #
-    #     `data` is a list of test statistics values.
-    #     `cut` defines where the distribution is truncated.
-    #     """
-
-        # print "Running Double Chi2"
-        #
-        # med = np.median(data)
-        #
-        # N_all = len(data)
-        #
-        # # print N_all, len(data_left), len(data_right)
-        # #
-        # # f_under = float(len(data_left))/float(N_all)
-        # # f_over = float(len(data_right)) / float(N_all)
-        # #
-        # # print f_under, f_over, f_under + f_over
-        # #
-        # # N_left = len(data_left)
-        #
-        # # four parameters will be fitted: dof x 2, scale x 2
-        # p_start = [2., 2., 0.5, 0.5, 0.]
-        # p_bounds = [(1e-9, None),
-        #             (1e-9, None),# dof > 0
-        #             (1e-5, 1),
-        #             (1e-5, 1e5),
-        #             (min(data), max(data))
-        #             ]  # shape ~ free
-        #
-        # # define the fit function: likelihood for 2 chi^2 distributions,
-        # # one for positive values and another for negative
-        #
-        # def func(p):
-        #     #
-        #     # print p
-        #
-        #     data_left = data[data <= p[4]]
-        #     data_right = data[data > p[4]]
-        #
-        #     f_under = float(len(data_left))/float(N_all)
-        #     f_over = float(len(data_right)) / float(N_all)
-        #
-        #     left = scipy.stats.chi2(p[0], loc=-p[4], scale=p[2])
-        #     right = scipy.stats.chi2(p[1], loc=p[4], scale=(1-p[2]))
-        #     # left = scipy.stats.chi2(p[0], loc=-p[4], scale=1)
-        #     # right = scipy.stats.chi2(p[1], loc=p[4], scale=1)
-        #
-        #     loglh = np.log(
-        #         f_under * left.pdf(-data_left).sum() +
-        #         f_over * right.pdf(data_right).sum()
-        #     )
-        #
-        #     # loglh += right.logpdf(data_right).sum()
-        #
-        #     # print loglh
-        #
-        #     return -loglh
-        #
-        # res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
-        #
-        # print res
-        # raw_input("prompt")
-        #
-        # # if not res.success:
-        # #     print 'Chi2 fit did not converge! Result is likely garbage.'
-        #
-        # self._f_left = scipy.stats.chi2(res.x[0], loc=0., scale=res.x[2])
-        # self._f = scipy.stats.chi2(res.x[1], loc=0., scale=res.x[3])
-        # self._res = res
-        # self._df = res.x[1]
-        # self._loc = 0.
-        # self._scale = res.x[3]
-        # self._frac_over = f_over
-        # self.frac_under = f_under
-
 class Chi2_one_side:
 
     def __init__(self, data):
@@ -321,7 +244,7 @@ class Chi2_one_side_free:
 
 def fit_background_ts(ts_array, ts_type):
 
-    mask = ts_array > 0.
+    mask = ts_array > 0.0
     frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
 
     if ts_type == "Flare":
@@ -429,10 +352,10 @@ def plot_expanded_negative(ts_array, path):
     plt.plot(x_range, frac_over * chi2._f.pdf(x_range),
              color="blue", label=r"$\chi^{2}$ Distribution")
 
-    x_range = np.linspace(min(ts_array), med, 100)
-
-    plt.plot(x_range, frac_over * chi2._f_left.pdf(-x_range),
-             color="blue")
+    # x_range = np.linspace(min(ts_array), med, 100)
+    #
+    # plt.plot(x_range, frac_over * chi2._f_left.pdf(-x_range),
+    #          color="blue")
 
     plt.yscale("log")
     plt.xlabel(r"Test Statistic ($\lambda$)")
@@ -454,9 +377,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     if np.sum(np.isnan(ts_array)) > 0:
         print "TS distribution has", np.sum(np.isnan(ts_array)), "nan entries."
 
-    med = np.median(ts_array)
-
-    if med < 0.:
+    if np.median(ts_array) < 0.:
         plot_expanded_negative(ts_array, path)
 
     fig = plt.figure()

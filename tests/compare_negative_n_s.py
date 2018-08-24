@@ -49,8 +49,8 @@ negative_bound = {
 
 name = "tests/negative_n_s/"
 
-sindecs = np.linspace(0.90, -0.90, 13)
-# sindecs = np.linspace(0.5, -0.5, 3)
+# sindecs = np.linspace(0.90, -0.90, 13)
+sindecs = np.linspace(0.5, -0.5, 3)
 # sindecs = [0.0]
 
 length = 100.
@@ -90,7 +90,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 10,
-            "n_steps": 15
+            "n_steps": 10
         }
 
         analysis_path = analysis_dir + full_name
@@ -104,18 +104,18 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
 
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
-
-        # rd.submit_to_cluster(pkl_file, n_jobs=500)
+        #
+        rd.submit_to_cluster(pkl_file, n_jobs=500)
 
         # if label == "Negative-bound":
-        #     mh = MinimisationHandler(mh_dict)
-        #     mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=5)
+        # mh = MinimisationHandler(mh_dict)
+        # mh.iterate_run(mh_dict["scale"], n_steps=3, n_trials=100)
 
         src_res[sindec] = mh_dict
 
     analyses[label] = src_res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 plt.figure()
 ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
@@ -125,10 +125,8 @@ plt.title("Sensitivity for " + str(int(max_window)) + " day window")
 all_sens = []
 all_fracs = []
 
-print len(analyses)
 
 for i, (label, src_res) in enumerate(analyses.iteritems()):
-
 
     cols = ["b", "orange", "g"]
 

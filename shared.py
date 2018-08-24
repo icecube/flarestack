@@ -75,9 +75,9 @@ def fit_setup(llh_kwargs, sources, flare=False):
     bounds = [(0.0, 1000.)]
     names = ["n_s"]
 
-    if "Fit Negative n_s?" in llh_kwargs.keys():
-        if llh_kwargs["Fit Negative n_s?"]:
-            bounds = [(-100., 1000.)]
+    # if "Fit Negative n_s?" in llh_kwargs.keys():
+    #     if llh_kwargs["Fit Negative n_s?"]:
+    #         bounds = [(-100., 1000.)]
 
     # If weights are to be fitted, then each source has an independent
     # n_s in the same 0-1000 range.

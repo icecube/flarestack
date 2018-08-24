@@ -299,18 +299,31 @@ class MinimisationHandler:
 
         best_llh = raw_f(vals)
 
-        if self.negative_n_s and (res.x[0] == 0.0):
+        if not (res.x[0] > 0.0) and not self.fit_weights:
 
-            bounds = list(self.bounds)
-            bounds[0] = (-1000., 0.)
+            if self.negative_n_s:
 
-            res = scipy.optimize.minimize(
-                llh_f, start_seed, bounds=bounds)
+                bounds = list(self.bounds)
+                bounds[0] = (-1000., -0.)
+                start_seed = list(self.p0)
+                start_seed[0] = -1.
+
+                new_res = scipy.optimize.minimize(
+                    llh_f, start_seed, bounds=bounds)
+
+                if new_res.status == 0:
+                    res = new_res
 
             vals = [res.x[0]]
             best_llh = res.fun
 
         ts = np.sum(best_llh)
+
+        if ts == -0.0:
+            ts = 0.0
+
+        # print ts, ts == -0.0
+        # raw_input("prompt")
 
         res_dict = {
             "res": res,
@@ -906,6 +919,10 @@ class MinimisationHandler:
         else:
             scans = [("", res_dict["res"], res_dict["f"])]
 
+        bounds = list(self.bounds)
+        if self.negative_n_s:
+            bounds[0] = (-30, 30)
+
         # #
         # # g = self.trial_function(scale)
         #
@@ -921,18 +938,24 @@ class MinimisationHandler:
 
             plt.figure(figsize=(8, 4 + 2*len(self.p0)))
 
-            for i, bounds in enumerate(self.bounds):
+            for i, bound in enumerate(bounds):
                 plt.subplot(len(self.p0), 1, 1 + i)
 
-                best = list(res[0])
+                best = list(res.x)
 
-                n_range = np.linspace(max(bounds[0], -100),
-                                      min(bounds[1], 100), 1e2)
+                n_range = np.linspace(max(bound[0], -100),
+                                      min(bound[1], 100), 1e2)
+
+                # n_range = np.linspace(-30, 30, 1e2)
                 y = []
 
                 for n in n_range:
 
                     best[i] = n
+
+                    print res
+
+                    print best
 
                     new = g(best)
                     try:
