@@ -387,23 +387,7 @@ def fit_background_ts(ts_array, ts_type):
             else:
                 frac_over = 1.
 
-    elif ts_type == "Negative n_s":
-
-        plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
-                 bins=n_bins, lw=2, histtype='step',
-                 color=['black', "grey"],
-                 label=['TS > 0', "TS <= 0"],
-                 normed=True,
-                 stacked=True)
-
-        chi2 = Double_Chi2(ts_array)
-
-        df = chi2._f.args[0]
-        loc = np.median(ts_array)
-        scale = 1.
-
-
-    elif ts_type == "Standard":
+    elif ts_type in ["Standard", "Negative n_s"]:
 
         plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
                  bins=n_bins, lw=2, histtype='step',

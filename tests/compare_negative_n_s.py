@@ -105,7 +105,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        rd.submit_to_cluster(pkl_file, n_jobs=500)
+        # rd.submit_to_cluster(pkl_file, n_jobs=500)
 
         # if label == "Negative-bound":
         #     mh = MinimisationHandler(mh_dict)
@@ -115,7 +115,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
 
     analyses[label] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 plt.figure()
 ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
