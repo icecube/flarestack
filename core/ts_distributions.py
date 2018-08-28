@@ -345,12 +345,12 @@ def plot_expanded_negative(ts_array, path):
 
     chi2 = Double_Chi2(ts_array)
 
-    frac_over = 0.5
+    # frac_over = 0.5
 
-    x_range = np.linspace(med, max(ts_array), 100)
-
-    plt.plot(x_range, frac_over * chi2._f.pdf(x_range),
-             color="blue", label=r"$\chi^{2}$ Distribution")
+    # x_range = np.linspace(med, max(ts_array), 100)
+    #
+    # plt.plot(x_range, frac_over * chi2._f.pdf(x_range),
+    #          color="blue", label=r"$\chi^{2}$ Distribution")
 
     # x_range = np.linspace(min(ts_array), med, 100)
     #

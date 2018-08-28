@@ -10,7 +10,7 @@ from core.llh import LLH, FlareLLH
 from shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
     plot_output_dir, scale_shortener
 import matplotlib.pyplot as plt
-import types
+from time_PDFs import TimePDF
 
 
 def time_smear(inj):
@@ -373,8 +373,9 @@ class MinimisationHandler:
         print ""
 
         for i, param in enumerate(param_vals):
-            print "Parameter", self.param_names[i], ":", np.mean(param), \
-                np.median(param), np.std(param)
+            if len(param) > 0:
+                print "Parameter", self.param_names[i], ":", np.mean(param), \
+                    np.median(param), np.std(param)
         print "Test Statistic:", np.mean(ts_vals), np.median(ts_vals), np.std(
             ts_vals)
         print ""
@@ -537,6 +538,12 @@ class MinimisationHandler:
 
         full_data = dict()
 
+        livetime_calcs = dict()
+
+        time_dict = {
+            "Name": "FixedEndBox"
+        }
+
         results = dict()
 
         # Loop over each data season
@@ -548,6 +555,8 @@ class MinimisationHandler:
 
             data = self.injectors[season["Name"]].create_dataset(scale)
             llh = self.llhs[season["Name"]]
+
+            livetime_calcs[season["Name"]] = TimePDF.create(time_dict, season)
 
             full_data[season["Name"]] = data
 
@@ -636,7 +645,6 @@ class MinimisationHandler:
                 max_flare = self.llh_kwargs["LLH Time PDF"]["Max Flare"] * (
                         60 * 60 * 24
                 )
-
             else:
                 max_flare = search_window
 
@@ -659,6 +667,7 @@ class MinimisationHandler:
             all_res = []
             all_ts = []
             all_f = []
+            all_pairs = []
 
             # Loop over each possible significant neutrino pair
 
@@ -677,8 +686,8 @@ class MinimisationHandler:
                 )
 
                 flare_length = np.sum([
-                    llh.time_pdf.effective_injection_time(flare_time)
-                    for llh in self.llhs.itervalues()]
+                    time_pdf.effective_injection_time(flare_time)
+                    for time_pdf in livetime_calcs.itervalues()]
                 )
 
                 # If the flare is between the minimum and maximum length
@@ -726,6 +735,7 @@ class MinimisationHandler:
                     )
 
                     if not inj_time > 0:
+                        # print "Continuing because no overlap"
                         continue
 
                     coincident_data = season_dict["Coincident Data"]
@@ -783,13 +793,14 @@ class MinimisationHandler:
                 all_res.append(res)
                 all_ts.append(-res[1])
                 all_f.append(f_final)
+                all_pairs.append(pair)
 
             max_ts = max(all_ts)
             stacked_ts += max_ts
             index = all_ts.index(max_ts)
 
-            best_start = pairs[index][0]
-            best_end = pairs[index][1]
+            best_start = all_pairs[index][0]
+            best_end = all_pairs[index][1]
 
             best_time = np.array(
                 (best_start, best_end),
@@ -800,13 +811,19 @@ class MinimisationHandler:
             )
 
             best_length = np.sum([
-                llh.time_pdf.effective_injection_time(best_time)
-                for llh in self.llhs.itervalues()]
+                time_pdf.effective_injection_time(best_time)
+                for time_pdf in livetime_calcs.itervalues()]
             ) / (60 * 60 * 24)
 
             best = [x for x in all_res[index][0]] + [
                 best_start, best_end, best_length
             ]
+
+            # If n_s is fit to 0, then do not bother storing other
+            # parameters, as they have physical meaning
+
+            if not best[0] > 0:
+                best = best[:1]
 
             src_dict["Parameters"] = best
 
@@ -819,6 +836,8 @@ class MinimisationHandler:
             del all_res, all_f, all_times
 
         results["TS"] = stacked_ts
+
+        del datasets, full_data, livetime_calcs
 
         return results
 
@@ -869,7 +888,7 @@ class MinimisationHandler:
                 for k, val in enumerate(res_dict[key]["Parameters"]):
                     results[key]["Parameters"][k].append(val)
 
-            results["TS"].append(results["TS"])
+            results["TS"].append(res_dict["TS"])
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)

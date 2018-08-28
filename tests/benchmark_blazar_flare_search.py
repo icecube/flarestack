@@ -104,12 +104,14 @@ src_res = dict()
 
 lengths = np.logspace(-2, 0, 5) * max_window
 
-for i, llh_kwargs in enumerate([no_flare,
+for i, llh_kwargs in enumerate([
+                                no_flare,
                                 no_flare_negative,
                                 flare
                                 ]):
 
-    label = ["Time-Integrated", "Time-Integrated (negative n_s)", "Flare"][i]
+    label = ["Time-Independent", "Time-Independent (negative n_s)",
+             "Time-Clustering"][i]
     f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
 
     flare_name = name + f_name + "/"
@@ -137,7 +139,7 @@ for i, llh_kwargs in enumerate([no_flare,
         }
 
         scale = flux_to_k(reference_sensitivity(np.sin(dec))
-                          * (50 * max_window / flare_length))
+                          * (70 * max_window / flare_length))
 
         mh_dict = {
             "name": full_name,
@@ -162,7 +164,7 @@ for i, llh_kwargs in enumerate([no_flare,
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=100)
+        rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
@@ -174,7 +176,7 @@ for i, llh_kwargs in enumerate([no_flare,
 
     src_res[label] = res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]
@@ -214,21 +216,23 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
 
     ax2 = ax1.twinx()
 
-    cols = ["#00A6EB", "#F79646", "g", "r"]
+    cols = ["#F79646","#00A6EB",  "g", "r"]
     linestyle = ["-", "-"][j]
 
     for i, f in enumerate(fracs):
 
-        if len(f) > 0:
-            ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                     color=cols[i])
-            ax2.plot(f, energy[i], linestyle=linestyle,
-                     color=cols[i])
+        print fluence[i], labels[i]
 
-    ax2.grid(True, which='both')
+        ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
+                 color=cols[i])
+        ax2.plot(f, energy[i], linestyle=linestyle,
+                 color=cols[i])
+
+    ax1.grid(True, which='both')
     ax1.set_ylabel(r"Time-Integrated Flux[ GeV$^{-1}$ cm$^{-2}$]",
                    fontsize=12)
-    ax2.set_xlabel(r"Flare Length (days)")
+    ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
+    ax1.set_xlabel(r"Flare Length (days)")
     ax1.set_yscale("log")
     ax2.set_yscale("log")
 
@@ -240,7 +244,8 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
 
     plt.title("Flare in " + str(int(max_window)) + " day window")
 
-    ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+    ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
+    plt.tight_layout()
     plt.savefig(plot_output_dir(name) + "/flare_vs_box_" +
-                catalogue["Name"][0] + "_" + ["sens", "disc"][k] + ".pdf")
+                catalogue["Name"][0] + "_" + ["sens", "disc"][j] + ".pdf")
     plt.close()

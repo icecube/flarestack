@@ -49,8 +49,8 @@ negative_bound = {
 
 name = "tests/negative_n_s/"
 
-# sindecs = np.linspace(0.90, -0.90, 13)
-sindecs = np.linspace(0.5, -0.5, 3)
+sindecs = np.linspace(0.90, -0.90, 13)
+# sindecs = np.linspace(0.5, -0.5, 3)
 # sindecs = [0.0]
 
 length = 100.
