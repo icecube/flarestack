@@ -49,7 +49,7 @@ catalogue = custom_sources(
     ra=ra,
     dec=dec,
     weight=1.,
-    distance=214.4,
+    distance=lumdist,
     start_time=t_start,
     end_time=t_end,
 )
