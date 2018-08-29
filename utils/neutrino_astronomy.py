@@ -14,6 +14,12 @@ waxmann_bachall = (3. / 8.) * f_pi
 
 f_cr_to_nu = 0.05
 
+def find_zfactor(distance):
+    redshift = astropy.coordinates.Distance(lumdist).compute_z()
+    zfactor = 1 + redshift
+
+    return zfactor
+
 
 def fluence_integral(gamma, e_min=100*u.GeV, e_max=10*u.PeV):
     e_min = e_min.to(u.GeV)
@@ -103,7 +109,10 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
     print "The energy range was assumed to be between", e_min,
     print "and", e_max, "with a spectral index of", gamma
 
-    etot = (si * area * e_integral).to(u.erg/u.s)
+    # Energy requires a 1/(1+z) factor
+
+    zfactor = find_zfactor(lumdist)
+    etot = (si * area * e_integral).to(u.erg/u.s) / zfactor
 
     astro_res["Mean Luminosity (erg/s)"] = etot.value
 
@@ -125,16 +134,17 @@ def calculate_neutrinos(source, season, inj_kwargs):
     print source["Name"], season["Name"]
     print "\n"
 
-    energy_pdf = inj_kwargs["Injection Energy PDF"]
-
-    energy = energy_pdf["Energy Flux"] * inj.time_pdf.effective_injection_time(
-        source)
-
-    print "Neutrino Energy is", energy
-
     lumdist = source["Distance (Mpc)"] * u.Mpc
 
     print "Source is", lumdist, "away"
+
+    energy_pdf = inj_kwargs["Injection Energy PDF"]
+
+    # Energy requires a (1+z) factor
+    zfactor = find_zfactor(lumdist)
+    energy = energy_pdf["Energy Flux"] * inj.time_pdf.effective_injection_time(
+        source) * zfactor
+    print "Neutrino Energy is", energy
 
     area = (4 * math.pi * (lumdist.to(u.cm)) ** 2)
 
