@@ -14,14 +14,28 @@ waxmann_bachall = (3. / 8.) * f_pi
 
 f_cr_to_nu = 0.05
 
-def find_zfactor(distance):
-    redshift = astropy.coordinates.Distance(lumdist).compute_z()
-    zfactor = 1 + redshift
 
+def find_zfactor(distance):
+    """For a given distance, converts this distance to a redshift, and then
+    returns the 1+z factor for that distance
+
+    :param distance: Astropy distance (with units)
+    :return: Corresponding 1+z factor
+    """
+    redshift = astropy.coordinates.Distance(distance).compute_z()
+    zfactor = 1 + redshift
     return zfactor
 
 
 def fluence_integral(gamma, e_min=100*u.GeV, e_max=10*u.PeV):
+    """Performs an integral for fluence over a given energy range. This is
+    the integral of E*
+
+    :param gamma:
+    :param e_min:
+    :param e_max:
+    :return:
+    """
     e_min = e_min.to(u.GeV)
     e_max = e_max.to(u.GeV)
     if gamma == 2:
