@@ -10,7 +10,7 @@ This is the sample that was used for the original TXS analysis in 2017
 """
 
 from shared import dataset_dir
-from icecube_pointsource_7_year import ps_7year
+from icecube_ps_tracks_v002_p01 import ps_7year
 import numpy as np
 
 gfu_data_dir = dataset_dir + "gfu_v002_p01/"

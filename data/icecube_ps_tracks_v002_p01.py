@@ -62,10 +62,10 @@ from shared import dataset_dir
 import numpy as np
 
 
-ps_data_dir = dataset_dir + "ps_tracks_240418/"
+ps_data_dir = dataset_dir + "ps_tracks_v002_p01/"
 
 ps_dict = {
-    "Data Sample": "ps_7_year",
+    "Data Sample": "ps_tracks_v002_p01",
     "sinDec bins": np.unique(np.concatenate([
             np.linspace(-1., -0.9, 2 + 1),
             np.linspace(-0.9, -0.2, 8 + 1),
@@ -131,5 +131,3 @@ IC86_234_dict.update(ps_dict)
 ps_7year = [
     IC40_dict, IC59_dict, IC79_dict, IC86_1_dict, IC86_234_dict,
 ]
-
-ps_7986 = [IC79_dict, IC86_1_dict]

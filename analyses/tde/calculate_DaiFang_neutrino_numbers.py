@@ -1,6 +1,6 @@
 import numpy as np
 from shared import catalogue_dir
-from data.icecube_pointsource_7_year import ps_7year
+from data.icecube_ps_tracks_v002_p01 import ps_7year
 from utils.custom_seasons import custom_dataset
 from utils.neutrino_astronomy import calculate_neutrinos
 from astropy import units as u

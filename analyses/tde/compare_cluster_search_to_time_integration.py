@@ -3,7 +3,7 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_pointsource_7_year import ps_7year
+from data.icecube_ps_tracks_v002_p01 import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd
