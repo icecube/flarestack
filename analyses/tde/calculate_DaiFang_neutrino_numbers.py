@@ -13,7 +13,7 @@ from astropy import units as u
 
 cat_path = catalogue_dir + "TDEs/Dai_Fang_TDE_catalogue.npy"
 
-sources = np.load(cat_path)
+sources = np.load(cat_path)[:2]
 
 # In column one of the paper, they assume a base cosmic ray flux of 10^51 erg
 
@@ -41,15 +41,11 @@ cr_integral = np.log(10**21/10**9)
 
 int_cr_energy = cr_flux * cr_integral
 
-# print cr_integral, cr_energy
-
 # nu_energy = cr_energy * f_nu_to_cr
 
-# print nu_energy
-
 # In the paper, they assume a base cosmic ray energy of 10^51 erg. This is
-# inversely proptional to the pion fraction, because it scales the cr flux to
-# explain the icecube neutrino flux.
+# inversely propotional to the pion fraction, because it scales the cr flux to
+# explain the IceCube neutrino flux.
 
 base_cr_energy = 10**51 * u.erg / f_pi
 
@@ -88,14 +84,24 @@ for source in sources:
 
     n_injs = []
 
+    print source["Name"]
+
     for cr_energy in [base_cr_energy, custom_cr_energy]:
 
-        nu_energy = cr_energy * f_nu_to_cr
+        print cr_energy
+
+        time = injection_window * 60 * 60 * 24
+
+        # Convert cosmic ray energy back to differential flux
+
+        cr_flux = cr_energy/(cr_integral * time)
+
+        nu_flux = f_nu_to_cr * cr_flux
 
         energy_pdf = {
             "Name": "Power Law",
             "Gamma": 2.0,
-            "Energy Flux": nu_energy / (injection_window * 60 * 60 * 24),
+            "Energy Flux": nu_flux,
             "E Min": 10 ** 5
         }
 

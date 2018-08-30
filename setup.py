@@ -10,10 +10,10 @@ from utils.create_acceptance_functions import make_acceptance_f
 from utils.reference_sensitivity import download_ref
 from utils.make_SoB_splines import make_spline
 
-from data.icecube_gfu_2point5_year import txs_sample
+from data.icecube_gfu_v002_p01 import txs_sample_v1
 from data.icecube_diffuse_8year import diffuse_8year
 
-all_data = txs_sample + diffuse_8year
+all_data = txs_sample_v1 + diffuse_8year
 
 if __name__ == "__main__":
     print "\n \n"

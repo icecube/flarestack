@@ -3,7 +3,7 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_gfu_2point5_year import txs_sample
+from data.icecube_gfu_v002_p01 import txs_sample_v1
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd
@@ -172,7 +172,7 @@ for j, cat in enumerate(cats):
 
             mh_dict = {
                 "name": full_name,
-                "datasets": custom_dataset(txs_sample, catalogue,
+                "datasets": custom_dataset(txs_sample_v1, catalogue,
                                            llh_kwargs["LLH Time PDF"]),
                 "catalogue": cat_path,
                 "inj kwargs": inj,

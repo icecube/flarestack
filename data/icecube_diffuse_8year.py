@@ -2,7 +2,7 @@ from shared import dataset_dir
 import numpy as np
 import os
 from data.icecube_pointsource_7_year import ps_data_dir
-from data.icecube_gfu_2point5_year import gfu_data_dir
+from data.icecube_gfu_v002_p01 import gfu_data_dir
 
 diffuse_data_dir = dataset_dir + "northern_tracks_140518/"
 

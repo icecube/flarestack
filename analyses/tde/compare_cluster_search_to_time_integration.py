@@ -79,7 +79,7 @@ for j, cat in enumerate(individual_tdes):
 
     for i, llh_kwargs in enumerate([time_integrated,
                                     time_integrated_negative_n_s,
-                                    # flare
+                                    flare
                                     ]):
 
         # Set plot labels and subdirectory names
@@ -149,7 +149,7 @@ for j, cat in enumerate(individual_tdes):
 
             # Run jobs on cluster
 
-            rd.submit_to_cluster(pkl_file, n_jobs=100)
+            rd.submit_to_cluster(pkl_file, n_jobs=500)
 
             # Run locally
             #
@@ -251,10 +251,15 @@ for (cat, src_res) in cat_res.iteritems():
         # Set limits and save
 
         for k, ax in enumerate([ax1, ax2]):
-            y = [fluence, energy][k]
 
-            ax.set_ylim(0.7 * min([min(x) for x in y if len(x) > 0]),
-                        1.1 * max([max(x) for x in y if len(x) > 0]))
+            try:
+                y = [fluence, energy][k]
+
+                ax.set_ylim(0.7 * min([min(x) for x in y if len(x) > 0]),
+                            1.1 * max([max(x) for x in y if len(x) > 0]))
+
+            except ValueError:
+                pass
 
         plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat)
 

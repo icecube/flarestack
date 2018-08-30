@@ -12,7 +12,7 @@ import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
 from data.icecube_diffuse_8year import diffuse_8year
-from data.icecube_gfu_2point5_year import gfu_2point5
+from data.icecube_gfu_v002_p01 import gfu_v002_p01
 from shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
 from utils.prepare_catalogue import custom_sources
 from utils.reference_sensitivity import reference_sensitivity
@@ -143,7 +143,7 @@ for i, llh_kwargs in enumerate([
 
         mh_dict = {
             "name": full_name,
-            "datasets": gfu_2point5,
+            "datasets": gfu_v002_p01,
             "catalogue": cat_path,
             "inj kwargs": inj_kwargs,
             "llh kwargs": llh_kwargs,

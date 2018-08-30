@@ -1,6 +1,6 @@
 import os
 import csv
-from data.icecube_gfu_2point5_year import gfu_2point5
+from data.icecube_gfu_v002_p01 import gfu_v002_p01
 from data.icecube_diffuse_8year import *
 
 # The diffuse sample does not have a PS/GFU-style GoodRunList, with start and

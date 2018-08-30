@@ -3,7 +3,7 @@ import os
 import cPickle as Pickle
 from core.unblinding import Unblinder
 from core.results import ResultsHandler
-from data.icecube_gfu_2point5_year import txs_sample
+from data.icecube_gfu_v002_p01 import txs_sample_v1
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 import matplotlib.pyplot as plt
 from utils.custom_seasons import custom_dataset
@@ -54,7 +54,7 @@ for j, cat in enumerate(cats):
 
     unblind_dict = {
         "name": name,
-        "datasets": custom_dataset(txs_sample, catalogue,
+        "datasets": custom_dataset(txs_sample_v1, catalogue,
                                    unblind_llh["LLH Time PDF"]),
         "catalogue": cat_path,
         "llh kwargs": unblind_llh,

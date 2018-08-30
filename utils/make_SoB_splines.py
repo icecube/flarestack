@@ -219,5 +219,5 @@ def load_bkg_spatial_spline(season):
     return res
 #
 # from data.icecube_pointsource_7_year import ps_7year
-# from data.icecube_gfu_2point5_year import gfu_2point5
-# make_spline(gfu_2point5)
+# from data.icecube_gfu_2point5_year import gfu_v002_p01
+# make_spline(gfu_v002_p01)

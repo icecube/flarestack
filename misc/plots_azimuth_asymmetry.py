@@ -6,13 +6,13 @@ import numexpr
 import resource
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from data.icecube_gfu_2point5_year import gfu_2point5
+from data.icecube_gfu_v002_p01 import gfu_v002_p01
 from utils.dataset_loader import data_loader
 from core.energy_PDFs import PowerLaw
 from shared import plots_dir
 import matplotlib.cm as cm
 
-# season_dict = gfu_2point5[0]
+# season_dict = gfu_v002_p01[0]
 
 # exp = data_loader(season_dict["exp_path"])
 # mc = data_loader(season_dict["mc_path"])
@@ -346,5 +346,5 @@ def plot_ratio(seasons):
             plt.savefig(root + title + " 1D.pdf")
             plt.close()
 
-# plot_ratio(txs_sample)
-plot_ratio(gfu_2point5)
+# plot_ratio(txs_sample_v1)
+plot_ratio(gfu_v002_p01)
