@@ -126,7 +126,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
     # Energy requires a 1/(1+z) factor
 
     zfactor = find_zfactor(lumdist)
-    etot = (si * area * e_integral).to(u.erg/u.s) / zfactor
+    etot = (si * area * e_integral).to(u.erg/u.s) * zfactor
 
     astro_res["Mean Luminosity (erg/s)"] = etot.value
 
@@ -157,7 +157,7 @@ def calculate_neutrinos(source, season, inj_kwargs):
     # Energy requires a (1+z) factor
     zfactor = find_zfactor(lumdist)
     energy = energy_pdf["Energy Flux"] * inj.time_pdf.effective_injection_time(
-        source) * zfactor
+        source)/zfactor
     print "Neutrino Energy is", energy
 
     area = (4 * math.pi * (lumdist.to(u.cm)) ** 2)

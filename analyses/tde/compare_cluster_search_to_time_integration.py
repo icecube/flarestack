@@ -3,7 +3,7 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_ps_tracks_v002_p01 import ps_7year
+from data.icecube_gfu_v002_p02 import txs_sample_v2
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd
@@ -125,7 +125,7 @@ for j, cat in enumerate(individual_tdes):
 
             mh_dict = {
                 "name": full_name,
-                "datasets": custom_dataset(ps_7year, catalogue,
+                "datasets": custom_dataset(txs_sample_v2, catalogue,
                                            llh_kwargs["LLH Time PDF"]),
                 "catalogue": cat_path,
                 "inj kwargs": inj_kwargs,
@@ -149,7 +149,7 @@ for j, cat in enumerate(individual_tdes):
 
             # Run jobs on cluster
 
-            rd.submit_to_cluster(pkl_file, n_jobs=500)
+            # rd.submit_to_cluster(pkl_file, n_jobs=500)
 
             # Run locally
             #

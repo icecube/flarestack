@@ -171,8 +171,12 @@ class ResultsHandler:
             for filename in files:
                 path = sub_dir + filename
 
-                with open(path) as f:
-                    data = Pickle.load(f)
+                try:
+                    with open(path) as f:
+                        data = Pickle.load(f)
+                except EOFError:
+                    print "Failed loading", path
+                    continue
                 os.remove(path)
 
                 for key in ["TS"]:
