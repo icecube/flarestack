@@ -16,9 +16,6 @@ from data.icecube_diffuse_8year import diffuse_8year
 
 all_data = txs_sample_v2 + diffuse_8year
 
-from data.icecube_gfu_v002_p01 import gfu_v002_p01
-all_data = gfu_v002_p01
-
 if __name__ == "__main__":
     print "\n \n"
     print "********************************************************************"
@@ -73,6 +70,12 @@ if __name__ == "__main__":
 
     x = np.sum([os.path.isdir(os.path.dirname(y["mc_path"])) for y in all_data])
 
+    print "********************************************************************"
+    print "*                                                                  *"
+    print "*                     Checking data directories                    *"
+    print "*                                                                  *"
+    print "********************************************************************"
+
     if x == 0:
         print "No IceCube data files found. Tried searching for: \n"
         for y in all_data:
@@ -83,6 +86,13 @@ if __name__ == "__main__":
         print "\t", dataset_dir
         print "\n"
         sys.exit()
+
+    else:
+        print "Searched for the following directories: \n"
+        for y in all_data:
+            print "\t", os.path.dirname(y["mc_path"]),
+            print "Found?", os.path.isdir(os.path.dirname(y["mc_path"]))
+
 
     print "\n"
     print "********************************************************************"
