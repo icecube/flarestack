@@ -149,7 +149,7 @@ for j, cat in enumerate(individual_tdes):
 
             # Run jobs on cluster
 
-            # rd.submit_to_cluster(pkl_file, n_jobs=500)
+            # rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
             # Run locally
             #
@@ -165,7 +165,7 @@ for j, cat in enumerate(individual_tdes):
 
 # Wait for cluster jobs to finish
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (cat, src_res) in cat_res.iteritems():
 
@@ -256,14 +256,14 @@ for (cat, src_res) in cat_res.iteritems():
                 y = [fluence, energy][k]
 
                 ax.set_ylim(0.7 * min([min(x) for x in y if len(x) > 0]),
-                            1.1 * max([max(x) for x in y if len(x) > 0]))
+                            1.5 * max([max(x) for x in y if len(x) > 0]))
 
             except ValueError:
                 pass
 
         plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat)
 
-        ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
+        ax1.legend(loc='upper left', fancybox=True)
         plt.tight_layout()
         plt.savefig(plot_output_dir(name) + "/flare_vs_box_" +
                     ["sens", "disc"][j] + ".pdf")
