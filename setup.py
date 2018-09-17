@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import sys
 from config import scratch_path
 from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
@@ -14,6 +15,9 @@ from data.icecube_gfu_v002_p02 import txs_sample_v2
 from data.icecube_diffuse_8year import diffuse_8year
 
 all_data = txs_sample_v2 + diffuse_8year
+
+from data.icecube_gfu_v002_p01 import gfu_v002_p01
+all_data = gfu_v002_p01
 
 if __name__ == "__main__":
     print "\n \n"
@@ -64,6 +68,21 @@ if __name__ == "__main__":
     print "********************************************************************"
     print "\n"
     make_single_sources()
+
+    # Check to ensure there is at least one IceCube dataset present
+
+    x = np.sum([os.path.isdir(os.path.dirname(y["mc_path"])) for y in all_data])
+
+    if x == 0:
+        print "No IceCube data files found. Tried searching for: \n"
+        for y in all_data:
+            print "\t", os.path.dirname(y["mc_path"])
+
+        print ""
+        print "Download these data files yourself, and save them to: \n"
+        print "\t", dataset_dir
+        print "\n"
+        sys.exit()
 
     print "\n"
     print "********************************************************************"
