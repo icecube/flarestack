@@ -35,6 +35,9 @@ class TimePDF:
         if np.sum(~self.grl["good_i3"]) == 0:
             pass
         else:
+            print "Trying to load", season
+            print "The following runs are included:"
+            print self.grl[~self.grl["good_i3"]]
             raise Exception("Runs marked as 'bad' are found in Good Run List")
 
         self.t0 = min(self.grl["start"])
