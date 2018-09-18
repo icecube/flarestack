@@ -4,7 +4,7 @@ import sys
 from config import scratch_path
 from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
     log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,\
-    SoB_spline_dir, analysis_dir, dataset_dir, livetime_dir, illustration_dir,\
+    SoB_spline_dir, analysis_dir, dataset_dir, illustration_dir,\
     transients_dir, bkg_spline_dir
 from utils.prepare_catalogue import make_single_sources
 from utils.create_acceptance_functions import make_acceptance_f

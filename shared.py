@@ -21,7 +21,6 @@ catalogue_dir = input_dir + "catalogues/"
 transients_dir = catalogue_dir + "transients/"
 analysis_dir = input_dir + "analysis/"
 dataset_dir = input_dir + "data/"
-livetime_dir = dataset_dir + "livetime/"
 
 pickle_dir = storage_dir + "pickles/"
 inj_param_dir = pickle_dir + "injection_values/"
