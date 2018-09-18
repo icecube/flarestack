@@ -113,7 +113,7 @@ diffuse_IC86_23456 = {
     "Name": "IC86_23456",
     "exp_path": nt_data_dir + "dataset_8yr_fit_IC86_2012_16_exp_compressed.npy",
     "mc_path": nt_data_dir + "dataset_8yr_fit_IC86_2012_16_MC_compressed.npy",
-    "grl_path": nt_data_dir + "GRL/GRL_IC86_2012_16"
+    "grl_path": nt_data_dir + "GRL/GRL_IC86_2012_16.npy"
 }
 
 diffuse_IC86_23456.update(diffuse_dict)
