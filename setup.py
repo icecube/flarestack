@@ -12,7 +12,7 @@ from utils.reference_sensitivity import download_ref
 from utils.make_SoB_splines import make_spline
 
 from data.icecube_gfu_v002_p02 import txs_sample_v2
-from data.icecube_diffuse_8year import diffuse_8year
+from data.icecube_northern_tracks_v002_p01 import diffuse_8year
 
 all_data = txs_sample_v2 + diffuse_8year
 
