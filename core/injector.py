@@ -61,7 +61,6 @@ class Injector:
         data[self.season["MJD Time Key"]] = data[self.season["MJD Time Key"]][
             index_shuffle
         ]
-        data["Run"] = data["Run"][index_shuffle]
 
         # np.random.shuffle(data[self.season["MJD Time Key"]])
 
