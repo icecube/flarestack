@@ -1,5 +1,5 @@
 # flarestack
-Code for unbinned likelihood analysis of astroparticle physics data, created by @robertdstein.
+Code for unbinned likelihood analysis of astroparticle physics data, created by [@robertdstein](https://github.com/robertdstein).
 
 Both time-dependent and time-independent analyses can be performed, as well as a "flare-search" algorithm to find event clustering in time as well as space.
 
