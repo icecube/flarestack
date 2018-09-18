@@ -10,7 +10,6 @@ from utils.prepare_catalogue import make_single_sources
 from utils.create_acceptance_functions import make_acceptance_f
 from utils.reference_sensitivity import download_ref
 from utils.make_SoB_splines import make_spline
-
 from data.icecube_gfu_v002_p02 import txs_sample_v2
 from data.icecube_northern_tracks_v002_p01 import diffuse_8year
 
@@ -47,15 +46,15 @@ if __name__ == "__main__":
         print "\n"
         sys.exit()
 
-    for dir in [input_dir, storage_dir, output_dir, log_dir, catalogue_dir,
-                acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir, livetime_dir,
-                SoB_spline_dir, analysis_dir, dataset_dir, illustration_dir,
-                transients_dir, bkg_spline_dir]:
-        if not os.path.isdir(dir):
-            print "Making Directory:", dir
-            os.makedirs(dir)
+    for dirname in [input_dir, storage_dir, output_dir, log_dir, catalogue_dir,
+                    acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,
+                    SoB_spline_dir, analysis_dir, dataset_dir, illustration_dir,
+                    transients_dir, bkg_spline_dir]:
+        if not os.path.isdir(dirname):
+            print "Making Directory:", dirname
+            os.makedirs(dirname)
         else:
-            print "Found Directory:", dir
+            print "Found Directory:", dirname
 
     print "\n"
     print "********************************************************************"
