@@ -82,7 +82,7 @@ diffuse_dict = {
         np.linspace(0.2, 0.9, 12 + 1),
         np.linspace(0.9, 1., 2 + 1),
     ])),
-    "MJD Time Key": "st_time"
+    "MJD Time Key": "time"
 }
 
 diffuse_IC59 = {
