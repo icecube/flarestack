@@ -91,7 +91,7 @@ class MinimisationHandler:
 
             # Checks to ensure fitting weights and negative n_s are not mixed
 
-            if self.negative_n_s:
+            if self.negative_n_s and self.fit_weights:
                 raise Exception("Attempted to mix fitting weights with negative"
                                 " n_s. The code is not able to handle this!")
 
@@ -564,6 +564,8 @@ class MinimisationHandler:
 
             for source in self.sources:
 
+                print source["Name"]
+
                 # Identify spatially- and temporally-coincident data
 
                 mask = llh.select_spatially_coincident_data(data, [source])
@@ -580,15 +582,16 @@ class MinimisationHandler:
 
                 coincident_data = spatial_coincident_data[t_mask]
 
-                # Creates empty dictionary to save info
-
-                name = source["Name"]
-                if name not in datasets.keys():
-                    datasets[name] = dict()
-
                 # If there are events in the window...
 
                 if len(coincident_data) > 0:
+
+                    # Creates empty dictionary to save info
+
+                    name = source["Name"]
+                    if name not in datasets.keys():
+                        datasets[name] = dict()
+
                     new_entry = dict(season)
                     new_entry["Coincident Data"] = coincident_data
                     new_entry["Start (MJD)"] = llh.time_pdf.t0
@@ -661,7 +664,7 @@ class MinimisationHandler:
             # If there is are no pairs meeting this criteria, skip
 
             if len(pairs) == 0:
-                # print "Continuing because no pairs"
+                print "Continuing because no pairs"
                 continue
 
             all_res = []
@@ -833,6 +836,8 @@ class MinimisationHandler:
 
             results[source] = src_dict
 
+            print src_dict
+
             del all_res, all_f, all_times
 
         results["TS"] = stacked_ts
@@ -879,14 +884,15 @@ class MinimisationHandler:
 
             res_dict = self.flare_trial(scale)
 
-            print res_dict
-
             for source in self.sources:
                 key = source["Name"]
-                results[key]["TS"].append(res_dict[key]["TS"])
 
-                for k, val in enumerate(res_dict[key]["Parameters"]):
-                    results[key]["Parameters"][k].append(val)
+                if key in res_dict:
+
+                    results[key]["TS"].append(res_dict[key]["TS"])
+
+                    for k, val in enumerate(res_dict[key]["Parameters"]):
+                        results[key]["Parameters"][k].append(val)
 
             results["TS"].append(res_dict["TS"])
 

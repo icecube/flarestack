@@ -1,14 +1,14 @@
 import os
 import csv
 from data.icecube_gfu_v002_p01 import gfu_v002_p01
-from data.icecube_diffuse_8year import *
+from data.icecube_northern_tracks_v002_p01 import *
 
 # The diffuse sample does not have a PS/GFU-style GoodRunList, with start and
 # stop times for each good run. It does, however, have a GRL in the form of
 # a standard IC-style text file. This script uses the standard GRLs provided
 # with the Diffuse sample to create PS/GFU-style numpy arrays.
 
-grl_dir = diffuse_data_dir + "GRL/"
+grl_dir = nt_data_dir + "GRL/"
 
 print grl_dir
 print sorted(os.listdir(grl_dir))

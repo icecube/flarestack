@@ -83,7 +83,7 @@ for cat in ["jetted", "gold"]:
                                     fixed_weights,
                                     fixed_weights_negative,
                                     fit_weights,
-                                    # flare
+                                    flare
                                     ]):
         label = ["Fixed Weights", "Fixed Weights (Negative n_s)",
                  "Fit Weights", "Flare Search", ][i]
@@ -147,11 +147,13 @@ for cat in ["jetted", "gold"]:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            rd.submit_to_cluster(pkl_file, n_jobs=100)
+            if f_name == "flare":
+            # if True:
+                rd.submit_to_cluster(pkl_file, n_jobs=100)
             # #
-            # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
-            # mh.clear()
+            #     mh = MinimisationHandler(mh_dict)
+            #     mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
+            #     mh.clear()
             # raw_input("prompt")
 
             res[flare_length] = mh_dict
@@ -221,17 +223,14 @@ for (cat, src_res) in cat_res.iteritems():
         ax2 = ax1.twinx()
 
         cols = ["#F79646", "#00A6EB", "g", "r"]
-        linestyle = ["-", "-"][j]
 
         for i, f in enumerate(fracs):
 
             if len(f) > 0:
                 # Plot fluence on left y axis, and source energy on right y axis
 
-                ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                         color=cols[i])
-                ax2.plot(f, energy[i], linestyle=linestyle,
-                         color=cols[i])
+                ax1.plot(f, fluence[i], label=labels[i], color=cols[i])
+                ax2.plot(f, energy[i], color=cols[i])
 
         # Set up plot
 
@@ -255,7 +254,8 @@ for (cat, src_res) in cat_res.iteritems():
             except ValueError:
                 pass
 
-        plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat)
+        plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat +
+                  " TDEs")
 
         ax1.legend(loc='upper left', fancybox=True)
         plt.tight_layout()
