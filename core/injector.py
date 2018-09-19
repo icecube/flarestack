@@ -50,7 +50,7 @@ class Injector:
 
         :return: data: The scrambled dataset
         """
-        data = self._raw_data
+        data = np.copy(self._raw_data)
         # Assigns a flat random distribution for Right Ascension
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
@@ -58,7 +58,10 @@ class Injector:
         index_shuffle = range(len(data))
         np.random.shuffle(index_shuffle)
 
-        data[self.season["MJD Time Key"]] = data[self.season["MJD Time Key"]][
+        print index_shuffle[:5]
+
+        data[self.season["MJD Time Key"]] = self._raw_data[
+            self.season["MJD Time Key"]][
             index_shuffle
         ]
 
@@ -314,6 +317,8 @@ class MockUnblindedInjector(Injector):
 
         seed = int(123456)
         np.random.seed(seed)
+
+        print "Performing fixed-seed background scramble"
 
         return self.scramble_data()
 
