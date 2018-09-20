@@ -409,13 +409,6 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
     plt.axvline(disc_potential, color="r", label=r"5 $\sigma$ Threshold")
 
-    plt.annotate(
-        '{:.1f}'.format(100 * frac_under) + "% of data in delta. \n" +
-        r"$\chi^{2}$ Distribution:" + "\n   * d.o.f.=" + \
-        '{:.2f}'.format(df) + ",\n  * loc=" + '{:.2f}'.format(loc) + " \n"
-        " * scale=" + '{:.2f}'.format(scale),
-        xy=(0.3, 0.7), xycoords="axes fraction", fontsize=8)
-
     if ts_val is not None:
         print "\n"
         print "Quantifying TS:", "{:.2f}".format(ts_val)
@@ -440,6 +433,14 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
                     label="{:.2f}".format(ts_val) + " TS/" +
                     "{:.2f}".format(sig) + r" $\sigma$")
 
+    else:
+        plt.annotate(
+            '{:.1f}'.format(100 * frac_under) + "% of data in delta. \n" +
+            r"$\chi^{2}$ Distribution:" + "\n   * d.o.f.=" + \
+            '{:.2f}'.format(df) + ",\n  * loc=" + '{:.2f}'.format(loc) + \
+            " \n * scale=" + '{:.2f}'.format(scale),
+            xy=(0.1, 0.2), xycoords="axes fraction", fontsize=8)
+
     yrange = min(1. / (float(len(ts_array)) * n_bins),
                  scipy.stats.chi2.pdf(disc_potential, df, loc, scale))
 
@@ -453,6 +454,8 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
 
 def plot_fit_results(results, path, labels, inj=None):
+
+    print labels
 
     results = np.array(results)
 

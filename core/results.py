@@ -417,6 +417,8 @@ class ResultsHandler:
         else:
             inj = None
 
+        print self.sources, self.param_names
+
         plot_fit_results(self.results[scale]["Parameters"], param_path,
                          self.param_names, inj=inj)
 

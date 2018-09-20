@@ -66,7 +66,7 @@ max_window = 100
 
 lengths = np.logspace(-2, 0, 5) * max_window
 
-for cat in ["jetted", "gold"]:
+for cat in ["gold"]:
 
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
@@ -147,8 +147,8 @@ for cat in ["jetted", "gold"]:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            if f_name == "flare":
-            # if True:
+            # if f_name == "flare":
+            if True:
                 rd.submit_to_cluster(pkl_file, n_jobs=100)
             # #
             #     mh = MinimisationHandler(mh_dict)
@@ -213,6 +213,8 @@ for (cat, src_res) in cat_res.iteritems():
                 pass
 
         labels.append(f_type)
+
+    print labels
 
     for j, [fluence, energy] in enumerate([[sens, sens_e],
                                            [disc_pots, disc_e]]):

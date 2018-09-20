@@ -1,6 +1,7 @@
 import numpy as np
 import resource
 import random
+import sys
 import os, os.path
 import argparse
 import cPickle as Pickle
@@ -10,6 +11,8 @@ from core.llh import LLH, FlareLLH
 from shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
     plot_output_dir, scale_shortener
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib as mpl
 from time_PDFs import TimePDF
 
 
@@ -564,8 +567,6 @@ class MinimisationHandler:
 
             for source in self.sources:
 
-                print source["Name"]
-
                 # Identify spatially- and temporally-coincident data
 
                 mask = llh.select_spatially_coincident_data(data, [source])
@@ -655,6 +656,9 @@ class MinimisationHandler:
             # flare length between the maximum and minimum values
 
             pairs = []
+
+            # print "There are", len(all_times), "significant neutrinos",
+            # print "out of", n_tot, "neutrinos"
 
             for x in all_times:
                 for y in all_times:
@@ -935,14 +939,7 @@ class MinimisationHandler:
         """
 
         res_dict = self.run_trial(scale)
-
-        if self.flare:
-            scans = [(source, src_dict["res"], src_dict["f"]) for
-                     (source, src_dict) in
-                     res_dict.iteritems() if source not in ["TS"]]
-
-        else:
-            scans = [("", res_dict["res"], res_dict["f"])]
+        scans = [("", res_dict["res"], res_dict["f"])]
 
         bounds = list(self.bounds)
         if self.negative_n_s:
@@ -1033,6 +1030,98 @@ class MinimisationHandler:
 
         return res_dict
 
+    def neutrino_lightcurve(self):
+
+        for source in self.sources:
+
+            f, (ax0, ax1) = plt.subplots(1, 2,
+                                       gridspec_kw={'width_ratios': [9, 1]})
+
+            logE = []
+            time = []
+            sig = []
+
+            for season in self.seasons:
+
+                time_key = season["MJD Time Key"]
+
+                # Generate a scrambled dataset, and save it to the datasets
+                # dictionary. Loads the llh for the season.
+
+                data = self.injectors[season["Name"]].create_dataset(scale=0)
+                llh = self.llhs[season["Name"]]
+
+                mask = llh.select_spatially_coincident_data(data, [source])
+                spatial_coincident_data = data[mask]
+
+                t_mask = np.logical_and(
+                    np.greater(
+                        spatial_coincident_data[time_key],
+                        llh.time_pdf.sig_t0(source)),
+                    np.less(
+                        spatial_coincident_data[time_key],
+                        llh.time_pdf.sig_t1(source))
+                )
+
+                coincident_data = spatial_coincident_data[t_mask]
+
+                # print max(coincident_data["logE"]), min(coincident_data["logE"])
+                # raw_input("prompt")
+                #
+                # col = (coincident_data["logE"] - 2.0)/2.5
+                # col[col > 1.] = 1.
+                # col[col < 0.] = 0.
+
+                # print col, cmap(col)
+
+                SoB = llh.estimate_significance(coincident_data, source)
+
+                mask = SoB > 1.
+
+                y = np.log10(SoB[mask])
+
+                if np.sum(mask) > 0:
+
+                    logE += list(10 ** (coincident_data["logE"][mask] - 3))
+                    time += list(coincident_data[time_key][mask])
+                    sig += list(y)
+
+                ax0.axvline(max(llh.time_pdf.sig_t0(source), llh.time_pdf.t0),
+                            color="k", linestyle="--", alpha=0.5)
+                ax0.axvline(min(llh.time_pdf.sig_t1(source), llh.time_pdf.t1),
+                            color="k", linestyle="--", alpha=0.5)
+
+            cmap = cm.get_cmap('jet')
+            norm = mpl.colors.Normalize(vmin=min(logE), vmax=max(logE),
+                                        clip=True)
+            m = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+            for i, val in enumerate(sig):
+                x = time[i]
+                ax0.plot([x, x], [0, val], color=m.to_rgba(logE[i]))
+
+            if hasattr(self, "res_dict"):
+                params = self.res_dict[source["Name"]]["Parameters"]
+                if len(params) > 1:
+                    ax0.axvspan(params[2], params[3], facecolor="grey",
+                                      alpha=0.2)
+            ax0.set_xlabel("Arrival Time (MJD)")
+            ax0.set_ylabel("Log(Signal/Background)")
+
+            cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                            norm=norm,
+                                            orientation='vertical')
+            ax1.set_ylabel("Muon Energy Proxy (TeV)")
+
+            ax0.set_ylim(bottom=0)
+            plt.suptitle(source["Name"])
+            # plt.tight_layout()
+
+            path = plot_output_dir(self.name) + source["Name"] + \
+                   "_neutrino_lightcurve.pdf"
+            plt.savefig(path)
+            plt.close()
+
     def check_flare_background_rate(self):
 
         results = [[] for x in self.seasons]
@@ -1052,7 +1141,7 @@ class MinimisationHandler:
 
                 # Loops over each source in catalogue
 
-                for source in np.sorted(self.sources, order="Distance (Mpc)"):
+                for source in sorted(self.sources, order="Distance (Mpc)"):
 
                     # Identify spatially- and temporally-coincident data
 

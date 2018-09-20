@@ -544,6 +544,28 @@ class FlareLLH(LLH):
     def assume_season_background(self, n_s, n_mask, n_season, n_all):
         return (n_season - n_mask) * np.log1p(-n_s / n_all)
 
+    def estimate_significance(self, coincident_data, source):
+        """Finds events in the coincident dataset (spatially and temporally
+        overlapping sources), which are significant. This is defined as having a
+        Signal/Background Ratio that is greater than 1. The S/B ratio is
+        calculating using spatial and energy PDFs.
+
+        :param coincident_data: Data overlapping the source spatially/temporally
+        :param source: Source to be considered
+        :return: SoB of events in coincident dataset
+        """
+        sig = self.signal_spatial(source, coincident_data)
+        bkg = self.background_spatial(source, coincident_data)
+        SoB_space = sig / bkg
+
+        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
+
+        SoB_energy = self.estimate_energy_weights(
+                gamma=3.0, energy_SoB_cache=SoB_energy_cache)
+
+        SoB = SoB_space * SoB_energy
+        return SoB
+
     def find_significant_events(self, coincident_data, source):
         """Finds events in the coincident dataset (spatially and temporally
         overlapping sources), which are significant. This is defined as having a
@@ -555,16 +577,7 @@ class FlareLLH(LLH):
         :return: Significant events in coincident dataset
         """
 
-        sig = self.signal_spatial(source, coincident_data)
-        bkg = self.background_spatial(source, coincident_data)
-        SoB_space = sig / bkg
-
-        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
-
-        SoB_energy = self.estimate_energy_weights(
-                gamma=3.0, energy_SoB_cache=SoB_energy_cache)
-
-        SoB = SoB_space * SoB_energy
+        SoB = self.estimate_significance(coincident_data, source)
 
         mask = SoB > 1.0
 
