@@ -154,10 +154,8 @@ def calculate_neutrinos(source, season, inj_kwargs):
 
     energy_pdf = inj_kwargs["Injection Energy PDF"]
 
-    # Energy requires a (1+z) factor
-    zfactor = find_zfactor(lumdist)
     energy = energy_pdf["Energy Flux"] * inj.time_pdf.effective_injection_time(
-        source)/zfactor
+        source)
     print "Neutrino Energy is", energy
 
     area = (4 * math.pi * (lumdist.to(u.cm)) ** 2)

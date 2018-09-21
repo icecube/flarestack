@@ -66,7 +66,7 @@ max_window = 100
 
 lengths = np.logspace(-2, 0, 5) * max_window
 
-for cat in ["gold"]:
+for cat in ["silver"]:
 
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
@@ -83,7 +83,7 @@ for cat in ["gold"]:
                                     fixed_weights,
                                     fixed_weights_negative,
                                     fit_weights,
-                                    flare
+                                    # flare
                                     ]):
         label = ["Fixed Weights", "Fixed Weights (Negative n_s)",
                  "Fit Weights", "Flare Search", ][i]
@@ -149,7 +149,7 @@ for cat in ["gold"]:
 
             # if f_name == "flare":
             if True:
-                rd.submit_to_cluster(pkl_file, n_jobs=100)
+                rd.submit_to_cluster(pkl_file, n_jobs=500)
             # #
             #     mh = MinimisationHandler(mh_dict)
             #     mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)

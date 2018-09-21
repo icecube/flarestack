@@ -1,6 +1,6 @@
 import numpy as np
 from shared import catalogue_dir
-from data.icecube_ps_tracks_v002_p01 import ps_7year
+from data.icecube_gfu_v002_p01 import txs_sample_v1, ps_7year
 from utils.custom_seasons import custom_dataset
 from utils.neutrino_astronomy import calculate_neutrinos
 from astropy import units as u
@@ -13,7 +13,7 @@ from astropy import units as u
 
 cat_path = catalogue_dir + "TDEs/Dai_Fang_TDE_catalogue.npy"
 
-sources = np.load(cat_path)[:2]
+sources = np.load(cat_path)
 
 # In column one of the paper, they assume a base cosmic ray flux of 10^51 erg
 
@@ -102,7 +102,7 @@ for source in sources:
             "Name": "Power Law",
             "Gamma": 2.0,
             "Energy Flux": nu_flux,
-            "E Min": 10 ** 5
+            "E Min": 10 ** 2
         }
 
         inj_kwargs = {
@@ -111,7 +111,7 @@ for source in sources:
             "Poisson Smear?": True,
         }
 
-        seasons = custom_dataset(ps_7year, [source], time_pdf)
+        seasons = custom_dataset(txs_sample_v1, [source], time_pdf)
 
         n_inj = 0
 
