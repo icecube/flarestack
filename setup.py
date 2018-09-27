@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import sys
+import setuptools
 from config import scratch_path
 from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
     log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,\
@@ -13,9 +14,33 @@ from utils.make_SoB_splines import make_spline
 from data.icecube_gfu_v002_p02 import txs_sample_v2
 from data.icecube_northern_tracks_v002_p01 import diffuse_8year
 
-all_data = txs_sample_v2 + diffuse_8year
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
-if __name__ == "__main__":
+setuptools.setup(
+    name="flarestack",
+    version="0.0.1",
+    author="Robert Stein",
+    author_email="robert.stein@desy.de",
+    description="Unbinned Likelihood Analysis code",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/robertdstein/flarestack",
+    packages=setuptools.find_packages(),
+    classifiers=[
+        "Programming Language :: Python :: 2",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+)
+
+
+def run_setup(all_data):
+    """Builds directory substructure, creates standard source catalogues and
+    creates acceptance functions + Signal/Background splines
+
+    :param all_data: All datasets to be used for setup
+    """
     print "\n \n"
     print "********************************************************************"
     print "*                                                                  *"
@@ -119,3 +144,9 @@ if __name__ == "__main__":
     print "********************************************************************"
     print "\n"
     download_ref()
+
+
+# if __name__ == "__main__":
+#     icecube_data = txs_sample_v2 + diffuse_8year
+
+    # run_setup(icecube_data)
