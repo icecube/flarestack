@@ -49,7 +49,7 @@ def run_setup(all_data=icecube_data):
         print "\n"
         print "Please edit config.py to include the correct directory!"
         print "\n"
-        sys.exit()
+        return
 
     for dirname in [input_dir, storage_dir, output_dir, log_dir, catalogue_dir,
                     acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,

@@ -33,6 +33,22 @@ def set_dataset_directory(path):
     dataset_dir = path
 
 
+# Scratch directory can be changed if needed
+
+def set_scratch_directory(path):
+    """Sets the scratch directory to be a custom path, and exports this.
+
+    :param path: Path to scratch
+    """
+    if not os.path.isdir(path):
+        raise Exception("Attempting to set invalid path for datasets. "
+                        "Directory", path, "does not exist!")
+    print "Loading datasets from", path
+
+    global scratch_path
+    scratch_path = path
+
+
 # ==============================================================================
 # Directory substructure creation
 # ==============================================================================
