@@ -1,9 +1,44 @@
 import os
 import numpy as np
-from config import scratch_path
+import config
 import socket
 
+# ==============================================================================
+# Directory substructure creation
+# ==============================================================================
+
+# fs_dir is the path of the
+
+fs_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
+
+fs_scratch_dir = config.scratch_path + "flarestack__data/"
+
+input_dir = fs_scratch_dir + "input/"
+storage_dir = fs_scratch_dir + "storage/"
+output_dir = fs_scratch_dir + "output/"
+log_dir = fs_scratch_dir + "logs/"
+
+catalogue_dir = input_dir + "catalogues/"
+transients_dir = catalogue_dir + "transients/"
+analysis_dir = input_dir + "analysis/"
+
+pickle_dir = storage_dir + "pickles/"
+inj_param_dir = pickle_dir + "injection_values/"
+
+plots_dir = output_dir + "plots/"
+
+illustration_dir = plots_dir + "illustrations/"
+
+acc_f_dir = input_dir + "acceptance_functions/"
+SoB_spline_dir = input_dir + "SoB_splines/"
+bkg_spline_dir = input_dir + "bkg_splines/"
+
+skylab_ref_dir = input_dir + "skylab_reference/"
+
+# ==============================================================================
 # Check host and specify path to dataset storage
+# ==============================================================================
+
 
 host = socket.gethostname()
 
@@ -45,41 +80,7 @@ def set_scratch_directory(path):
                         "Directory", path, "does not exist!")
     print "Setting scratch path to", path
 
-    global scratch_path
-    scratch_path = path
-
-
-# ==============================================================================
-# Directory substructure creation
-# ==============================================================================
-
-# fs_dir is the path of the
-
-fs_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
-
-fs_scratch_dir = scratch_path + "flarestack__data/"
-
-input_dir = fs_scratch_dir + "input/"
-storage_dir = fs_scratch_dir + "storage/"
-output_dir = fs_scratch_dir + "output/"
-log_dir = fs_scratch_dir + "logs/"
-
-catalogue_dir = input_dir + "catalogues/"
-transients_dir = catalogue_dir + "transients/"
-analysis_dir = input_dir + "analysis/"
-
-pickle_dir = storage_dir + "pickles/"
-inj_param_dir = pickle_dir + "injection_values/"
-
-plots_dir = output_dir + "plots/"
-
-illustration_dir = plots_dir + "illustrations/"
-
-acc_f_dir = input_dir + "acceptance_functions/"
-SoB_spline_dir = input_dir + "SoB_splines/"
-bkg_spline_dir = input_dir + "bkg_splines/"
-
-skylab_ref_dir = input_dir + "skylab_reference/"
+    config.scratch_path = path
 
 
 gamma_range = [1., 4.]
