@@ -43,7 +43,7 @@ def set_scratch_directory(path):
     if not os.path.isdir(path):
         raise Exception("Attempting to set invalid path for datasets. "
                         "Directory", path, "does not exist!")
-    print "Loading datasets from", path
+    print "Setting scratch path to", path
 
     global scratch_path
     scratch_path = path
