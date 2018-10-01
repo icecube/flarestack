@@ -455,8 +455,6 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
 def plot_fit_results(results, path, labels, inj=None):
 
-    print labels
-
     results = np.array(results)
 
     try:

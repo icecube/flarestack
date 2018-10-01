@@ -417,8 +417,6 @@ class ResultsHandler:
         else:
             inj = None
 
-        print self.sources, self.param_names
-
         plot_fit_results(self.results[scale]["Parameters"], param_path,
                          self.param_names, inj=inj)
 
@@ -428,7 +426,6 @@ class ResultsHandler:
 
         for source in sources:
 
-            # print self.results[scale]["TS"]
             ts_array = np.array(self.results[scale][source]["TS"])
             ts_path = self.plot_dir + source + "/ts_distributions/" + str(
                 scale) + ".pdf"

@@ -1035,7 +1035,7 @@ class MinimisationHandler:
         for source in self.sources:
 
             f, (ax0, ax1) = plt.subplots(1, 2,
-                                       gridspec_kw={'width_ratios': [9, 1]})
+                                       gridspec_kw={'width_ratios': [19, 1]})
 
             logE = []
             time = []

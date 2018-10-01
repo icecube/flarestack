@@ -61,8 +61,7 @@ Path to local copy of point source tracks, downloaded on 24/04/18 from
 from shared import dataset_dir
 import numpy as np
 
-
-ps_data_dir = dataset_dir + "ps_tracks_v002_p01/"
+ps_data_dir = dataset_dir + "ps_tracks/ps_v002_p01/"
 
 ps_dict = {
     "Data Sample": "ps_tracks_v002_p01",

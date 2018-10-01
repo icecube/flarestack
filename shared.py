@@ -1,6 +1,37 @@
 import os
 import numpy as np
 from config import scratch_path
+import socket
+
+# Check host and specify path to dataset storage
+
+host = socket.gethostname()
+
+if "ifh.de" in host:
+    dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
+    print "Loading datasets from", dataset_dir, "(DESY)"
+elif "icecube.wisc.edu" in host:
+    dataset_dir = "/data/ana/analyses/"
+    print "Loading datasets from", dataset_dir, "(IceCube)"
+else:
+    pass
+
+
+# Dataset directory can be changed if needed
+
+def set_dataset_directory(path):
+    """Sets the dataset directory to be a custom path, and exports this.
+
+    :param path: Path to datasets
+    """
+    if not os.path.isdir(path):
+        raise Exception("Attempting to set invalid path for datasets. "
+                        "Directory", path, "does not exist!")
+    print "Loading datasets from", path
+
+    global dataset_dir
+    dataset_dir = path
+
 
 # ==============================================================================
 # Directory substructure creation
@@ -20,7 +51,6 @@ log_dir = fs_scratch_dir + "logs/"
 catalogue_dir = input_dir + "catalogues/"
 transients_dir = catalogue_dir + "transients/"
 analysis_dir = input_dir + "analysis/"
-dataset_dir = input_dir + "data/"
 
 pickle_dir = storage_dir + "pickles/"
 inj_param_dir = pickle_dir + "injection_values/"

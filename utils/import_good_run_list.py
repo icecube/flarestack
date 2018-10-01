@@ -1,7 +1,5 @@
-import os
 import csv
-from data.icecube_gfu_v002_p01 import gfu_v002_p01
-from data.icecube_northern_tracks_v002_p01 import *
+from data.icecube.northern_tracks.nt_v002_p01 import *
 
 # The diffuse sample does not have a PS/GFU-style GoodRunList, with start and
 # stop times for each good run. It does, however, have a GRL in the form of

@@ -1,10 +1,8 @@
 import numpy as np
 import os
 import cPickle as Pickle
-from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_gfu_v002_p01 import txs_sample_v1, gfu_v002_p01
-from data.icecube_ps_tracks_v002_p01 import ps_7year
+from data.icecube_gfu_v002_p01 import txs_sample_v1
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd

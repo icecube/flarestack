@@ -1,9 +1,8 @@
 import numpy as np
 import os
 import cPickle as Pickle
-from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_gfu_v002_p02 import txs_sample_v2
+from data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd
@@ -83,7 +82,7 @@ for cat in ["silver"]:
                                     fixed_weights,
                                     fixed_weights_negative,
                                     fit_weights,
-                                    # flare
+                                    flare
                                     ]):
         label = ["Fixed Weights", "Fixed Weights (Negative n_s)",
                  "Fit Weights", "Flare Search", ][i]
@@ -148,8 +147,8 @@ for cat in ["silver"]:
                 Pickle.dump(mh_dict, f)
 
             # if f_name == "flare":
-            if True:
-                rd.submit_to_cluster(pkl_file, n_jobs=500)
+            # # if True:
+            #     rd.submit_to_cluster(pkl_file, n_jobs=500)
             # #
             #     mh = MinimisationHandler(mh_dict)
             #     mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
@@ -213,8 +212,6 @@ for (cat, src_res) in cat_res.iteritems():
                 pass
 
         labels.append(f_type)
-
-    print labels
 
     for j, [fluence, energy] in enumerate([[sens, sens_e],
                                            [disc_pots, disc_e]]):

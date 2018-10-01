@@ -70,10 +70,9 @@ Path to local copy of point source tracks, downloaded on 18/09/18 from
 
 from shared import dataset_dir
 import numpy as np
-import os
-from data.icecube_ps_tracks_v002_p01 import ps_data_dir
+from data.icecube.ps_tracks.ps_v002_p01 import ps_data_dir
 
-nt_data_dir = dataset_dir + "northern_tracks_v002_p01/"
+nt_data_dir = dataset_dir + "northern_tracks/nt_v002_p01/"
 
 diffuse_dict = {
     "Data Sample": "diffuse_8_year",

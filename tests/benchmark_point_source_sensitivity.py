@@ -1,15 +1,12 @@
 import numpy as np
 import os
 import cPickle as Pickle
-from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_ps_tracks_v002_p01 import ps_7year
+from data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.prepare_catalogue import ps_catalogue_name
 from utils.reference_sensitivity import reference_sensitivity,\
     reference_7year_discovery_potential
-from scipy.interpolate import interp1d
-from cluster import run_desy_cluster as rd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

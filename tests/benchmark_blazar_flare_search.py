@@ -9,9 +9,7 @@ here, is capable of matching previous flare search methods.
 import numpy as np
 import os
 import cPickle as Pickle
-from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_northern_tracks_v002_p01 import diffuse_8year
 from data.icecube_gfu_v002_p01 import gfu_v002_p01
 from shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
 from utils.prepare_catalogue import custom_sources
@@ -20,8 +18,6 @@ from cluster import run_desy_cluster as rd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from core.time_PDFs import TimePDF
-from astropy import units as u
 from astropy.coordinates import Distance
 
 name = "tests/1ES_blazar_benchmark/"

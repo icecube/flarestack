@@ -1,12 +1,8 @@
 import os
 import matplotlib.pyplot as plt
-from data.icecube_gfu_v002_p02 import txs_sample_v2
-from data.icecube_gfu_v002_p01 import gfu_v002_p01
-from data.icecube_northern_tracks_v002_p01 import diffuse_8year
-from setup import all_data
+from data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
 from shared import plots_dir
 from utils.dataset_loader import data_loader, grl_loader
-from core.time_PDFs import TimePDF
 
 data_rate_dir = plots_dir + "data_rate/"
 
