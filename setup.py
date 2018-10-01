@@ -1,16 +1,4 @@
-import os
-import numpy as np
-import sys
 import setuptools
-from config import scratch_path
-from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
-    log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,\
-    SoB_spline_dir, analysis_dir, illustration_dir,\
-    transients_dir, bkg_spline_dir
-from utils.prepare_catalogue import make_single_sources
-from utils.create_acceptance_functions import make_acceptance_f
-from utils.reference_sensitivity import download_ref
-from utils.make_SoB_splines import make_spline
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -40,8 +28,24 @@ setuptools.setup(
     ]
 )
 
+import os
+import sys
+from config import scratch_path
+from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
+    log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,\
+    SoB_spline_dir, analysis_dir, illustration_dir,\
+    transients_dir, bkg_spline_dir
+from utils.prepare_catalogue import make_single_sources
+from utils.create_acceptance_functions import make_acceptance_f
+from utils.reference_sensitivity import download_ref
+from utils.make_SoB_splines import make_spline
+from data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
+from data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
 
-def run_setup(all_data):
+icecube_data = txs_sample_v2 + diffuse_8year
+
+
+def run_setup(all_data=icecube_data):
     """Builds directory substructure, creates standard source catalogues and
     creates acceptance functions + Signal/Background splines
 
@@ -150,9 +154,9 @@ def run_setup(all_data):
     print "********************************************************************"
     print "\n"
     download_ref()
-
-
+#
+#
 # if __name__ == "__main__":
-#     icecube_data = txs_sample_v2 + diffuse_8year
-
-    # run_setup(icecube_data)
+#
+#
+#     run_setup(icecube_data)
