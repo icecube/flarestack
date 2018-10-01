@@ -17,7 +17,7 @@ Flarestack uses python 2.7, and requires the following packages:
 * matplotlib
 * numexpr
 
-All required dependencies can be found using the IceCube py2-v3 environment.
+All required dependencies can be found using the IceCube py2-v3 environment. They can collectively be installed with _pip install -r requirements.txt_.
 
 Once git cloned, you must edit the config.py file, and specify a directory for the storage and output of Flarestack. This should ideally be scratch space. You can then run setup.py. Check that the path specified is the correct one. 
 
