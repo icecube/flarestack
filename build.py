@@ -1,9 +1,10 @@
 import os
 import sys
+import config
 from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
     log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,\
     SoB_spline_dir, analysis_dir, illustration_dir,\
-    transients_dir, bkg_spline_dir, scratch_path
+    transients_dir, bkg_spline_dir
 from utils.prepare_catalogue import make_single_sources
 from utils.create_acceptance_functions import make_acceptance_f
 from utils.reference_sensitivity import download_ref
@@ -32,7 +33,7 @@ def run_setup(all_data=icecube_data):
     print "\n"
 
     print "The following parent directory has been found in config.py: \n"
-    print "\t", scratch_path
+    print "\t", config.scratch_path
     print
     print "A new data storage directory will be created at: \n"
     print "\t", fs_scratch_dir
