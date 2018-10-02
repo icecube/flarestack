@@ -7,7 +7,7 @@ from shared import dataset_dir
 from data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 import numpy as np
 
-gfu_data_dir = dataset_dir + "gfu_v002_p02/"
+gfu_data_dir = dataset_dir + "gfu/version-002-p02/"
 
 gfu_dict = {
     "Data Sample": "gfu_v002-p02",

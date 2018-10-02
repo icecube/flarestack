@@ -72,7 +72,7 @@ from shared import dataset_dir
 import numpy as np
 from data.icecube.ps_tracks.ps_v002_p01 import ps_data_dir
 
-nt_data_dir = dataset_dir + "northern_tracks/nt_v002_p01/"
+nt_data_dir = dataset_dir + "northern_tracks/version-002-p01/"
 
 diffuse_dict = {
     "Data Sample": "diffuse_8_year",
