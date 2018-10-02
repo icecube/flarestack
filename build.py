@@ -1,26 +1,45 @@
 import os
 import sys
-import config
-from shared import fs_scratch_dir, input_dir, storage_dir, output_dir, \
-    log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, skylab_ref_dir,\
-    SoB_spline_dir, analysis_dir, illustration_dir,\
-    transients_dir, bkg_spline_dir
-from utils.prepare_catalogue import make_single_sources
-from utils.create_acceptance_functions import make_acceptance_f
-from utils.reference_sensitivity import download_ref
-from utils.make_SoB_splines import make_spline
-from data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
-from data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
+import argparse
+import numpy as np
 
-icecube_data = txs_sample_v2 + diffuse_8year
+config_path = os.path.dirname(os.path.realpath(__file__)) + "/config.py"
+
+# Scratch directory can be changed if needed
+
+def set_scratch_directory(path):
+    """Sets the scratch directory to be a custom path, and exports this.
+
+    :param path: Path to scratch
+    """
+
+    if not os.path.isdir(path):
+        raise Exception("Attempting to set invalid path for datasets. "
+                        "Directory", path, "does not exist!")
+    print "Setting scratch path to", path
+
+    with open(config_path, "wb") as f:
+        f.write("scratch_path = '" + path + "'")
 
 
-def run_setup(all_data=icecube_data):
+def run_setup(all_data):
     """Builds directory substructure, creates standard source catalogues and
     creates acceptance functions + Signal/Background splines
 
     :param all_data: All datasets to be used for setup
     """
+    import config
+    from shared import fs_scratch_dir, input_dir, storage_dir, \
+        output_dir, \
+        log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, \
+        skylab_ref_dir, \
+        SoB_spline_dir, analysis_dir, illustration_dir, \
+        transients_dir, bkg_spline_dir, dataset_dir
+    from utils.prepare_catalogue import make_single_sources
+    from utils.create_acceptance_functions import make_acceptance_f
+    from utils.reference_sensitivity import download_ref
+    from utils.make_SoB_splines import make_spline
+
     print "\n \n"
     print "********************************************************************"
     print "*                                                                  *"
@@ -80,10 +99,12 @@ def run_setup(all_data=icecube_data):
     print "*                                                                  *"
     print "********************************************************************"
 
+    roots = list(set([os.path.dirname(y["mc_path"]) for y in all_data]))
+
     if x == 0:
         print "No IceCube data files found. Tried searching for: \n"
-        for y in all_data:
-            print "\t", os.path.dirname(y["mc_path"])
+        for y in roots:
+            print "\t", y
 
         print ""
         print "Download these data files yourself, and save them to: \n"
@@ -93,10 +114,9 @@ def run_setup(all_data=icecube_data):
 
     else:
         print "Searched for the following directories: \n"
-        for y in all_data:
-            print "\t", os.path.dirname(y["mc_path"]),
-            print "Found?", os.path.isdir(os.path.dirname(y["mc_path"]))
-
+        for y in roots:
+            print "\t", y,
+            print "Found?", os.path.isdir(y)
 
     print "\n"
     print "********************************************************************"
@@ -116,17 +136,26 @@ def run_setup(all_data=icecube_data):
     print "\n"
     make_spline(all_data)
 
-    print "\n"
-    print "********************************************************************"
-    print "*                                                                  *"
-    print "*      Downloading Reference Point Source Sensitivity (Skylab)     *"
-    print "*                                                                  *"
-    print "********************************************************************"
-    print "\n"
-    download_ref()
-#
-#
-# if __name__ == "__main__":
-#
-#
-#     run_setup(icecube_data)
+
+if __name__ == "__main__":
+
+    from config import scratch_path
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-sp", "--scratch_path",
+                        help="Path to scratch directory",
+                        default=scratch_path)
+
+    cfg = parser.parse_args()
+
+    if cfg.scratch_path != scratch_path:
+        del scratch_path
+        set_scratch_directory(cfg.scratch_path)
+
+    from data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
+    from data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
+
+    icecube_data = txs_sample_v2 + diffuse_8year
+
+    run_setup(icecube_data)

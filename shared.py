@@ -33,8 +33,6 @@ acc_f_dir = input_dir + "acceptance_functions/"
 SoB_spline_dir = input_dir + "SoB_splines/"
 bkg_spline_dir = input_dir + "bkg_splines/"
 
-skylab_ref_dir = input_dir + "skylab_reference/"
-
 # ==============================================================================
 # Check host and specify path to dataset storage
 # ==============================================================================
@@ -44,9 +42,11 @@ host = socket.gethostname()
 
 if "ifh.de" in host:
     dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
+    skylab_ref_dir = dataset_dir + "mirror-7year-PS-sens/"
     print "Loading datasets from", dataset_dir, "(DESY)"
 elif "icecube.wisc.edu" in host:
     dataset_dir = "/data/ana/analyses/"
+    skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
     print "Loading datasets from", dataset_dir, "(IceCube)"
 else:
     pass
@@ -66,21 +66,6 @@ def set_dataset_directory(path):
 
     global dataset_dir
     dataset_dir = path
-
-
-# Scratch directory can be changed if needed
-
-def set_scratch_directory(path):
-    """Sets the scratch directory to be a custom path, and exports this.
-
-    :param path: Path to scratch
-    """
-    if not os.path.isdir(path):
-        raise Exception("Attempting to set invalid path for datasets. "
-                        "Directory", path, "does not exist!")
-    print "Setting scratch path to", path
-
-    config.scratch_path = path
 
 
 gamma_range = [1., 4.]

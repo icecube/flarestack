@@ -164,39 +164,43 @@ def make_spline(seasons):
     print list(gamma_support_points)
 
     for season in seasons:
-        print "Making splines for", season["Name"]
-        path = SoB_spline_path(season)
-
-        bkg_path = bkg_spline_path(season)
-
-        exp = data_loader(season["exp_path"])
-        mc = data_loader(season["mc_path"])
-
-        sin_dec_bins = season["sinDec bins"]
-
-        splines = create_2d_splines(exp, mc, sin_dec_bins)
-
-        print "Saving to", path
-
         try:
-            os.makedirs(os.path.dirname(path))
-        except OSError:
+            print "Making splines for", season["Name"]
+            path = SoB_spline_path(season)
+
+            bkg_path = bkg_spline_path(season)
+
+            exp = data_loader(season["exp_path"])
+            mc = data_loader(season["mc_path"])
+
+            sin_dec_bins = season["sinDec bins"]
+
+            splines = create_2d_splines(exp, mc, sin_dec_bins)
+
+            print "Saving to", path
+
+            try:
+                os.makedirs(os.path.dirname(path))
+            except OSError:
+                pass
+
+            with open(path, "wb") as f:
+                Pickle.dump(splines, f)
+
+            bkg_spline = create_bkg_spatial_spline(exp, sin_dec_bins)
+
+            print "Saving to", bkg_path
+
+            try:
+                os.makedirs(os.path.dirname(bkg_path))
+            except OSError:
+                pass
+
+            with open(bkg_path, "wb") as f:
+                Pickle.dump(bkg_spline, f)
+
+        except IOError:
             pass
-
-        with open(path, "wb") as f:
-            Pickle.dump(splines, f)
-
-        bkg_spline = create_bkg_spatial_spline(exp, sin_dec_bins)
-
-        print "Saving to", bkg_path
-
-        try:
-            os.makedirs(os.path.dirname(bkg_path))
-        except OSError:
-            pass
-
-        with open(bkg_path, "wb") as f:
-            Pickle.dump(bkg_spline, f)
 
 
 def load_spline(season):
