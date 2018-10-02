@@ -11,8 +11,8 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_northern_tracks_v002_p01 import diffuse_8year
-from data.icecube_gfu_v002_p01 import txs_sample_v1
+from data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
+from data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from utils.custom_seasons import custom_dataset
 from shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
 from utils.prepare_catalogue import custom_sources
