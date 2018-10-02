@@ -11,7 +11,7 @@ import os
 import cPickle as Pickle
 from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_diffuse_8year import diffuse_8year
+from data.icecube_northern_tracks_v002_p01 import diffuse_8year
 from data.icecube_gfu_v002_p01 import txs_sample_v1
 from utils.custom_seasons import custom_dataset
 from shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
@@ -34,7 +34,8 @@ analyses = dict()
 
 # Start and end time of flare in MJD
 t_start = 55753.00
-t_end = 56474.00
+#t_end = 56000.00
+t_end = 56474.00 #true end hard flare
 
 # Ra and dec of source
 ra = 160.134167
@@ -58,8 +59,9 @@ catalogue = custom_sources(
 cat_path = transients_dir + "GB6_J1040_0617.npy"
 np.save(cat_path, catalogue)
 
-max_window = float(t_end - t_start)
 
+search_window = float(t_end - t_start)
+max_window = 150.
 # Initialise Injectors/LLHs
 
 injection_energy = {
@@ -71,7 +73,8 @@ llh_time = {
     "Name": "FixedRefBox",
     "Fixed Ref Time (MJD)": t_start,
     "Pre-Window": 0.,
-    "Post-Window": max_window
+    "Post-Window": search_window,
+    "Max Flare": max_window
 }
 
 llh_energy = injection_energy
@@ -129,7 +132,7 @@ for i, llh_kwargs in enumerate([
             "Post-Window": flare_length,
             "Time Smear?": True,
             "Min Offset": 0.,
-            "Max Offset": max_window - flare_length
+            "Max Offset": search_window - flare_length
         }
 
         inj_kwargs = {
@@ -139,7 +142,7 @@ for i, llh_kwargs in enumerate([
         }
 
         scale = flux_to_k(reference_sensitivity(np.sin(dec))
-                          * (14 * max_window / flare_length))
+                          * (50 * search_window / flare_length))
 
         mh_dict = {
             "name": full_name,
@@ -165,7 +168,7 @@ for i, llh_kwargs in enumerate([
             Pickle.dump(mh_dict, f)
             
         
-        rd.submit_to_cluster(pkl_file, n_jobs=300) #for cluster
+        rd.submit_to_cluster(pkl_file, n_jobs=1000) #for cluster
         # local
         #mh = MinimisationHandler(mh_dict)
         #mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=30)
@@ -244,7 +247,7 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
         ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
                     1.1 * max([max(x) for x in y if len(x) > 0]))
 
-    plt.title("Flare in " + str(int(max_window)) + " day window")
+    plt.title("Flare in " + str(int(search_window)) + " day window")
 
     ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
     plt.tight_layout()
