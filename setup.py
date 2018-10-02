@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flarestack",
-    version="0.1",
+    version="0.1.6",
     author="Robert Stein",
     author_email="robert.stein@desy.de",
-    description="Unbinned likelihood analysis code",
+    description="Package for unbinned likelihood analysis of physics data",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
@@ -21,9 +21,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "numpy==1.14.0",
-        "numexpr==2.6.4",
-        "healpy==1.10.3",
-        "scipy==1.1.0"
-    ]
+        "numpy",
+        "numexpr",
+        "healpy",
+        "scipy"
+    ],
 )
