@@ -1,9 +1,8 @@
 import numpy as np
 import os
 import cPickle as Pickle
-from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_gfu_v002_p02 import txs_sample_v2
+from data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
 from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from utils.reference_sensitivity import reference_sensitivity
 from cluster import run_desy_cluster as rd
@@ -66,7 +65,7 @@ max_window = 100
 
 lengths = np.logspace(-2, 0, 5) * max_window
 
-for cat in ["jetted", "gold"]:
+for cat in ["silver"]:
 
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
@@ -83,7 +82,7 @@ for cat in ["jetted", "gold"]:
                                     fixed_weights,
                                     fixed_weights_negative,
                                     fit_weights,
-                                    # flare
+                                    flare
                                     ]):
         label = ["Fixed Weights", "Fixed Weights (Negative n_s)",
                  "Fit Weights", "Flare Search", ][i]
@@ -147,11 +146,13 @@ for cat in ["jetted", "gold"]:
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            rd.submit_to_cluster(pkl_file, n_jobs=100)
+            # if f_name == "flare":
+            # # if True:
+            #     rd.submit_to_cluster(pkl_file, n_jobs=500)
             # #
-            # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
-            # mh.clear()
+            #     mh = MinimisationHandler(mh_dict)
+            #     mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
+            #     mh.clear()
             # raw_input("prompt")
 
             res[flare_length] = mh_dict
@@ -221,17 +222,14 @@ for (cat, src_res) in cat_res.iteritems():
         ax2 = ax1.twinx()
 
         cols = ["#F79646", "#00A6EB", "g", "r"]
-        linestyle = ["-", "-"][j]
 
         for i, f in enumerate(fracs):
 
             if len(f) > 0:
                 # Plot fluence on left y axis, and source energy on right y axis
 
-                ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                         color=cols[i])
-                ax2.plot(f, energy[i], linestyle=linestyle,
-                         color=cols[i])
+                ax1.plot(f, fluence[i], label=labels[i], color=cols[i])
+                ax2.plot(f, energy[i], color=cols[i])
 
         # Set up plot
 
@@ -255,7 +253,8 @@ for (cat, src_res) in cat_res.iteritems():
             except ValueError:
                 pass
 
-        plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat)
+        plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat +
+                  " TDEs")
 
         ax1.legend(loc='upper left', fancybox=True)
         plt.tight_layout()

@@ -50,19 +50,11 @@ class Injector:
 
         :return: data: The scrambled dataset
         """
-        data = self._raw_data
+        data = np.copy(self._raw_data)
         # Assigns a flat random distribution for Right Ascension
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
-
-        index_shuffle = range(len(data))
-        np.random.shuffle(index_shuffle)
-
-        data[self.season["MJD Time Key"]] = data[self.season["MJD Time Key"]][
-            index_shuffle
-        ]
-
-        # np.random.shuffle(data[self.season["MJD Time Key"]])
+        np.random.shuffle(data[self.season["MJD Time Key"]])
 
         return data
 

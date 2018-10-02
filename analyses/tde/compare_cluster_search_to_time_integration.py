@@ -1,12 +1,10 @@
 import numpy as np
 import os
 import cPickle as Pickle
-from core.minimisation import MinimisationHandler
 from core.results import ResultsHandler
-from data.icecube_gfu_v002_p02 import txs_sample_v2
-from shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
+from data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
+from shared import plot_output_dir, flux_to_k, analysis_dir
 from utils.reference_sensitivity import reference_sensitivity
-from cluster import run_desy_cluster as rd
 from utils.custom_seasons import custom_dataset
 import matplotlib.pyplot as plt
 from analyses.tde.shared_TDE import individual_tdes, individual_tde_cat

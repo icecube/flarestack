@@ -29,3 +29,22 @@ def data_loader(data_path):
         )
 
     return dataset
+
+
+def grl_loader(season):
+    if isinstance(season["grl_path"], list):
+        grl = np.sort(np.array(np.concatenate(
+            [np.load(x) for x in season["grl_path"]])),
+            order="run")
+    else:
+        grl = np.load(season["grl_path"])
+
+    if np.sum(~grl["good_i3"]) == 0:
+        pass
+    else:
+        print "Trying to load", season
+        print "The following runs are included:"
+        print grl[~grl["good_i3"]]
+        raise Exception("Runs marked as 'bad' are found in Good Run List")
+
+    return grl

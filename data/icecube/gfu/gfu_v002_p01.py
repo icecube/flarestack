@@ -8,12 +8,11 @@ Path to local copy of point source tracks, downloaded on 16/05/18 from
 This is the sample that was used for the original TXS analysis in 2017
 (NOT THE ONE THAT INCLUDED ADDITIONAL DATA UP TO SPRING 2018!)
 """
-
-from shared import dataset_dir
-from icecube_ps_tracks_v002_p01 import ps_7year
+from shared import host, dataset_dir
+from data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 import numpy as np
 
-gfu_data_dir = dataset_dir + "gfu_v002_p01/"
+gfu_data_dir = dataset_dir + "gfu/version-002-p01/"
 
 gfu_dict = {
     "Data Sample": "gfu_v002_p01",
@@ -38,3 +37,5 @@ gfu_dict = {
 gfu_v002_p01 = [gfu_dict]
 
 txs_sample_v1 = ps_7year + gfu_v002_p01
+
+print host

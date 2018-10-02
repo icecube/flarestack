@@ -53,24 +53,37 @@ class Unblinder(MinimisationHandler):
 
         try:
             path = self.unblind_dict["background TS"]
-            self.merged_dir = name_pickle_output_dir(path) + "merged/0.pkl"
+            self.pickle_dir = name_pickle_output_dir(path)
             self.output_file = plot_output_dir(self.name) + "TS.pdf"
             self.compare_to_background_TS()
         except KeyError:
             print "No Background TS Distribution specified.",
             print "Cannot assess significance of TS value."
-        # self.scan_likelihood()
+
+        if self.flare:
+            self.neutrino_lightcurve()
+        else:
+            self.scan_likelihood()
 
     def compare_to_background_TS(self):
-        print "Retrieving Background TS Distribution from", self.merged_dir
+        print "Retrieving Background TS Distribution from", self.pickle_dir
 
         try:
 
-            with open(self.merged_dir) as mp:
+            ts_array = list()
 
-                merged_data = Pickle.load(mp)
+            for subdir in os.listdir(self.pickle_dir):
+                merged_pkl = self.pickle_dir + subdir + "/merged/0.pkl"
 
-            ts_array = merged_data["TS"]
+                print "Loading", merged_pkl
+
+                with open(merged_pkl) as mp:
+
+                    merged_data = Pickle.load(mp)
+
+                ts_array += list(merged_data["TS"])
+
+            ts_array = np.array(ts_array)
 
             plot_background_ts_distribution(ts_array, self.output_file,
                                             self.ts_type, self.ts)

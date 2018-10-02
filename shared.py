@@ -1,6 +1,7 @@
 import os
 import numpy as np
-from config import scratch_path
+import config
+import socket
 
 # ==============================================================================
 # Directory substructure creation
@@ -10,7 +11,7 @@ from config import scratch_path
 
 fs_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
-fs_scratch_dir = scratch_path + "flarestack__data/"
+fs_scratch_dir = config.scratch_path + "flarestack__data/"
 
 input_dir = fs_scratch_dir + "input/"
 storage_dir = fs_scratch_dir + "storage/"
@@ -20,7 +21,6 @@ log_dir = fs_scratch_dir + "logs/"
 catalogue_dir = input_dir + "catalogues/"
 transients_dir = catalogue_dir + "transients/"
 analysis_dir = input_dir + "analysis/"
-dataset_dir = input_dir + "data/"
 
 pickle_dir = storage_dir + "pickles/"
 inj_param_dir = pickle_dir + "injection_values/"
@@ -33,7 +33,39 @@ acc_f_dir = input_dir + "acceptance_functions/"
 SoB_spline_dir = input_dir + "SoB_splines/"
 bkg_spline_dir = input_dir + "bkg_splines/"
 
-skylab_ref_dir = input_dir + "skylab_reference/"
+# ==============================================================================
+# Check host and specify path to dataset storage
+# ==============================================================================
+
+
+host = socket.gethostname()
+
+if "ifh.de" in host:
+    dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
+    skylab_ref_dir = dataset_dir + "mirror-7year-PS-sens/"
+    print "Loading datasets from", dataset_dir, "(DESY)"
+elif "icecube.wisc.edu" in host:
+    dataset_dir = "/data/ana/analyses/"
+    skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
+    print "Loading datasets from", dataset_dir, "(IceCube)"
+else:
+    pass
+
+
+# Dataset directory can be changed if needed
+
+def set_dataset_directory(path):
+    """Sets the dataset directory to be a custom path, and exports this.
+
+    :param path: Path to datasets
+    """
+    if not os.path.isdir(path):
+        raise Exception("Attempting to set invalid path for datasets. "
+                        "Directory", path, "does not exist!")
+    print "Loading datasets from", path
+
+    global dataset_dir
+    dataset_dir = path
 
 
 gamma_range = [1., 4.]

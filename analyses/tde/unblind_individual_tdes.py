@@ -32,7 +32,7 @@ unblind_llh = {
 }
 
 name_root = "analyses/tde/unblind_individual_tdes/"
-bkg_ts_root = "analyses/tde/compare_spectral_indices_individual/"
+bkg_ts_root = "analyses/tde/compare_cluster_search_to_time_integration/"
 
 cat_res = dict()
 
@@ -47,7 +47,7 @@ for j, cat in enumerate(cats):
 
     name = name_root + cat.replace(" ", "") + "/"
 
-    bkg_ts = bkg_ts_root + cat.replace(" ", "") + "/negative_n_s/2.0/"
+    bkg_ts = bkg_ts_root + cat.replace(" ", "") + "/flare/"
 
     cat_path = catalogue_dir + "TDEs/individual_TDEs/" + cat + "_catalogue.npy"
     catalogue = np.load(cat_path)
@@ -62,13 +62,3 @@ for j, cat in enumerate(cats):
     }
 
     ub = Unblinder(unblind_dict)
-
-    # rh = ResultsHandler(unblind_dict["name"], unblind_dict["llh kwargs"],
-    #                     unblind_dict["catalogue"])
-    #
-    # astro_sens, astro_disc = rh.astro_values(
-    #     unblind_dict["inj kwargs"]["Injection Energy PDF"])
-    #
-    # key = "Total Fluence (GeV^{-1} cm^{-2} s^{-1})"
-    #
-    # e_key = "Mean Luminosity (erg/s)"

@@ -426,7 +426,6 @@ class ResultsHandler:
 
         for source in sources:
 
-            # print self.results[scale]["TS"]
             ts_array = np.array(self.results[scale][source]["TS"])
             ts_path = self.plot_dir + source + "/ts_distributions/" + str(
                 scale) + ".pdf"

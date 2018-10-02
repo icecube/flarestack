@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from utils.dataset_loader import grl_loader
 
 
 def box_func(t, t0, t1):
@@ -25,20 +26,7 @@ class TimePDF:
         self.t_dict = t_pdf_dict
         self.season = season
 
-        if isinstance(season["grl_path"], list):
-            self.grl = np.sort(np.array(np.concatenate(
-                [np.load(x) for x in season["grl_path"]])),
-                order="run")
-        else:
-            self.grl = np.load(season["grl_path"])
-
-        if np.sum(~self.grl["good_i3"]) == 0:
-            pass
-        else:
-            print "Trying to load", season
-            print "The following runs are included:"
-            print self.grl[~self.grl["good_i3"]]
-            raise Exception("Runs marked as 'bad' are found in Good Run List")
+        self.grl = grl_loader(season)
 
         self.t0 = min(self.grl["start"])
         self.t1 = max(self.grl["stop"])
