@@ -56,7 +56,7 @@ Unfortunately, you can't do Science quite yet. There is an additional step, in w
 
   _run_setup(txs_sample_v1)_
 
-The above 4/6 lines of code will then build all relevant files for the datasets used in the TXS analysis (7 years of Point Source data and 2.5 years of GFU data). *Be prepared that this will take some time*. Fortunately, having done this once, you will not need to repeat it unless you require new datasets or a new release of Flarestack. The scratch directory will not need to be set again, although the dataset directory will need to be newly assigned. 
+The above 4/6 lines of code will then build all relevant files for the datasets used in the TXS analysis (7 years of Point Source data and 2.5 years of GFU data). *Be prepared that this will take some time*. Fortunately, having done this once, you will not need to repeat it unless you require new datasets or a new release of Flarestack. The scratch directory will not need to be set again, although the dataset directory will need to be newly assigned at the top of your analysis scripts. 
 
 You can them simply run scripts such as those under /flarestack/analyses/, and do your science!
 
