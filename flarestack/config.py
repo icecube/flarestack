@@ -1,1 +1,1 @@
-scratch_path = '/afs/ifh.de/user/s/steinrob/scratch/'
+scratch_path = 'path/to/scratch/'
