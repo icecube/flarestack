@@ -43,7 +43,7 @@ negative_bound = {
     "Brute Seed?": True
 }
 
-name = "tests/brute_seed/"
+name = "benchmarks/brute_seed/"
 
 sindecs = np.linspace(0.90, -0.90, 13)
 # sindecs = np.linspace(0.5, -0.5, 2)

@@ -9,24 +9,16 @@ here, is capable of matching previous flare search methods.
 import numpy as np
 import os
 import cPickle as Pickle
-from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.utils.custom_seasons import custom_dataset
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
-    transients_dir
+from flarestack.data.icecube_gfu_v002_p01 import gfu_v002_p01
+from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
 from flarestack.utils.prepare_catalogue import custom_sources
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from flarestack.core.time_PDFs import TimePDF
-from astropy import units as u
 from astropy.coordinates import Distance
 
-name = "benchmarks/Fermi_GB6_blazar_benchmark/"
+name = "benchmarks/1ES_blazar_benchmark/"
 
 analyses = dict()
 
@@ -34,35 +26,33 @@ analyses = dict()
 # http://tevcat.uchicago.edu/?mode=1;id=79
 
 # Start and end time of flare in MJD
-t_start = 55753.00
-#t_end = 56000.00
-t_end = 56474.00 #true end hard flare
+t_start = 57506.00
+t_end = 57595.00
 
 # Ra and dec of source
-ra = 160.134167
-dec = 6.29
+ra = 300.00
+dec = 65.15
 
 # Distance to source -> z=0.048 according to TeVCat. With lambdaCDM, this gives:
-z = 0.73
+z = 0.048
 lumdist = Distance(z=z).to("Mpc").value
 
 # Creates the .npy source catalogue
 catalogue = custom_sources(
-    name="GB6_J1040_0617",
+    name="1ES_1959+650",
     ra=ra,
     dec=dec,
     weight=1.,
-    distance= lumdist,
+    distance=lumdist,
     start_time=t_start,
     end_time=t_end,
 )
 
-cat_path = transients_dir + "GB6_J1040_0617.npy"
+cat_path = transients_dir + "1ES_1959+650.npy"
 np.save(cat_path, catalogue)
 
+max_window = float(t_end - t_start)
 
-search_window = float(t_end - t_start)
-max_window = 150.
 # Initialise Injectors/LLHs
 
 injection_energy = {
@@ -74,8 +64,8 @@ llh_time = {
     "Name": "FixedRefBox",
     "Fixed Ref Time (MJD)": t_start,
     "Pre-Window": 0.,
-    "Post-Window": search_window,
-    "Max Flare": max_window
+    "Post-Window": max_window,
+    "Max Flare": 21.
 }
 
 llh_energy = injection_energy
@@ -133,7 +123,7 @@ for i, llh_kwargs in enumerate([
             "Post-Window": flare_length,
             "Time Smear?": True,
             "Min Offset": 0.,
-            "Max Offset": search_window - flare_length
+            "Max Offset": max_window - flare_length
         }
 
         inj_kwargs = {
@@ -143,17 +133,17 @@ for i, llh_kwargs in enumerate([
         }
 
         scale = flux_to_k(reference_sensitivity(np.sin(dec))
-                          * (50 * search_window / flare_length))
+                          * (70 * max_window / flare_length))
 
         mh_dict = {
             "name": full_name,
-            "datasets": custom_dataset(txs_sample_v1,catalogue,llh_kwargs["LLH Time PDF"]),
+            "datasets": gfu_v002_p01,
             "catalogue": cat_path,
             "inj kwargs": inj_kwargs,
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 1,
-            "n_steps": 15 #number of flux values
+            "n_steps": 15
         }
 
         analysis_path = analysis_dir + full_name
@@ -167,14 +157,12 @@ for i, llh_kwargs in enumerate([
 
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
-            
-        
-        rd.submit_to_cluster(pkl_file, n_jobs=1000) #for cluster
-        # local
-        #mh = MinimisationHandler(mh_dict)
-        #mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=30)
-        #mh.clear()
-        ####
+
+        rd.submit_to_cluster(pkl_file, n_jobs=5000)
+
+        # mh = MinimisationHandler(mh_dict)
+        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
+        # mh.clear()
 
         # raw_input("prompt")
 
@@ -182,7 +170,7 @@ for i, llh_kwargs in enumerate([
 
     src_res[label] = res
 
-rd.wait_for_cluster() #for cluster
+rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]
@@ -248,7 +236,7 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
         ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
                     1.1 * max([max(x) for x in y if len(x) > 0]))
 
-    plt.title("Flare in " + str(int(search_window)) + " day window")
+    plt.title("Flare in " + str(int(max_window)) + " day window")
 
     ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
     plt.tight_layout()

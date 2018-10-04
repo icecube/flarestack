@@ -9,7 +9,7 @@ from flarestack.utils.reference_sensitivity import reference_sensitivity
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
 
-name_root = "tests/timePDFs/misalignment/"
+name_root = "benchmarks/timePDFs/misalignment/"
 
 # Picks ref time ~100 days into IC86-I
 

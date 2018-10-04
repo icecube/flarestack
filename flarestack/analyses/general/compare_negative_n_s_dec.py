@@ -43,7 +43,7 @@ negative_bound = {
     "Fit Negative n_s?": True
 }
 
-name = "tests/negative_n_s/"
+name = "benchmarks/negative_n_s/"
 
 sindecs = np.linspace(0.90, -0.90, 13)
 # sindecs = np.linspace(0.5, -0.5, 3)

@@ -30,7 +30,7 @@ llh_kwargs = {
     "Fit Gamma?": True,
 }
 
-base_name = "tests/energy_decades"
+base_name = "benchmarks/energy_decades"
 
 # sindecs = np.linspace(0.90, -0.90, 13)
 # sindecs = np.linspace(0.75, -0.75, 7)

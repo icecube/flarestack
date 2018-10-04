@@ -5,9 +5,8 @@ from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.utils.reference_sensitivity import reference_sensitivity, \
+from flarestack.utils.reference_sensitivity import reference_sensitivity,\
     reference_7year_discovery_potential
-from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
 
 # Initialise Injectors/LLHs
@@ -37,14 +36,13 @@ llh_kwargs = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
-    "Fit Negative n_s?": True
 }
 
-name = "benchmarks/improved_ps_sens"
+name = "benchmarks/ps_sens"
 
 sindecs = np.linspace(0.90, -0.90, 13)
-# sindecs = [0.90, 0.0, -0.90]
-# sindecs = np.linspace(-0.75, 0.75, 7)
+# sindecs = np.linspace(0.75, -0.75, 7)
+# sindecs = np.linspace(0.5, -0.5, 3)
 
 analyses = []
 
@@ -62,7 +60,7 @@ for sindec in sindecs:
         "inj kwargs": inj_kwargs,
         "llh kwargs": llh_kwargs,
         "scale": scale,
-        "n_trials": 10,
+        "n_trials": 5,
         "n_steps": 15
     }
 
@@ -78,20 +76,20 @@ for sindec in sindecs:
     with open(pkl_file, "wb") as f:
         Pickle.dump(mh_dict, f)
 
-    rd.submit_to_cluster(pkl_file, n_jobs=3000)
+    # rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
     # mh = MinimisationHandler(mh_dict)
-    # mh.iterate_run(mh_dict["scale"], n_steps=100)
+    # mh.iterate_run(mh_dict["scale"], n_steps=10, n_trials=mh_dict["n_trials"])
     # mh.clear()
 
     analyses.append(mh_dict)
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = []
 disc_pots = []
 
-for i, rh_dict in enumerate(analyses):
+for rh_dict in analyses:
     rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                         rh_dict["catalogue"])
     sens.append(rh.sensitivity)

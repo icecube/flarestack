@@ -10,7 +10,7 @@ from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
 
-name_root = "tests/timePDFs/scaling/"
+name_root = "benchmarks/timePDFs/scaling/"
 
 # Picks ref time at start of IC86-I
 
