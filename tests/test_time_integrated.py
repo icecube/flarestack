@@ -1,9 +1,9 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1). The sensitivity is calculated for three declinations,
 and compared to stored values for these results. If the sensitivity deviates
-from the stored sensitivity by more than X%, the test is failed.
+from the stored sensitivity by more than 20%, the test is failed.
 
-The approximate runtime for this test, in which 1000 background trials are
+The approximate runtime for this test, in which 2000 background trials are
 run, is roughly 1 minute.
 
 """
@@ -65,74 +65,64 @@ sindecs = np.linspace(0.5, -0.5, 3)
 # compared to these values.
 
 high_statistics_results = [
-    2.097237550036032e-09,
-    1.4530108421250116e-09,
-    1.6870891536361605e-08
+    2.262657165737197e-09,
+    1.4715209683167835e-09,
+    1.5604438427616364e-08
 ]
 
 
-class TestUM(unittest.TestCase):
+class TestTimeIntegrated(unittest.TestCase):
 
     def setUp(self):
         pass
 
     def test_declination_sensitivity(self):
-        pass
+
+        # Test threev= declinations
+
+        for i, sindec in enumerate(sindecs):
+            cat_path = ps_catalogue_name(sindec)
+            subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
+
+            # Set characteristic flux scale
+            scale = flux_to_k(reference_sensitivity(sindec)) * 7
+
+            mh_dict = {
+                "name": subname,
+                "datasets": [IC86_1_dict],
+                "catalogue": cat_path,
+                "inj kwargs": inj_kwargs,
+                "llh kwargs": llh_kwargs,
+                "scale": scale,
+                "n_trials": 200,
+                "n_steps": 10
+            }
+
+            # Run trials
+
+            mh = MinimisationHandler(mh_dict)
+            mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],
+                           n_trials=mh_dict["n_trials"])
+            mh.clear()
+
+            # Calculate sensitivity
+
+            rh = ResultsHandler(mh_dict["name"], mh_dict["llh kwargs"],
+                                mh_dict["catalogue"])
+
+            sens = rh.sensitivity
+            ref = high_statistics_results[i]
+
+            frac_diff = abs(sens-ref)/ref
+
+            print "\n"
+            print "\n"
+            print "Fractional Deviation:", frac_diff
+            print "\n"
+            print "\n"
+
+            self.assertLess(frac_diff, 0.2)
 
 
-all_sens = []
-
-for i, sindec in enumerate(sindecs):
-    cat_path = ps_catalogue_name(sindec)
-
-    subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
-
-    scale = flux_to_k(reference_sensitivity(sindec)) * 7
-
-    mh_dict = {
-        "name": subname,
-        "datasets": [IC86_1_dict],
-        "catalogue": cat_path,
-        "inj kwargs": inj_kwargs,
-        "llh kwargs": llh_kwargs,
-        "scale": scale,
-        "n_trials": 100,
-        "n_steps": 10
-    }
-
-    analysis_path = analysis_dir + subname
-
-    try:
-        os.makedirs(analysis_path)
-    except OSError:
-        pass
-
-    pkl_file = analysis_path + "dict.pkl"
-
-    with open(pkl_file, "wb") as f:
-        Pickle.dump(mh_dict, f)
-
-    # mh = MinimisationHandler(mh_dict)
-    # mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],
-    #                n_trials=mh_dict["n_trials"])
-    # mh.clear()
-    rd.submit_to_cluster(pkl_file, n_jobs=100)
-    rd.wait_for_cluster()
-
-    rh = ResultsHandler(mh_dict["name"], mh_dict["llh kwargs"],
-                        mh_dict["catalogue"])
-
-    sens = rh.sensitivity
-    ref = high_statistics_results[i]
-
-    print sens
-
-    print ref
-
-    frac_diff = abs(sens-ref)/ref
-
-    print "Fractional deviation", frac_diff
-
-    all_sens.append(sens)
-
-print all_sens
+if __name__ == '__main__':
+    unittest.main()
