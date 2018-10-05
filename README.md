@@ -50,7 +50,7 @@ All required dependencies can be found using the IceCube py2-v3 environment. The
 Unfortunately, you can't do Science quite yet. There is an additional step, in which multiple recycleable values are computed once, and will be frequently reused later on. To perform this step, you need to firstly download some data+MC. That can be bypassed if you are working on the DESY /afs/ filesystem, or on the cobalt machinces at WIPAC, because Flarestack will instead find the relevant IceCube files automatically. Either way, you then need to select a space to save these precomputed/stored values. Since they can be regenerated at any time, a scratch space is ideal for this purpose. You then need to run a script such as the following:
 
 ```python
- from flarestack.build import run_setup, set_scratch_directory
+ from flarestack.precompute import run_precompute, set_scratch_directory
  set_scratch_directory("/path/to/my/scratch/")
 ```
 
@@ -65,7 +65,7 @@ In any case, you then need the next to lines to begin setup:
 
  ```python
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-run_setup(txs_sample_v1)
+run_precompute(txs_sample_v1)
 ```
 
 The above 4/6 lines of code will then build all relevant files for the datasets used in the TXS analysis (7 years of Point Source data and 2.5 years of GFU data). *Be prepared that this will take some time*. Fortunately, having done this once, you will not need to repeat it unless you require new datasets or a new release of Flarestack. The scratch directory will not need to be set again, although the dataset directory will need to be newly assigned at the top of your analysis scripts. 

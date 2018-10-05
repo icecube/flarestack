@@ -12,6 +12,9 @@ def set_scratch_directory(path):
 
     :param path: Path to scratch
     """
+    
+    if path[-1] != "/":
+        path += "/"
 
     if not os.path.isdir(path):
         raise Exception("Attempting to set invalid path for datasets. "
@@ -22,7 +25,7 @@ def set_scratch_directory(path):
         f.write("scratch_path = '" + path + "'")
 
 
-def run_setup(all_data):
+def run_precompute(all_data):
     """Builds directory substructure, creates standard source catalogues and
     creates acceptance functions + Signal/Background splines
 
@@ -156,4 +159,4 @@ if __name__ == "__main__":
 
     icecube_data = txs_sample_v2 + diffuse_8year
 
-    run_setup(icecube_data)
+    run_precompute(icecube_data)
