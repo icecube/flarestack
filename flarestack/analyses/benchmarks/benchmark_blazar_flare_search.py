@@ -10,8 +10,9 @@ import numpy as np
 import os
 import cPickle as Pickle
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube_gfu_v002_p01 import gfu_v002_p01
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, transients_dir
+from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_v002_p01
+from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
+    transients_dir
 from flarestack.utils.prepare_catalogue import custom_sources
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
