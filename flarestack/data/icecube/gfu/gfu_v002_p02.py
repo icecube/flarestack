@@ -10,7 +10,7 @@ import numpy as np
 gfu_data_dir = dataset_dir + "gfu/version-002-p02/"
 
 gfu_dict = {
-    "Data Sample": "gfu_v002-p02",
+    "Data Sample": "gfu_v002_p02",
     "sinDec bins": np.unique(np.concatenate([
         np.linspace(-1., -0.9, 2 + 1),
         np.linspace(-0.9, -0.2, 8 + 1),

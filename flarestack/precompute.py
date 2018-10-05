@@ -154,9 +154,10 @@ if __name__ == "__main__":
         del scratch_path
         set_scratch_directory(cfg.scratch_path)
 
+    from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_v002_p01
     from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
     from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
 
-    icecube_data = txs_sample_v2 + diffuse_8year
+    icecube_data = txs_sample_v2 + diffuse_8year + gfu_v002_p01
 
     run_precompute(icecube_data)
