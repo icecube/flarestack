@@ -4,14 +4,14 @@ import cPickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
-    catalogue_dir
+    transients_dir
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import math
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
 
-analyses = dict()
+
 
 # Initialise Injectors/LLHs
 
@@ -48,19 +48,12 @@ fixed_weights_negative = {
 }
 
 gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
-# gammas = [1.8, 2.0, 2.3, 2.5, 2.7]
-# gammas = [1.8, 2.0]
 
-# cats = ["gold", "jetted"]
-# # cats = ["jetted"]
-# cat_names = ["Jetted", "Golden"]
 cats = ["jetted", "gold", "silver", "obscured"]
-# cat_names = ["Golden"]
 
-# cats = ["silver", "obscured"]
 
-power_law_start_energy = [100, 10000, 100000]
-# power_law_start_energy = [100]
+# power_law_start_energy = [100, 10000, 100000]
+power_law_start_energy = [100]
 
 cutoff_dict = dict()
 
@@ -68,97 +61,84 @@ injection_length = 100
 
 for e_min in power_law_start_energy:
 
-    raw = "analyses/tde/compare_spectral_indices/" + "Emin=" + str(e_min) + "/"
+    src_res = dict()
 
-    cat_res = dict()
+    closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
 
-    for cat in cats:
+    for i, llh_kwargs in enumerate([fixed_weights_negative,
+                                    fixed_weights,
+                                    fit_weights,
+                                    # flare
+                                    ]):
+        label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
+                 "Fit Weights", "Flare Search", ][i]
+        f_name = ["fixed_weights_neg", "fixed_weights",
+                  "fit_weights", "flare"][i]
 
-        name = raw + cat + "/"
+        flare_name = name + f_name + "/"
 
-        cat_path = catalogue_dir + "TDEs/TDE_" + cat + "_catalogue.npy"
-        catalogue = np.load(cat_path)
+        res = dict()
 
-        src_res = dict()
+        for gamma in gammas:
 
-        closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
+            full_name = flare_name + str(gamma) + "/"
 
-        for i, llh_kwargs in enumerate([fixed_weights_negative,
-                                        fixed_weights,
-                                        fit_weights,
-                                        # flare
-                                        ]):
-            label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
-                     "Fit Weights", "Flare Search", ][i]
-            f_name = ["fixed_weights_neg", "fixed_weights",
-                      "fit_weights", "flare"][i]
+            injection_time = llh_time = {
+                "Name": "Box",
+                "Pre-Window": 0.,
+                "Post-Window": injection_length
+            }
 
-            flare_name = name + f_name + "/"
+            injection_energy = dict(llh_energy)
+            injection_energy["E Min"] = e_min
+            injection_energy["Gamma"] = gamma
 
-            res = dict()
+            inj_kwargs = {
+                "Injection Energy PDF": injection_energy,
+                "Injection Time PDF": injection_time,
+                "Poisson Smear?": True,
+            }
 
-            for gamma in gammas:
+            scale = flux_to_k(reference_sensitivity(
+                np.sin(closest_src["dec"]), gamma=gamma
+            ) * 40 * math.sqrt(float(len(catalogue)))) * (e_min/100.)**0.2
 
-                full_name = flare_name + str(gamma) + "/"
+            mh_dict = {
+                "name": full_name,
+                "datasets": custom_dataset(txs_sample_v1, catalogue,
+                                           llh_kwargs["LLH Time PDF"]),
+                "catalogue": cat_path,
+                "inj kwargs": inj_kwargs,
+                "llh kwargs": llh_kwargs,
+                "scale": scale,
+                "n_trials": 5,
+                "n_steps": 15
+            }
 
-                injection_time = llh_time = {
-                    "Name": "Box",
-                    "Pre-Window": 0.,
-                    "Post-Window": injection_length
-                }
+            analysis_path = analysis_dir + full_name
 
-                injection_energy = dict(llh_energy)
-                injection_energy["E Min"] = e_min
-                injection_energy["Gamma"] = gamma
+            try:
+                os.makedirs(analysis_path)
+            except OSError:
+                pass
 
-                inj_kwargs = {
-                    "Injection Energy PDF": injection_energy,
-                    "Injection Time PDF": injection_time,
-                    "Poisson Smear?": True,
-                }
+            pkl_file = analysis_path + "dict.pkl"
 
-                scale = flux_to_k(reference_sensitivity(
-                    np.sin(closest_src["dec"]), gamma=gamma
-                ) * 40 * math.sqrt(float(len(catalogue)))) * (e_min/100.)**0.2
+            with open(pkl_file, "wb") as f:
+                Pickle.dump(mh_dict, f)
 
-                mh_dict = {
-                    "name": full_name,
-                    "datasets": custom_dataset(txs_sample_v1, catalogue,
-                                               llh_kwargs["LLH Time PDF"]),
-                    "catalogue": cat_path,
-                    "inj kwargs": inj_kwargs,
-                    "llh kwargs": llh_kwargs,
-                    "scale": scale,
-                    "n_trials": 5,
-                    "n_steps": 15
-                }
+            # rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
-                analysis_path = analysis_dir + full_name
+            # mh = MinimisationHandler(mh_dict)
+            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
+            #                n_trials=10)
+            # mh.clear()
 
-                try:
-                    os.makedirs(analysis_path)
-                except OSError:
-                    pass
+            res[gamma] = mh_dict
 
-                pkl_file = analysis_path + "dict.pkl"
+        src_res[label] = res
 
-                with open(pkl_file, "wb") as f:
-                    Pickle.dump(mh_dict, f)
-
-                # rd.submit_to_cluster(pkl_file, n_jobs=1000)
-
-                # mh = MinimisationHandler(mh_dict)
-                # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
-                #                n_trials=10)
-                # mh.clear()
-
-                res[gamma] = mh_dict
-
-            src_res[label] = res
-
-        cat_res[cat] = src_res
-
-    cutoff_dict[e_min] = cat_res
+    cutoff_dict[e_min] = src_res
 
 rd.wait_for_cluster()
 
