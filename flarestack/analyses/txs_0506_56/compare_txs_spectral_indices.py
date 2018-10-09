@@ -7,11 +7,12 @@ from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
     transients_dir
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
-import math
+from flarestack.core.minimisation import MinimisationHandler
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.analyses.txs_0506_56.make_txs_catalogue import txs_cat_path
 
-
+catalogue = np.load(txs_cat_path)
 
 # Initialise Injectors/LLHs
 
@@ -22,13 +23,6 @@ llh_energy = {
 
 llh_time = {
     "Name": "FixedEndBox"
-}
-
-fit_weights = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Fit Weights?": True
 }
 
 fixed_weights = {
@@ -48,8 +42,7 @@ fixed_weights_negative = {
 }
 
 gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
-
-cats = ["jetted", "gold", "silver", "obscured"]
+# gammas = [1.8, 2.0]
 
 
 # power_law_start_energy = [100, 10000, 100000]
@@ -61,32 +54,30 @@ injection_length = 100
 
 for e_min in power_law_start_energy:
 
-    src_res = dict()
+    name_root = "analyses/txs_0506_56/compare_spectral_indices/Emin=" + \
+                str(e_min) + "/"
 
-    closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
+    src_res = dict()
 
     for i, llh_kwargs in enumerate([fixed_weights_negative,
                                     fixed_weights,
-                                    fit_weights,
                                     # flare
                                     ]):
         label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
-                 "Fit Weights", "Flare Search", ][i]
+                 "Flare Search", ][i]
         f_name = ["fixed_weights_neg", "fixed_weights",
-                  "fit_weights", "flare"][i]
+                  "flare"][i]
 
-        flare_name = name + f_name + "/"
+        name = name_root + f_name + "/"
 
         res = dict()
 
         for gamma in gammas:
 
-            full_name = flare_name + str(gamma) + "/"
+            full_name = name + str(gamma) + "/"
 
             injection_time = llh_time = {
-                "Name": "Box",
-                "Pre-Window": 0.,
-                "Post-Window": injection_length
+                "Name": "FixedEndBox"
             }
 
             injection_energy = dict(llh_energy)
@@ -100,14 +91,14 @@ for e_min in power_law_start_energy:
             }
 
             scale = flux_to_k(reference_sensitivity(
-                np.sin(closest_src["dec"]), gamma=gamma
-            ) * 40 * math.sqrt(float(len(catalogue)))) * (e_min/100.)**0.2
+                np.sin(catalogue["dec"]), gamma=gamma
+            )) * 60 * (e_min/100.)**0.2
 
             mh_dict = {
                 "name": full_name,
                 "datasets": custom_dataset(txs_sample_v1, catalogue,
                                            llh_kwargs["LLH Time PDF"]),
-                "catalogue": cat_path,
+                "catalogue": txs_cat_path,
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
@@ -140,100 +131,95 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 
-    raw = "analyses/tde/compare_spectral_indices/" + "Emin=" + str(e_min) + "/"
+    name = "analyses/txs_0506_56/compare_spectral_indices/Emin=" + \
+          str(e_min) + "/"
 
-    for b, (cat_name, src_res) in enumerate(cat_res.iteritems()):
+    sens_livetime = [[] for _ in src_res]
+    fracs = [[] for _ in src_res]
+    disc_pots_livetime = [[] for _ in src_res]
+    sens_e = [[] for _ in src_res]
+    disc_e = [[] for _ in src_res]
 
-        name = raw + cat_name + "/"
+    labels = []
 
-        sens_livetime = [[] for _ in src_res]
-        fracs = [[] for _ in src_res]
-        disc_pots_livetime = [[] for _ in src_res]
-        sens_e = [[] for _ in src_res]
-        disc_e = [[] for _ in src_res]
+    for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
-        labels = []
+        # if f_type == "Fit Weights":
+        if True:
 
-        for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
+            for (gamma, rh_dict) in sorted(res.iteritems()):
+                try:
+                    rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
+                                        rh_dict["catalogue"], show_inj=True)
 
-            # if f_type == "Fit Weights":
-            if True:
+                    inj_time = injection_length * 60 * 60 * 24
 
-                for (gamma, rh_dict) in sorted(res.iteritems()):
-                    try:
-                        rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                            rh_dict["catalogue"], show_inj=True)
+                    astro_sens, astro_disc = rh.astro_values(
+                        rh_dict["inj kwargs"]["Injection Energy PDF"])
 
-                        inj_time = injection_length * 60 * 60 * 24
+                    key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
-                        astro_sens, astro_disc = rh.astro_values(
-                            rh_dict["inj kwargs"]["Injection Energy PDF"])
+                    e_key = "Mean Luminosity (erg/s)"
 
-                        key = "Total Fluence (GeV cm^{-2} s^{-1})"
+                    sens_livetime[i].append(astro_sens[key] * inj_time)
+                    disc_pots_livetime[i].append(astro_disc[key] * inj_time)
 
-                        e_key = "Mean Luminosity (erg/s)"
+                    sens_e[i].append(astro_sens[e_key])
+                    disc_e[i].append(astro_disc[e_key])
 
-                        sens_livetime[i].append(astro_sens[key] * inj_time)
-                        disc_pots_livetime[i].append(astro_disc[key] * inj_time)
+                    fracs[i].append(gamma)
 
-                        sens_e[i].append(astro_sens[e_key] * inj_time)
-                        disc_e[i].append(astro_disc[e_key] * inj_time)
+                except OSError:
+                    pass
 
-                        fracs[i].append(gamma)
+            labels.append(f_type)
+        # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-                    except OSError:
-                        pass
+    for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
+                                          [disc_pots_livetime, disc_e]]):
 
-                labels.append(f_type)
-            # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
+        plt.figure()
+        ax1 = plt.subplot(111)
 
-        for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
-                                              [disc_pots_livetime, disc_e]]):
+        ax2 = ax1.twinx()
 
-            plt.figure()
-            ax1 = plt.subplot(111)
+        cols = ["#00A6EB", "#F79646", "g", "r"]
+        linestyle = ["-", "-"][j]
 
-            ax2 = ax1.twinx()
+        for i, f in enumerate(fracs):
 
-            cols = ["#00A6EB", "#F79646", "g", "r"]
-            linestyle = ["-", "-"][j]
+            if len(f) > 0:
 
-            for i, f in enumerate(fracs):
+                ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
+                         color=cols[i])
+                ax2.plot(f, energy[i], linestyle=linestyle,
+                         color=cols[i])
 
-                if len(f) > 0:
+        ax2.grid(True, which='both')
+        ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
+        ax2.set_ylabel(r"Isotropic-Equivalent Luminosity $L_{\nu}$ (ergs s$^{"
+                       r"-1}$)")
+        ax1.set_xlabel(r"Spectral Index ($\gamma$)")
+        ax1.set_yscale("log")
+        ax2.set_yscale("log")
 
-                    ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                             color=cols[i])
-                    ax2.plot(f, energy[i], linestyle=linestyle,
-                             color=cols[i])
+        for k, ax in enumerate([ax1, ax2]):
+            y = [fluence, energy][k]
 
-            y_label = [r"Total Fluence [GeV cm$^{-2}$]",
-                       r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
+            ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
+                        1.1 * max([max(x) for x in y if len(x) > 0]))
 
-            ax2.grid(True, which='both')
-            ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
-            ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
-            ax1.set_xlabel(r"Spectral Index ($\gamma$)")
-            ax1.set_yscale("log")
-            ax2.set_yscale("log")
+        plt.title(["Sensitivity", "Discovery Potential"][j] +
+                  " for TXS 0506+56 (Neutrino Flare)")
 
-            for k, ax in enumerate([ax1, ax2]):
-                y = [fluence, energy][k]
-
-                ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
-                            1.1 * max([max(x) for x in y if len(x) > 0]))
-
-            plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
-                      " for " + cat_name + " TDEs")
-
-            ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
-            plt.tight_layout()
-            plt.savefig(plot_output_dir(name) + "/spectral_index_" +
-                        "Emin=" + str(e_min) +
-                        ["sens", "disc"][j] + "_" + cat_name + ".pdf")
-            plt.close()
+        ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
+        plt.tight_layout()
+        plt.savefig(plot_output_dir(name) + "/spectral_index_" +
+                    "Emin=" + str(e_min) +
+                    ["sens", "disc"][j] + "_TXS_0506+56.pdf")
+        plt.close()
 
