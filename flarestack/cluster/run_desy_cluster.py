@@ -26,7 +26,9 @@ import os.path
 import argparse
 from flarestack.shared import log_dir, fs_dir
 
-cmd = 'qstat -u steinrob'
+username = os.path.basename(os.environ['HOME'])
+
+cmd = 'qstat -u ' + username
 
 
 def wait_for_cluster():
@@ -38,6 +40,7 @@ def wait_for_cluster():
     completion of job, terminates function process and allows the script to
     continue.
     """
+    time.sleep(10)
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     tmp = str(process.stdout.read())
     i = 31
