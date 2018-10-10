@@ -3,7 +3,7 @@ Code for unbinned likelihood analysis of astroparticle physics data, created by 
 
 Both time-dependent and time-independent analyses can be performed, as well as a "flare-search" algorithm to find event clustering in time as well as space.
 
-Perform single-source analyses, as well as stacking of sources according to predefined weighting. 
+Performs single point source analyses, as well as the stacking of sources according to predefined weighting. 
 Also performs stacking analyses where the signal strength of each source is fit individually.
 
 # Installation instructions
@@ -58,7 +58,7 @@ If you are *not* using the DESY/WIPAC datasets, you'll need to add the following
 
 ```python
 from flarestack.shared import set_dataset_dir
-set_dataset_dir("/path/to/datasets")
+set_dataset_dir("/path/to/datasets/")
 ```
 
 In any case, you then need the next to lines to begin setup:
@@ -72,5 +72,6 @@ The above 4/6 lines of code will then build all relevant files for the datasets 
 
 You can them simply run scripts such as those under /flarestack/analyses/, and do your science!
 
+### Anything else?
 
-One additional file that is required is the published IceCube 7 year Point source sensitivity. In general, Flarestack calculates sensitivity/discovery potential by generating TS distributions at fixed points between 0 and a characteristic flux level, and then interpolates between these points to determine the 90% sensitivity and 50% discovery potential. To meaningfully estimate the sensitivity/discovery potential, the characteristic flux scale must be large enough to exceed the sensitivity or discovery potential, while still small enough so that the interpolation points are not entirely composed of overfluctutations. Selecting reasonable values for this flux scale is typically done by multiplying the published ps sensitivity by various factors. The file can be downloaded from https://icecube.wisc.edu/~coenders/sens.npy, and should be saved to /path/to/scratch/flarestack__data/input/skylab_reference/sens.npy . As with the datasets, this step does not need to be performed for users of DESY/WIPAC because Flarestack will automatically find the relevant files.
+One additional file that is useful is the published IceCube 7 year Point source sensitivity. In general, Flarestack calculates sensitivity/discovery potential by generating TS distributions at fixed points between 0 and a characteristic flux level, and then interpolates between these points to determine the 90% sensitivity and 50% discovery potential. To meaningfully estimate the sensitivity/discovery potential, the characteristic flux scale must be large enough to exceed the sensitivity or discovery potential, while still small enough so that the interpolation points are not entirely composed of overfluctutations. Selecting reasonable values for this flux scale is typically done by multiplying the published ps sensitivity by various factors. The file can be downloaded from https://icecube.wisc.edu/~coenders/sens.npy, and should be saved to /path/to/scratch/flarestack__data/input/skylab_reference/sens.npy . As with the datasets, this step does not need to be performed for users of DESY/WIPAC because Flarestack will automatically find the relevant files. Users without access to these files will be unable to use the _reference_sensitivity_ function, but will otherwise be able to perform analyses as usual.
