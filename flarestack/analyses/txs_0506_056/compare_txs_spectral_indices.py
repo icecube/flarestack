@@ -10,7 +10,7 @@ from flarestack.cluster import run_desy_cluster as rd
 from flarestack.core.minimisation import MinimisationHandler
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
-from flarestack.analyses.txs_0506_56.make_txs_catalogue import txs_cat_path
+from flarestack.analyses.txs_0506_056.make_txs_catalogue import txs_cat_path
 
 catalogue = np.load(txs_cat_path)
 
@@ -54,7 +54,7 @@ injection_length = 100
 
 for e_min in power_law_start_energy:
 
-    name_root = "analyses/txs_0506_56/compare_spectral_indices/Emin=" + \
+    name_root = "analyses/txs_0506_056/compare_spectral_indices/Emin=" + \
                 str(e_min) + "/"
 
     src_res = dict()
@@ -133,9 +133,9 @@ for e_min in power_law_start_energy:
 
 # rd.wait_for_cluster()
 
-for (e_min, cat_res) in cutoff_dict.iteritems():
+for (e_min, src_res) in cutoff_dict.iteritems():
 
-    name = "analyses/txs_0506_56/compare_spectral_indices/Emin=" + \
+    name = "analyses/txs_0506_056/compare_spectral_indices/Emin=" + \
           str(e_min) + "/"
 
     sens_livetime = [[] for _ in src_res]

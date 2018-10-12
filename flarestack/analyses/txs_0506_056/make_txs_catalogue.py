@@ -18,8 +18,8 @@ z = 0.3365
 lumdist = Distance(z=z).to("Mpc").value
 
 # Creates the .npy source catalogue
-catalogue = custom_sources(
-    name="TXS_0596+56",
+txs_catalogue = custom_sources(
+    name="TXS_0506+056",
     ra=ra,
     dec=dec,
     weight=1.,
@@ -29,5 +29,5 @@ catalogue = custom_sources(
     ref_time=t_start
 )
 
-txs_cat_path = transients_dir + "TXS_0506+56.npy"
-np.save(txs_cat_path, catalogue)
+txs_cat_path = transients_dir + "TXS_0506+056.npy"
+np.save(txs_cat_path, txs_catalogue)
