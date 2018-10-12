@@ -45,9 +45,13 @@ class LLH():
             # Sets precision for energy SoB
             self.precision = .1
 
-            # If there is an LLH energy pdf specified, uses that gamma as the
-            # default for weighting the detector acceptance.
-            self.default_gamma = self.energy_pdf.gamma
+            if self.fit_gamma:
+                self.default_gamma = np.nan
+
+            else:
+                # If there is an LLH energy pdf specified, uses that gamma as the
+                # default for weighting the detector acceptance.
+                self.default_gamma = self.energy_pdf.gamma
 
         # Checks gamma is not being fit without an energy PDF provided
         elif self.fit_gamma:
