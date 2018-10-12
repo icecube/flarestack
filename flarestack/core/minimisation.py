@@ -968,7 +968,7 @@ class MinimisationHandler:
             plt.figure(figsize=(8, 4 + 2*len(self.p0)))
 
             for i, bound in enumerate(bounds):
-                plt.subplot(len(self.p0), 1, 1 + i)
+                ax = plt.subplot(len(self.p0), 1, 1 + i)
 
                 best = list(res.x)
 
@@ -991,7 +991,6 @@ class MinimisationHandler:
                 plt.plot(n_range, y)
                 plt.xlabel(self.param_names[i])
                 plt.ylabel(r"$-2\log(\mathcal{L}/\mathcal{L}_{0})$")
-
 
                 print "PARAM:", self.param_names[i]
                 min_y = np.min(y)
@@ -1017,9 +1016,14 @@ class MinimisationHandler:
 
                 print "One Sigma interval between", l_lim, "and", u_lim
 
+                ax.axvspan(l_lim, u_lim, facecolor="grey",
+                            alpha=0.2)
+
             path = plot_output_dir(self.name) + name + "llh_scan.pdf"
 
-            plt.suptitle(os.path.basename(self.name[:-1]))
+            title = os.path.basename(self.name[:-1]).replace("_", " ")
+
+            plt.suptitle(title)
 
             try:
                 os.makedirs(os.path.dirname(path))
