@@ -310,7 +310,7 @@ class MockUnblindedInjector(Injector):
         return self.scramble_data()
 
 
-class UnblindedInjector(Injector):
+class TrueUnblindedInjector(Injector):
     """If the data is unblinded, then UnblindedInjector should be called. In
     this case, the create_dataset function simply returns the unblinded dataset.
     """
@@ -318,8 +318,6 @@ class UnblindedInjector(Injector):
         self.season = season
         self._raw_data = data_loader(season["exp_path"])
 
-    def create_dataset(self):
-
-        raise Exception("Attempting to run on unblinded data!")
+    def create_dataset(self, scale):
 
         return self._raw_data

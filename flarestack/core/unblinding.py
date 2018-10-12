@@ -24,12 +24,14 @@ def confirm():
 
 class Unblinder(MinimisationHandler):
 
-    def __init__(self, unblind_dict):
+    def __init__(self, unblind_dict, mock_unblind=True):
         self.unblind_dict = unblind_dict
-        unblind_dict["Mock Unblind"] = True
+        unblind_dict["Unblind"] = True
+        unblind_dict["Mock Unblind"] = mock_unblind
         unblind_dict["inj kwargs"] = {}
 
-        # self.check_unblind()
+        if not mock_unblind:
+            self.check_unblind()
         MinimisationHandler.__init__(self, unblind_dict)
 
         # Minimise likelihood and produce likelihood scans
@@ -40,7 +42,8 @@ class Unblinder(MinimisationHandler):
         print "\n"
 
         # Quantify the TS value significance
-        self.ts = self.res_dict["TS"][0]
+        # print type(np.array([self.res_dict["TS"]]))
+        self.ts = np.array([self.res_dict["TS"]])[0]
 
         print "Test Statistic of:", self.ts
 

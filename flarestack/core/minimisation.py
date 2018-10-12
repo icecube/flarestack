@@ -6,7 +6,8 @@ import os, os.path
 import argparse
 import cPickle as Pickle
 import scipy.optimize
-from flarestack.core.injector import Injector, MockUnblindedInjector
+from flarestack.core.injector import Injector, MockUnblindedInjector, \
+    TrueUnblindedInjector
 from flarestack.core.llh import LLH, FlareLLH
 from flarestack.shared import name_pickle_output_dir, fit_setup, inj_dir_name,\
     plot_output_dir, scale_shortener
@@ -111,8 +112,11 @@ class MinimisationHandler:
         # Unblinder class will have this attribute.
 
         if hasattr(self, "unblind_dict"):
+            self.unblind = True
             self.mock_unblind = mh_dict["Mock Unblind"]
+
         else:
+            self.unblind = False
             self.mock_unblind = False
 
         # For each season, we create an independent injector and a
@@ -129,6 +133,9 @@ class MinimisationHandler:
 
             if self.mock_unblind:
                 self.injectors[season["Name"]] = MockUnblindedInjector(
+                    season, sources, **self.inj_kwargs)
+            elif self.unblind:
+                self.injectors[season["Name"]] = TrueUnblindedInjector(
                     season, sources, **self.inj_kwargs)
             else:
                 self.injectors[season["Name"]] = Injector(
@@ -975,10 +982,6 @@ class MinimisationHandler:
 
                     best[i] = n
 
-                    print res
-
-                    print best
-
                     new = g(best)
                     try:
                         y.append(new[0][0])
@@ -1014,7 +1017,7 @@ class MinimisationHandler:
 
                 print "One Sigma interval between", l_lim, "and", u_lim
 
-            path = plot_output_dir(self.name) + name + "_llh_scan.pdf"
+            path = plot_output_dir(self.name) + name + "llh_scan.pdf"
 
             plt.suptitle(os.path.basename(self.name[:-1]))
 
