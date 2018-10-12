@@ -19,7 +19,7 @@ from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
 from astropy.coordinates import Distance
 
-name = "benchmarks/1ES_blazar_benchmark/"
+name = "analyses/benchmarks/1ES_blazar_benchmark/"
 
 analyses = dict()
 
