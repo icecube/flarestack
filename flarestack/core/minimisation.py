@@ -685,9 +685,11 @@ class MinimisationHandler:
 
             # Loop over each possible significant neutrino pair
 
-            for pair in pairs:
+            for i, pair in enumerate(pairs):
                 t_start = pair[0]
                 t_end = pair[1]
+
+                print i, "of", len(pairs)
 
                 # Calculate the length of the neutrino flare in livetime
 
@@ -946,94 +948,180 @@ class MinimisationHandler:
         """
 
         res_dict = self.run_trial(scale)
-        scans = [("", res_dict["res"], res_dict["f"])]
+
+        res = res_dict["res"]
+        g = res_dict["f"]
 
         bounds = list(self.bounds)
         if self.negative_n_s:
             bounds[0] = (-30, 30)
 
-        # #
-        # # g = self.trial_function(scale)
-        #
-        # res = scipy.optimize.minimize(
-        #     g, self.p0, bounds=self.bounds)
+        # Scan 1D Likelihood
 
-        print "Scan results:"
-        print res_dict
-        #
-        # raw_input("prompt")
+        plt.figure(figsize=(8, 4 + 2*len(self.p0)))
 
-        for (name, res, g) in scans:
+        u_ranges = []
 
-            plt.figure(figsize=(8, 4 + 2*len(self.p0)))
+        for i, bound in enumerate(bounds):
+            ax = plt.subplot(len(self.p0), 1, 1 + i)
 
-            for i, bound in enumerate(bounds):
-                ax = plt.subplot(len(self.p0), 1, 1 + i)
+            best = list(res.x)
+            min_llh = np.sum(float(g(best)))
 
-                best = list(res.x)
+            factor = 0.9
+            best[i] = bound[1]
 
-                n_range = np.linspace(max(bound[0], -100),
-                                      min(bound[1], 100), 1e2)
+            while (g(best) > (min_llh + 5.0)):
+                best[i] *= factor
 
-                # n_range = np.linspace(-30, 30, 1e2)
-                y = []
+            ur = min(bound[1], max(best[i], 0))
 
-                for n in n_range:
+            u_ranges.append(ur)
 
-                    best[i] = n
+            n_range = np.linspace(max(bound[0], -100), ur, 1e2)
 
-                    new = g(best)
-                    try:
-                        y.append(new[0][0])
-                    except IndexError:
-                        y.append(new)
+            # n_range = np.linspace(-30, 30, 1e2)
+            y = []
 
-                plt.plot(n_range, y)
-                plt.xlabel(self.param_names[i])
-                plt.ylabel(r"$-2\log(\mathcal{L}/\mathcal{L}_{0})$")
+            for n in n_range:
 
-                print "PARAM:", self.param_names[i]
-                min_y = np.min(y)
-                print "Minimum value of", min_y,
+                best[i] = n
 
-                min_index = y.index(min_y)
-                min_n = n_range[min_index]
-                print "at", min_n
-
-                l_y = np.array(y[:min_index])
+                new = g(best)/2.0
                 try:
-                    l_y = min(l_y[l_y > (min_y + 0.5)])
-                    l_lim = n_range[y.index(l_y)]
-                except ValueError:
-                    l_lim = 0
+                    y.append(new[0][0])
+                except IndexError:
+                    y.append(new)
 
-                u_y = np.array(y[min_index:])
-                try:
-                    u_y = min(u_y[u_y > (min_y + 0.5)])
-                    u_lim = n_range[y.index(u_y)]
-                except ValueError:
-                    u_lim = ">" + str(max(n_range))
+            plt.plot(n_range, y - min(y))
+            plt.xlabel(self.param_names[i])
+            plt.ylabel(r"$\Delta (-\log(\mathcal{L}/\mathcal{L}_{0})$)")
 
-                print "One Sigma interval between", l_lim, "and", u_lim
+            print "PARAM:", self.param_names[i]
+            min_y = np.min(y)
+            print "Minimum value of", min_y,
 
-                ax.axvspan(l_lim, u_lim, facecolor="grey",
-                            alpha=0.2)
+            min_index = y.index(min_y)
+            min_n = n_range[min_index]
+            print "at", min_n
 
-            path = plot_output_dir(self.name) + name + "llh_scan.pdf"
+            print "One Sigma interval between",
 
-            title = os.path.basename(self.name[:-1]).replace("_", " ")
-
-            plt.suptitle(title)
-
+            l_y = np.array(y[:min_index])
             try:
-                os.makedirs(os.path.dirname(path))
-            except OSError:
-                pass
+                l_y = min(l_y[l_y > (min_y + 0.5)])
+                l_lim = n_range[y.index(l_y)]
+                print l_lim,
+            except ValueError:
+                l_lim = min(n_range)
+                print "<"+str(l_lim),
 
-            plt.savefig(path)
-            plt.close()
+            print "and"
 
-            print "Saved to", path
+            u_y = np.array(y[min_index:])
+            try:
+                u_y = min(u_y[u_y > (min_y + 0.5)])
+                u_lim = n_range[y.index(u_y)]
+                print u_lim
+            except ValueError:
+                u_lim = max(n_range)
+                print ">" + str(u_lim)
+
+            ax.axvspan(l_lim, u_lim, facecolor="grey",
+                        alpha=0.2)
+            ax.set_ylim(bottom=0.0)
+
+        path = plot_output_dir(self.name) + "llh_scan.pdf"
+
+        title = os.path.basename(self.name[:-1]).replace("_", " ") + \
+            " Likelihood Scans"
+
+        plt.suptitle(title)
+
+        try:
+            os.makedirs(os.path.dirname(path))
+        except OSError:
+            pass
+
+        plt.savefig(path)
+        plt.close()
+
+        print "Saved to", path
+
+        # Scan 2D likelihood
+
+        if "Gamma" in self.param_names:
+
+            gamma_index = self.param_names.index("Gamma")
+
+            gamma_bounds = bounds[gamma_index]
+
+            x = np.linspace(gamma_bounds[0], gamma_bounds[1])
+
+            mask = np.array(["n_s" in b for b in self.param_names])
+
+            n_s_bounds = np.array(self.bounds)[mask]
+
+            for j, bound in enumerate(n_s_bounds):
+                best = list(res.x)
+                plt.figure()
+                ax = plt.subplot(111)
+
+                index = np.arange(len(self.param_names))[mask][j]
+
+                plt.xlabel(r"Spectral Index ($\gamma$)")
+
+                param_name = np.array(self.param_names)[mask][j]
+
+                plt.ylabel(param_name)
+
+                y = np.linspace(max(bound[0], -100),
+                                np.array(u_ranges)[index], 1e2)
+
+                X, Y = np.meshgrid(x, y[::-1])
+                Z = []
+
+                for gamma in x:
+                    best[gamma_index] = gamma
+                    z_row = []
+
+                    for n in y:
+                        best[index] = n
+                        z_row.append((g(best) - g(res.x))/2.0)
+
+                    Z.append(z_row[::-1])
+
+                Z = np.array(Z).T
+
+                levels = [0.5, 1.0, 2.5]
+
+                plt.imshow(Z, aspect="auto",
+                           extent=(x[0], x[-1], y[0], y[-1]),
+                           interpolation='bilinear')
+                plt.colorbar()
+                CS = ax.contour(X, Y, Z, levels=levels, colors="white")
+
+                fmt = {}
+                strs = [r'1$\sigma$', r'2$\sigma$', r'5$\sigma$']
+                for l, s in zip(CS.levels, strs):
+                    fmt[l] = s
+
+                ax.clabel(CS, fmt=fmt, inline=1, fontsize=10, levels=levels,
+                          color="white")
+
+                path = plot_output_dir(self.name) + (param_name + "_")[4:] + \
+                       "contour_scan.pdf"
+
+                title = os.path.basename(self.name[:-1]).replace("_", " ") + \
+                        " Contour Scans"
+
+                plt.suptitle(title)
+
+                plt.savefig(path)
+                plt.close()
+
+                print "Saved to", path
+
 
         return res_dict
 
@@ -1071,15 +1159,6 @@ class MinimisationHandler:
                 )
 
                 coincident_data = spatial_coincident_data[t_mask]
-
-                # print max(coincident_data["logE"]), min(coincident_data["logE"])
-                # raw_input("prompt")
-                #
-                # col = (coincident_data["logE"] - 2.0)/2.5
-                # col[col > 1.] = 1.
-                # col[col < 0.] = 0.
-
-                # print col, cmap(col)
 
                 SoB = llh.estimate_significance(coincident_data, source)
 
