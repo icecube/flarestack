@@ -37,7 +37,6 @@ bkg_spline_dir = input_dir + "bkg_splines/"
 # Check host and specify path to dataset storage
 # ==============================================================================
 
-
 host = socket.gethostname()
 
 if "ifh.de" in host:
