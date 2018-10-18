@@ -47,7 +47,7 @@ All required dependencies can be found using the IceCube py2-v3 environment. The
  
 ### Right, anyway, I've now downloaded Flarestack. Can I use it right away?
  
-Unfortunately, you can't do Science quite yet. There is an additional step, in which multiple recycleable values are computed once, and will be frequently reused later on. To perform this step, you need to firstly download some data+MC. That can be bypassed if you are working on the DESY /afs/ filesystem, or on the cobalt machinces at WIPAC, because Flarestack will instead find the relevant IceCube files automatically. Either way, you then need to select a space to save these precomputed/stored values. Since they can be regenerated at any time, a scratch space is ideal for this purpose. You then need to run a script such as the following:
+Unfortunately, you can't do Science quite yet. There is an additional step, in which multiple recycleable values are computed once, and will be frequently reused later on. To perform this step, you need to firstly download some data+MC. IceCube users can download these files from Madison under ```/data/ana/analyses/```, where the appropriate directory naming convention is then mirrored by the ```flarestack/data/IceCube/``` structure. That can be bypassed if you are working on the DESY /afs/ filesystem, or on the cobalt machinces at WIPAC, because Flarestack will instead find the relevant IceCube files automatically. Either way, you then need to select a space to save these precomputed/stored values. Since they can be regenerated at any time, a scratch space is ideal for this purpose. You then need to run a script such as the following:
 
 ```python
  from flarestack.precompute import run_precompute, set_scratch_directory
