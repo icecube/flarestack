@@ -57,8 +57,8 @@ Unfortunately, you can't do Science quite yet. There is an additional step, in w
 If you are *not* using the DESY/WIPAC datasets, you'll need to add the following lines to your code:
 
 ```python
-from flarestack.shared import set_dataset_dir
-set_dataset_dir("/path/to/datasets/")
+from flarestack.shared import set_dataset_directory
+set_dataset_directory("/path/to/datasets/")
 ```
 
 In any case, you then need the next to lines to begin setup:
