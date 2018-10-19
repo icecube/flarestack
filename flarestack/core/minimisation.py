@@ -995,7 +995,7 @@ class MinimisationHandler:
 
             plt.plot(n_range, y - min(y))
             plt.xlabel(self.param_names[i])
-            plt.ylabel(r"$\Delta (-\log(\mathcal{L}/\mathcal{L}_{0})$)")
+            plt.ylabel(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$")
 
             print "PARAM:", self.param_names[i]
             min_y = np.min(y)
@@ -1093,12 +1093,12 @@ class MinimisationHandler:
 
                 Z = np.array(Z).T
 
-                levels = [0.5, 1.0, 2.5]
+                levels = 0.5 * np.array([1.0, 2.0, 5.0])**2
 
-                plt.imshow(Z, aspect="auto",
+                plt.imshow(Z, aspect="auto", cmap="jet_r",
                            extent=(x[0], x[-1], y[0], y[-1]),
                            interpolation='bilinear')
-                plt.colorbar()
+                cbar = plt.colorbar()
                 CS = ax.contour(X, Y, Z, levels=levels, colors="white")
 
                 fmt = {}
@@ -1108,6 +1108,8 @@ class MinimisationHandler:
 
                 ax.clabel(CS, fmt=fmt, inline=1, fontsize=10, levels=levels,
                           color="white")
+                cbar.set_label(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
+                               rotation=90)
 
                 path = plot_output_dir(self.name) + (param_name + "_")[4:] + \
                        "contour_scan.pdf"
@@ -1115,13 +1117,17 @@ class MinimisationHandler:
                 title = os.path.basename(self.name[:-1]).replace("_", " ") + \
                         " Contour Scans"
 
+                plt.scatter(res.x[gamma_index],res.x[index],  color="white",
+                            marker="*")
+
+                plt.grid(color="white", linestyle="--", alpha=0.5)
+
                 plt.suptitle(title)
 
                 plt.savefig(path)
                 plt.close()
 
                 print "Saved to", path
-
 
         return res_dict
 
@@ -1205,6 +1211,12 @@ class MinimisationHandler:
 
             path = plot_output_dir(self.name) + source["Name"] + \
                    "_neutrino_lightcurve.pdf"
+
+            try:
+                os.makedirs(os.path.dirname(path))
+            except OSError:
+                pass
+
             plt.savefig(path)
             plt.close()
 
