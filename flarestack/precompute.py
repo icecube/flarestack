@@ -154,7 +154,7 @@ if __name__ == "__main__":
         del scratch_path
         set_scratch_directory(cfg.scratch_path)
 
-    from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v1
+    from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 
     icecube_data = txs_sample_v1
 
