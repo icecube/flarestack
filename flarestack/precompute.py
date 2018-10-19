@@ -140,7 +140,8 @@ def run_precompute(all_data):
 
 if __name__ == "__main__":
 
-    from flarestack.config import scratch_path
+    with open(config_path, "r") as f:
+        scratch_path = f.readline()[16:-2]
 
     parser = argparse.ArgumentParser()
 
@@ -153,7 +154,6 @@ if __name__ == "__main__":
     if cfg.scratch_path != scratch_path:
         del scratch_path
         set_scratch_directory(cfg.scratch_path)
-        reload(scratch_path)
 
     from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 
