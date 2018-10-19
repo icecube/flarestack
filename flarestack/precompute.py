@@ -17,7 +17,7 @@ def set_scratch_directory(path):
         path += "/"
 
     if not os.path.isdir(path):
-        raise Exception("Attempting to set invalid path for datasets. "
+        raise Exception("Attempting to set invalid path for scratch. "
                         "Directory", path, "does not exist!")
     print "Setting scratch path to", path
 
@@ -153,6 +153,7 @@ if __name__ == "__main__":
     if cfg.scratch_path != scratch_path:
         del scratch_path
         set_scratch_directory(cfg.scratch_path)
+        reload(scratch_path)
 
     from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 

@@ -46,7 +46,7 @@ if "ifh.de" in host:
 elif "icecube.wisc.edu" in host:
     dataset_dir = "/data/ana/analyses/"
     skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
-    print "Loading datasets from", dataset_dir, "(IceCube)"
+    print "Loading datasets from", dataset_dir, "(WIPAC)"
 else:
     pass
 
