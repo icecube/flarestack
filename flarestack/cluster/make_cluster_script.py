@@ -6,7 +6,7 @@ username = os.path.basename(os.environ['HOME'])
 
 root_dir = os.path.dirname(fs_dir[:-1])
 
-cluster_dir = fs_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
+cluster_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 submit_file = cluster_dir + "SubmitDESY.sh"
 
@@ -55,4 +55,7 @@ def make_submit_file():
 
 
 if not os.path.exists(submit_file):
+    make_submit_file()
+
+if __name__=="__main__":
     make_submit_file()
