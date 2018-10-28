@@ -70,6 +70,10 @@ def set_dataset_directory(path):
 gamma_range = [1., 4.]
 gamma_precision = .025
 
+# Sets the minimum angular error
+
+min_angular_err = np.deg2rad(0.2)
+
 
 def name_pickle_output_dir(name):
     return pickle_dir + name

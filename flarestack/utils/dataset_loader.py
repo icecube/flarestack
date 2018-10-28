@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.lib.recfunctions import append_fields
+from flarestack.shared import min_angular_err
 
 
 def data_loader(data_path):
@@ -27,6 +28,8 @@ def data_loader(data_path):
         dataset = append_fields(
             dataset, 'sinDec', sinDec, usemask=False, dtypes=[np.float]
         )
+
+    dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
 
     return dataset
 

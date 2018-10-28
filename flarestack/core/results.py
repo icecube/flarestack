@@ -93,6 +93,11 @@ class ResultsHandler:
         except RuntimeError:
             pass
 
+        # try:
+        #     self.plot_bias()
+        # except KeyError:
+        #     pass
+
     def astro_values(self, e_pdf_dict):
         """Function to convert the values calculated for sensitivity and
         discovery potential, which are given in terms of flux at the
@@ -445,6 +450,59 @@ class ResultsHandler:
             plot_fit_results(self.results[scale][source]["Parameters"],
                              param_path, self.param_names,
                              inj=inj)
+
+    def plot_bias(self):
+        x = sorted(self.results.keys())
+        raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
+        x = [k_to_flux(float(j)) for j in raw_x]
+
+        print self.param_names
+
+        print self.inj
+
+        for i, param in enumerate(self.param_names):
+            if ("n_s" in param) or (param=="Gamma"):
+
+                plt.figure()
+
+                ax = plt.subplot(111)
+
+                meds = []
+                ulims = []
+                llims = []
+                trues = []
+
+                for scale in raw_x:
+                    vals = self.results[scale]["Parameters"][i]
+                    med = np.median(vals)
+                    meds.append(med)
+                    sig = np.std(vals)
+                    ulims.append(med + sig)
+                    llims.append(med - sig)
+
+                    true_dict = self.inj[scale]
+
+                    if len(true_dict) == 1:
+                        true = true_dict.itervalues().next()[param]
+                        trues.append(true)
+                plt.scatter(x, meds, color="orange")
+                plt.plot(x, meds, color="black")
+                plt.plot(x, trues, linestyle="--", color="red")
+                plt.fill_between(x, ulims, llims, alpha=0.5, color="orange")
+
+                ax.set_xlim(left=0.0, right=max(x))
+                ax.set_ylim(bottom=0.0)
+
+                plt.xlabel(r"Flux ($GeV cm^{-2}$)")
+                plt.ylabel(param)
+
+                savepath = self.plot_dir + "bias_" + param + ".pdf"
+                print "Saving bias plot to", savepath
+                plt.savefig(savepath)
+                plt.close()
+
+
+
 
 
 

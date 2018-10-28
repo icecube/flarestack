@@ -10,7 +10,7 @@ from flarestack.utils.make_SoB_splines import load_spline, \
 from flarestack.core.energy_PDFs import EnergyPDF
 
 
-class LLH():
+class LLH:
     """General  LLH class.
     """
 
@@ -49,8 +49,8 @@ class LLH():
                 self.default_gamma = np.nan
 
             else:
-                # If there is an LLH energy pdf specified, uses that gamma as the
-                # default for weighting the detector acceptance.
+                # If there is an LLH energy pdf specified, uses that gamma as
+                # the default for weighting the detector acceptance.
                 self.default_gamma = self.energy_pdf.gamma
 
         # Checks gamma is not being fit without an energy PDF provided
@@ -138,8 +138,6 @@ class LLH():
         :return: Mask to remove
         """
         veto = np.ones_like(data[self.season["MJD Time Key"]], dtype=np.bool)
-
-        # print min(data["timeMJD"]), max(data["timeMJD"])
 
         for source in sources:
 
@@ -280,13 +278,11 @@ class LLH():
         for i, n_j in enumerate(all_n_j):
             # Switches off Energy term for negative n_s, which should in theory
             # be a continuous change that does not alter the likelihood for
-            # n_s > 0(as it is not included for n_s=0). However,
-            # it nonetheless seems to  materially alter the TS distribution
-            # for positive values of n_s, by affecting the best fit position
-            # of the minimiser.
+            # n_s > 0 (as it is not included for n_s=0).
             if n_j < 0:
                 x.append(1 + ((n_j / n_all) * (SoB_spacetime[i] - 1.)))
             else:
+
                 x.append(1 + ((n_j / n_all) * (
                     SoB_energy[i] * SoB_spacetime[i] - 1.)))
 
@@ -307,7 +303,8 @@ class LLH():
         # Definition of test statistic
         return 2. * np.sum(llh_value)
 
-    def assume_background(self, n_s, n_coincident, n_all):
+    @staticmethod
+    def assume_background(n_s, n_coincident, n_all):
         """To save time with likelihood calculation, it can be assumed that
         all events defined as "non-coincident", because of distance in space
         and time to the source, are in fact background events. This is
@@ -350,7 +347,8 @@ class LLH():
 
         return sig_pdf
 
-    def signal_spatial(self, source, cut_data):
+    @staticmethod
+    def signal_spatial(source, cut_data):
         """Calculates the angular distance between the source and the
         coincident dataset. Uses a Gaussian PDF function, centered on the
         source. Returns the value of the Gaussian at the given distances.
@@ -587,12 +585,12 @@ class FlareLLH(LLH):
 
         return coincident_data[mask]
 
-    def create_flare(self, season, sources, **kwargs):
-        spline_dict = dict()
-        spline_dict["Background spatial"] = self.bkg_spatial
-        spline_dict["SoB_spline_2D"] = self.SoB_spline_2Ds
-        kwargs["LLH Time PDF"] = None
-
-        flare_llh = FlareLLH(season, sources, spline_dict, **kwargs)
-
-        return flare_llh
+    # def create_flare(self, season, sources, **kwargs):
+    #     spline_dict = dict()
+    #     spline_dict["Background spatial"] = self.bkg_spatial
+    #     spline_dict["SoB_spline_2D"] = self.SoB_spline_2Ds
+    #     kwargs["LLH Time PDF"] = None
+    #
+    #     flare_llh = FlareLLH(season, sources, spline_dict, **kwargs)
+    #
+    #     return flare_llh
