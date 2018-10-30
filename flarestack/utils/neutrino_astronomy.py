@@ -5,6 +5,7 @@ import math
 from flarestack.shared import catalogue_dir
 from astropy.coordinates import Distance
 from flarestack.core.injector import Injector
+from flarestack.core.energy_PDFs import EnergyPDF
 
 e_0 = 1 * u.GeV
 
@@ -27,70 +28,41 @@ def find_zfactor(distance):
     return zfactor
 
 
-def fluence_integral(gamma, e_min=100*u.GeV, e_max=10*u.PeV):
-    """Performs an integral for fluence over a given energy range. This is
-    the integral of E*
-
-    :param gamma:
-    :param e_min:
-    :param e_max:
-    :return:
-    """
-    e_min = e_min.to(u.GeV)
-    e_max = e_max.to(u.GeV)
-    if gamma == 2:
-        e_integral = np.log10(e_max / e_min) * (u.GeV ** 2)
-    else:
-        power = 2 - gamma
-
-        # Get around astropy power rounding error (does not give
-        # EXACTLY 2)
-
-        e_integral = ((1. / power) * (e_0 ** gamma) * (
-                (e_max ** power) - (e_min ** power))
-                      ).value * u.GeV ** 2
-
-    return e_integral
+# def fluence_integral(gamma, e_min=100*u.GeV, e_max=10*u.PeV):
+#     """Performs an integral for fluence over a given energy range. This is
+#     the integral of E*
+#
+#     :param gamma:
+#     :param e_min:
+#     :param e_max:
+#     :return:
+#     """
+#     e_min = e_min.to(u.GeV)
+#     e_max = e_max.to(u.GeV)
+#     if gamma == 2:
+#         e_integral = np.log(e_max / e_min) * (u.GeV ** 2)
+#     else:
+#         power = 2 - gamma
+#
+#         # Get around astropy power rounding error (does not give
+#         # EXACTLY 2)
+#
+#         e_integral = ((1. / power) * (e_0 ** gamma) * (
+#                 (e_max ** power) - (e_min ** power))
+#                       ).value * u.GeV ** 2
+#
+#     return e_integral
 
 
 def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
-    gamma = e_pdf_dict["Gamma"]
+    energy_PDF = EnergyPDF.create(e_pdf_dict)
 
     astro_res = dict()
 
-    # Set the minimum and maximum energy for integration/detection
+    phi_integral = energy_PDF.flux_integral()
 
-    if "E Min" in e_pdf_dict.keys():
-        e_min = e_pdf_dict["E Min"] * u.GeV
-    else:
-        e_min = (100 * u.GeV)
-
-    if "E Max" in e_pdf_dict.keys():
-        e_max = e_pdf_dict["E Max"] * u.GeV
-    else:
-        e_max = (10 * u.PeV).to(u.GeV)
-
-    # Integrate over flux to get dN/dt
-
-    phi_power = 1 - gamma
-
-    phi_integral = ((1. / phi_power) * (e_0 ** gamma) * (
-            (e_max ** phi_power) - (e_min ** phi_power))).value * u.GeV
-
-    # Integrate over energy to get dE/dt
-
-    if gamma == 2:
-        e_integral = np.log(e_max / e_min) * (u.GeV ** 2)
-    else:
-        power = 2 - gamma
-
-        # Get around astropy power rounding error (does not give
-        # EXACTLY 2)
-
-        e_integral = ((1. / power) * (
-                (e_max ** power) - (e_min ** power))
-                      ).value * u.GeV ** 2
+    e_integral = energy_PDF.fluence_integral() * u.GeV
 
     # Calculate fluence
 
@@ -100,14 +72,14 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     print "Total Fluence", tot_fluence
 
-    src_1 = catalogue[0]
+    src_1 = np.sort(catalogue, order="Distance (Mpc)")[0]
 
     dist_weight = src_1["Distance (Mpc)"]**-2 / np.sum(
         catalogue["Distance (Mpc)"]**-2)
 
-    si = flux * dist_weight / (u. GeV * u.cm ** 2 * u.s)
+    si = flux * dist_weight / (u.cm ** 2 * u.s)
 
-    astro_res["Flux (per source)"] = si
+    astro_res["Flux from nearest source"] = si
 
     lumdist = src_1["Distance (Mpc)"] * u.Mpc
 
@@ -120,8 +92,9 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
     N = dNdA * area
 
     print "There would be", '{:.3g}'.format(N), "neutrinos emitted."
-    print "The energy range was assumed to be between", e_min,
-    print "and", e_max, "with a spectral index of", gamma
+    print "The energy range was assumed to be between", \
+        energy_PDF.integral_e_min,
+    print "and", energy_PDF.integral_e_max
 
     # Energy requires a 1/(1+z) factor
 
@@ -141,68 +114,73 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
     return astro_res
 
 
+# def calculate_neutrinos(source, season, inj_kwargs):
+#
+#     print source
+#     inj = Injector(season, [source], **inj_kwargs)
+#
+#     print "\n"
+#     print source["Name"], season["Name"]
+#     print "\n"
+#
+#     energy_pdf = inj_kwargs["Injection Energy PDF"]
+#
+#     energy = energy_pdf["Energy Flux"] * inj.time_pdf.effective_injection_time(
+#         source)
+#     print "Neutrino Energy is", energy
+#
+#     lumdist = source["Distance (Mpc)"] * u.Mpc
+#
+#     print "Source is", lumdist, "away"
+#
+#     area = 4 * math.pi * (lumdist.to(u.cm)) ** 2
+#
+#     nu_flu = energy.to(u.GeV)/area
+#
+#     print "Neutrino Fluence is", nu_flu
+#
+#     # if "E Min" in energy_pdf.keys():
+#     #     e_min = energy_pdf["E Min"] * u.GeV
+#     # else:
+#     #     e_min = (100 * u.GeV)
+#     #
+#     # if "E Max" in energy_pdf.keys():
+#     #     e_max = energy_pdf["E Max"] * u.GeV
+#     # else:
+#     #     e_max = (10 * u.PeV).to(u.GeV)
+#
+#     e_int = energy_pdf.fluence_integral()
+#
+#     flux_1GeV = nu_flu/e_int
+#
+#     print "Flux at 1GeV would be", flux_1GeV, "\n"
+#
+#     source_mc, omega, band_mask = inj.select_mc_band(inj._mc, source)
+#
+#     source_mc["ow"] = flux_1GeV * (inj.mc_weights[band_mask] / omega)
+#     n_inj = np.sum(source_mc["ow"])
+#
+#     print ""
+#
+#     print "This corresponds to", n_inj, "neutrinos"
+#
+#     return n_inj
+
+
 def calculate_neutrinos(source, season, inj_kwargs):
 
     print source
     inj = Injector(season, [source], **inj_kwargs)
-
-    print "\n"
-    print source["Name"], season["Name"]
-    print "\n"
-
-    energy_pdf = inj_kwargs["Injection Energy PDF"]
-
-    energy = energy_pdf["Energy Flux"] * inj.time_pdf.effective_injection_time(
-        source)
-    print "Neutrino Energy is", energy
-
-    lumdist = source["Distance (Mpc)"] * u.Mpc
-
-    print "Source is", lumdist, "away"
-
-    area = 4 * math.pi * (lumdist.to(u.cm)) ** 2
-
-    nu_flu = energy.to(u.GeV)/area
-
-    print "Neutrino Fluence is", nu_flu
-
-    if "E Min" in energy_pdf.keys():
-        e_min = energy_pdf["E Min"] * u.GeV
-    else:
-        e_min = (100 * u.GeV)
-
-    if "E Max" in energy_pdf.keys():
-        e_max = energy_pdf["E Max"] * u.GeV
-    else:
-        e_max = (10 * u.PeV).to(u.GeV)
-
-    e_int = fluence_integral(energy_pdf["Gamma"], e_min, e_max)
-
-    flux_1GeV = nu_flu/e_int
-
-    print "Flux at 1GeV would be", flux_1GeV, "\n"
-
-    source_mc, omega, band_mask = inj.select_mc_band(inj._mc, source)
-
-    source_mc["ow"] = flux_1GeV * (inj.mc_weights[band_mask] / omega)
-    n_inj = np.sum(source_mc["ow"])
-
-    print ""
-
-    print "This corresponds to", n_inj, "neutrinos"
-
-    return n_inj
-
-
-def calculate_neutrinos_from_flux(source, season, inj_kwargs):
-
-    print source
-    inj = Injector(season, [source], **inj_kwargs)
     energy_pdf = inj_kwargs["Injection Energy PDF"]
 
     print "\n"
     print source["Name"], season["Name"]
     print "\n"
+
+    if "Flux at 1GeV" not in energy_pdf.keys():
+        # if "Source Energy (erg)" in energy_pdf.keys():
+        energy_pdf["Flux at 1GeV"] = \
+            energy_pdf["Source Energy (erg)"]/energy_pdf.fluence_integral()
 
     flux_1GeV = energy_pdf["Flux at 1GeV"] * \
                inj.time_pdf.effective_injection_time(
