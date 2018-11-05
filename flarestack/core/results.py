@@ -117,12 +117,29 @@ class ResultsHandler:
         discovery potential
         """
 
-        astro_sens = calculate_astronomy(self.sensitivity, e_pdf_dict,
-                                         self.sources)
-        astro_disc = calculate_astronomy(self.disc_potential, e_pdf_dict,
-                                         self.sources)
+        astro_sens = self.nu_astronomy(self.sensitivity, e_pdf_dict)
+        astro_disc = self.nu_astronomy(self.disc_potential, e_pdf_dict)
 
         return astro_sens, astro_disc
+
+    def nu_astronomy(self, flux, e_pdf_dict):
+        """Function to convert a local flux in the detector at 1GeV to physical
+        quantities for a source of mean luminosity. The
+        fluxes are integrated over an energy range, either specified in
+        e_pdf_dict, or by default between 100GeV and 10PeV. They are then
+        scaled by the luminosity distance to source, giving the mean
+        luminosity of the sources in the catalogue. The assumption is that
+        the sources are standard candles, so this value would be the same for
+        each source, and is thus only calculated once. To convert further from
+        this mean luminosity to the luminosity of a specific source,
+        the values must be multiplied by the "relative injection weight" of
+        the source, which has a mean of 1.
+
+        :param flux: Flux to be converted
+        :param e_pdf_dict: Dictionary containing energy PDF information
+        :return: Value for the neutrino luminosity
+        """
+        return calculate_astronomy(flux, e_pdf_dict, self.sources)
 
     def clean_merged_data(self):
         """Function to clear cache of all data"""
@@ -238,15 +255,7 @@ class ResultsHandler:
         """Uses the results of the background trials to find the median TS
         value, determining the sensitivity threshold. This sensitivity is
         not necessarily zero, for example with negative n_s, fitting of
-        weights or the flare search method. Uses the values of
-        injection trials to fit an 1-exponential decay function to the
-        overfluctuations, allowing for calculation of the sensitivity.
-        Where the injected flux was not sufficient to reach the
-        sensitivity, extrapolation will be used instead of interpolation,
-        but this will obviously have larger associated errors. If
-        extrapolation is used, self.extrapolated_sens is set to true. In
-        either case, a plot of the overfluctuations as a function of the
-        injected signal will be made.
+        weights or the flare search method.
         """
 
         try:
@@ -259,6 +268,60 @@ class ResultsHandler:
 
         bkg_median = np.median(bkg_ts)
         self.bkg_median = bkg_median
+
+        savepath = self.plot_dir + "sensitivity.pdf"
+
+        self.sensitivity, self.extrapolated_sens = self.find_overfluctuations(
+            bkg_median, savepath)
+
+        if self.extrapolated_sens:
+            print "EXTRAPOLATED",
+
+        print "Sensitivity is", "{0:.3g}".format(self.sensitivity)
+
+    def set_upper_limit(self, ts_val, savepath):
+        """Set an upper limit, based on a Test Statistic value from
+        unblinding, as well as a
+
+        :param ts_val: Test Statistic Value
+        :param savepath: Path to save plot
+        :return: Upper limit, and whether this was extrapolated
+        """
+
+        try:
+            bkg_dict = self.results[scale_shortener(0.0)]
+        except KeyError:
+            print "No key equal to '0'"
+            return
+
+        bkg_ts = bkg_dict["TS"]
+        bkg_median = np.median(bkg_ts)
+
+        # Set an upper limit based on the Test Statistic value for an
+        # overfluctuation, or the median background for an underfluctuation.
+
+        ref_ts = max(ts_val, bkg_median)
+
+        ul, extrapolated = self.find_overfluctuations(
+            ref_ts, savepath)
+
+        if extrapolated:
+            print "EXTRAPOLATED",
+
+        print "Upper limit is", "{0:.3g}".format(ul)
+        return ul, extrapolated
+
+    def find_overfluctuations(self, ts_val, savepath):
+        """Uses the values of injection trials to fit an 1-exponential decay
+        function to the overfluctuations, allowing for calculation of the
+        sensitivity. Where the injected flux was not sufficient to reach the
+        sensitivity, extrapolation will be used instead of interpolation,
+        but this will obviously have larger associated errors. If
+        extrapolation is used, self.extrapolated_sens is set to true. In
+        either case, a plot of the overfluctuations as a function of the
+        injected signal will be made.
+        """
+
         x = sorted(self.results.keys())
         x_acc = []
         y = []
@@ -268,10 +331,10 @@ class ResultsHandler:
         for scale in x:
             print scale,
             ts_array = np.array(self.results[scale]["TS"])
-            frac = float(len(ts_array[ts_array > bkg_median])) / (float(len(
+            frac = float(len(ts_array[ts_array > ts_val])) / (float(len(
                 ts_array)))
             print "Fraction of overfluctuations is", "{0:.2f}".format(frac),
-            print "above", "{0:.2f}".format(bkg_median),
+            print "above", "{0:.2f}".format(ts_val),
             print "(", len(ts_array), ")"
 
             if scale == scale_shortener(0.0):
@@ -300,37 +363,31 @@ class ResultsHandler:
         best_a = scipy.optimize.curve_fit(
             f, x, y,  p0=[1./max(x)])[0][0]
 
-        # print "best_a", best_a
-        # raw_input("prompt")
-
         def best_f(x):
             return f(x, best_a)
 
-        self.sensitivity = k_to_flux((1./best_a) * np.log(b / (1 - threshold)))
+        fit = k_to_flux((1./best_a) * np.log(b / (1 - threshold)))
 
-        if self.sensitivity > max(x_flux):
-            self.extrapolated_sens = True
+        if fit > max(x_flux):
+            extrapolated = True
+        else:
+            extrapolated = False
 
         xrange = np.linspace(0.0, 1.1 * max(x), 1000)
-
-        savepath = self.plot_dir + "sensitivity.pdf"
 
         plt.figure()
         plt.scatter(x_flux, y, color="black")
         plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
         plt.axhline(threshold, lw=1, color="red", linestyle="--")
-        plt.axvline(self.sensitivity, lw=2, color="red")
+        plt.axvline(fit, lw=2, color="red")
         plt.ylim(0., 1.)
         plt.xlim(0., k_to_flux(max(xrange)))
-        plt.ylabel(r'Overfluctuations relative to median $\lambda_{bkg}$')
+        plt.ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
         plt.xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
         plt.savefig(savepath)
         plt.close()
 
-        if self.extrapolated_sens:
-            print "EXTRAPOLATED",
-
-        print "Sensitivity is", "{0:.3g}".format(self.sensitivity)
+        return fit, extrapolated
 
     def find_disc_potential(self):
 

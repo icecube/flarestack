@@ -363,6 +363,7 @@ def plot_expanded_negative(ts_array, path):
     plt.savefig(path[:-4] + "_expanded.pdf")
     plt.close()
 
+
 def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
                                     ts_val=None):
 
@@ -411,6 +412,12 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
     if ts_val is not None:
         print "\n"
+
+        if not isinstance(ts_val, float):
+            ts_val = float(ts_val[0])
+
+        # print
+
         print "Quantifying TS:", "{:.2f}".format(ts_val)
 
         if ts_val > np.median(ts_array):

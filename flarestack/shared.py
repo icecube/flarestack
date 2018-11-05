@@ -2,6 +2,7 @@ import os
 import numpy as np
 import config
 import socket
+import cPickle as Pickle
 
 # ==============================================================================
 # Directory substructure creation
@@ -166,3 +167,35 @@ def scale_shortener(scale):
     :return: Flux Scale to 4.s.f
     """
     return '{0:.4G}'.format(scale)
+
+
+def analysis_pickle_path(name):
+    """Converts a unique Minimisation Handler name to a corresponding analysis
+    config pickle. This pickle can be used to run a Minimisation Handler.
+
+    :param name: unique Minimisation Handler name
+    :return: Path to analysis pickle
+    """
+    analysis_path = analysis_dir + name
+
+    try:
+        os.makedirs(analysis_path)
+    except OSError:
+        pass
+
+    pkl_file = analysis_path + "dict.pkl"
+    return pkl_file
+
+
+def make_analysis_pickle(mh_dict):
+    """Takes a Minimisation Handler Dictionary, finds the corresponding
+    analysis pickle path, and saves the dictionary to this path
+
+    :param mh_dict: Minimisation Handler dictionary
+    """
+    name = mh_dict["name"]
+
+    pkl_file = analysis_pickle_path(name)
+
+    with open(pkl_file, "wb") as f:
+        Pickle.dump(mh_dict, f)

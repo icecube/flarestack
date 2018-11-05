@@ -67,15 +67,9 @@ class TimePDF:
                 stitch_t.append(t)
                 stitch_f.append(f[i])
 
-            # print stitch_t
-            # print stitch_f
-            # raw_input("input")
-
         if stitch_t != sorted(stitch_t):
-            print "Error!"
+            print "Error in ordering GoodRunList!"
             raw_input("prompt")
-
-        # stitch = [(t, val) for t in t_range for f in val]
 
         mjd.append(1e5)
         livetime.append(total_t)
@@ -228,6 +222,16 @@ class Steady(TimePDF):
 
         return season_length * (60 * 60 * 24)
 
+    def raw_injection_time(self, source):
+        """Calculates the 'raw injection time' which is the injection time
+        assuming a detector with 100% uptime. Useful for calculating source
+        emission times for source-frame energy estimation.
+
+        :param source: Source to be considered
+        :return: Time in seconds for 100% uptime
+        """
+        return (self.t1 - self.t0) * (60 * 60 * 24)
+
     def sig_t0(self, source):
         """Calculates the starting time for the window, equal to the
         source reference time in MJD minus the length of the pre-reference-time
@@ -351,6 +355,18 @@ class Box(TimePDF):
         time = (t1 - t0) * 60 * 60 * 24
 
         return max(time, 0.)
+
+    def raw_injection_time(self, source):
+        """Calculates the 'raw injection time' which is the injection time
+        assuming a detector with 100% uptime. Useful for calculating source
+        emission times for source-frame energy estimation.
+
+        :param source: Source to be considered
+        :return: Time in seconds for 100% uptime
+        """
+
+        diff = max(self.sig_t1(source) - self.sig_t0(source), 0)
+        return diff * (60 * 60 * 24)
 
 
 @TimePDF.register_subclass('FixedRefBox')
