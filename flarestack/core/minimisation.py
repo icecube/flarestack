@@ -1,7 +1,7 @@
 import numpy as np
 import resource
 import random
-import sys
+from sys import stdout
 import os, os.path
 import argparse
 import cPickle as Pickle
@@ -200,8 +200,11 @@ class MinimisationHandler:
             }
 
             if "Gamma" in self.param_names:
-                default["Gamma"] = self.inj_kwargs["Injection Energy PDF"][
-                    "Gamma"]
+                try:
+                    default["Gamma"] = self.inj_kwargs["Injection Energy PDF"][
+                        "Gamma"]
+                except KeyError:
+                    default["Gamma"] = np.nan
 
             if self.flare:
                 fs = [inj.time_pdf.sig_t0(source)
@@ -689,8 +692,6 @@ class MinimisationHandler:
                 t_start = pair[0]
                 t_end = pair[1]
 
-                print i, "of", len(pairs)
-
                 # Calculate the length of the neutrino flare in livetime
 
                 flare_time = np.array(
@@ -714,6 +715,9 @@ class MinimisationHandler:
                 elif flare_length > max_flare:
                     # print "Continuing because flare too long"
                     continue
+
+                stdout.write("\r" + str(i) + " of " + str(len(pairs)))
+                stdout.flush()
 
                 # Marginalisation term is length of flare in livetime
                 # divided by max flare length in livetime. Accounts
@@ -1033,8 +1037,9 @@ class MinimisationHandler:
 
         path = plot_output_dir(self.name) + "llh_scan.pdf"
 
-        title = os.path.basename(self.name[:-1]).replace("_", " ") + \
-            " Likelihood Scans"
+        title = os.path.basename(
+                    os.path.dirname(self.name[:-1])
+                ).replace("_", " ") + " Likelihood Scans"
 
         plt.suptitle(title)
 
@@ -1114,10 +1119,11 @@ class MinimisationHandler:
                 path = plot_output_dir(self.name) + (param_name + "_")[4:] + \
                        "contour_scan.pdf"
 
-                title = os.path.basename(self.name[:-1]).replace("_", " ") + \
-                        " Contour Scans"
+                title = os.path.basename(
+                    os.path.dirname(self.name[:-1])
+                ).replace("_", " ") + " Contour Scans"
 
-                plt.scatter(res.x[gamma_index],res.x[index],  color="white",
+                plt.scatter(res.x[gamma_index], res.x[index],  color="white",
                             marker="*")
 
                 plt.grid(color="white", linestyle="--", alpha=0.5)
