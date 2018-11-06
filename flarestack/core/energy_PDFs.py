@@ -5,6 +5,7 @@ events based on a given energy PDF.
 
 import numexpr
 import numpy as np
+import cPickle as Pickle
 
 default_emin = 100
 default_emax = 10**7
@@ -156,8 +157,6 @@ class PowerLaw(EnergyPDF):
     def flux_integral(self):
         """Integrates over energy PDF to give integrated flux (dN/dT)"""
 
-
-
         # Integrate over flux to get dN/dt
 
         phi_power = 1 - self.gamma
@@ -206,7 +205,10 @@ class Spline(EnergyPDF):
         :param e_pdf_dict: Dictionary containing parameters
         """
         EnergyPDF.__init__(self, e_pdf_dict)
-        self.f = np.load(e_pdf_dict["Spline Path"])
+
+        with open(e_pdf_dict["Spline Path"], "r") as g:
+            f = Pickle.load(g)
+            self.f = lambda x: np.exp(f(x))
 
     def weight_mc(self, mc):
         """Returns an array containing the weights for each MC event,
@@ -234,15 +236,53 @@ class Spline(EnergyPDF):
 
 
 if __name__ == "__main__":
+
+    from flarestack.shared import plots_dir, fs_scratch_dir
+    from astropy.modeling.powerlaws import LogParabola1D
+    import matplotlib.pyplot as plt
+    from scipy.interpolate import InterpolatedUnivariateSpline
+
+    g = EnergyPDF.create(
+        {
+            "Name": "Power Law",
+            "Gamma": 2
+        }
+    )
+
+    e_range = np.logspace(0, 7, 1e3)
+
+    f = InterpolatedUnivariateSpline(e_range, np.log(g.f(e_range)))
+
+    path = fs_scratch_dir + "tester_spline.npy"
+
+    with open(path, "wb") as h:
+        Pickle.dump(f, h)
+
     e_pdf_dict = {
-        "Name": "Power Law",
-        "Gamma": 2.0,
+        "Name": "Spline",
+        "Spline Path": path,
     }
 
     energy_pdf = EnergyPDF.create(e_pdf_dict)
-    print energy_pdf.flux_integral()
-    print energy_pdf.alt_flux_integral()
+
+    plt.figure()
+    plt.plot(e_range, energy_pdf.f(e_range))
+    plt.plot(e_range, g.f(e_range))
+    plt.yscale("log")
+    plt.xscale("log")
+    plt.savefig(plots_dir + "spline.pdf")
+    plt.close()
+
+    print "Directly from Power Law"
+
+    print g.fluence_integral()
+    print g.flux_integral()
+
+    print "Via Spline"
+
     print energy_pdf.fluence_integral()
-    print energy_pdf.alt_fluence_integral()
+    print energy_pdf.flux_integral()
+
+
 
 
