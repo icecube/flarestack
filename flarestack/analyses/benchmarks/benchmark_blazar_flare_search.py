@@ -159,7 +159,7 @@ for i, llh_kwargs in enumerate([
         with open(pkl_file, "wb") as f:
             Pickle.dump(mh_dict, f)
 
-        rd.submit_to_cluster(pkl_file, n_jobs=5000)
+        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
         # mh = MinimisationHandler(mh_dict)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
@@ -171,7 +171,7 @@ for i, llh_kwargs in enumerate([
 
     src_res[label] = res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]
