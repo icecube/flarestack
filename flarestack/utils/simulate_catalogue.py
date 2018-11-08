@@ -19,30 +19,29 @@ from flarestack.utils.neutrino_cosmology import define_cosmology_functions, \
     integrate_over_z, cumulative_z
 from flarestack.analyses.ztf.sn_cosmology import ccsn_clash_candels, ccsn_madau
 from scipy.interpolate import interp1d
+from flarestack.core.time_PDFs import TimePDF
 
 
-datasample = ps_7year[-2:]
+def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
+                                 cat_name="random", n_entries=30):
 
-def simulate_catalogue(inj_kwargs):
+    tpdfs = [TimePDF.create(mh_dict["inj kwargs"]["Injection Time PDF"],
+                            season_dict)
+             for season_dict in mh_dict["datasets"]]
 
-    injectors = [Injector(season_dict, [], **inj_kwargs) for season_dict in
-                 datasample]
+    data_start = min([time_pdf.t0 for time_pdf in tpdfs])
+    data_end = max([time_pdf.t1 for time_pdf in tpdfs])
 
-    data_start = min([inj.time_pdf.t0 for inj in injectors])
-    data_end = max([inj.time_pdf.t1 for inj in injectors])
-
-    # The CCSN rate from Clash Candels will be used. We assume here a
-    # neutrino-bright fraction of 1.0 (i.e we assume that all CCSN are neutrino
-    # sources)
-
-
-    rate = ccsn_clash_candels
+    try:
+        injection_gamma = mh_dict["inj kwargs"]["Injection Energy PDF"]["Gamma"]
+    except KeyError:
+        raise Exception("No spectral index defined")
 
     rate_per_z, nu_flux_per_z, cumulative_nu_flux = define_cosmology_functions(
         rate, 1 * u.erg, injection_gamma, nu_bright_fraction=1.0
     )
 
-    print "We can integrate the CCSN rate up to z=8.0. This gives",
+    print "We can integrate the rate up to z=8.0. This gives",
     n_tot = integrate_over_z(rate_per_z, zmin=0.0, zmax=8.0)
     print "{:.3E}".format(n_tot)
 
@@ -56,9 +55,7 @@ def simulate_catalogue(inj_kwargs):
 
     print "We simulate for", sim_length
 
-    n_local = int(n_local * sim_length * 0.5)
-
-    print "We will simulate only the northern sky. This leaves", n_local
+    n_local = int(n_local * sim_length)
 
     print "Entries in catalogue", n_local
 
@@ -67,62 +64,80 @@ def simulate_catalogue(inj_kwargs):
         cumulative_nu_flux(local_z)[-1]/cumulative_nu_flux(8.0)[-1]),
     print "of all the flux from this source class"
 
-    n_catalogue = sorted(list(set([int(x) for x in np.logspace(0, 3, 25)])))
+    n_catalogue = sorted(list(set(
+        [int(x) for x in np.logspace(0, 3.0, n_entries)]
+    )))
 
-    cat_names = [catalogue_dir + "random/" + str(n) + "_cat.npy"
-                 for n in n_catalogue]
+    cat_names_north = [catalogue_dir + cat_name + "/" + str(n) +
+                       "_cat_northern.npy" for n in n_catalogue]
+    cat_names_south = [catalogue_dir + cat_name + "/" + str(n) +
+                       "_cat_southern.npy" for n in n_catalogue]
+    cat_names = [catalogue_dir + cat_name + "/" + str(n) +
+                 "_cat_full.npy" for n in n_catalogue]
 
-    return cat_names
+    all_cat_names = {
+        "Northern": cat_names_north,
+        "Southern": cat_names_south,
+        "Full": cat_names
+    }
 
+    if not np.logical_and(
+            np.sum([os.path.isfile(x) for x in cat_names]) == len(cat_names),
+            not resimulate
+    ):
+        catalogue = np.empty(n_local, dtype=cat_dtype)
 
-def make_random_catalogue():
-    catalogue = np.empty(n_local, dtype=cat_dtype)
+        catalogue["Name"] = ["src" + str(i) for i in range(n_local)]
+        catalogue["ra"] = np.random.uniform(0., 2 * np.pi, n_local)
+        catalogue["dec"] = np.arcsin(np.random.uniform(-1., 1., n_local))
+        catalogue["Relative Injection Weight"] = np.ones(n_local)
+        catalogue["Ref Time (MJD)"] = np.random.uniform(
+            data_start, data_end, n_local
+        )
 
-    catalogue["Name"] = ["src" + str(i) for i in range(n_local)]
-    catalogue["ra"] = np.random.uniform(0., 2 * np.pi, n_local)
-    catalogue["dec"] = np.arcsin(np.random.uniform(0, 1, n_local))
-    catalogue["Relative Injection Weight"] = np.ones(n_local)
-    catalogue["Ref Time (MJD)"] = np.random.uniform(
-        data_start + pre_window, data_end, n_local
-    )
+        # Define conversion fraction to sample redshift distribution
 
-    # Define conversion fraction to sample redshift distribution
+        zrange = np.linspace(0, local_z, 1e3)
 
-    zrange = np.linspace(0, local_z, 1e3)
+        count_ints = [(x * sim_length).value
+                      for x in cumulative_z(rate_per_z, zrange)]
+        count_ints = np.array([0] + count_ints)/max(count_ints)
 
-    count_ints = [(x * sim_length).value
-                  for x in cumulative_z(rate_per_z, zrange)]
-    count_ints = np.array([0] + count_ints)/max(count_ints)
+        rand_to_z = interp1d(count_ints, zrange[:-1])
 
-    rand_to_z = interp1d(count_ints, zrange[:-1])
+        z_vals = sorted(rand_to_z(np.random.uniform(0., 1.0, n_local)))
 
-    z_vals = sorted(rand_to_z(np.random.uniform(0., 1.0, n_local)))
+        mpc_vals = [Distance(z=z).to("Mpc").value for z in z_vals]
 
-    mpc_vals = [Distance(z=z).to("Mpc").value for z in z_vals]
+        catalogue["Distance (Mpc)"] = np.array(mpc_vals)
 
-    catalogue["Distance (Mpc)"] = np.array(mpc_vals)
+        dec_ranges = [
+            ("Northern", 0., 1.),
+            ("Southern", -1, 0.),
+            ("Full", -1., 1.)
+        ]
 
-    for i, n in enumerate(n_catalogue):
+        for i, n in enumerate(n_catalogue):
 
-        index = int(n)
+            for (key, dec_min, dec_max) in dec_ranges:
 
-        cat = catalogue[:index]
+                index = int(n)
 
-        cat_path = cat_names[i]
+                cat = catalogue[:index]
 
-        try:
-            os.makedirs(os.path.dirname(cat_path))
-        except OSError:
-            pass
-        np.save(cat_path, cat)
+                cat_path = all_cat_names[key][i]
 
-        print "Saved", cat_path
+                mask = np.logical_and(
+                    np.sin(cat["dec"]) > dec_min,
+                    np.sin(cat["dec"]) < dec_max
+                )
 
+                try:
+                    os.makedirs(os.path.dirname(cat_path))
+                except OSError:
+                    pass
+                np.save(cat_path, cat[mask])
 
-if __name__ == "__main__":
-    make_random_catalogue()
+                print "Saved", cat_path
 
-if np.sum([os.path.isfile(x) for x in cat_names]) < len(cat_names):
-    make_random_catalogue()
-
-
+    return all_cat_names
