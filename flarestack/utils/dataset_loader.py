@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.lib.recfunctions import append_fields
+from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
 
 
@@ -28,6 +28,16 @@ def data_loader(data_path):
         dataset = append_fields(
             dataset, 'sinDec', sinDec, usemask=False, dtypes=[np.float]
         )
+
+    if "sigma" not in dataset.dtype.names:
+
+        if "angErr" in dataset.dtype.names:
+            dataset = rename_fields(dataset, {"angErr": "sigma"})
+        else:
+            raise Exception("No recognised Angular Error field found in "
+                            "dataset. (Searched for 'sigma' and 'angErr')")
+
+    # Apply a minimum angular error "floor"
 
     dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
 
