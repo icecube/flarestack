@@ -60,4 +60,13 @@ def grl_loader(season):
         print grl[~grl["good_i3"]]
         raise Exception("Runs marked as 'bad' are found in Good Run List")
 
+    if "length" not in grl.dtype.names:
+
+        if "livetime" in grl.dtype.names:
+            grl = rename_fields(grl, {"livetime": "length"})
+        else:
+            raise Exception("No recognised Livetime field found in "
+                            "GoodRunList. (Searched for 'livetime' and "
+                            "'length')")
+
     return grl
