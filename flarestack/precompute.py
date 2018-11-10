@@ -36,7 +36,7 @@ def run_precompute(all_data):
         output_dir, \
         log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, \
         SoB_spline_dir, analysis_dir, illustration_dir, \
-        transients_dir, bkg_spline_dir, dataset_dir
+        transients_dir, bkg_spline_dir, dataset_dir, dataset_plot_dir
     from flarestack.utils.prepare_catalogue import make_single_sources
     from flarestack.utils.create_acceptance_functions import make_acceptance_f
     from flarestack.utils.make_SoB_splines import make_spline
@@ -74,7 +74,7 @@ def run_precompute(all_data):
     for dirname in [input_dir, storage_dir, output_dir, log_dir, catalogue_dir,
                     acc_f_dir, pickle_dir, plots_dir,
                     SoB_spline_dir, analysis_dir, illustration_dir,
-                    transients_dir, bkg_spline_dir]:
+                    transients_dir, bkg_spline_dir, dataset_plot_dir]:
         if not os.path.isdir(dirname):
             print "Making Directory:", dirname
             os.makedirs(dirname)
@@ -156,7 +156,8 @@ if __name__ == "__main__":
         set_scratch_directory(cfg.scratch_path)
 
     from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
+    from flarestack.data.icecube.gfu.gfu_v003_p00 import gfu_v003_p00
 
-    icecube_data = txs_sample_v1
+    icecube_data = txs_sample_v1 + gfu_v003_p00
 
     run_precompute(icecube_data)

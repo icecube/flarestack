@@ -27,6 +27,7 @@ pickle_dir = storage_dir + "pickles/"
 inj_param_dir = pickle_dir + "injection_values/"
 
 plots_dir = output_dir + "plots/"
+dataset_plot_dir = output_dir + "dataset_plots/"
 
 illustration_dir = plots_dir + "illustrations/"
 
@@ -104,10 +105,10 @@ def bkg_spline_path(season):
 
 
 def fit_setup(llh_kwargs, sources, flare=False):
-    # The default value for n_s is 1. It can be between 0 and 1000.
+    # The default value for n_s is 1. It can be between 0 and 10000.
     p0 = [1.]
 
-    bounds = [(0.0, 1000.)]
+    bounds = [(0.0, 10000.)]
     names = ["n_s"]
 
     # if "Fit Negative n_s?" in llh_kwargs.keys():
@@ -199,3 +200,5 @@ def make_analysis_pickle(mh_dict):
 
     with open(pkl_file, "wb") as f:
         Pickle.dump(mh_dict, f)
+
+    return pkl_file
