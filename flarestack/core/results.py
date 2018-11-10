@@ -94,7 +94,7 @@ class ResultsHandler:
             pass
 
         # try:
-        #     self.plot_bias()
+        self.plot_bias()
         # except KeyError:
         #     pass
 
@@ -513,9 +513,6 @@ class ResultsHandler:
         raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
         x = [k_to_flux(float(j)) for j in raw_x]
 
-        print self.param_names
-
-        print self.inj
 
         for i, param in enumerate(self.param_names):
             if ("n_s" in param) or (param=="Gamma"):
@@ -539,9 +536,22 @@ class ResultsHandler:
 
                     true_dict = self.inj[scale]
 
-                    if len(true_dict) == 1:
+                    if param == "n_s":
+                        true = 0.
+
+                        for val in true_dict.itervalues():
+                            true += val["n_s"]
+                        trues.append(true)
+
+                    elif "n_s" in param:
+                        source = param.split("(")[1][:-1]
+                        val = true_dict[source]["n_s"]
+                        trues.append(val)
+
+                    elif len(true_dict) > 0:
                         true = true_dict.itervalues().next()[param]
                         trues.append(true)
+
                 plt.scatter(x, meds, color="orange")
                 plt.plot(x, meds, color="black")
                 plt.plot(x, trues, linestyle="--", color="red")
@@ -550,8 +560,9 @@ class ResultsHandler:
                 ax.set_xlim(left=0.0, right=max(x))
                 ax.set_ylim(bottom=0.0)
 
-                plt.xlabel(r"Flux ($GeV cm^{-2}$)")
+                plt.xlabel(r"$\Phi_{1GeV}$ (GeV$^{-1}$ cm$^{-2}$)")
                 plt.ylabel(param)
+                plt.title("Bias (" + param + ")")
 
                 savepath = self.plot_dir + "bias_" + param + ".pdf"
                 print "Saving bias plot to", savepath
