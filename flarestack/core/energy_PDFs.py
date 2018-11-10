@@ -235,53 +235,55 @@ class Spline(EnergyPDF):
         return weights
 
 
-if __name__ == "__main__":
-
-    from flarestack.shared import plots_dir, fs_scratch_dir
-    from astropy.modeling.powerlaws import LogParabola1D
-    import matplotlib.pyplot as plt
-    from scipy.interpolate import InterpolatedUnivariateSpline
-
-    g = EnergyPDF.create(
-        {
-            "Name": "Power Law",
-            "Gamma": 2
-        }
-    )
-
-    e_range = np.logspace(0, 7, 1e3)
-
-    f = InterpolatedUnivariateSpline(e_range, np.log(g.f(e_range)))
-
-    path = fs_scratch_dir + "tester_spline.npy"
-
-    with open(path, "wb") as h:
-        Pickle.dump(f, h)
-
-    e_pdf_dict = {
-        "Name": "Spline",
-        "Spline Path": path,
-    }
-
-    energy_pdf = EnergyPDF.create(e_pdf_dict)
-
-    plt.figure()
-    plt.plot(e_range, energy_pdf.f(e_range))
-    plt.plot(e_range, g.f(e_range))
-    plt.yscale("log")
-    plt.xscale("log")
-    plt.savefig(plots_dir + "spline.pdf")
-    plt.close()
-
-    print "Directly from Power Law"
-
-    print g.fluence_integral()
-    print g.flux_integral()
-
-    print "Via Spline"
-
-    print energy_pdf.fluence_integral()
-    print energy_pdf.flux_integral()
+# if __name__ == "__main__":
+#
+#     from flarestack.shared import plots_dir, fs_scratch_dir
+#     from astropy.modeling.powerlaws import LogParabola1D
+#     import matplotlib.pyplot as plt
+#     from scipy.interpolate import InterpolatedUnivariateSpline
+#
+#     g = EnergyPDF.create(
+#         {
+#             "Name": "Power Law",
+#             "Gamma": 2
+#         }
+#     )
+#
+#     e_range = np.logspace(0, 7, 1e3)
+#
+#     f = InterpolatedUnivariateSpline(e_range, np.log(g.f(e_range)))
+#
+#     path = fs_scratch_dir + "tester_spline.npy"
+#
+#     print path
+#
+#     with open(path, "wb") as h:
+#         Pickle.dump(f, h)
+#
+#     e_pdf_dict = {
+#         "Name": "Spline",
+#         "Spline Path": path,
+#     }
+#
+#     energy_pdf = EnergyPDF.create(e_pdf_dict)
+#
+#     plt.figure()
+#     plt.plot(e_range, energy_pdf.f(e_range))
+#     plt.plot(e_range, g.f(e_range))
+#     plt.yscale("log")
+#     plt.xscale("log")
+#     plt.savefig(plots_dir + "spline.pdf")
+#     plt.close()
+#
+#     print "Directly from Power Law"
+#
+#     print g.fluence_integral()
+#     print g.flux_integral()
+#
+#     print "Via Spline"
+#
+#     print energy_pdf.fluence_integral()
+#     print energy_pdf.flux_integral()
 
 
 
