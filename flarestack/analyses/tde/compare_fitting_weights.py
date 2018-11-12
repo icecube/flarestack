@@ -1,14 +1,20 @@
+"""Script to compare the four alternative stacking methods tested for the TDE
+catalogues. Compares the regular stacking, as well as stacking with negative
+n_s, stacking where an n_s for each source is fit individually (rather than a
+joint n_s split across sources assuming standard candles), and lastly an
+independent flare search for each source with TS values summed at the end.
+"""
 import numpy as np
-import os
-import cPickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
+from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
 import math
+from flarestack.analyses.tde.shared_TDE import tde_catalogue_name, \
+    tde_catalogues
 
 analyses = dict()
 
@@ -65,18 +71,16 @@ max_window = 100
 
 lengths = np.logspace(-2, 0, 5) * max_window
 
-for cat in ["silver"]:
+for cat in tde_catalogues:
 
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
-    cat_path = catalogue_dir + "TDEs/TDE_" + cat + "_catalogue.npy"
+    cat_path = tde_catalogue_name(cat)
     catalogue = np.load(cat_path)
 
     src_res = dict()
 
     closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
-
-    # lengths = [0.5 * max_window]
 
     for i, llh_kwargs in enumerate([
                                     fixed_weights,
@@ -134,26 +138,9 @@ for cat in ["silver"]:
                 "n_steps": 15
             }
 
-            analysis_path = analysis_dir + full_name
+            pkl_file = make_analysis_pickle(mh_dict)
 
-            try:
-                os.makedirs(analysis_path)
-            except OSError:
-                pass
-
-            pkl_file = analysis_path + "dict.pkl"
-
-            with open(pkl_file, "wb") as f:
-                Pickle.dump(mh_dict, f)
-
-            # if f_name == "flare":
-            # # if True:
-            #     rd.submit_to_cluster(pkl_file, n_jobs=500)
-            # #
-            #     mh = MinimisationHandler(mh_dict)
-            #     mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
-            #     mh.clear()
-            # raw_input("prompt")
+            # rd.submit_to_cluster(pkl_file, n_jobs=500)
 
             res[flare_length] = mh_dict
 
@@ -161,7 +148,7 @@ for cat in ["silver"]:
 
     cat_res[cat] = src_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (cat, src_res) in cat_res.iteritems():
 
@@ -175,7 +162,7 @@ for (cat, src_res) in cat_res.iteritems():
 
     labels = []
 
-    cat_path = catalogue_dir + "TDEs/TDE_" + cat + "_catalogue.npy"
+    cat_path = tde_catalogue_name(cat) + "_catalogue.npy"
     catalogue = np.load(cat_path)
 
     src_1_frac = min(catalogue["Distance (Mpc)"])**-2/np.sum(

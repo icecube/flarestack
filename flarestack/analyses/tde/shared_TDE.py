@@ -5,7 +5,6 @@ individual_tdes = [
     "Swift J2058+05",
     "ASASSN-14li",
     "XMMSL1 J0740-85"
-    # "ASASSN-15lh",
 ]
 
 
@@ -25,3 +24,13 @@ tde_catalogues = [
     "silver",
     "obscured"
 ]
+
+
+def tde_catalogue_name(name):
+    """Maps the name of a given TDE catalogue to to the path of a source
+    catalogue which contains those TDEs in one combined catalogue.
+
+    :param name: Name of TDE catalogue
+    :return: Path to catalogue
+    """
+    return catalogue_dir + "TDEs/TDE_" + name + "_catalogue.npy"

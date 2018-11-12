@@ -1,14 +1,17 @@
+"""Script to compare the standard time integration method to time integration
+with negative n_s, and also to the flare search method, which looks for
+temporal clustering. The script runs for all individual TDEs to be analysed.
+"""
 import numpy as np
-import os
-import cPickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
+from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.utils.custom_seasons import custom_dataset
 import matplotlib.pyplot as plt
 from flarestack.analyses.tde.shared_TDE import individual_tdes, \
     individual_tde_cat
+import flarestack.cluster.run_desy_cluster as rd
 
 name_root = "analyses/tde/compare_cluster_search_to_time_integration/"
 
@@ -72,7 +75,6 @@ for j, cat in enumerate(individual_tdes):
     src_res = dict()
 
     lengths = np.logspace(-2, 0, 5) * max_window
-    # lengths = np.logspace(-2, 0, 17) * max_window
 
     # Loop over likelihood methods
 
@@ -83,7 +85,7 @@ for j, cat in enumerate(individual_tdes):
 
         # Set plot labels and subdirectory names
 
-        label = ["Time-Integrated", "Time-Integrated (negative n_s)",
+        label = ["Time-Integrated (n_s > 0)", "Time-Integrated",
                  "Cluster Search"][i]
         f_name = ["fixed_box", "fixed_box_negative", "flare"][i]
 
@@ -134,17 +136,7 @@ for j, cat in enumerate(individual_tdes):
                 "n_steps": 15
             }
 
-            analysis_path = analysis_dir + full_name
-
-            try:
-                os.makedirs(analysis_path)
-            except OSError:
-                pass
-
-            pkl_file = analysis_path + "dict.pkl"
-
-            with open(pkl_file, "wb") as f:
-                Pickle.dump(mh_dict, f)
+            pkl_file = make_analysis_pickle(mh_dict)
 
             # Run jobs on cluster
 
@@ -182,37 +174,37 @@ for (cat, src_res) in cat_res.iteritems():
 
     for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
-        # if f_type != "Time-Integrated (negative n_s)":
+        if f_type != "Time-Integrated (n_s > 0)":
 
-        for (length, rh_dict) in sorted(res.iteritems()):
+            for (length, rh_dict) in sorted(res.iteritems()):
 
-            # Calculate the sensitivity based on TS distributions
+                # Calculate the sensitivity based on TS distributions
 
-            rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                rh_dict["catalogue"], show_inj=True)
+                rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
+                                    rh_dict["catalogue"], show_inj=True)
 
-            # Length of injection in seconds
+                # Length of injection in seconds
 
-            inj_time = length * (60 * 60 * 24)
+                inj_time = length * (60 * 60 * 24)
 
-            # Convert flux to fluence and source energy
+                # Convert flux to fluence and source energy
 
-            astro_sens, astro_disc = rh.astro_values(
-                rh_dict["inj kwargs"]["Injection Energy PDF"])
+                astro_sens, astro_disc = rh.astro_values(
+                    rh_dict["inj kwargs"]["Injection Energy PDF"])
 
-            key = "Total Fluence (GeV cm^{-2} s^{-1})"
+                key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
-            e_key = "Mean Luminosity (erg/s)"
+                e_key = "Mean Luminosity (erg/s)"
 
-            sens[i].append(astro_sens[key] * inj_time)
-            disc_pots[i].append(astro_disc[key] * inj_time)
+                sens[i].append(astro_sens[key] * inj_time)
+                disc_pots[i].append(astro_disc[key] * inj_time)
 
-            sens_e[i].append(astro_sens[e_key] * inj_time)
-            disc_e[i].append(astro_disc[e_key] * inj_time)
+                sens_e[i].append(astro_sens[e_key] * inj_time)
+                disc_e[i].append(astro_disc[e_key] * inj_time)
 
-            fracs[i].append(length)
+                fracs[i].append(length)
 
-        labels.append(f_type)
+            labels.append(f_type)
 
     # Loop over sensitivity/discovery potential
 

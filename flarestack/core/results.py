@@ -93,10 +93,10 @@ class ResultsHandler:
         except RuntimeError:
             pass
 
-        # try:
-        self.plot_bias()
-        # except KeyError:
-        #     pass
+        try:
+            self.plot_bias()
+        except KeyError:
+            pass
 
     def astro_values(self, e_pdf_dict):
         """Function to convert the values calculated for sensitivity and
@@ -512,7 +512,6 @@ class ResultsHandler:
         x = sorted(self.results.keys())
         raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
         x = [k_to_flux(float(j)) for j in raw_x]
-
 
         for i, param in enumerate(self.param_names):
             if ("n_s" in param) or (param=="Gamma"):

@@ -126,7 +126,8 @@ class Injector:
             # All injection fluxes are given in terms of k, equal to 1e-9
             inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
 
-            # dist_weight = (source["Distance (Mpc)"]/dist_scale)**-2
+            # Fraction of total flux allocated to given source, assuming
+            # standard candles with flux proportional to 1/d^2
 
             dist_weight = (source["Distance (Mpc)"]**-2) / dist_scale
 

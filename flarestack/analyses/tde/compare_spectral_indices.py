@@ -1,11 +1,15 @@
+"""Script to compare the sensitivity for each TDE catalogues as a function of
+injected spectral index. Rather than the traditional flux at 1 GeV,
+Sensitivities are given as the total integrated fluence across all sources,
+and as the corresponding standard-candle-luminosity.
+"""
 import numpy as np
-import os
-import cPickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
-    catalogue_dir
+from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
 from flarestack.utils.reference_sensitivity import reference_sensitivity
+from flarestack.analyses.tde.shared_TDE import tde_catalogues, \
+    tde_catalogue_name
 from flarestack.cluster import run_desy_cluster as rd
 import math
 import matplotlib.pyplot as plt
@@ -47,20 +51,12 @@ fixed_weights_negative = {
     "Fit Weights?": False
 }
 
-gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
-# gammas = [1.8, 2.0, 2.3, 2.5, 2.7]
-# gammas = [1.8, 2.0]
+gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
+gammas = [1.8, 2.0]
 
-# cats = ["gold", "jetted"]
-# # cats = ["jetted"]
-# cat_names = ["Jetted", "Golden"]
-cats = ["jetted", "gold", "silver", "obscured"]
-# cat_names = ["Golden"]
-
-# cats = ["silver", "obscured"]
 
 power_law_start_energy = [100, 10000, 100000]
-# power_law_start_energy = [100]
+power_law_start_energy = [100]
 
 cutoff_dict = dict()
 
@@ -72,11 +68,11 @@ for e_min in power_law_start_energy:
 
     cat_res = dict()
 
-    for cat in cats:
+    for cat in tde_catalogues:
 
         name = raw + cat + "/"
 
-        cat_path = catalogue_dir + "TDEs/TDE_" + cat + "_catalogue.npy"
+        cat_path = tde_catalogue_name(cat)
         catalogue = np.load(cat_path)
 
         src_res = dict()
@@ -88,7 +84,7 @@ for e_min in power_law_start_energy:
                                         fit_weights,
                                         # flare
                                         ]):
-            label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
+            label = ["Fixed Weights", "Fixed Weights (n_s > 0)",
                      "Fit Weights", "Flare Search", ][i]
             f_name = ["fixed_weights_neg", "fixed_weights",
                       "fit_weights", "flare"][i]
@@ -133,26 +129,18 @@ for e_min in power_law_start_energy:
                     "n_steps": 15
                 }
 
-                analysis_path = analysis_dir + full_name
+                make_analysis_pickle(mh_dict)
 
-                try:
-                    os.makedirs(analysis_path)
-                except OSError:
-                    pass
+                # if label != "Fixed Weights (n_s > 0)":
+                if label == "Fit Weights":
+                #     rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
-                pkl_file = analysis_path + "dict.pkl"
+                    # mh = MinimisationHandler(mh_dict)
+                    # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
+                    #                n_trials=10)
+                    # mh.clear()
 
-                with open(pkl_file, "wb") as f:
-                    Pickle.dump(mh_dict, f)
-
-                # rd.submit_to_cluster(pkl_file, n_jobs=1000)
-
-                # mh = MinimisationHandler(mh_dict)
-                # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
-                #                n_trials=10)
-                # mh.clear()
-
-                res[gamma] = mh_dict
+                    res[gamma] = mh_dict
 
             src_res[label] = res
 
@@ -160,7 +148,7 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = cat_res
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 
@@ -180,13 +168,15 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
 
         for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
 
-            # if f_type == "Fit Weights":
-            if True:
+            if f_type != "Fixed Weights (n_s > 0)":
 
                 for (gamma, rh_dict) in sorted(res.iteritems()):
                     try:
-                        rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                            rh_dict["catalogue"], show_inj=True)
+                        rh = ResultsHandler(rh_dict["name"],
+                                            rh_dict["llh kwargs"],
+                                            rh_dict["catalogue"],
+                                            show_inj=True
+                                            )
 
                         inj_time = injection_length * 60 * 60 * 24
 
