@@ -94,7 +94,7 @@ if __name__ == "__main__":
     for [name, nu_e, fraction, nu_bright] in results:
 
         def f(z):
-            return fraction * ccsn_clash_candels(z)
+            return fraction * ccsn_madau(z)
 
 
         e_pdf_dict = dict(e_pdf_dict_template)
