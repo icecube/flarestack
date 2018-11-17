@@ -1,6 +1,7 @@
 from flarestack.utils.prepare_catalogue import custom_sources
 from astropy.coordinates import Distance
 from flarestack.shared import catalogue_dir
+from flarestack.analyses.tde.shared_TDE import individual_tde_cat
 import numpy as np
 import os
 
@@ -17,12 +18,12 @@ t_end = ref_time + 100.
 ra = 244.000927647
 dec = 22.2680094118
 
-# Distance to source, according to https://arxiv.org/abs/1802.01939, is 0.3365
+# Distance to source,from http://www.astronomerstelegram.org/?read=11727
 z = 0.014145
 lumdist = Distance(z=z).to("Mpc").value
 
 # Creates the .npy source catalogue
-at2018_cow_catalogue = custom_sources(
+at2018cow_catalogue = custom_sources(
     name="AT2018cow",
     ra=ra,
     dec=dec,
@@ -33,12 +34,11 @@ at2018_cow_catalogue = custom_sources(
     ref_time=t_start
 )
 
-cat_dir = catalogue_dir + "TDEs/individual_TDEs/"
+at2018cow_cat_path = individual_tde_cat("AT2018cow")
 
 try:
-    os.makedirs(cat_dir)
+    os.makedirs(os.path.dirname(at2018cow_cat_path))
 except OSError:
     pass
 
-at2018cow_cat_path = cat_dir + "AT2018cow_catalogue.npy"
-np.save(at2018cow_cat_path, at2018_cow_catalogue)
+np.save(at2018cow_cat_path, at2018cow_catalogue)

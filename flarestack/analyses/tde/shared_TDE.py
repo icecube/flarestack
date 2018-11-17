@@ -1,10 +1,13 @@
 from flarestack.shared import catalogue_dir
+import os
+tde_dir = os.path.abspath(os.path.dirname(__file__))
 
 individual_tdes = [
-    "Swift J1644+57",
-    "Swift J2058+05",
-    "ASASSN-14li",
-    "XMMSL1 J0740-85"
+    # "Swift J1644+57",
+    # "Swift J2058+05",
+    # "ASASSN-14li",
+    # "XMMSL1 J0740-85",
+    "AT2018cow"
 ]
 
 
@@ -27,10 +30,11 @@ tde_catalogues = [
 
 
 def tde_catalogue_name(name):
-    """Maps the name of a given TDE catalogue to to the path of a source
+    """Maps the name of a given TDE catalogue to the path of a source
     catalogue which contains those TDEs in one combined catalogue.
 
     :param name: Name of TDE catalogue
     :return: Path to catalogue
     """
-    return catalogue_dir + "TDEs/TDE_" + name + "_catalogue.npy"
+
+    return tde_dir + "/tde_catalogues/TDE_" + name + "_catalogue.npy"
