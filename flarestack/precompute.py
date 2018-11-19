@@ -40,6 +40,7 @@ def run_precompute(all_data):
     from flarestack.utils.prepare_catalogue import make_single_sources
     from flarestack.utils.create_acceptance_functions import make_acceptance_f
     from flarestack.utils.make_SoB_splines import make_spline
+    from flarestack.utils.dataset_loader import verify_grl_with_data
 
     print "\n \n"
     print "********************************************************************"
@@ -122,6 +123,15 @@ def run_precompute(all_data):
     print "\n"
     print "********************************************************************"
     print "*                                                                  *"
+    print "*                       Checking GoodRunLists                      *"
+    print "*                                                                  *"
+    print "********************************************************************"
+    print "\n"
+    verify_grl_with_data(all_data)
+
+    print "\n"
+    print "********************************************************************"
+    print "*                                                                  *"
     print "*                   Making Acceptance Functions                    *"
     print "*                                                                  *"
     print "********************************************************************"
@@ -158,6 +168,6 @@ if __name__ == "__main__":
     from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
     from flarestack.data.icecube.gfu.gfu_v003_p00 import gfu_v003_p00
 
-    icecube_data = txs_sample_v1 + gfu_v003_p00
+    icecube_data = txs_sample_v1
 
     run_precompute(icecube_data)
