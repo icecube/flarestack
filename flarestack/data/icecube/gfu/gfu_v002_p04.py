@@ -13,6 +13,7 @@ from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 import numpy as np
 
 gfu_data_dir = flarestack.shared.dataset_dir + "gfu/version-002-p04/"
+grl_dir = gfu_data_dir + "GRL/"
 
 gfu_dict = {
     "Data Sample": "gfu_v002_p04",
@@ -26,25 +27,25 @@ gfu_dict = {
     "MJD Time Key": "time",
     "Name": "GFU_v002_p04",
     "exp_path": [
-        gfu_data_dir + "SplineMPEmax.MuEX.IC86-2011.npy",
-        gfu_data_dir + "SplineMPEmax.MuEX.IC86-2012.npy",
-        gfu_data_dir + "SplineMPEmax.MuEX.IC86-2013.npy",
-        gfu_data_dir + "SplineMPEmax.MuEX.IC86-2014.npy",
-        gfu_data_dir + "SplineMPEmax.MuEX.IC86-2015.npy",
-        gfu_data_dir + "SplineMPEmax.MuEX.IC86-2016.npy",
-        gfu_data_dir + "SplineMPEmax.MuEX.IC86-2017.npy",
-        gfu_data_dir + "SplineMPEmax.MuEX.IC86-2018.npy"
+        gfu_data_dir + "IC86_2011_data.npy",
+        gfu_data_dir + "IC86_2012_data.npy",
+        gfu_data_dir + "IC86_2013_data.npy",
+        gfu_data_dir + "IC86_2014_data.npy",
+        gfu_data_dir + "IC86_2015_data.npy",
+        gfu_data_dir + "IC86_2016_data.npy",
+        gfu_data_dir + "IC86_2017_data.npy",
+        gfu_data_dir + "IC86_2018_data.npy"
     ],
-    "mc_path": gfu_data_dir + "SplineMPEmax.MuEX.MC.npy",
+    "mc_path": gfu_data_dir + "IC86_2011_MC.npy",
     "grl_path": [
-        gfu_data_dir + "SplineMPEmax.GRL.IC86-2011.npy",
-        gfu_data_dir + "SplineMPEmax.GRL.IC86-2012.npy",
-        gfu_data_dir + "SplineMPEmax.GRL.IC86-2013.npy",
-        gfu_data_dir + "SplineMPEmax.GRL.IC86-2014.npy",
-        gfu_data_dir + "SplineMPEmax.GRL.IC86-2015.npy",
-        gfu_data_dir + "SplineMPEmax.GRL.IC86-2016.npy",
-        gfu_data_dir + "SplineMPEmax.GRL.IC86-2017.npy",
-        gfu_data_dir + "SplineMPEmax.GRL.IC86-2018.npy",
+        grl_dir + "IC86_2011_data.npy",
+        grl_dir + "IC86_2012_data.npy",
+        grl_dir + "IC86_2013_data.npy",
+        grl_dir + "IC86_2014_data.npy",
+        grl_dir + "IC86_2015_data.npy",
+        grl_dir + "IC86_2016_data.npy",
+        grl_dir + "IC86_2017_data.npy",
+        grl_dir + "IC86_2018_data.npy"
     ]
 }
 

@@ -166,8 +166,8 @@ if __name__ == "__main__":
         set_scratch_directory(cfg.scratch_path)
 
     from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-    from flarestack.data.icecube.gfu.gfu_v003_p00 import gfu_v003_p00
+    from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 
-    icecube_data = txs_sample_v1
+    icecube_data = txs_sample_v1 + gfu_v002_p04
 
     run_precompute(icecube_data)
