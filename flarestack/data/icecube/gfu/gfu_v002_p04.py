@@ -12,10 +12,10 @@ import flarestack.shared
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 import numpy as np
 
-gfu_data_dir = flarestack.shared.dataset_dir + "gfu/version-003-p00/"
+gfu_data_dir = flarestack.shared.dataset_dir + "gfu/version-002-p04/"
 
 gfu_dict = {
-    "Data Sample": "gfu_v003_p00",
+    "Data Sample": "gfu_v002_p04",
     "sinDec bins": np.unique(np.concatenate([
         np.linspace(-1., -0.9, 2 + 1),
         np.linspace(-0.9, -0.2, 8 + 1),
@@ -24,7 +24,7 @@ gfu_dict = {
         np.linspace(0.9, 1., 2 + 1),
     ])),
     "MJD Time Key": "time",
-    "Name": "GFU_v003_p00",
+    "Name": "GFU_v002_p04",
     "exp_path": [
         gfu_data_dir + "SplineMPEmax.MuEX.IC86-2011.npy",
         gfu_data_dir + "SplineMPEmax.MuEX.IC86-2012.npy",
@@ -48,4 +48,4 @@ gfu_dict = {
     ]
 }
 
-gfu_v003_p00 = [gfu_dict]
+gfu_v002_p04 = [gfu_dict]

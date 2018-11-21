@@ -5,6 +5,7 @@ temporal clustering. The script runs for all individual TDEs to be analysed.
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
+from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.utils.custom_seasons import custom_dataset
@@ -12,6 +13,7 @@ import matplotlib.pyplot as plt
 from flarestack.analyses.tde.shared_TDE import individual_tdes, \
     individual_tde_cat
 import flarestack.cluster.run_desy_cluster as rd
+from flarestack.core.minimisation import MinimisationHandler
 
 name_root = "analyses/tde/compare_cluster_search_to_time_integration/"
 
@@ -124,10 +126,15 @@ for j, cat in enumerate(individual_tdes):
             scale = flux_to_k(reference_sensitivity(np.sin(catalogue["dec"]))
                               * (50 * max_window / flare_length))
 
+            if cat != "AT2018cow":
+                dataset = custom_dataset(txs_sample_v2, catalogue,
+                                           llh_kwargs["LLH Time PDF"])
+            else:
+                dataset = gfu_v002_p04
+
             mh_dict = {
                 "name": full_name,
-                "datasets": custom_dataset(txs_sample_v2, catalogue,
-                                           llh_kwargs["LLH Time PDF"]),
+                "datasets": dataset,
                 "catalogue": cat_path,
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
@@ -156,7 +163,7 @@ for j, cat in enumerate(individual_tdes):
 
 # Wait for cluster jobs to finish
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for (cat, src_res) in cat_res.iteritems():
 
