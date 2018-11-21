@@ -1,15 +1,10 @@
 """File containing links to data samples used (GFU).
 
-Path to local copy of point source tracks, downloaded on 16/05/18 from
-/data/ana .. /current, with the following readme:
-
-    * better pull-correction using splines, instead of polynomial fits
-
-This is the sample that was used for the original TXS analysis in 2017
-(NOT THE ONE THAT INCLUDED ADDITIONAL DATA UP TO SPRING 2018!)
+This was the complete GFU data samle, extending from 2011-2018, that was used
+in Thomas Kintscher's final unblinding of GFU for the application of the
+'Online Flare Search' method on archival data.
 """
 import flarestack.shared
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 import numpy as np
 
 gfu_data_dir = flarestack.shared.dataset_dir + "gfu/version-002-p04/"
