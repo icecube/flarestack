@@ -101,8 +101,6 @@ def run_precompute(all_data):
         print "Host", host, "not recognised."
         print "No Cluster Scripts generated."
 
-    sys.exit()
-
     print "\n"
     print "********************************************************************"
     print "*                                                                  *"
