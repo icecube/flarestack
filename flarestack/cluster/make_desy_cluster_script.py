@@ -10,7 +10,7 @@ cluster_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 submit_file = cluster_dir + "SubmitDESY.sh"
 
-def make_submit_file():
+def make_desy_submit_file():
 
     text = "#!/bin/zsh \n" \
            "## \n" \
@@ -44,7 +44,6 @@ def make_submit_file():
            'cp $TMPDIR/${JOB_ID}_stdout.txt ' + log_dir + '\n'\
            'cp $TMPDIR/${JOB_ID}_stderr.txt ' + log_dir + '\n '
 
-    print "No bash submit file found for DESY cluster!"
     print "Creating file at", submit_file
 
     with open(submit_file, "w") as f:
@@ -54,8 +53,5 @@ def make_submit_file():
     print text
 
 
-if not os.path.exists(submit_file):
-    make_submit_file()
-
-if __name__=="__main__":
-    make_submit_file()
+if __name__ == "__main__":
+    make_desy_submit_file()

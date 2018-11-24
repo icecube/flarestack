@@ -41,6 +41,9 @@ def run_precompute(all_data):
     from flarestack.utils.create_acceptance_functions import make_acceptance_f
     from flarestack.utils.make_SoB_splines import make_spline
     from flarestack.utils.dataset_loader import verify_grl_with_data
+    import socket
+    from flarestack.cluster.make_cluster_script import make_desy_submit_file
+
 
     print "\n \n"
     print "********************************************************************"
@@ -81,6 +84,24 @@ def run_precompute(all_data):
             os.makedirs(dirname)
         else:
             print "Found Directory:", dirname
+
+    host = socket.gethostname()
+
+    print "\n"
+    print "********************************************************************"
+    print "*                                                                  *"
+    print "*                    Generating Cluster Scripts                    *"
+    print "*                                                                  *"
+    print "********************************************************************"
+    print "\n"
+
+    if "ifh.de" in host:
+        make_desy_submit_file()
+    else:
+        print "Host", host, "not recognised."
+        print "No Cluster Scripts generated."
+
+    sys.exit()
 
     print "\n"
     print "********************************************************************"
