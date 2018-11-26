@@ -25,7 +25,6 @@ import os
 import os.path
 import argparse
 from flarestack.shared import log_dir, fs_dir
-import flarestack.cluster.make_cluster_script
 
 username = os.path.basename(os.environ['HOME'])
 
