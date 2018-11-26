@@ -36,7 +36,8 @@ def run_precompute(all_data):
         output_dir, \
         log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, \
         SoB_spline_dir, analysis_dir, illustration_dir, \
-        transients_dir, bkg_spline_dir, dataset_dir, dataset_plot_dir
+        transients_dir, bkg_spline_dir, dataset_dir, dataset_plot_dir, \
+        limits_dir
     from flarestack.utils.prepare_catalogue import make_single_sources
     from flarestack.utils.create_acceptance_functions import make_acceptance_f
     from flarestack.utils.make_SoB_splines import make_spline
@@ -77,7 +78,7 @@ def run_precompute(all_data):
         return
 
     for dirname in [input_dir, storage_dir, output_dir, log_dir, catalogue_dir,
-                    acc_f_dir, pickle_dir, plots_dir,
+                    acc_f_dir, pickle_dir, plots_dir, limits_dir,
                     SoB_spline_dir, analysis_dir, illustration_dir,
                     transients_dir, bkg_spline_dir, dataset_plot_dir]:
         if not os.path.isdir(dirname):

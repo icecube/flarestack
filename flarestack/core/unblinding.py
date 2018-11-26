@@ -5,7 +5,7 @@ from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.core.time_PDFs import TimePDF
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
-    analysis_pickle_path
+    analysis_pickle_path, limit_output_path
 import cPickle as Pickle
 from flarestack.core.ts_distributions import plot_background_ts_distribution
 import matplotlib.pyplot as plt
@@ -28,7 +28,7 @@ def confirm():
 
 class Unblinder(MinimisationHandler):
 
-    def __init__(self, unblind_dict, mock_unblind=True):
+    def __init__(self, unblind_dict, mock_unblind=True, full_plots=False):
         self.unblind_dict = unblind_dict
         unblind_dict["Unblind"] = True
         unblind_dict["Mock Unblind"] = mock_unblind
@@ -40,8 +40,12 @@ class Unblinder(MinimisationHandler):
 
         if self.mock_unblind:
             self.name += "mock_unblind/"
+            self.limit_path = limit_output_path(
+                self.unblind_dict["background TS"] + "mock_unblind/")
         else:
             self.name += "real_unblind/"
+            self.limit_path = limit_output_path(
+                self.unblind_dict["background TS"] + "real_unblind/")
 
         self.plot_dir = plot_output_dir(self.name)
 
@@ -75,13 +79,14 @@ class Unblinder(MinimisationHandler):
             print "No Background TS Distribution specified.",
             print "Cannot assess significance of TS value."
 
+        if full_plots:
 
-        # self.calculate_upper_limits()
+            self.calculate_upper_limits()
 
-        # if self.flare:
-        #     self.neutrino_lightcurve()
-        # else:
-        #     self.scan_likelihood()
+            # if self.flare:
+            #     self.neutrino_lightcurve()
+            # else:
+            #     self.scan_likelihood()
 
     def calculate_upper_limits(self):
 
@@ -165,6 +170,22 @@ class Unblinder(MinimisationHandler):
         plt.savefig(self.plot_dir + "upper_limit_fluence.pdf")
         plt.close()
 
+        try:
+            os.makedirs(os.path.dirname(self.limit_path))
+        except OSError:
+            pass
+        print "Saving limits to", self.limit_path
+
+        res_dict = {
+            "x": x_axis,
+            "flux": flux_uls,
+            "fluence": fluence_uls,
+            "energy": e_per_source_uls
+        }
+
+        with open(self.limit_path, "wb") as f:
+            Pickle.dump(res_dict, f)
+
     def compare_to_background_TS(self):
         print "Retrieving Background TS Distribution from", self.pickle_dir
 
@@ -185,9 +206,8 @@ class Unblinder(MinimisationHandler):
 
             ts_array = np.array(ts_array)
 
-            self.sigma = plot_background_ts_distribution(ts_array,
-                                                      self.output_file,
-                                            self.ts_type, self.ts)
+            self.sigma = plot_background_ts_distribution(
+                ts_array, self.output_file, self.ts_type, self.ts)
 
         except IOError:
             print "No Background TS Distribution found"

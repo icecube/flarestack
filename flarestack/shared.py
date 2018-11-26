@@ -27,6 +27,7 @@ pickle_dir = storage_dir + "pickles/"
 inj_param_dir = pickle_dir + "injection_values/"
 
 plots_dir = output_dir + "plots/"
+limits_dir = output_dir + "limits/"
 dataset_plot_dir = output_dir + "dataset_plots/"
 
 illustration_dir = plots_dir + "illustrations/"
@@ -87,6 +88,11 @@ def inj_dir_name(name):
 
 def plot_output_dir(name):
     return plots_dir + name
+
+
+def limit_output_path(name):
+    path = limits_dir + name + "limit.pkl"
+    return path
 
 
 def acceptance_path(season):
