@@ -42,7 +42,8 @@ def run_precompute(all_data):
     from flarestack.utils.make_SoB_splines import make_spline
     from flarestack.utils.dataset_loader import verify_grl_with_data
     import socket
-    from flarestack.cluster.make_cluster_script import make_desy_submit_file
+    from flarestack.cluster.make_desy_cluster_script import \
+        make_desy_submit_file
 
 
     print "\n \n"
