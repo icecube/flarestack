@@ -3,10 +3,10 @@ import os
 tde_dir = os.path.abspath(os.path.dirname(__file__))
 
 individual_tdes = [
-    # "Swift J1644+57",
-    # "Swift J2058+05",
-    # "ASASSN-14li",
-    # "XMMSL1 J0740-85",
+    "Swift J1644+57",
+    "Swift J2058+05",
+    "ASASSN-14li",
+    "XMMSL1 J0740-85",
     "AT2018cow"
 ]
 

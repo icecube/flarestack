@@ -52,11 +52,11 @@ fixed_weights_negative = {
 }
 
 gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
-gammas = [1.8, 2.0]
+# gammas = [1.8, 2.0]
 
 
 power_law_start_energy = [100, 10000, 100000]
-power_law_start_energy = [100]
+# power_law_start_energy = [100]
 
 cutoff_dict = dict()
 
@@ -129,7 +129,7 @@ for e_min in power_law_start_energy:
                     "n_steps": 15
                 }
 
-                make_analysis_pickle(mh_dict)
+                pkl_file = make_analysis_pickle(mh_dict)
 
                 # if label != "Fixed Weights (n_s > 0)":
                 if label == "Fit Weights":

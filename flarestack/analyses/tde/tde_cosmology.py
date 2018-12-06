@@ -6,7 +6,7 @@ e_pdf_dict_template = {
     "Source Energy (erg)": 1.0 * 10**54 * u.erg,
     "E Min": 10**2,
     "E Max": 10**7,
-    "Gamma": 2.0
+    # "Gamma": 2.0
 }
 
 # Assumed source evolution is highly negative
@@ -56,7 +56,7 @@ for (name, energy) in res:
     e_pdf_dict["Source Energy (erg)"] = energy
 
     calculate_transient(e_pdf_dict, tde_rate, name + " TDEs",
-                        zmax=6.0, diffuse_fit="Northern Tracks")
+                        zmax=6.0, diffuse_fit="Joint")
 
 # Assumed source evolution is highly negative
 jetted_m = -3
@@ -80,11 +80,11 @@ def standard_jetted_rate(z):
 
 
 calculate_transient(e_pdf_dict_template, standard_jetted_rate, "jetted TDEs",
-                    zmax=2.5)
+                    zmax=2.5, diffuse_fit="Northern Tracks")
 
 calculate_transient(e_pdf_dict_template, biehl_jetted_rate,
                     "jetted TDEs (biehl)", zmax=2.5,
-                    diffuse_fit="Northern Tracks"
+                    # diffuse_fit="Northern Tracks"
                     )
 
 

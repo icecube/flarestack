@@ -6,6 +6,7 @@ plots.
 import numpy as np
 from flarestack.core.unblinding import Unblinder
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
+from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 from flarestack.analyses.tde.shared_TDE import individual_tde_cat, \
     individual_tdes
 from flarestack.utils.custom_seasons import custom_dataset
@@ -47,13 +48,18 @@ for j, cat in enumerate(individual_tdes):
     cat_path = individual_tde_cat(cat)
     catalogue = np.load(cat_path)
 
+    if cat != "AT2018cow":
+        dataset = custom_dataset(txs_sample_v1, catalogue,
+                                 unblind_llh["LLH Time PDF"])
+    else:
+        dataset = gfu_v002_p04
+
     unblind_dict = {
         "name": name,
-        "datasets": custom_dataset(txs_sample_v1, catalogue,
-                                   unblind_llh["LLH Time PDF"]),
+        "datasets": dataset,
         "catalogue": cat_path,
         "llh kwargs": unblind_llh,
         "background TS": bkg_ts
     }
 
-    ub = Unblinder(unblind_dict, mock_unblind=False)
+    ub = Unblinder(unblind_dict, mock_unblind=False, full_plots=True)
