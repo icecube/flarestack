@@ -20,3 +20,22 @@ was added as a source for the flare search, in order to provide a timely IceCube
  analysis of this source. The new data set was added to the code, and a new
  Flarestack v1.2.1 (Asteria) release was made. No significant excess was
  observed from this source.
+
+REPRODUCIBILITY GUIDE
+
+To reproduce the 5 flare searches, unblind_individual_tdes.py must be run. To
+reproduce the 4 stacking analyses, unblind_tde_catalogues.py must be run. In
+both cases, the fit results will be obtained.
+
+To reproduce the sensitivity curves as a function of spectral index,
+compare_spectral_indices.py must be run. For the comparison of time integration
+and flare search methods, compare_cluster_search_to_time_integration.py must be
+run. Both of these scripts should be run on the cluster to obtain sufficient
+statistics.
+
+If the unblinding scripts are run *after* the sensitivity scripts have been run,
+ TS distributions will be available. Then the TS results for each unblinding
+ will automatically be compared to background TS distributions, and the
+ significance of the result will be quantified. Limits will also automatically
+ be set. All plots can be viewed in the assigned scratch directory, under
+  /path/to/scratch/flarestack_data/output/plots/analyses/tde/....
