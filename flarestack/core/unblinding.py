@@ -83,10 +83,10 @@ class Unblinder(MinimisationHandler):
 
             self.calculate_upper_limits()
 
-            # if self.flare:
-            #     self.neutrino_lightcurve()
-            # else:
-            #     self.scan_likelihood()
+            if self.flare:
+                self.neutrino_lightcurve()
+            else:
+                self.scan_likelihood()
 
     def calculate_upper_limits(self):
 
@@ -114,7 +114,7 @@ class Unblinder(MinimisationHandler):
 
             savepath = ul_dir + subdir + ".pdf"
 
-            ul, extrapolated = rh.set_upper_limit(self.ts, savepath)
+            ul, extrapolated = rh.set_upper_limit(float(self.ts), savepath)
             flux_uls.append(ul)
 
             # Calculate mean injection time per source
@@ -209,7 +209,7 @@ class Unblinder(MinimisationHandler):
             self.sigma = plot_background_ts_distribution(
                 ts_array, self.output_file, self.ts_type, self.ts)
 
-        except IOError:
+        except IOError, OSError:
             print "No Background TS Distribution found"
             pass
 
