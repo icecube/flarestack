@@ -1,6 +1,7 @@
 from flarestack.shared import catalogue_dir
 import os
 tde_dir = os.path.abspath(os.path.dirname(__file__))
+tde_cat_dir = tde_dir + "/tde_catalogues/"
 
 individual_tdes = [
     "Swift J1644+57",
@@ -18,7 +19,7 @@ def individual_tde_cat(name):
     :param name: Name of TDE
     :return: Path to catalogue
     """
-    return catalogue_dir + "TDEs/individual_TDEs/" + name + "_catalogue.npy"
+    return tde_cat_dir + "individual_TDEs/" + name + "_catalogue.npy"
 
 
 tde_catalogues = [
@@ -37,4 +38,4 @@ def tde_catalogue_name(name):
     :return: Path to catalogue
     """
 
-    return tde_dir + "/tde_catalogues/TDE_" + name + "_catalogue.npy"
+    return tde_cat_dir + "TDE_" + name + "_catalogue.npy"
