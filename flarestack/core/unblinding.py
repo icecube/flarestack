@@ -90,101 +90,106 @@ class Unblinder(MinimisationHandler):
 
     def calculate_upper_limits(self):
 
-        ul_dir = self.plot_dir + "upper_limits/"
-
         try:
-            os.makedirs(ul_dir)
-        except OSError:
-            pass
 
-        flux_uls = []
-        fluence_uls = []
-        e_per_source_uls = []
-        x_axis = []
+            ul_dir = self.plot_dir + "upper_limits/"
 
-        for subdir in os.listdir(self.pickle_dir):
-            new_path = self.unblind_dict["background TS"] + subdir + "/"
+            try:
+                os.makedirs(ul_dir)
+            except OSError:
+                pass
 
-            with open(analysis_pickle_path(new_path), "r") as f:
-                mh_dict = Pickle.load(f)
-                e_pdf_dict = mh_dict["inj kwargs"]["Injection Energy PDF"]
+            flux_uls = []
+            fluence_uls = []
+            e_per_source_uls = []
+            x_axis = []
 
-            rh = ResultsHandler(new_path, self.unblind_dict["llh kwargs"],
-                                self.unblind_dict["catalogue"])
+            for subdir in os.listdir(self.pickle_dir):
+                new_path = self.unblind_dict["background TS"] + subdir + "/"
 
-            savepath = ul_dir + subdir + ".pdf"
+                with open(analysis_pickle_path(new_path), "r") as f:
+                    mh_dict = Pickle.load(f)
+                    e_pdf_dict = mh_dict["inj kwargs"]["Injection Energy PDF"]
 
-            ul, extrapolated = rh.set_upper_limit(float(self.ts), savepath)
-            flux_uls.append(ul)
+                rh = ResultsHandler(new_path, self.unblind_dict["llh kwargs"],
+                                    self.unblind_dict["catalogue"])
 
-            # Calculate mean injection time per source
+                savepath = ul_dir + subdir + ".pdf"
 
-            n_sources = float(len(self.sources))
+                ul, extrapolated = rh.set_upper_limit(float(self.ts), savepath)
+                flux_uls.append(ul)
 
-            inj_time = 0.
+                # Calculate mean injection time per source
 
-            for season in mh_dict["datasets"]:
+                n_sources = float(len(self.sources))
 
-                t_pdf = TimePDF.create(
-                    mh_dict["inj kwargs"]["Injection Time PDF"], season
+                inj_time = 0.
+
+                for season in mh_dict["datasets"]:
+
+                    t_pdf = TimePDF.create(
+                        mh_dict["inj kwargs"]["Injection Time PDF"], season
+                    )
+
+                    for src in self.sources:
+                        inj_time += t_pdf.raw_injection_time(src)/n_sources
+
+                astro_dict = rh.nu_astronomy(ul, e_pdf_dict)
+
+                fluence_uls.append(
+                    astro_dict["Total Fluence (GeV cm^{-2} s^{-1})"] * inj_time)
+
+                e_per_source_uls.append(
+                    astro_dict["Mean Luminosity (erg/s)"] * inj_time
                 )
 
-                for src in self.sources:
-                    inj_time += t_pdf.raw_injection_time(src)/n_sources
+                x_axis.append(float(subdir))
 
-            astro_dict = rh.nu_astronomy(ul, e_pdf_dict)
+            plt.figure()
+            plt.plot(x_axis, flux_uls, label="upper limit")
+            plt.yscale("log")
+            plt.savefig(self.plot_dir + "upper_limit_flux.pdf")
+            plt.close()
 
-            fluence_uls.append(
-                astro_dict["Total Fluence (GeV cm^{-2} s^{-1})"] * inj_time)
+            plt.figure()
+            ax1 = plt.subplot(111)
+            ax2 = ax1.twinx()
 
-            e_per_source_uls.append(
-                astro_dict["Mean Luminosity (erg/s)"] * inj_time
-            )
+            ax1.plot(x_axis, fluence_uls)
+            ax2.plot(x_axis, e_per_source_uls)
 
-            x_axis.append(float(subdir))
+            ax2.grid(True, which='both')
+            ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$ s$^{-1}$]")
+            ax2.set_ylabel(r"Isotropic-Equivalent Luminosity $L_{\nu}$ (erg/s)")
+            ax1.set_yscale("log")
+            ax2.set_yscale("log")
 
-        plt.figure()
-        plt.plot(x_axis, flux_uls, label="upper limit")
-        plt.yscale("log")
-        plt.savefig(self.plot_dir + "upper_limit_flux.pdf")
-        plt.close()
+            for k, ax in enumerate([ax1, ax2]):
+                y = [fluence_uls, e_per_source_uls][k]
+                ax.set_ylim(0.95 * min(y), 1.1 * max(y))
 
-        plt.figure()
-        ax1 = plt.subplot(111)
-        ax2 = ax1.twinx()
+            plt.tight_layout()
+            plt.savefig(self.plot_dir + "upper_limit_fluence.pdf")
+            plt.close()
 
-        ax1.plot(x_axis, fluence_uls)
-        ax2.plot(x_axis, e_per_source_uls)
+            try:
+                os.makedirs(os.path.dirname(self.limit_path))
+            except OSError:
+                pass
+            print "Saving limits to", self.limit_path
 
-        ax2.grid(True, which='both')
-        ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$ s$^{-1}$]")
-        ax2.set_ylabel(r"Isotropic-Equivalent Luminosity $L_{\nu}$ (erg/s)")
-        ax1.set_yscale("log")
-        ax2.set_yscale("log")
+            res_dict = {
+                "x": x_axis,
+                "flux": flux_uls,
+                "fluence": fluence_uls,
+                "energy": e_per_source_uls
+            }
 
-        for k, ax in enumerate([ax1, ax2]):
-            y = [fluence_uls, e_per_source_uls][k]
-            ax.set_ylim(0.95 * min(y), 1.1 * max(y))
-
-        plt.tight_layout()
-        plt.savefig(self.plot_dir + "upper_limit_fluence.pdf")
-        plt.close()
-
-        try:
-            os.makedirs(os.path.dirname(self.limit_path))
+            with open(self.limit_path, "wb") as f:
+                Pickle.dump(res_dict, f)
+                
         except OSError:
-            pass
-        print "Saving limits to", self.limit_path
-
-        res_dict = {
-            "x": x_axis,
-            "flux": flux_uls,
-            "fluence": fluence_uls,
-            "energy": e_per_source_uls
-        }
-
-        with open(self.limit_path, "wb") as f:
-            Pickle.dump(res_dict, f)
+            print "Unable to set limits. No TS distributions found."
 
     def compare_to_background_TS(self):
         print "Retrieving Background TS Distribution from", self.pickle_dir
@@ -209,7 +214,7 @@ class Unblinder(MinimisationHandler):
             self.sigma = plot_background_ts_distribution(
                 ts_array, self.output_file, self.ts_type, self.ts)
 
-        except (IOError, OSError) as _:
+        except (IOError, OSError):
             print "No Background TS Distribution found"
             pass
 
