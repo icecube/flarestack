@@ -209,7 +209,7 @@ class Unblinder(MinimisationHandler):
             self.sigma = plot_background_ts_distribution(
                 ts_array, self.output_file, self.ts_type, self.ts)
 
-        except (IOError, OSError) as e:
+        except (IOError, OSError) as _:
             print "No Background TS Distribution found"
             pass
 
