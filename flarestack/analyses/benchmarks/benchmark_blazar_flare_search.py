@@ -10,9 +10,10 @@ import numpy as np
 import os
 import cPickle as Pickle
 from flarestack.core.results import ResultsHandler
+from flarestack.core.minimisation import MinimisationHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_v002_p01
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
-    transients_dir
+from flarestack.shared import plot_output_dir, flux_to_k,  \
+    transients_dir, make_analysis_pickle
 from flarestack.utils.prepare_catalogue import custom_sources
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
@@ -80,18 +81,16 @@ no_flare = {
 }
 
 no_flare_negative = {
+    "name": "standard",
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": False,
     "Fit Negative n_s?": True
 }
 
 flare = {
+    "name": "standard",
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": True,
     "Fit Negative n_s?": False
 }
 
@@ -100,16 +99,15 @@ src_res = dict()
 lengths = np.logspace(-2, 0, 5) * max_window
 
 for i, llh_kwargs in enumerate([
-                                no_flare,
                                 no_flare_negative,
                                 flare
                                 ]):
 
-    label = ["Time-Independent", "Time-Independent (negative n_s)",
+    label = ["Time-Integrated",
              "Time-Clustering"][i]
-    f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
+    mh_name = ["fixed_weights", "flare"][i]
 
-    flare_name = name + f_name + "/"
+    flare_name = name + mh_name + "/"
 
     res = dict()
 
@@ -138,40 +136,30 @@ for i, llh_kwargs in enumerate([
 
         mh_dict = {
             "name": full_name,
+            "mh_name": mh_name,
             "datasets": gfu_v002_p01,
             "catalogue": cat_path,
             "inj kwargs": inj_kwargs,
-            "llh kwargs": llh_kwargs,
+            "llh_dict": llh_kwargs,
             "scale": scale,
-            "n_trials": 1,
+            "n_trials": 5,
             "n_steps": 15
         }
 
-        analysis_path = analysis_dir + full_name
+        pkl_file = make_analysis_pickle(mh_dict)
 
-        try:
-            os.makedirs(analysis_path)
-        except OSError:
-            pass
+        rd.submit_to_cluster(pkl_file, n_jobs=5000)
 
-        pkl_file = analysis_path + "dict.pkl"
-
-        with open(pkl_file, "wb") as f:
-            Pickle.dump(mh_dict, f)
-
-        # rd.submit_to_cluster(pkl_file, n_jobs=5000)
-
-        # mh = MinimisationHandler(mh_dict)
+        # mh = MinimisationHandler.create(mh_dict)
+        # # mh.run(n_trials=3, scale=0.0)
         # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=1)
         # mh.clear()
-
-        # raw_input("prompt")
 
         res[flare_length] = mh_dict
 
     src_res[label] = res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]
@@ -184,8 +172,7 @@ labels = []
 for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
     for (length, rh_dict) in sorted(res.iteritems()):
 
-        rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                            rh_dict["catalogue"])
+        rh = ResultsHandler(rh_dict)
 
         inj_time = length * (60 * 60 * 24)
 
