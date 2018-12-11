@@ -2,12 +2,11 @@
 process is deterministic, so the same flare should be found each time.
 """
 import numpy as np
-from flarestack.core.unblinding import Unblinder
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC79_dict, IC86_1_dict
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
+from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 import unittest
-
-analyses = dict()
+from flarestack.core.unblinding import create_unblinder
 
 # Initialise Injectors/LLHs
 
@@ -23,6 +22,7 @@ llh_time = {
 }
 
 unblind_llh = {
+    "name": "standard",
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
@@ -34,13 +34,17 @@ name = "tests/test_flare_search/"
 
 
 cat_path = ps_catalogue_name(-0.1)
+# cat_path = catalogue = tde_catalogue_name("jetted")
 catalogue = np.load(cat_path)
+
 
 unblind_dict = {
     "name": name,
-    "datasets": [IC86_1_dict],
+    "mh_name": "flare",
+    "datasets": [IC79_dict, IC86_1_dict],
     "catalogue": cat_path,
     "llh kwargs": unblind_llh,
+    "llh_dict": unblind_llh
 }
 
 # Inspecting the neutrino lightcurve for this fixed-seed scramble confirms
@@ -49,8 +53,8 @@ unblind_dict = {
 # deterministic, these values should be returned every time this test is run.
 
 true_parameters = [
-    4.470342243452785,
-    2.6270936625866463,
+    4.402008822643572,
+    2.6471261198030915,
     55876.89316064464,
     55892.569503379375,
     14.084548753227864
@@ -63,13 +67,18 @@ class TestFlareSearch(unittest.TestCase):
         pass
 
     def test_flare(self):
-        ub = Unblinder(unblind_dict)
+        print "\n"
+        print "\n"
+        print "Testing flare LLH class"
+        print "\n"
+        print "\n"
+        ub = create_unblinder(unblind_dict)
         key = [x for x in ub.res_dict.iterkeys() if x != "TS"][0]
         res = ub.res_dict[key]["Parameters"]
         self.assertEqual(res, true_parameters)
 
-        print "Best fit values", res
-        print "Reference best fit", res
+        print "Best fit values", list(res)
+        print "Reference best fit", true_parameters
 
 
 if __name__ == '__main__':
