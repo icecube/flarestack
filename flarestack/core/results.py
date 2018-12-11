@@ -5,71 +5,75 @@ import math
 import scipy
 import scipy.stats
 import matplotlib.pyplot as plt
-from flarestack.shared import name_pickle_output_dir, plot_output_dir, k_to_flux, \
-    fit_setup, inj_dir_name, scale_shortener
+from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
+    k_to_flux, inj_dir_name, scale_shortener
 from flarestack.core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
+from flarestack.core.minimisation import MinimisationHandler
+import sys
 
 
 class ResultsHandler:
 
-    def __init__(self, name, llh_kwargs, cat_path, show_inj=True,
-                 cleanup=False):
+    def __init__(self, rh_dict):
 
-        self.sources = np.sort(np.load(cat_path), order="Distance (Mpc)")
+        self.sources = np.sort(np.load(rh_dict["catalogue"]),
+                               order="Distance (Mpc)")
 
-        self.name = name
+        self.name = rh_dict["name"]
 
         self.results = dict()
-        self.pickle_output_dir = name_pickle_output_dir(name)
-        self.plot_dir = plot_output_dir(name)
+        self.pickle_output_dir = name_pickle_output_dir(self.name)
+        self.plot_dir = plot_output_dir(self.name)
         self.merged_dir = self.pickle_output_dir + "merged/"
 
         # Checks if the code should search for flares. By default, this is
         # not done.
-        try:
-            self.flare = llh_kwargs["Flare Search?"]
-        except KeyError:
-            self.flare = False
+        # try:
+        #     self.flare = llh_kwargs["Flare Search?"]
+        # except KeyError:
+        #     self.flare = False
 
-        if self.flare:
-            self.make_plots = self.flare_plots
-        else:
-            self.make_plots = self.noflare_plots
+        # if self.flare:
+        #     self.make_plots = self.flare_plots
+        # else:
+        self.make_plots = self.noflare_plots
 
         # Checks whether negative n_s is fit or not
-
-        try:
-            self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
-        except KeyError:
-            self.negative_n_s = False
-
-        try:
-            self.fit_weights = llh_kwargs["Fit Weights?"]
-        except KeyError:
-            self.fit_weights = False
+        #
+        # try:
+        #     self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
+        # except KeyError:
+        #     self.negative_n_s = False
+        #
+        # try:
+        #     self.fit_weights = llh_kwargs["Fit Weights?"]
+        # except KeyError:
+        #     self.fit_weights = False
 
         # Sets default Chi2 distribution to fit to background trials
-
-        if self.fit_weights:
-            self.ts_type = "Fit Weights"
-        elif self.flare:
-            self.ts_type = "Flare"
-        elif self.negative_n_s:
-            self.ts_type = "Negative n_s"
-        else:
-            self.ts_type = "Standard"
+        #
+        # if self.fit_weights:
+        #     self.ts_type = "Fit Weights"
+        # elif self.flare:
+        #     self.ts_type = "Flare"
+        # elif self.negative_n_s:
+        #     self.ts_type = "Negative n_s"
+        # else:
+        self.ts_type = "Standard"
         #
         # print "negative_ns", self.negative_n_s
 
-        p0, bounds, names = fit_setup(llh_kwargs, self.sources, self.flare)
+        p0, bounds, names = MinimisationHandler.find_parameter_info(rh_dict)
+
+        # p0, bounds, names = fit_setup(llh_kwargs, self.sources, self.flare)
         self.param_names = names
         self.bounds = bounds
         self.p0 = p0
 
-        if cleanup:
-            self.clean_merged_data()
+        # if cleanup:
+        #     self.clean_merged_data()
 
         self.sensitivity = np.nan
         self.bkg_median = np.nan
@@ -77,12 +81,12 @@ class ResultsHandler:
         self.disc_potential = np.nan
         self.extrapolated_sens = False
         self.extrapolated_disc = False
-        self.show_inj = show_inj
+        # self.show_inj = show_inj
 
-        if self.show_inj:
-            self.inj = self.load_injection_values()
-        else:
-            self.inj = None
+        # if self.show_inj:
+        self.inj = self.load_injection_values()
+        # else:
+        #     self.inj = None
 
         self.merge_pickle_data()
 
@@ -93,10 +97,7 @@ class ResultsHandler:
         except RuntimeError:
             pass
 
-        try:
-            self.plot_bias()
-        except KeyError:
-            pass
+        self.plot_bias()
 
     def astro_values(self, e_pdf_dict):
         """Function to convert the values calculated for sensitivity and
@@ -202,44 +203,15 @@ class ResultsHandler:
                     continue
                 os.remove(path)
 
-                for key in ["TS"]:
-                    try:
-                        merged_data[key] += data[key]
-                    except KeyError:
-                        merged_data[key] = data[key]
-
-                if "Parameters" in data.keys():
-
-                    if "Parameters" not in merged_data.keys():
-                        merged_data["Parameters"] = [
-                            [] for _ in data["Parameters"]]
-
-                    for k, val in enumerate(data["Parameters"]):
-                        try:
-                            merged_data["Parameters"][k] += val
-                        except IndexError:
-                            merged_data["Parameters"][k] = val
-
+                if merged_data == {}:
+                    merged_data = data
                 else:
-                    keys = [x for x in data.keys() if x not in ["TS"]]
-
-                    if keys[0] not in merged_data.keys():
-                        merged_data = data
-
-                    else:
-                        for key in keys:
-                            merged_data[key]["TS"] += data[key]["TS"]
-                            for k, val in enumerate(data[key]["Parameters"]):
-                                merged_data[key]["Parameters"][k] += val
-
-                    # for key in data.keys():
-                    #     if key not in merged_data.keys():
-                    #
-                    #     elif isinstance(merged_data[key], dict):
-                    #         for subkey in merged_data[key].keys():
-                    #             merged_data[key][subkey] += data[key][subkey]
-                    #     else:
-                    #         merged_data[key] += data[key]
+                    for (key, info) in data.iteritems():
+                        if isinstance(info, list):
+                            merged_data[key] += info
+                        else:
+                            for (param_name, params) in info.iteritems():
+                                merged_data[key][param_name] += params
 
             with open(merged_path, "wb") as mp:
                 Pickle.dump(merged_data, mp)
@@ -248,8 +220,11 @@ class ResultsHandler:
                 self.results[scale_shortener(float(sub_dir_name))] = merged_data
 
         if len(self.results.keys()) == 0:
-            print "No data was found by ResultsHandler object!"
-            return
+            print "No data was found by ResultsHandler object! \n"
+            print "Tried root directory: \n"
+            print self.pickle_output_dir
+            print ""
+            sys.exit()
 
     def find_sensitivity(self):
         """Uses the results of the background trials to find the median TS
@@ -279,37 +254,37 @@ class ResultsHandler:
 
         print "Sensitivity is", "{0:.3g}".format(self.sensitivity)
 
-    def set_upper_limit(self, ts_val, savepath):
-        """Set an upper limit, based on a Test Statistic value from
-        unblinding, as well as a
-
-        :param ts_val: Test Statistic Value
-        :param savepath: Path to save plot
-        :return: Upper limit, and whether this was extrapolated
-        """
-
-        try:
-            bkg_dict = self.results[scale_shortener(0.0)]
-        except KeyError:
-            print "No key equal to '0'"
-            return
-
-        bkg_ts = bkg_dict["TS"]
-        bkg_median = np.median(bkg_ts)
-
-        # Set an upper limit based on the Test Statistic value for an
-        # overfluctuation, or the median background for an underfluctuation.
-
-        ref_ts = max(ts_val, bkg_median)
-
-        ul, extrapolated = self.find_overfluctuations(
-            ref_ts, savepath)
-
-        if extrapolated:
-            print "EXTRAPOLATED",
-
-        print "Upper limit is", "{0:.3g}".format(ul)
-        return ul, extrapolated
+    # def set_upper_limit(self, ts_val, savepath):
+    #     """Set an upper limit, based on a Test Statistic value from
+    #     unblinding, as well as a
+    #
+    #     :param ts_val: Test Statistic Value
+    #     :param savepath: Path to save plot
+    #     :return: Upper limit, and whether this was extrapolated
+    #     """
+    #
+    #     try:
+    #         bkg_dict = self.results[scale_shortener(0.0)]
+    #     except KeyError:
+    #         print "No key equal to '0'"
+    #         return
+    #
+    #     bkg_ts = bkg_dict["TS"]
+    #     bkg_median = np.median(bkg_ts)
+    #
+    #     # Set an upper limit based on the Test Statistic value for an
+    #     # overfluctuation, or the median background for an underfluctuation.
+    #
+    #     ref_ts = max(ts_val, bkg_median)
+    #
+    #     ul, extrapolated = self.find_overfluctuations(
+    #         ref_ts, savepath)
+    #
+    #     if extrapolated:
+    #         print "EXTRAPOLATED",
+    #
+    #     print "Upper limit is", "{0:.3g}".format(ul)
+    #     return ul, extrapolated
 
     def find_overfluctuations(self, ts_val, savepath):
         """Uses the values of injection trials to fit an 1-exponential decay
@@ -475,98 +450,84 @@ class ResultsHandler:
 
         param_path = self.plot_dir + "params/" + str(scale) + ".pdf"
 
-        if self.show_inj:
-            inj = self.inj[str(scale)]
-        else:
-            inj = None
+        # if self.show_inj:
+        inj = self.inj[str(scale)]
 
         plot_fit_results(self.results[scale]["Parameters"], param_path,
-                         self.param_names, inj=inj)
+                         inj=inj)
 
-    def flare_plots(self, scale):
-
-        sources = [x for x in self.results[scale].keys() if x != "TS"]
-
-        for source in sources:
-
-            ts_array = np.array(self.results[scale][source]["TS"])
-            ts_path = self.plot_dir + source + "/ts_distributions/" + str(
-                scale) + ".pdf"
-
-            plot_background_ts_distribution(ts_array, ts_path,
-                                            ts_type=self.ts_type)
-
-            param_path = self.plot_dir + source + "/params/" + str(scale) + \
-                         ".pdf"
-
-            if self.show_inj:
-                inj = self.inj[str(scale)]
-            else:
-                inj = None
-
-            plot_fit_results(self.results[scale][source]["Parameters"],
-                             param_path, self.param_names,
-                             inj=inj)
+    # def flare_plots(self, scale):
+    #
+    #     sources = [x for x in self.results[scale].keys() if x != "TS"]
+    #
+    #     for source in sources:
+    #
+    #         ts_array = np.array(self.results[scale][source]["TS"])
+    #         ts_path = self.plot_dir + source + "/ts_distributions/" + str(
+    #             scale) + ".pdf"
+    #
+    #         plot_background_ts_distribution(ts_array, ts_path,
+    #                                         ts_type=self.ts_type)
+    #
+    #         param_path = self.plot_dir + source + "/params/" + str(scale) + \
+    #                      ".pdf"
+    #
+    #         if self.show_inj:
+    #             inj = self.inj[str(scale)]
+    #         else:
+    #             inj = None
+    #
+    #         plot_fit_results(self.results[scale][source]["Parameters"],
+    #                          param_path, inj)
 
     def plot_bias(self):
         x = sorted(self.results.keys())
         raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
-        x = [k_to_flux(float(j)) for j in raw_x]
+        try:
+            x = [self.inj[j]["n_s"] for j in raw_x]
+            x_label = r"$n_{injected}$"
+        except KeyError:
+            x = [k_to_flux(float(j)) for j in raw_x]
+            x_label = r"$\Phi_{1GeV}$ (GeV$^{-1}$ cm$^{-2}$)"
 
         for i, param in enumerate(self.param_names):
-            if ("n_s" in param) or (param=="Gamma"):
 
-                plt.figure()
+            plt.figure()
 
-                ax = plt.subplot(111)
+            ax = plt.subplot(111)
 
-                meds = []
-                ulims = []
-                llims = []
-                trues = []
+            meds = []
+            ulims = []
+            llims = []
+            trues = []
 
-                for scale in raw_x:
-                    vals = self.results[scale]["Parameters"][i]
-                    med = np.median(vals)
-                    meds.append(med)
-                    sig = np.std(vals)
-                    ulims.append(med + sig)
-                    llims.append(med - sig)
+            for scale in raw_x:
+                vals = self.results[scale]["Parameters"][param]
+                med = np.median(vals)
+                meds.append(med)
+                sig = np.std(vals)
+                ulims.append(med + sig)
+                llims.append(med - sig)
 
-                    true_dict = self.inj[scale]
+                true = self.inj[scale][param]
+                trues.append(true)
 
-                    if param == "n_s":
-                        true = 0.
+            plt.scatter(x, meds, color="orange")
+            plt.plot(x, meds, color="black")
+            plt.plot(x, trues, linestyle="--", color="red")
+            plt.fill_between(x, ulims, llims, alpha=0.5, color="orange")
 
-                        for val in true_dict.itervalues():
-                            true += val["n_s"]
-                        trues.append(true)
+            ax.set_xlim(left=0.0, right=max(x))
+            ax.set_ylim(bottom=0.0)
 
-                    elif "n_s" in param:
-                        source = param.split("(")[1][:-1]
-                        val = true_dict[source]["n_s"]
-                        trues.append(val)
+            plt.xlabel(x_label)
+            plt.ylabel(param)
+            plt.title("Bias (" + param + ")")
 
-                    elif len(true_dict) > 0:
-                        true = true_dict.itervalues().next()[param]
-                        trues.append(true)
-
-                plt.scatter(x, meds, color="orange")
-                plt.plot(x, meds, color="black")
-                plt.plot(x, trues, linestyle="--", color="red")
-                plt.fill_between(x, ulims, llims, alpha=0.5, color="orange")
-
-                ax.set_xlim(left=0.0, right=max(x))
-                ax.set_ylim(bottom=0.0)
-
-                plt.xlabel(r"$\Phi_{1GeV}$ (GeV$^{-1}$ cm$^{-2}$)")
-                plt.ylabel(param)
-                plt.title("Bias (" + param + ")")
-
-                savepath = self.plot_dir + "bias_" + param + ".pdf"
-                print "Saving bias plot to", savepath
-                plt.savefig(savepath)
-                plt.close()
+            savepath = self.plot_dir + "bias_" + param + ".pdf"
+            print "Saving bias plot to", savepath
+            plt.savefig(savepath)
+            plt.close()
 
 
 

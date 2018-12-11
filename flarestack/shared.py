@@ -3,6 +3,7 @@ import numpy as np
 import config
 import socket
 import cPickle as Pickle
+from flarestack.core.energy_PDFs import gamma_range, EnergyPDF
 
 # ==============================================================================
 # Directory substructure creation
@@ -70,7 +71,7 @@ def set_dataset_directory(path):
     dataset_dir = path
 
 
-gamma_range = [1., 4.]
+# gamma_range = [1., 4.]
 gamma_precision = .025
 
 # Sets the minimum angular error
@@ -110,11 +111,11 @@ def bkg_spline_path(season):
            season["Name"] + '.pkl'
 
 
-def fit_setup(llh_kwargs, sources, flare=False):
+def fit_setup(llh_kwargs, sources, fit_energy, flare=False):
     # The default value for n_s is 1. It can be between 0 and 10000.
     p0 = [1.]
 
-    bounds = [(0.0, 10000.)]
+    bounds = [(0.0, 1000.)]
     names = ["n_s"]
 
     # if "Fit Negative n_s?" in llh_kwargs.keys():
@@ -129,13 +130,12 @@ def fit_setup(llh_kwargs, sources, flare=False):
             bounds = [bounds[0] for x in sources]
             names = ["n_s (" + x["Name"] + ")" for x in sources]
 
-    # If gamma is to be included as a fit parameter, then its default
-    # value if 2, and it can range between 1 and 4.
-    if "Fit Gamma?" in llh_kwargs.keys():
-        if llh_kwargs["Fit Gamma?"]:
-            p0.append(2.)
-            bounds.append(tuple(gamma_range))
-            names.append("Gamma")
+    if fit_energy:
+        e_pdf = EnergyPDF.create(llh_kwargs["LLH Energy PDF"])
+        e_seed, e_bounds, e_names = e_pdf.return_energy_parameters()
+        p0 += e_seed
+        bounds += e_bounds
+        names += e_names
 
     if flare:
         names += ["Flare Start", "Flare End", "Flare Length"]

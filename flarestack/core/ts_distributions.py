@@ -460,16 +460,16 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     return disc_potential
 
 
-def plot_fit_results(results, path, labels, inj=None):
+def plot_fit_results(results, path, inj):
 
-    results = np.array(results)
+    # results = np.array(results)
 
     try:
         os.makedirs(os.path.dirname(path))
     except OSError:
         pass
 
-    n_dim = len(results)
+    n_dim = len(results.keys())
 
     try:
 
@@ -478,11 +478,9 @@ def plot_fit_results(results, path, labels, inj=None):
         fig.set_size_inches(7, n_dim*3)
         fig.subplots_adjust(hspace=.5)
 
-        for i, row in enumerate(results):
+        for i, (label, row) in enumerate(results.iteritems()):
 
             weights = np.ones(len(row))/float(len(row))
-
-            label = labels[i]
 
             plt.subplot(n_dim, 1, i+1)
             plt.hist(row, histtype="step", weights=weights,
@@ -491,23 +489,8 @@ def plot_fit_results(results, path, labels, inj=None):
                         label="Median")
             plt.title(label)
 
-            if inj is not None and label == "n_s":
-                n_s = 0
-                for val in inj.itervalues():
-                    n_s += val["n_s"]
-                plt.axvline(n_s, linestyle="--", color="orange", label="Injection")
-
-            elif inj is not None and "(" in label:
-
-                keys = [x[:-1] for x in label.split("(")]
-                val = inj[keys[1]][keys[0]]
-                plt.axvline(val, linestyle="--", color="orange",
-                            label="Injection")
-
-            elif inj is not None:
-                val = inj.itervalues().next()[label]
-                plt.axvline(val, linestyle="--", color="orange",
-                            label="Injection")
+            plt.axvline(inj[label], linestyle="--", color="orange",
+                        label="Injection")
 
             plt.legend()
 

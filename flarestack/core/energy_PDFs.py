@@ -7,6 +7,8 @@ import numexpr
 import numpy as np
 import cPickle as Pickle
 
+gamma_range = [1., 4.]
+
 default_emin = 100
 default_emax = 10**7
 
@@ -90,6 +92,12 @@ class EnergyPDF:
             return energy * self.f(energy)
 
         return self.integrate_over_E(g)
+
+    def return_energy_parameters(self):
+        default = []
+        bounds = []
+        name = []
+        return default, bounds, name
 
 
 @EnergyPDF.register_subclass('Power Law')
@@ -188,6 +196,15 @@ class PowerLaw(EnergyPDF):
             )
 
         return e_integral
+
+    def return_energy_parameters(self):
+        default = [2.]
+        bounds = [(gamma_range[0], gamma_range[1])]
+        name = ["gamma"]
+        return default, bounds, name
+
+    def return_injected_parameters(self):
+        return {"gamma": self.gamma}
 
 
 @EnergyPDF.register_subclass('Spline')

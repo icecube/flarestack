@@ -295,16 +295,15 @@ class MockUnblindedInjector(Injector):
     one background scramble.
     """
 
-    def __init__(self, season, sources, **kwargs):
+    def __init__(self, season, sources=np.nan, **kwargs):
         self.season = season
         self._raw_data = data_loader(season["exp_path"])
 
-    def create_dataset(self, scale):
+    def create_dataset(self, scale=0.0):
         """Returns a background scramble
 
         :return: Scrambled data
         """
-
         seed = int(123456)
         np.random.seed(seed)
 
@@ -320,5 +319,4 @@ class TrueUnblindedInjector(Injector):
         self._raw_data = data_loader(season["exp_path"])
 
     def create_dataset(self, scale):
-
         return self._raw_data
