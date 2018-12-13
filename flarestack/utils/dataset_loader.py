@@ -3,7 +3,7 @@ from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
 
 
-def data_loader(data_path):
+def data_loader(data_path, floor=True):
     """Helper function to load data for a given season/set of season.
     Adds sinDec field if this is not available, and combines multiple years
     of data is appropriate (different sets of data from the same icecube
@@ -50,8 +50,8 @@ def data_loader(data_path):
                             "dataset. (Searched for 'sigma' and 'angErr')")
 
     # Apply a minimum angular error "floor"
-
-    dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
+    if floor:
+        dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
 
     return dataset
 
