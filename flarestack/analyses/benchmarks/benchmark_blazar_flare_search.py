@@ -72,14 +72,6 @@ llh_time = {
 
 llh_energy = injection_energy
 
-no_flare = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": False,
-    "Fit Negative n_s?": False
-}
-
 no_flare_negative = {
     "name": "standard",
     "LLH Energy PDF": llh_energy,
