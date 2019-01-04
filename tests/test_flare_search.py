@@ -53,9 +53,9 @@ unblind_dict = {
 # deterministic, these values should be returned every time this test is run.
 
 true_parameters = [
+    55876.89316064464,
     4.402008822643572,
     2.6471261198030915,
-    55876.89316064464,
     55892.569503379375,
     14.084548753227864
 ]
@@ -73,8 +73,7 @@ class TestFlareSearch(unittest.TestCase):
         print "\n"
         print "\n"
         ub = create_unblinder(unblind_dict)
-        key = [x for x in ub.res_dict.iterkeys() if x != "TS"][0]
-        res = ub.res_dict[key]["Parameters"]
+        res = [x for x in ub.res_dict["Parameters"].itervalues()]
         self.assertEqual(res, true_parameters)
 
         print "Best fit values", list(res)

@@ -3,8 +3,7 @@ IceCube data (IC86_1).
 """
 import unittest
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.core.new_unblinder import create_unblinder
-from flarestack.core.unblinding import Unblinder
+from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack.utils.custom_seasons import custom_dataset
 import numpy as np
@@ -37,7 +36,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         print "\n"
         print "\n"
-        print "Testing fixed_weight MinimisationHandler class"
+        print "Testing fit_weight MinimisationHandler class"
         print "\n"
         print "\n"
 

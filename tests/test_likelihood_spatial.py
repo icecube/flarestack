@@ -2,9 +2,9 @@ from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.shared import flux_to_k
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.utils.reference_sensitivity import reference_sensitivity
-from flarestack.core.new_minimisation import MinimisationHandler
+from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
-from flarestack.core.new_unblinder import create_unblinder
+from flarestack.core.unblinding import create_unblinder
 import unittest
 
 

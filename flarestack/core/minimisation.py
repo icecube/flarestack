@@ -407,13 +407,15 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                     source))
                 acc.append(llh.acceptance(source, params))
 
-            acc = np.array(acc).T
+            time_weights = np.array(time_weights)
 
-            w = acc * dist_weight * np.array(time_weights)
+            acc = np.array(acc).T[0]
+
+            w = acc * dist_weight * time_weights
 
             w = w[:, np.newaxis]
 
-            for j, ind_w in enumerate(w.T):
+            for j, ind_w in enumerate(w):
                 weights_matrix[i][j] = ind_w
 
         return weights_matrix

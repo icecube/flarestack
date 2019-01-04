@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.core.new_unblinder import create_unblinder
+from flarestack.core.unblinding import create_unblinder
 
 # Initialise Injectors/LLHs
 
