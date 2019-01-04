@@ -85,3 +85,14 @@ You can them simply run scripts such as those under /flarestack/analyses/, and d
 ### Anything else?
 
 One additional file that is useful is the published IceCube 7 year Point source sensitivity. In general, Flarestack calculates sensitivity/discovery potential by generating TS distributions at fixed points between 0 and a characteristic flux level, and then interpolates between these points to determine the 90% sensitivity and 50% discovery potential. To meaningfully estimate the sensitivity/discovery potential, the characteristic flux scale must be large enough to exceed the sensitivity or discovery potential, while still small enough so that the interpolation points are not entirely composed of overfluctutations. Selecting reasonable values for this flux scale is typically done by multiplying the published ps sensitivity by various factors. The file can be downloaded from https://icecube.wisc.edu/~coenders/sens.npy, and should be saved to /path/to/scratch/flarestack__data/input/skylab_reference/sens.npy . As with the datasets, this step does not need to be performed for users of DESY/WIPAC because Flarestack will automatically find the relevant files. Users without access to these files will be unable to use the _reference_sensitivity_ function, but will otherwise be able to perform analyses as usual.
+
+# Testing Flarestack
+
+Is flarestack actually working? If you've already run the precomputation, you can check the functionality of flarestack with *unit tests*. There are a suite of unit tests to cover flarestack functionality, which can be run from the base flarestack directory with:
+
+ ```bash
+ python -m unittest discover tests/
+```
+
+If you want to contribute to flarestack, please remember to add new tests!
+

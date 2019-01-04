@@ -33,7 +33,7 @@ def run_precompute(all_data):
     """
     import flarestack.config
     from flarestack.shared import fs_scratch_dir, input_dir, storage_dir, \
-        output_dir, \
+        output_dir, cluster_dir, \
         log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, \
         SoB_spline_dir, analysis_dir, illustration_dir, \
         transients_dir, bkg_spline_dir, dataset_dir, dataset_plot_dir, \
@@ -77,7 +77,7 @@ def run_precompute(all_data):
         print "\n"
         return
 
-    for dirname in [input_dir, storage_dir, output_dir, log_dir, catalogue_dir,
+    for dirname in [input_dir, storage_dir, output_dir, log_dir, cluster_dir, catalogue_dir,
                     acc_f_dir, pickle_dir, plots_dir, limits_dir,
                     SoB_spline_dir, analysis_dir, illustration_dir,
                     transients_dir, bkg_spline_dir, dataset_plot_dir]:
