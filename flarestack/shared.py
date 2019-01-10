@@ -4,6 +4,7 @@ import config
 import socket
 import cPickle as Pickle
 from flarestack.core.energy_PDFs import gamma_range, EnergyPDF
+import json
 
 # ==============================================================================
 # Directory substructure creation
@@ -37,6 +38,16 @@ illustration_dir = plots_dir + "illustrations/"
 acc_f_dir = input_dir + "acceptance_functions/"
 SoB_spline_dir = input_dir + "SoB_splines/"
 bkg_spline_dir = input_dir + "bkg_splines/"
+pc_dir = input_dir + "pull_corrections/"
+pull_dir = pc_dir + "pulls/"
+floor_dir = pc_dir + "floors/"
+
+all_dirs = [
+    fs_scratch_dir, input_dir, storage_dir, output_dir, cluster_dir, pc_dir,
+    log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir,
+    SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
+    bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir
+]
 
 # ==============================================================================
 # Check host and specify path to dataset storage
@@ -53,7 +64,8 @@ elif "icecube.wisc.edu" in host:
     skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
     print "Loading datasets from", dataset_dir, "(WIPAC)"
 else:
-    pass
+    dataset_dir = "a dataset directory, which can be set with " \
+                  "flarestack.shared.set_dataset_directory"
 
 
 # Dataset directory can be changed if needed
@@ -77,7 +89,30 @@ gamma_precision = .025
 
 # Sets the minimum angular error
 
-min_angular_err = np.deg2rad(0.2)
+min_angular_err = np.deg2rad(0.0)
+
+# Sets an angular error floor based on the 25th quantile
+
+base_floor_quantile = 0.25
+
+
+def floor_pickle(floor_dict):
+    hash_dict = dict(floor_dict)
+    hash_dict["season"] = dict(floor_dict["season"])
+    try:
+        del hash_dict["pull_name"]
+    except KeyError:
+        pass
+    hash_dict["season"]["sinDec bins"] = list(hash_dict["season"]["sinDec bins"])
+    unique_key = hash(json.dumps(hash_dict, sort_keys=True))
+    return floor_dir + str(unique_key) + ".pkl"
+
+def pull_pickle(pull_dict):
+    hash_dict = dict(pull_dict)
+    hash_dict["season"] = dict(pull_dict["season"])
+    hash_dict["season"]["sinDec bins"] = list(hash_dict["season"]["sinDec bins"])
+    unique_key = hash(json.dumps(hash_dict, sort_keys=True))
+    return pull_dir + str(unique_key) + ".pkl"
 
 
 def name_pickle_output_dir(name):
@@ -209,3 +244,24 @@ def make_analysis_pickle(mh_dict):
         Pickle.dump(mh_dict, f)
 
     return pkl_file
+
+
+def weighted_quantile(values, quantiles, weight):
+    """Calculated quantiles accounting for weights.
+
+    :param values: numpy.array with data
+    :param quantiles: array-like with many quantiles needed
+    :param weight: array-like of the same length as `array`
+    :return: numpy.array with computed quantiles.
+    """
+    values = np.array(values)
+    quantiles = np.array(quantiles)
+    sample_weight = np.array(weight)
+
+    sorter = np.argsort(values)
+    values = values[sorter]
+    sample_weight = sample_weight[sorter]
+
+    weighted_quantiles = np.cumsum(sample_weight) - 0.5 * sample_weight
+    weighted_quantiles /= np.sum(sample_weight)
+    return np.interp(quantiles, weighted_quantiles, values)

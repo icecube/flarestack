@@ -32,12 +32,7 @@ def run_precompute(all_data):
     :param all_data: All datasets to be used for setup
     """
     import flarestack.config
-    from flarestack.shared import fs_scratch_dir, input_dir, storage_dir, \
-        output_dir, cluster_dir, \
-        log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir, \
-        SoB_spline_dir, analysis_dir, illustration_dir, \
-        transients_dir, bkg_spline_dir, dataset_dir, dataset_plot_dir, \
-        limits_dir
+    from flarestack.shared import fs_scratch_dir, dataset_dir, all_dirs
     from flarestack.utils.prepare_catalogue import make_single_sources
     from flarestack.utils.create_acceptance_functions import make_acceptance_f
     from flarestack.utils.make_SoB_splines import make_spline
@@ -77,10 +72,7 @@ def run_precompute(all_data):
         print "\n"
         return
 
-    for dirname in [input_dir, storage_dir, output_dir, log_dir, cluster_dir, catalogue_dir,
-                    acc_f_dir, pickle_dir, plots_dir, limits_dir,
-                    SoB_spline_dir, analysis_dir, illustration_dir,
-                    transients_dir, bkg_spline_dir, dataset_plot_dir]:
+    for dirname in all_dirs:
         if not os.path.isdir(dirname):
             print "Making Directory:", dirname
             os.makedirs(dirname)
