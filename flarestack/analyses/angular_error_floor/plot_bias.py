@@ -11,15 +11,35 @@ basedir = plot_output_dir("analyses/angular_error_floor/plots/")
 
 energy_bins = np.linspace(1., 10., 20 + 1)
 
-data_samples = txs_sample_v1 + [IC86_234567_dict]
+data_samples = txs_sample_v1[-3:] + [IC86_234567_dict]
+# data_samples = txs_sample_v1[:-3]
 
 
 def get_data(season):
-    mc = data_loader(season["mc_path"], floor=False)
+    mc = data_loader(season["mc_path"], floor=True)
     x = np.degrees(angular_distance(
         mc["ra"], mc["dec"], mc["trueRa"], mc["trueDec"]))
     y = np.degrees(mc["sigma"]) * 1.177
     return mc, x, y
+
+def weighted_quantile(values, quantiles, weight):
+    """
+    :param values: numpy.array with data
+    :param quantiles: array-like with many quantiles needed
+    :param weight: array-like of the same length as `array`
+    :return: numpy.array with computed quantiles.
+    """
+    values = np.array(values)
+    quantiles = np.array(quantiles)
+    sample_weight = np.array(weight)
+
+    sorter = np.argsort(values)
+    values = values[sorter]
+    sample_weight = sample_weight[sorter]
+
+    weighted_quantiles = np.cumsum(sample_weight) - 0.5 * sample_weight
+    weighted_quantiles /= np.sum(sample_weight)
+    return np.interp(quantiles, weighted_quantiles, values)
 
 
 try:
@@ -50,7 +70,38 @@ plt.ylabel("Fraction of events outside '50% contour'")
 plt.plot([1, 4], [0.5, 0.5], linestyle=":")
 plt.legend()
 plt.title("Fraction of MC events with underestimated angular errors")
-plt.savefig(basedir + "underfluctuations_index.pdf")
+path = basedir + "underfluctuations_index.pdf"
+print "Saving to", path
+plt.savefig(path)
+plt.close()
+
+plt.figure()
+
+for season in data_samples:
+
+    mc, x, y = get_data(season)
+    pulls = x/y
+
+    # mask = x > y
+    gammas = np.linspace(1.0, 4.0, 16 + 1)
+    med_pulls = []
+
+    for gamma in gammas:
+
+        weights = mc["ow"] * mc["trueE"] ** -gamma
+        med_pull = weighted_quantile(pulls, 0.5, weights)
+        med_pulls.append(med_pull)
+
+    plt.plot(gammas, med_pulls, label=season["Name"])
+
+plt.xlabel(r"Assumed Spectral Index $\gamma$ for MC weighting")
+plt.ylabel("Median Pull")
+plt.plot([1, 4], [1.0, 1.0], linestyle=":")
+plt.legend()
+plt.title("Median Pulls")
+path = basedir + "pulls_index.pdf"
+print "Saving to", path
+plt.savefig(path)
 plt.close()
 
 
@@ -59,7 +110,7 @@ ax = plt.subplot(111)
 log_e_bins = np.linspace(2.0, 7.0, 10 + 1)
 centers = 0.5 * (log_e_bins[:-1] + log_e_bins[1:])
 
-for season in data_samples[3:]:
+for season in data_samples:
 
     gamma = 2.0
 
@@ -90,7 +141,48 @@ plt.plot([min(log_e_bins), max(log_e_bins)], [0.5, 0.5], linestyle=":")
 plt.legend()
 plt.title("Fraction of MC events with underestimated angular errors")
 ax.set_ylim(bottom=0.4)
-plt.savefig(basedir + "underfluctuations_loge_true.pdf")
+path = basedir + "underfluctuations_loge_true.pdf"
+print "Saving to", path
+plt.savefig(path)
+plt.close()
+
+plt.figure()
+ax = plt.subplot(111)
+log_e_bins = np.linspace(2.0, 7.0, 10 + 1)
+centers = 0.5 * (log_e_bins[:-1] + log_e_bins[1:])
+
+for season in data_samples:
+
+    gamma = 2.0
+
+    mc, x, y = get_data(season)
+    pulls = x/y
+    weights = mc["ow"] * mc["trueE"] ** -gamma
+
+    med_pulls = []
+    log_es = []
+
+    for i, lower in enumerate(log_e_bins[:-1]):
+        upper = log_e_bins[i + 1]
+        mask = np.logical_and(
+            np.log10(mc["trueE"]) > lower,
+            np.log10(mc["trueE"]) < upper
+        )
+        med = weighted_quantile(pulls[mask], 0.5, weights[mask])
+        med_pulls += [med for _ in range(2)]
+        log_es += [lower, upper]
+
+    plt.plot(log_es, med_pulls, label=season["Name"])
+
+plt.xlabel(r"Log(True Energy/GeV)")
+plt.ylabel("Median Pull")
+plt.plot([min(log_e_bins), max(log_e_bins)], [1.0, 1.0], linestyle=":")
+plt.legend()
+plt.title("Median Pulls for MC error estimates")
+# ax.set_ylim(bottom=0.4)
+path = basedir + "pulls_loge_true.pdf"
+print "Saving to", path
+plt.savefig(path)
 plt.close()
 
 for gamma in [2.0, 3.0, 3.5]:
@@ -98,7 +190,7 @@ for gamma in [2.0, 3.0, 3.5]:
     plt.figure()
     ax = plt.subplot(111)
 
-    for season in data_samples[3:]:
+    for season in data_samples:
 
         sin_dec_bins = season["sinDec bins"]
 
@@ -134,10 +226,48 @@ for gamma in [2.0, 3.0, 3.5]:
 
     plt.figure()
     ax = plt.subplot(111)
+
+    for season in data_samples:
+
+        sin_dec_bins = season["sinDec bins"]
+
+        mc, x, y = get_data(season)
+        pulls = x/y
+
+        med_pulls = []
+        log_es = []
+
+        for i, lower in enumerate(sin_dec_bins[:-1]):
+            upper = sin_dec_bins[i + 1]
+            mask = np.logical_and(
+                mc["sinDec"] > lower,
+                mc["sinDec"] < upper
+            )
+            cut_mc = mc[mask]
+
+            over_mask = x[mask] > y[mask]
+
+            weights = cut_mc["ow"] * cut_mc["trueE"] ** -gamma
+            med = weighted_quantile(pulls[mask], 0.5, weights)
+            med_pulls += [med for _ in range(2)]
+            log_es += [lower, upper]
+
+        plt.plot(log_es, med_pulls, label=season["Name"])
+
+    plt.xlabel(r"$\sin(\delta)$")
+    plt.ylabel("Median Pull")
+    plt.plot([-1., 1.], [1.0, 1.0], linestyle=":")
+    plt.legend()
+    plt.title(r"MC events weighted with $E^{-" + str(gamma) + "}$")
+    plt.savefig(basedir + "pulls_sindec_" + str(gamma) + ".pdf")
+    plt.close()
+
+    plt.figure()
+    ax = plt.subplot(111)
     log_e_bins = np.linspace(2.5, 5.0, 5 + 1)
     centers = 0.5 * (log_e_bins[:-1] + log_e_bins[1:])
 
-    for season in data_samples[3:]:
+    for season in data_samples:
 
         mc, x, y = get_data(season)
         weights = mc["ow"] * mc["trueE"] ** -gamma
@@ -168,6 +298,42 @@ for gamma in [2.0, 3.0, 3.5]:
     plt.title(r"MC events weighted with $E^{-" + str(gamma) + "}$")
     ax.set_ylim(bottom=0.4)
     plt.savefig(basedir + "underfluctuations_loge_" + str(gamma) + ".pdf")
+    plt.close()
+
+    plt.figure()
+    ax = plt.subplot(111)
+    log_e_bins = np.linspace(2.5, 5.0, 5 + 1)
+    centers = 0.5 * (log_e_bins[:-1] + log_e_bins[1:])
+
+    for season in data_samples:
+
+        mc, x, y = get_data(season)
+        pulls = x/y
+        weights = mc["ow"] * mc["trueE"] ** -gamma
+
+        underestimates = []
+        log_es = []
+
+        for i, lower in enumerate(log_e_bins[:-1]):
+            upper = log_e_bins[i + 1]
+            mask = np.logical_and(
+                mc["logE"] > lower,
+                mc["logE"] < upper
+            )
+            cut_mc = mc[mask]
+
+            med = weighted_quantile(pulls[mask], 0.5, weights[mask])
+            underestimates += [med for _ in range(2)]
+            log_es += [lower, upper]
+
+        plt.plot(log_es, underestimates, label=season["Name"])
+
+    plt.xlabel(r"Log(Energy Proxy/GeV)")
+    plt.ylabel("Median Pull")
+    plt.plot([min(log_e_bins), max(log_e_bins)], [1.0, 1.0], linestyle=":")
+    plt.legend()
+    plt.title(r"MC events weighted with $E^{-" + str(gamma) + "}$")
+    plt.savefig(basedir + "pulls_loge_" + str(gamma) + ".pdf")
     plt.close()
 
 raw_input("prompt")

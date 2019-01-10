@@ -32,8 +32,8 @@ for i, llh_name in enumerate(["spatial", "fixed_energy", "standard"]):
             "Name": "Power Law"
         }
 
-    for gamma in [1.5, 2.0, 3.0, 3.5]:
-
+    for j, gamma in enumerate([1.5, 2.0, 3.0, 3.5]):
+    # for gamma in [1.]:
         name = base_name + str(gamma) + "/"
 
         if llh_name == "fixed_energy":
@@ -58,9 +58,9 @@ for i, llh_name in enumerate(["spatial", "fixed_energy", "standard"]):
             "inj kwargs": inj_dict
         }
 
-        scale = flux_to_k(reference_sensitivity(sin_dec, gamma)) * 500
-        if gamma > 3.0:
-            scale *= 6
+        scale = flux_to_k(reference_sensitivity(sin_dec, gamma)) * 125 * (
+            [4.0, 1.0, 0.3, 10.0][j]
+        )
 
         mh = MinimisationHandler.create(mh_dict)
         mh.iterate_run(scale=scale, n_steps=10, n_trials=1000)

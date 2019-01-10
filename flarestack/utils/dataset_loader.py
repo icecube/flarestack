@@ -49,6 +49,10 @@ def data_loader(data_path, floor=True):
             raise Exception("No recognised Angular Error field found in "
                             "dataset. (Searched for 'sigma' and 'angErr')")
 
+    dataset = append_fields(
+        dataset, 'raw_sigma', dataset["sigma"], usemask=False, dtypes=[np.float]
+    )
+
     # Apply a minimum angular error "floor"
     if floor:
         dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
