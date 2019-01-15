@@ -114,6 +114,7 @@ class LLH:
             cut_data['ra'], cut_data['dec'], source['ra'], source['dec'])
         space_term = (1. / (2. * np.pi * cut_data['sigma'] ** 2.) *
                       np.exp(-0.5 * (distance / cut_data['sigma']) ** 2.))
+
         return space_term
 
     # ==========================================================================
@@ -233,18 +234,18 @@ class LLH:
         """
         return (n_all - n_coincident) * np.log1p(-n_s / n_all)
 
-    def create_kwargs(self, data):
+    def create_kwargs(self, data, pull_corrector):
         kwargs = dict()
         return kwargs
 
-    def create_llh_function(self, data):
+    def create_llh_function(self, data, pull_corrector):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
         :return: LLH function that can be minimised
         """
 
-        kwargs = self.create_kwargs(data)
+        kwargs = self.create_kwargs(data, pull_corrector)
 
         def test_statistic(params, weights):
             return self.calculate_test_statistic(
@@ -306,10 +307,11 @@ class SpatialLLH(LLH):
         # return lambda x: data_rate
         return lambda x: np.exp(self.bkg_spatial(np.sin(x))) * data_rate
 
-    def create_llh_function(self, data):
+    def create_llh_function(self, data, pull_corrector):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
+        :param pull_corrector: pull_corrector
         :return: LLH function that can be minimised
         """
         n_all = float(len(data))
@@ -324,6 +326,10 @@ class SpatialLLH(LLH):
 
             assumed_bkg_mask *= ~s_mask
             coincident_data = data[s_mask]
+
+            if pull_corrector(coincident_data) != coincident_data:
+                raise Exception("Spatial Likelihood is not compatible with "
+                                "Dynamic Pull Corrections. ")
 
             if len(coincident_data) > 0:
 
@@ -437,7 +443,7 @@ class FixedEnergyLLH(LLH):
 
         return f
 
-    def create_kwargs(self, data):
+    def create_kwargs(self, data, pull_corrector):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
@@ -463,6 +469,10 @@ class FixedEnergyLLH(LLH):
 
             assumed_bkg_mask *= ~s_mask
             coincident_data = data[s_mask]
+
+            if pull_corrector(coincident_data) != coincident_data:
+                raise Exception("Fixed Energy PDF Likelihood is not compatible "
+                                "with Dynamic Pull Corrections.")
 
             if len(coincident_data) > 0:
 
@@ -598,7 +608,7 @@ class StandardLLH(FixedEnergyLLH):
 
         return self.acceptance_f(dec, gamma)
 
-    def create_kwargs(self, data):
+    def create_kwargs(self, data, pull_corrector):
 
         kwargs = dict()
 
@@ -617,13 +627,13 @@ class StandardLLH(FixedEnergyLLH):
             coincident_data = data[s_mask]
 
             if len(coincident_data) > 0:
+                # del sig
+                # del bkg
 
-                sig = self.signal_pdf(source, coincident_data)
-                bkg = np.array(self.background_pdf(source, coincident_data))
+                spatial_cache = self.create_spatial_cache(
+                    coincident_data, source, pull_corrector)
 
-                SoB_spacetime.append(sig/bkg)
-                del sig
-                del bkg
+                SoB_spacetime.append(spatial_cache)
 
                 energy_cache = self.create_SoB_energy_cache(coincident_data)
 
@@ -632,9 +642,9 @@ class StandardLLH(FixedEnergyLLH):
             # print n_bkg
 
         kwargs["n_coincident"] = np.sum(~assumed_background_mask)
-
-        kwargs["SoB_spacetime"] = np.array(SoB_spacetime)
+        kwargs["SoB_spacetime_cache"] = np.array(SoB_spacetime)
         kwargs["SoB_energy_cache"] = SoB_energy_cache
+
 
         return kwargs
 
@@ -650,6 +660,15 @@ class StandardLLH(FixedEnergyLLH):
         gamma = params[-1]
         SoB_energy = np.array([self.estimate_energy_weights(gamma, x)
                                for x in kwargs["SoB_energy_cache"]])
+        SoB_spacetime = np.array([self.estimate_spatial(gamma, x)
+                                  for x in kwargs["SoB_spacetime_cache"]])
+
+        # for x in kwargs["SoB_spacetime_cache"]:
+        #     print x[2.0][:10]
+        # print params
+        # print SoB_spacetime[0][:10]
+        # print kwargs["baseSoB"][:10]
+        # raw_input("prompt")
 
         # Calculates the expected number of signal events for each source in
         # the season
@@ -665,11 +684,10 @@ class StandardLLH(FixedEnergyLLH):
             # n_s > 0 (as it is not included for n_s=0).
             if n_j < 0:
                 x.append(1 + ((n_j / kwargs["n_all"]) * (
-                        kwargs["SoB_spacetime"][i] - 1.)))
+                        SoB_spacetime[i] - 1.)))
             else:
-
                 x.append(1 + ((n_j / kwargs["n_all"]) * (
-                    SoB_energy[i] * kwargs["SoB_spacetime"][i] - 1.)))
+                    SoB_energy[i] * SoB_spacetime[i] - 1.)))
 
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
@@ -742,6 +760,67 @@ class StandardLLH(FixedEnergyLLH):
 
             val = numexpr.evaluate(
                 "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
+                " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
+            )
+
+        return val
+
+    def create_spatial_cache(self, cut_data, source, pull_corrector):
+        """Evaluates the median pull values for all coincidentdata. For each
+        value of gamma in self.gamma_support_points, calculates
+        the Log(Signal/Background) values for the coincident data. Then saves
+        each weight array to a dictionary.
+
+        :param cut_data: Subset of the data containing only coincident events
+        :return: Dictionary containing SoB values for each event for each
+        gamma value.
+        """
+
+        spatial_cache = dict()
+
+        for key in sorted(pull_corrector.pickled_data.iterkeys()):
+
+            cut_data = pull_corrector.pull_correct_dynamic(cut_data, key)
+
+            sig = self.signal_pdf(source, cut_data)
+            bkg = np.array(self.background_pdf(source, cut_data))
+
+            spatial_cache[key] = sig/bkg
+
+        return spatial_cache
+
+    def estimate_spatial(self, gamma, spatial_cache):
+        """Quickly estimates the value of pull for Gamma.
+        Uses pre-calculated values for first and second derivatives.
+        Uses a Taylor series to estimate S(gamma), unless pull has already
+        been calculated for a given gamma.
+
+        :param gamma: Spectral Index
+        :param spatial_cache: Median Pull cache
+        :return: Estimated value for S(gamma)
+        """
+        if gamma in spatial_cache.keys():
+            # val = np.exp(spatial_cache[gamma])
+            val = spatial_cache[gamma]
+        else:
+            g1 = self._around(gamma)
+            dg = self.precision
+
+            g0 = self._around(g1 - dg)
+            g2 = self._around(g1 + dg)
+
+            # Uses Numexpr to quickly estimate S(gamma)
+
+            S0 = spatial_cache[g0]
+            S1 = spatial_cache[g1]
+            S2 = spatial_cache[g2]
+
+            # val = numexpr.evaluate(
+            #     "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
+            #     " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
+            # )
+            val = numexpr.evaluate(
+                "((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
                 " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
             )
 

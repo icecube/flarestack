@@ -7,11 +7,13 @@ from flarestack.shared import min_angular_err, base_floor_quantile, \
     floor_pickle, pull_pickle, weighted_quantile
 from flarestack.utils.dynamic_pull_correction import \
     create_quantile_floor_0d, create_quantile_floor_0d_e, \
-    create_quantile_floor_1d, create_quantile_floor_1d_e, create_pull_0d_e
+    create_quantile_floor_1d, create_quantile_floor_1d_e, create_pull_0d_e, \
+    create_pull_1d
 from flarestack.utils.dataset_loader import data_loader
 import json
 import cPickle as Pickle
 from scipy.interpolate import interp1d, RectBivariateSpline
+from flarestack.utils.make_SoB_splines import gamma_support_points
 
 
 class BaseFloorClass:
@@ -48,8 +50,9 @@ class BaseFloorClass:
         return np.array([0. for _ in data])
 
     def apply_floor(self, data):
-        data[data["raw_sigma"] < self.floor(data)]["sigma"] = math.sqrt(
-            self.floor(data) ** 2. + data["raw_sigma"] ** 2.)
+        mask = data["raw_sigma"] < self.floor(data)
+        data["sigma"][mask] = np.sqrt(
+            self.floor(data[mask]) ** 2. + data["raw_sigma"][mask] ** 2.)
         return data
 
     def apply_dynamic(self, data):
@@ -73,7 +76,7 @@ class BaseStaticFloor(BaseFloorClass):
     """
 
     def apply_static(self, data):
-        data = self.floor(data)
+        data = self.apply_floor(data)
         data["raw_sigma"] = data["sigma"]
         return data
 
@@ -157,10 +160,10 @@ class QuantileFloorEParam0D(BaseQuantileFloor, BaseDynamicFloorClass):
         create_quantile_floor_0d_e(self.floor_dict)
 
     def create_function(self, pickled_array):
-        print pickled_array
         func = interp1d(pickled_array[0], pickled_array[1])
         return lambda data, params: np.array([func(params) for _ in data])
-#
+
+
 @BaseFloorClass.register_subclass('quantile_floor_1d')
 class QuantileFloor1D(BaseQuantileFloor, BaseStaticFloor):
 
@@ -170,6 +173,7 @@ class QuantileFloor1D(BaseQuantileFloor, BaseStaticFloor):
     def create_function(self, pickled_array):
         func = interp1d(pickled_array[0], pickled_array[1])
         return lambda data, params: func(data["logE"])
+
 
 @BaseFloorClass.register_subclass('quantile_floor_1d_e')
 class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
@@ -194,7 +198,6 @@ class BasePullCorrector:
         self.floor = BaseFloorClass.create(pull_dict)
         self.pull_dict = pull_dict
         self.pull_name = pull_pickle(pull_dict)
-
 
     @classmethod
     def register_subclass(cls, pull_name):
@@ -224,39 +227,21 @@ class BasePullCorrector:
 
         return cls.subclasses[pull_name](pull_dict)
 
-    def pull_correct(self, data):
-        data["sigma"] = self.f(data["raw_sigma"])
+    def pull_correct(self, data, params):
         return data
 
     def pull_correct_static(self, data):
         data = self.floor.apply_static(data)
         return data
 
-    def pull_correct_dynamic(self, data, **kwargs):
-        data = self.floor.apply_dynamic(data, **kwargs)
+    def pull_correct_dynamic(self, data, params):
+        data = self.floor.apply_dynamic(data, params)
         return data
 
 
 @BasePullCorrector.register_subclass('no_pull')
 class NoPull(BasePullCorrector):
     pass
-
-
-class BaseStaticPullCorrector(BasePullCorrector):
-
-    def pull_correct_static(self, data):
-        data = self.floor.apply_static(data)
-        data = self.pull_correct(data)
-        data["raw_sigma"] = data["sigma"]
-        return data
-
-
-class BaseDynamicPullCorrector(BasePullCorrector):
-
-    def pull_correct_static(self, data):
-        data = self.floor.apply_dynamic(data)
-        data = self.pull_correct(data)
-        return data
 
 
 class BaseMedianPullCorrector(BasePullCorrector):
@@ -269,25 +254,66 @@ class BaseMedianPullCorrector(BasePullCorrector):
         else:
             print "Loading from", self.pull_name
 
-        self.create_pickle()
-
         with open(self.pull_name, "r") as f:
-            pickled_data = Pickle.load(f)
+            self.pickled_data = Pickle.load(f)
 
-        self.f = self.create_function(pickled_data)
+    def pull_correct(self, f, data):
+        data["sigma"] = f(data) * data["raw_sigma"]
+        return data
 
     def create_pickle(self):
         pass
 
-    def create_function(self, pickled_array):
-        pass
+    def create_static(self):
+        return lambda data: np.array([1. for _ in data])
+
+    def create_dynamic(self, pickled_array):
+        return lambda data: np.array([1. for _ in data])
+
+
+class StaticMedianPullCorrector(BaseMedianPullCorrector):
+
+    def __init__(self, pull_dict):
+        BaseMedianPullCorrector.__init__(self, pull_dict)
+
+        self.static_f = self.create_static()
+
+    def pull_correct_static(self, data):
+        data = self.floor.apply_static(data)
+        data = self.pull_correct(self.static_f, data)
+        data["raw_sigma"] = data["sigma"]
+        return data
+
+
+class DynamicMedianPullCorrector(BaseMedianPullCorrector):
+
+    def pull_correct_dynamic(self, data, param):
+        data = self.floor.apply_dynamic(data)
+        f = self.create_dynamic(self.pickled_data[param])
+        data["sigma"] = f(data) * data["raw_sigma"]
+        return data
 
 
 @BasePullCorrector.register_subclass("median_0d_e")
-class MedianPullEParam0D(BaseMedianPullCorrector, BaseDynamicFloorClass):
+class MedianPullEParam0D(DynamicMedianPullCorrector):
 
     def create_pickle(self):
         create_pull_0d_e(self.pull_dict)
+
+    def create_dynamic(self, pickled_array):
+        return lambda data: np.array([pickled_array for _ in data])
+
+
+@BasePullCorrector.register_subclass("median_1d")
+class MedianPullEParam0D(StaticMedianPullCorrector):
+
+    def create_pickle(self):
+        create_pull_1d(self.pull_dict)
+
+    def create_static(self):
+        func = interp1d(self.pickled_array[0], self.pickled_array[1])
+        return lambda data: func(data["logE"])
+
 
 # @BasePullCorrector.register_subclass('static_pull_corrector')
 # class Static1DPullCorrector(BasePullCorrector):
@@ -295,20 +321,6 @@ class MedianPullEParam0D(BaseMedianPullCorrector, BaseDynamicFloorClass):
 #     def __init__(self, season, e_pdf_dict, **kwargs):
 #         BasePullCorrector.__init__(self, season, e_pdf_dict)
 
-
-from flarestack.shared import fs_scratch_dir
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-import json
-
-path = fs_scratch_dir + "tester_spline.npy"
-
-e_pdf_dict = {
-    "Name": "Power Law",
-    "Gamma": 3.0
-}
-
-x = BasePullCorrector.create(IC86_1_dict, e_pdf_dict, "quantile_floor_1d_e",
-                             "median_0d_e")
 
 # x = BaseFloorClass.create(IC86_1_dict, e_pdf_dict, "quantile_floor_1d_e",
 #                           floor_quantile=0.1)

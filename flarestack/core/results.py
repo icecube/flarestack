@@ -518,7 +518,8 @@ class ResultsHandler:
             plt.fill_between(x, ulims, llims, alpha=0.5, color="orange")
 
             ax.set_xlim(left=0.0, right=max(x))
-            ax.set_ylim(bottom=0.0)
+            if min(trues) == 0.0:
+                ax.set_ylim(bottom=0.0)
 
             plt.xlabel(x_label)
             plt.ylabel(param)

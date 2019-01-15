@@ -145,6 +145,8 @@ class PowerLaw(EnergyPDF):
             mask = trueE > self.e_max
             weights[mask] = 0.
 
+        del ow, trueE
+
         return weights
 
     def f(self, energy):

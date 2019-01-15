@@ -5,6 +5,7 @@ from flarestack.core.energy_PDFs import EnergyPDF
 import matplotlib.pyplot as plt
 from flarestack.shared import weighted_quantile, floor_pickle, pull_pickle
 from flarestack.core.astro import angular_distance
+from flarestack.utils.make_SoB_splines import gamma_support_points
 
 
 def get_mc(floor_dict):
@@ -17,8 +18,10 @@ def get_pulls(mc):
     y = np.degrees(mc["sigma"]) * 1.177
     return x/y
 
+
 n_step = 50
 min_loge_gap = 0.2
+
 # def create_quantile_floor(floor_dict):
 #
 #     path = floor_pickle(floor_dict)
@@ -135,13 +138,10 @@ def create_quantile_floor_1d_e(floor_dict):
     mc = get_mc(floor_dict)
     e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
 
-    mc = get_mc(floor_dict)
-    e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
-
     default, bounds, name = e_pdf.return_energy_parameters()
 
-    if len(name) != 1:
-        raise Exception("Trying to scan just one energy parameter, "
+    if name != ["gamma"]:
+        raise Exception("Trying to scan gamma parameter, "
                         "but selected energy pdf gave the following parameters:"
                         " {} {} {}".format(name, default, bounds))
 
@@ -215,21 +215,69 @@ def create_pull_0d_e(pull_dict):
 
     default, bounds, name = e_pdf.return_energy_parameters()
 
-    if len(name) != 1:
-        raise Exception("Trying to scan just one energy parameter, "
+    if name != ["gamma"]:
+        raise Exception("Trying to scan gamma parameter, "
                         "but selected energy pdf gave the following parameters:"
                         " {} {} {}".format(name, default, bounds))
 
-    x_range = np.linspace(bounds[0][0], bounds[0][1], n_step)
+    res_dict = dict()
+
+    x_range = np.array(list(gamma_support_points))
+
     y_range = []
 
     for x in x_range:
         weights = e_pdf.weight_mc(mc, x)
-        quantile_floor = weighted_quantile(
+        median_pull = weighted_quantile(
             pulls, 0.5, weights)
-        y_range.append(quantile_floor)
+        y_range.append(median_pull)
+        res_dict[x] = median_pull
 
     y_range = np.array(y_range)
+
+    save_path = pull_pickle(pull_dict)
+    plot_path = save_path[:-3] + "pdf"
+
+    print x_range, y_range
+
+    plt.figure()
+    plt.plot(x_range, y_range)
+    plt.axhline(1.0, linestyle="--")
+    plt.ylabel("Median Pull")
+    plt.xlabel(name[0])
+    plt.savefig(plot_path)
+    plt.close()
+
+    with open(save_path, "wb") as f:
+        Pickle.dump(res_dict, f)
+
+    print "Saved to", save_path
+
+
+
+def create_pull_1d(pull_dict):
+    mc = get_mc(pull_dict)
+    pulls = get_pulls(mc)
+    e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
+    weights = e_pdf.weight_mc(mc)
+
+    bins = np.linspace(2., 6., 15)
+
+    x_range = 0.5 * (bins[1:] + bins[:-1])
+    y_range = []
+
+    for j, lower in enumerate(bins[:-1]):
+        upper = bins[j + 1]
+        mask = np.logical_and(
+            mc["logE"] >= lower,
+            mc["logE"] < upper
+        )
+        median_pull = weighted_quantile(
+            pulls[mask], 0.5, weights[mask])
+        y_range.append(median_pull)
+
+    x_range = np.array([0.] + list(x_range) + [10.])
+    y_range = np.array([y_range[0]] + list(y_range) + [y_range[-1]])
 
     save_path = pull_pickle(pull_dict)
 
@@ -246,8 +294,6 @@ def create_pull_0d_e(pull_dict):
     plt.plot(x_range, y_range)
     plt.axhline(1.0, linestyle="--")
     plt.ylabel("Median Pull")
-    plt.xlabel(name[0])
+    plt.xlabel("Log(Energy Proxy/GeV)")
     plt.savefig(plot_path)
     plt.close()
-
-

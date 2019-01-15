@@ -194,7 +194,7 @@ class Injector:
 
         return sig_events
 
-    def create_dataset(self, scale):
+    def create_dataset(self, scale, pull_corrector):
         """Create a dataset based on scrambled data for background, and Monte
         Carlo simulation for signal. Returns the composite dataset. The source
         flux can be scaled by the scale parameter.
@@ -213,6 +213,8 @@ class Injector:
             simulated_data = np.concatenate((bkg_events, sig_events))
         else:
             simulated_data = bkg_events
+
+        simulated_data = pull_corrector.pull_correct_static(simulated_data)
 
         return simulated_data
 

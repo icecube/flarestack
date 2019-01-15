@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib as mpl
 from flarestack.core.time_PDFs import TimePDF, Box, Steady
+from flarestack.core.pull_corrector import BasePullCorrector
 
 
 def time_smear(inj):
@@ -48,6 +49,7 @@ class MinimisationHandler:
         self.seasons = mh_dict["datasets"]
         self.sources = sources
         self.mh_dict = mh_dict
+        self.pull_correctors = dict()
 
         # Checks whether signal injection should be done with a sliding PDF
         # within a larger window, or remain fixed at the specified time
@@ -100,6 +102,20 @@ class MinimisationHandler:
             self.unblind = False
             self.mock_unblind = False
 
+        # Sets up whether what pull corrector should be used (default is
+        # none), and whether an angular error floor should be applied (
+        # default is a static floor.
+
+        try:
+            self.pull_name = self.llh_dict["pull_name"]
+        except KeyError:
+            self.pull_name = "no_pull"
+
+        try:
+            self.floor_name = self.llh_dict["floor_name"]
+        except KeyError:
+            self.floor_name = "static_floor"
+
         # For each season, we create an independent injector and llh using the
         # source list along with the respective sets of energy/time PDFs
         # provided.
@@ -114,6 +130,11 @@ class MinimisationHandler:
             else:
                 self.injectors[season["Name"]] = Injector(
                     season, sources, **self.inj_kwargs)
+
+            self.pull_correctors[season["Name"]] = BasePullCorrector.create(
+                season, self.llh_dict["LLH Energy PDF"], self.floor_name,
+                self.pull_name
+            )
 
         p0, bounds, names = self.return_parameter_info(mh_dict)
 
@@ -426,8 +447,10 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         n_all = dict()
 
         for season in self.seasons:
-            dataset = self.injectors[season["Name"]].create_dataset(scale)
-            llh_f = self.llhs[season["Name"]].create_llh_function(dataset)
+            dataset = self.injectors[season["Name"]].create_dataset(
+                scale, self.pull_correctors[season["Name"]])
+            llh_f = self.llhs[season["Name"]].create_llh_function(
+                dataset, self.pull_correctors[season["Name"]])
             llh_functions[season["Name"]] = llh_f
             n_all[season["Name"]] = len(dataset)
 
@@ -792,8 +815,10 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         n_all = dict()
 
         for season in self.seasons:
-            dataset = self.injectors[season["Name"]].create_dataset(scale)
-            llh_f = self.llhs[season["Name"]].create_llh_function(dataset)
+            dataset = self.injectors[season["Name"]].create_dataset(
+                scale, self.pull_correctors[season["Name"]])
+            llh_f = self.llhs[season["Name"]].create_llh_function(
+                dataset, self.pull_correctors[season["Name"]])
             llh_functions[season["Name"]] = llh_f
             n_all[season["Name"]] = len(dataset)
 
