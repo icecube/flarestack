@@ -42,6 +42,11 @@ class Injector:
         for source in sources:
             self.ref_fluxes[scale_shortener(0.0)][source["Name"]] = 0.0
 
+        try:
+            self.fixed_n = kwargs["fixed_n"]
+        except KeyError:
+            self.fixed_n = np.nan
+
     def scramble_data(self):
         """Scrambles the raw dataset to "blind" the data. Assigns a flat Right
         Ascension distribution, and randomly redistributes the arrival times
@@ -115,13 +120,13 @@ class Injector:
         for i, source in enumerate(
                 np.sort(self.sources, order="Distance (Mpc)")):
 
+            # Selects MC events lying in a +/- 5 degree declination band
+            source_mc, omega, band_mask = self.select_mc_band(mc, source)
+
             # Calculate the effective injection time for simulation. Equal to
             # the overlap between the season and the injection time PDF for
             # the source, scaled if the injection PDF is not uniform in time.
             eff_inj_time = self.time_pdf.effective_injection_time(source)
-
-            # Selects MC events lying in a +/- 5 degree declination band
-            source_mc, omega, band_mask = self.select_mc_band(mc, source)
 
             # All injection fluxes are given in terms of k, equal to 1e-9
             inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
@@ -129,7 +134,7 @@ class Injector:
             # Fraction of total flux allocated to given source, assuming
             # standard candles with flux proportional to 1/d^2
 
-            dist_weight = (source["Distance (Mpc)"]**-2) / dist_scale
+            dist_weight = (source["Distance (Mpc)"] ** -2) / dist_scale
 
             # Calculate the fluence, using the effective injection time.
             fluence = inj_flux * eff_inj_time * dist_weight
@@ -141,21 +146,29 @@ class Injector:
 
             source_mc["ow"] = fluence * (self.mc_weights[band_mask] / omega)
 
-            n_inj = np.sum(source_mc["ow"])
+            if np.isnan(self.fixed_n):
 
-            n_tot_exp += n_inj
+                n_inj = np.sum(source_mc["ow"])
 
-            if source["Name"] not in self.ref_fluxes[scale_key].keys():
-                self.ref_fluxes[scale_key][source["Name"]] = n_inj
+                n_tot_exp += n_inj
 
-            # print self.season["Name"], source["Name"], "expecting", n_inj,
+                if source["Name"] not in self.ref_fluxes[scale_key].keys():
+                    self.ref_fluxes[scale_key][source["Name"]] = n_inj
 
-            # Simulates poisson noise around the expectation value n_inj.
-            if self.poisson_smear:
-                n_s = np.random.poisson(n_inj)
-            # If there is no poisson noise, rounds n_s down to nearest integer
+                # print self.season["Name"], source["Name"], "expecting", n_inj,
+
+                # Simulates poisson noise around the expectation value n_inj.
+                if self.poisson_smear:
+                    n_s = np.random.poisson(n_inj)
+                # If there is no poisson noise, rounds n_s down to nearest integer
+                else:
+                    n_s = int(n_inj)
+
             else:
-                n_s = int(n_inj)
+                n_s = int(self.fixed_n)
+
+                if source["Name"] not in self.ref_fluxes[scale_key].keys():
+                    self.ref_fluxes[scale_key][source["Name"]] = n_s
 
             # print "injecting", n_s
             # print inj_flux, dist_weight, eff_inj_time/(60*60*24), np.sum(
