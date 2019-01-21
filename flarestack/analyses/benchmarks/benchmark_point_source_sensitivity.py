@@ -1,12 +1,14 @@
 import numpy as np
 import os
 import cPickle as Pickle
+from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
+from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.utils.reference_sensitivity import reference_sensitivity,\
     reference_7year_discovery_potential
+import flarestack.cluster.run_desy_cluster as rd
 import matplotlib.pyplot as plt
 
 # Initialise Injectors/LLHs
@@ -33,14 +35,14 @@ inj_kwargs = {
 llh_energy = injection_energy
 
 llh_kwargs = {
+    "name": "standard",
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
 }
 
-name = "benchmarks/ps_sens"
+name = "analyses/benchmarks/ps_sens"
 
-sindecs = np.linspace(0.90, -0.90, 13)
+sindecs = np.linspace(0.90, -0.90, 37)
 # sindecs = np.linspace(0.75, -0.75, 7)
 # sindecs = np.linspace(0.5, -0.5, 3)
 
@@ -55,43 +57,35 @@ for sindec in sindecs:
 
     mh_dict = {
         "name": subname,
+        "mh_name": "fixed_weights",
         "datasets": ps_7year,
         "catalogue": cat_path,
         "inj kwargs": inj_kwargs,
-        "llh kwargs": llh_kwargs,
+        "llh_dict": llh_kwargs,
         "scale": scale,
-        "n_trials": 5,
+        "n_trials": 50,
         "n_steps": 15
     }
 
-    analysis_path = analysis_dir + subname
+    pkl_file = make_analysis_pickle(mh_dict)
 
-    try:
-        os.makedirs(analysis_path)
-    except OSError:
-        pass
+    # rd.submit_to_cluster(pkl_file, n_jobs=100)
 
-    pkl_file = analysis_path + "dict.pkl"
-
-    with open(pkl_file, "wb") as f:
-        Pickle.dump(mh_dict, f)
-
-    # rd.submit_to_cluster(pkl_file, n_jobs=5000)
-
-    # mh = MinimisationHandler(mh_dict)
+    # mh = MinimisationHandler.create(mh_dict)
     # mh.iterate_run(mh_dict["scale"], n_steps=10, n_trials=mh_dict["n_trials"])
+
+    # raw_input("prompt")
     # mh.clear()
 
     analyses.append(mh_dict)
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 sens = []
 disc_pots = []
 
 for rh_dict in analyses:
-    rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                        rh_dict["catalogue"])
+    rh = ResultsHandler(rh_dict)
     sens.append(rh.sensitivity)
     disc_pots.append(rh.disc_potential)
 
