@@ -314,7 +314,7 @@ class MockUnblindedInjector(Injector):
         self.season = season
         self._raw_data = data_loader(season["exp_path"])
 
-    def create_dataset(self, scale=0.0):
+    def create_dataset(self, scale, pull_corrector):
         """Returns a background scramble
 
         :return: Scrambled data
@@ -322,7 +322,10 @@ class MockUnblindedInjector(Injector):
         seed = int(123456)
         np.random.seed(seed)
 
-        return self.scramble_data()
+        simulated_data = self.scramble_data()
+        simulated_data = pull_corrector.pull_correct_static(simulated_data)
+
+        return simulated_data
 
 
 class TrueUnblindedInjector(Injector):
@@ -333,5 +336,5 @@ class TrueUnblindedInjector(Injector):
         self.season = season
         self._raw_data = data_loader(season["exp_path"])
 
-    def create_dataset(self, scale):
-        return self._raw_data
+    def create_dataset(self, scale, pull_corrector):
+        return pull_corrector.pull_correct_static(self._raw_data)

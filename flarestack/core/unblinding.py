@@ -278,7 +278,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False):
             print "\n"
             print "The following LLH will be used:"
             print "\n"
-            for (key, val) in self.unblind_dict["llh kwargs"].iteritems():
+            for (key, val) in self.unblind_dict["llh_dict"].iteritems():
                 print key, val
             print "\n"
             confirm()
