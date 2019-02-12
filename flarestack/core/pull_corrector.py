@@ -8,12 +8,15 @@ from flarestack.shared import min_angular_err, base_floor_quantile, \
 from flarestack.utils.dynamic_pull_correction import \
     create_quantile_floor_0d, create_quantile_floor_0d_e, \
     create_quantile_floor_1d, create_quantile_floor_1d_e, create_pull_0d_e, \
-    create_pull_1d
+    create_pull_1d, create_pull_1d_e, create_pull_2d
 from flarestack.utils.dataset_loader import data_loader
 import json
 import cPickle as Pickle
 from scipy.interpolate import interp1d, RectBivariateSpline
-from flarestack.utils.make_SoB_splines import gamma_support_points
+from flarestack.utils.make_SoB_splines import gamma_support_points, \
+    gamma_precision, _around
+import numexpr
+import inspect
 
 
 class BaseFloorClass:
@@ -238,6 +241,59 @@ class BasePullCorrector:
         data = self.floor.apply_dynamic(data, params)
         return data
 
+    def create_spatial_cache(self, cut_data, SoB_pdf):
+        if len(inspect.getargspec(SoB_pdf)[0]) == 2:
+            SoB = dict()
+            for gamma in gamma_support_points:
+                SoB[gamma] = np.log(SoB_pdf(cut_data, gamma))
+        else:
+            SoB = SoB_pdf(cut_data)
+        return SoB
+
+    def estimate_spatial(self, gamma, spatial_cache):
+
+        if isinstance(spatial_cache, dict):
+            return self.estimate_spatial_dynamic(gamma, spatial_cache)
+        else:
+            return spatial_cache
+
+    def estimate_spatial_dynamic(self, gamma, spatial_cache):
+        """Quickly estimates the value of pull for Gamma.
+        Uses pre-calculated values for first and second derivatives.
+        Uses a Taylor series to estimate S(gamma), unless pull has already
+        been calculated for a given gamma.
+
+        :param gamma: Spectral Index
+        :param spatial_cache: Median Pull cache
+        :return: Estimated value for S(gamma)
+        """
+        if gamma in spatial_cache.keys():
+            val = np.exp(spatial_cache[gamma])
+            # val = spatial_cache[gamma]
+        else:
+            g1 = _around(gamma)
+            dg = gamma_precision
+
+            g0 = _around(g1 - dg)
+            g2 = _around(g1 + dg)
+
+            # Uses Numexpr to quickly estimate S(gamma)
+
+            S0 = spatial_cache[g0]
+            S1 = spatial_cache[g1]
+            S2 = spatial_cache[g2]
+
+            val = numexpr.evaluate(
+                "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
+                " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
+            )
+            # val = numexpr.evaluate(
+            #     "((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
+            #     " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
+            # )
+
+        return val
+
 
 @BasePullCorrector.register_subclass('no_pull')
 class NoPull(BasePullCorrector):
@@ -258,7 +314,7 @@ class BaseMedianPullCorrector(BasePullCorrector):
             self.pickled_data = Pickle.load(f)
 
     def pull_correct(self, f, data):
-        data["sigma"] = f(data) * data["raw_sigma"]
+        data["sigma"] = np.exp(f(data)) * data["raw_sigma"]
         return data
 
     def create_pickle(self):
@@ -287,11 +343,47 @@ class StaticMedianPullCorrector(BaseMedianPullCorrector):
 
 class DynamicMedianPullCorrector(BaseMedianPullCorrector):
 
+    def __init__(self, pull_dict):
+        BasePullCorrector.__init__(self, pull_dict)
+
+    def estimate_spatial(self, gamma, spatial_cache):
+        return self.estimate_spatial_dynamic(gamma, spatial_cache)
+
     def pull_correct_dynamic(self, data, param):
         data = self.floor.apply_dynamic(data)
         f = self.create_dynamic(self.pickled_data[param])
-        data["sigma"] = f(data) * data["raw_sigma"]
+        data["sigma"] = np.exp(f(data)) * data["raw_sigma"]
         return data
+
+    def create_spatial_cache(self, cut_data, SoB_pdf):
+        """Evaluates the median pull values for all coincidentdata. For each
+        value of gamma in self.gamma_support_points, calculates
+        the Log(Signal/Background) values for the coincident data. Then saves
+        each weight array to a dictionary.
+
+        :param cut_data: Subset of the data containing only coincident events
+        :return: Dictionary containing SoB values for each event for each
+        gamma value.
+        """
+
+        spatial_cache = dict()
+
+        for key in sorted(self.pickled_data.iterkeys()):
+
+            cut_data = self.pull_correct_dynamic(cut_data, key)
+
+            # If gamma is needed to evaluate spatial PDF (say because you
+            # have overlapping PDFs and you need to know the weights,
+            # then you pass the key. Otherwise just evaluate as normal.
+
+            if len(inspect.getargspec(SoB_pdf)[0]) == 2:
+                SoB = SoB_pdf(cut_data, key)
+            else:
+                SoB = SoB_pdf(cut_data)
+
+            spatial_cache[key] = np.log(SoB)
+
+        return spatial_cache
 
 
 @BasePullCorrector.register_subclass("median_0d_e")
@@ -305,14 +397,43 @@ class MedianPullEParam0D(DynamicMedianPullCorrector):
 
 
 @BasePullCorrector.register_subclass("median_1d")
-class MedianPullEParam0D(StaticMedianPullCorrector):
+class MedianPull1D(StaticMedianPullCorrector):
 
     def create_pickle(self):
         create_pull_1d(self.pull_dict)
 
     def create_static(self):
-        func = interp1d(self.pickled_array[0], self.pickled_array[1])
+        func = interp1d(self.pickled_data[0], self.pickled_data[1])
         return lambda data: func(data["logE"])
+
+
+@BasePullCorrector.register_subclass("median_1d_e")
+class MedianPullEParam1D(DynamicMedianPullCorrector):
+
+    def create_pickle(self):
+        create_pull_1d_e(self.pull_dict)
+
+    def create_dynamic(self, pickled_array):
+        func = interp1d(pickled_array[0], pickled_array[1])
+        return lambda data: func(data["logE"])
+
+@BasePullCorrector.register_subclass("median_2d")
+class MedianPull2D(StaticMedianPullCorrector):
+
+    def create_pickle(self):
+        create_pull_2d(self.pull_dict)
+
+    def create_static(self):
+        func = RectBivariateSpline(self.pickled_data[0], self.pickled_data[1],
+                                   self.pickled_data[2])
+        import resource
+        mem_use = str(
+            float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
+        print ""
+        print 'Memory usage max: %s (Gb)' % mem_use
+
+        return lambda data: [func(x["logE"], x["sinDec"])[0][0] for x in data]
+        # return lambda data:
 
 
 # @BasePullCorrector.register_subclass('static_pull_corrector')

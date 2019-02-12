@@ -11,6 +11,7 @@ from flarestack.core.energy_PDFs import EnergyPDF
 from flarestack.utils.create_acceptance_functions import dec_range
 from flarestack.utils.dataset_loader import data_loader
 from flarestack.utils.make_SoB_splines import create_2d_ratio_spline
+import inspect
 
 
 class LLH:
@@ -234,18 +235,18 @@ class LLH:
         """
         return (n_all - n_coincident) * np.log1p(-n_s / n_all)
 
-    def create_kwargs(self, data, pull_corrector):
+    def create_kwargs(self, data, pull_corrector, weight_f=None):
         kwargs = dict()
         return kwargs
 
-    def create_llh_function(self, data, pull_corrector):
+    def create_llh_function(self, data, pull_corrector, weight_f=None):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
         :return: LLH function that can be minimised
         """
 
-        kwargs = self.create_kwargs(data, pull_corrector)
+        kwargs = self.create_kwargs(data, pull_corrector, weight_f)
 
         def test_statistic(params, weights):
             return self.calculate_test_statistic(
@@ -281,10 +282,10 @@ class SpatialLLH(LLH):
     def __init__(self, season, sources, llh_dict):
         LLH.__init__(self, season, sources, llh_dict)
 
-        if "LLH Energy PDF" in llh_dict.keys():
-            raise Exception("Found 'LLH Energy PDF' entry in llh_dict, "
-                            "but SpatialLLH does not use Energy PDFs. \n"
-                            "Please remove this entry, and try again.")
+        # if "LLH Energy PDF" in llh_dict.keys():
+        #     raise Exception("Found 'LLH Energy PDF' entry in llh_dict, "
+        #                     "but SpatialLLH does not use Energy PDFs. \n"
+        #                     "Please remove this entry, and try again.")
 
     def create_acceptance_function(self):
         """In the most simple case of spatial-only weighting, you would
@@ -307,7 +308,7 @@ class SpatialLLH(LLH):
         # return lambda x: data_rate
         return lambda x: np.exp(self.bkg_spatial(np.sin(x))) * data_rate
 
-    def create_llh_function(self, data, pull_corrector):
+    def create_llh_function(self, data, pull_corrector, weight_f=None):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
@@ -326,10 +327,6 @@ class SpatialLLH(LLH):
 
             assumed_bkg_mask *= ~s_mask
             coincident_data = data[s_mask]
-
-            if pull_corrector(coincident_data) != coincident_data:
-                raise Exception("Spatial Likelihood is not compatible with "
-                                "Dynamic Pull Corrections. ")
 
             if len(coincident_data) > 0:
 
@@ -443,7 +440,7 @@ class FixedEnergyLLH(LLH):
 
         return f
 
-    def create_kwargs(self, data, pull_corrector):
+    def create_kwargs(self, data, pull_corrector, weight_f=None):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
@@ -469,10 +466,6 @@ class FixedEnergyLLH(LLH):
 
             assumed_bkg_mask *= ~s_mask
             coincident_data = data[s_mask]
-
-            if pull_corrector(coincident_data) != coincident_data:
-                raise Exception("Fixed Energy PDF Likelihood is not compatible "
-                                "with Dynamic Pull Corrections.")
 
             if len(coincident_data) > 0:
 
@@ -608,7 +601,7 @@ class StandardLLH(FixedEnergyLLH):
 
         return self.acceptance_f(dec, gamma)
 
-    def create_kwargs(self, data, pull_corrector):
+    def create_kwargs(self, data, pull_corrector, weight_f=None):
 
         kwargs = dict()
 
@@ -623,28 +616,65 @@ class StandardLLH(FixedEnergyLLH):
 
             s_mask = self.select_spatially_coincident_data(data, [source])
 
-            assumed_background_mask *= ~s_mask
             coincident_data = data[s_mask]
 
             if len(coincident_data) > 0:
-                # del sig
-                # del bkg
+                # Only bother accepting neutrinos where the spatial
+                # likelihood is greater than 1e-21. This prevents 0s
+                # appearing in dynamic pull corrections, but also speeds
+                # things up (those neutrinos won't contribute anything to the
+                # likelihood!)
 
-                spatial_cache = self.create_spatial_cache(
-                    coincident_data, source, pull_corrector)
+                sig = self.signal_pdf(source, coincident_data)
+                nonzero_mask = (sig > 1e-21)
+                # nonzero_mask = sig > 0.
+                s_mask[s_mask] *= nonzero_mask
 
-                SoB_spacetime.append(spatial_cache)
+                assumed_background_mask *= ~s_mask
+                coincident_data = data[s_mask]
 
-                energy_cache = self.create_SoB_energy_cache(coincident_data)
+                if len(coincident_data) > 0:
 
-                SoB_energy_cache.append(energy_cache)
+                    SoB_pdf = lambda x: self.signal_pdf(source, x)/\
+                                        self.background_pdf(source, x)
 
-            # print n_bkg
+                    spatial_cache = pull_corrector.create_spatial_cache(
+                        coincident_data, SoB_pdf
+                    )
+
+
+                    SoB_spacetime.append(spatial_cache)
+
+                    energy_cache = self.create_SoB_energy_cache(coincident_data)
+
+                    SoB_energy_cache.append(energy_cache)
+
+                else:
+                    SoB_spacetime.append([])
+                    SoB_energy_cache.append([])
+
+            else:
+                SoB_spacetime.append([])
+                SoB_energy_cache.append([])
+
+        # coincident_data = data[~assumed_background_mask]
+        #
+        # for source in self.sources:
+        #     print source["Name"]
+        #     print self.signal_pdf(source, coincident_data)[:5]
+        #     print self.background_pdf(source, coincident_data)[:5]
+        #     print (self.signal_pdf(source,
+        #                            coincident_data)/self.background_pdf(
+        #         source, coincident_data))[:5]
+        #
+        #     # print n_bkg
+        # raw_input("prompt")
+
 
         kwargs["n_coincident"] = np.sum(~assumed_background_mask)
         kwargs["SoB_spacetime_cache"] = np.array(SoB_spacetime)
         kwargs["SoB_energy_cache"] = SoB_energy_cache
-
+        kwargs["pull_corrector"] = pull_corrector
 
         return kwargs
 
@@ -658,54 +688,77 @@ class StandardLLH(FixedEnergyLLH):
         """
         n_s = np.array(params[:-1])
         gamma = params[-1]
-        SoB_energy = np.array([self.estimate_energy_weights(gamma, x)
-                               for x in kwargs["SoB_energy_cache"]])
-        SoB_spacetime = np.array([self.estimate_spatial(gamma, x)
-                                  for x in kwargs["SoB_spacetime_cache"]])
 
-        # for x in kwargs["SoB_spacetime_cache"]:
-        #     print x[2.0][:10]
-        # print params
-        # print SoB_spacetime[0][:10]
-        # print kwargs["baseSoB"][:10]
+        # print kwargs["SoB_spacetime_cache"]
         # raw_input("prompt")
 
         # Calculates the expected number of signal events for each source in
         # the season
         all_n_j = (n_s * weights.T[0])
+        #
+        # print all_n_j
+        # raw_input("prompt")
 
         x = []
 
         # If n_s if negative, then removes the energy term from the likelihood
 
         for i, n_j in enumerate(all_n_j):
+
+            SoB_spacetime = kwargs["SoB_spacetime_cache"][i]
             # Switches off Energy term for negative n_s, which should in theory
             # be a continuous change that does not alter the likelihood for
             # n_s > 0 (as it is not included for n_s=0).
-            if n_j < 0:
-                x.append(1 + ((n_j / kwargs["n_all"]) * (
-                        SoB_spacetime[i] - 1.)))
+
+            if len(SoB_spacetime) == 0:
+                x.append(np.array([1.]))
+
             else:
-                x.append(1 + ((n_j / kwargs["n_all"]) * (
-                    SoB_energy[i] * SoB_spacetime[i] - 1.)))
+
+                SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
+                    gamma, SoB_spacetime)
+
+                # print SoB_spacetime
+
+                if n_j < 0:
+                    x.append(1. + ((n_j / kwargs["n_all"]) * (
+                            SoB_spacetime - 1.)))
+
+                else:
+
+                    SoB_energy = self.estimate_energy_weights(
+                            gamma, kwargs["SoB_energy_cache"][i])
+
+                    # print ((SoB_spacetime * SoB_energy) - 1.)
+
+                    x.append((1. + ((n_j / kwargs["n_all"]) * (
+                            (SoB_energy * SoB_spacetime) - 1.))))
+
+        # print "X"
+        # print x
+        # raw_input("prompt")
+
 
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
             llh_value = -50. + all_n_j
-
+        #
         else:
 
-            llh_value = np.array([np.sum(np.log(y)) for y in x])
+            llh_value = np.sum([np.sum(np.log(y)) for y in x])
 
-            # print "llh value", llh_value, n_s, kwargs["n_all"]
+            # print params, llh_value
             # raw_input("prompt")
 
-            llh_value += self.assume_background(
-                all_n_j, kwargs["n_coincident"], kwargs["n_all"])
+            llh_value += np.sum(self.assume_background(
+                np.sum(all_n_j), kwargs["n_coincident"], kwargs["n_all"]))
 
             if np.logical_and(np.sum(all_n_j) < 0,
                               np.sum(llh_value) < np.sum(-50. + all_n_j)):
                 llh_value = -50. + all_n_j
+
+        # print params, llh_value
+        # raw_input("prompt")
 
         # Definition of test statistic
         return 2. * np.sum(llh_value)
@@ -725,6 +778,7 @@ class StandardLLH(FixedEnergyLLH):
         :return: Dictionary containing SoB values for each event for each
         gamma value.
         """
+
         energy_SoB_cache = dict()
 
         for gamma in self.SoB_spline_2Ds.keys():
@@ -765,67 +819,6 @@ class StandardLLH(FixedEnergyLLH):
 
         return val
 
-    def create_spatial_cache(self, cut_data, source, pull_corrector):
-        """Evaluates the median pull values for all coincidentdata. For each
-        value of gamma in self.gamma_support_points, calculates
-        the Log(Signal/Background) values for the coincident data. Then saves
-        each weight array to a dictionary.
-
-        :param cut_data: Subset of the data containing only coincident events
-        :return: Dictionary containing SoB values for each event for each
-        gamma value.
-        """
-
-        spatial_cache = dict()
-
-        for key in sorted(pull_corrector.pickled_data.iterkeys()):
-
-            cut_data = pull_corrector.pull_correct_dynamic(cut_data, key)
-
-            sig = self.signal_pdf(source, cut_data)
-            bkg = np.array(self.background_pdf(source, cut_data))
-
-            spatial_cache[key] = sig/bkg
-
-        return spatial_cache
-
-    def estimate_spatial(self, gamma, spatial_cache):
-        """Quickly estimates the value of pull for Gamma.
-        Uses pre-calculated values for first and second derivatives.
-        Uses a Taylor series to estimate S(gamma), unless pull has already
-        been calculated for a given gamma.
-
-        :param gamma: Spectral Index
-        :param spatial_cache: Median Pull cache
-        :return: Estimated value for S(gamma)
-        """
-        if gamma in spatial_cache.keys():
-            # val = np.exp(spatial_cache[gamma])
-            val = spatial_cache[gamma]
-        else:
-            g1 = self._around(gamma)
-            dg = self.precision
-
-            g0 = self._around(g1 - dg)
-            g2 = self._around(g1 + dg)
-
-            # Uses Numexpr to quickly estimate S(gamma)
-
-            S0 = spatial_cache[g0]
-            S1 = spatial_cache[g1]
-            S2 = spatial_cache[g2]
-
-            # val = numexpr.evaluate(
-            #     "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
-            #     " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
-            # )
-            val = numexpr.evaluate(
-                "((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
-                " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
-            )
-
-        return val
-
     @staticmethod
     def return_llh_parameters(llh_dict):
         e_pdf = EnergyPDF.create(llh_dict["LLH Energy PDF"])
@@ -853,6 +846,148 @@ class StandardLLH(FixedEnergyLLH):
             res_dict[key] = np.nan
 
         return res_dict
+
+@LLH.register_subclass('standard_overlapping')
+class StandardOverlappingLLH(StandardLLH):
+
+    def create_kwargs(self, data, pull_corrector, weight_f=None):
+
+        if weight_f is None:
+            raise Exception("Weight function not passed, but is required for "
+                            "standard_overlapping LLH functions.")
+
+
+        season_weight = lambda x: weight_f([1.0, x], self.season)
+
+
+
+        kwargs = dict()
+
+        kwargs["n_all"] = float(len(data))
+
+        assumed_background_mask = np.ones(len(data), dtype=np.bool)
+
+        for i, source in enumerate(np.sort(self.sources,
+                                           order="Distance (Mpc)")):
+
+            s_mask = self.select_spatially_coincident_data(data, [source])
+
+            coincident_data = data[s_mask]
+
+            if len(coincident_data) > 0:
+                # Only bother accepting neutrinos where the spacial
+                # likelihood is greater than 1e-21. This prevents 0s
+                # appearing in dynamic pull corrections, but also speeds
+                # things up (those neutrinos won't contribute anything to the
+                # likelihood!)
+
+                sig = self.signal_pdf(source, coincident_data)
+                nonzero_mask = (sig > 1e-21)
+                s_mask[s_mask] *= nonzero_mask
+
+                assumed_background_mask *= ~s_mask
+
+        coincident_data = data[~assumed_background_mask]
+
+        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
+
+        def joint_SoB(dataset, gamma):
+            return np.sum([np.array(
+                season_weight(gamma)[i] * self.signal_pdf(source, dataset)/
+                self.background_pdf(source, dataset))
+                for i, source in enumerate(self.sources)], axis=0
+            )/np.sum(season_weight(gamma))
+
+        # print joint_SoB(coincident_data)[:5]
+        # for source in self.sources:
+        #     print source["Name"]
+        #     print self.signal_pdf(source, coincident_data)[:5]
+        #     print self.background_pdf(source, coincident_data)[:5]
+        #     print (self.signal_pdf(source,
+        #                            coincident_data)/self.background_pdf(
+        #         source, coincident_data))[:5]
+        #
+        # raw_input("prompt")
+
+        SoB_spacetime = pull_corrector.create_spatial_cache(
+            coincident_data, joint_SoB
+        )
+
+        kwargs["n_coincident"] = np.sum(~assumed_background_mask)
+        kwargs["SoB_spacetime_cache"] = SoB_spacetime
+        kwargs["SoB_energy_cache"] = SoB_energy_cache
+        kwargs["pull_corrector"] = pull_corrector
+
+        return kwargs
+
+    def calculate_test_statistic(self, params, weights, **kwargs):
+        """Calculates the test statistic, given the parameters. Uses numexpr
+        for faster calculations.
+
+        :param params: Parameters from Minimisation
+        :param weights: Normalised fraction of n_s allocated to each source
+        :return: 2 * llh value (Equal to Test Statistic)
+        """
+        n_s = np.array(params[:-1])
+        gamma = params[-1]
+
+
+        SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
+                gamma, kwargs["SoB_spacetime_cache"])
+
+        # print SoB_spacetime
+        # raw_input("prompt")
+
+        SoB_energy = self.estimate_energy_weights(
+                gamma, kwargs["SoB_energy_cache"])
+
+
+
+        # print np.mean(SoB_spacetime), len(SoB_spacetime[0])
+
+        # Calculates the expected number of signal events for each source in
+        # the season
+        n_j = (n_s * np.sum(weights))
+
+        # print ((SoB_energy * SoB_spacetime) - 1.)
+
+        # If n_s if negative, then removes the energy term from the likelihood
+
+        # Switches off Energy term for negative n_s, which should in theory
+        # be a continuous change that does not alter the likelihood for
+        # n_s > 0 (as it is not included for n_s=0).
+        if n_j < 0.:
+            x = (1. + ((n_j / kwargs["n_all"]) * (
+                    SoB_spacetime - 1.)))
+        else:
+            x = (1. + ((n_j / kwargs["n_all"]) * (
+                (SoB_energy * SoB_spacetime) - 1.)))
+
+        # print "X"
+        # print x
+        # raw_input("prompt")
+
+
+        llh_value = np.sum(np.log(x))
+
+        # print params, llh_value
+        # raw_input("prompt")
+        # print params, np.sum(llh_value), n_j, kwargs["n_coincident"], kwargs["n_all"]
+
+        llh_value += self.assume_background(
+            n_j, kwargs["n_coincident"], kwargs["n_all"])
+
+        # raw_input("prompt")
+
+        # if np.logical_and(n_j < 0,
+        #                   np.sum(llh_value) < np.sum(-50. + n_j)):
+        #     llh_value = -50. + n_j
+
+        # print params, llh_value
+        # raw_input("prompt")
+
+        # Definition of test statistic
+        return 2. * np.sum(llh_value)
 
 
 def generate_dynamic_flare_class(season, sources, llh_dict):
@@ -886,11 +1021,6 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
                     params, weights, **kwargs)
 
 
-
-            # def base_f(params):
-            #     return test_statistic(coincident_data)(
-            #         params)
-
             # Super ugly-looking code that magically takes the old llh
             # object, sets the assume_background contribution to zero,
             # and then adds on a new assume_season_background where mutiple
@@ -901,36 +1031,6 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
                         2 * self.assume_season_background(
                     params[0], np.sum(~flare_veto), n_season, n_all)
                 )
-
-            # base_ts =
-            #
-            # base_ts += self.assume_season_background()
-
-            # sig = self.signal_spatial(source, coincident_data)
-            # bkg = self.background_spatial(coincident_data)
-            # SoB_spacetime = sig/bkg
-            # del sig
-            # del bkg
-            #
-            # # If an llh energy PDF has been provided, calculate the SoB values
-            # # for the coincident data, and stores it in a cache.
-            # if hasattr(self, "energy_pdf"):
-            #     SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
-            #
-            #     # If gamma is not going to be fit, replaces the SoB energy
-            #     # cache with the weight array corresponding to the gamma provided
-            #     # in the llh energy PDF
-            #     if not self.fit_gamma:
-            #         SoB_energy_cache = self.estimate_energy_weights(
-            #             self.default_gamma, SoB_energy_cache)
-            #
-            # else:
-            #     SoB_energy_cache = None
-            #
-            # def test_statistic(params):
-            #     return self.calculate_test_statistic(
-            #         params, n_season, n_all, SoB_spacetime,
-            #         SoB_energy_cache)
 
             return combined_test_statistic
 

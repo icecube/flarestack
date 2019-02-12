@@ -210,7 +210,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     vary as a function of the parameters given in minimisation step.
     """
 
-    compatible_llh = ["spatial", "fixed_energy", "standard"]
+    compatible_llh = ["spatial", "fixed_energy", "standard",
+                      "standard_overlapping"]
     compatible_negative_n_s = True
 
     def __init__(self, mh_dict):
@@ -404,6 +405,31 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         self.dump_injection_values(scale)
 
+    def make_season_weight(self, params, season):
+
+        src = np.sort(self.sources, order="Distance (Mpc)")
+        dist_weight = src["Distance (Mpc)"] ** -2
+
+        llh = self.llhs[season["Name"]]
+        acc = []
+
+        time_weights = []
+
+        for source in src:
+            time_weights.append(llh.time_pdf.effective_injection_time(
+                source))
+            acc.append(llh.acceptance(source, params))
+
+        time_weights = np.array(time_weights)
+
+        acc = np.array(acc).T[0]
+
+        w = acc * dist_weight * time_weights
+
+        w = w[:, np.newaxis]
+
+        return w
+
     def make_weight_matrix(self, params):
 
         # Creates a matrix fixing the fraction of the total signal that
@@ -412,29 +438,10 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         # for the ith season for the jth source is given by:
         #  n_exp = n_s * weight_matrix[i][j]
 
-        src = np.sort(self.sources, order="Distance (Mpc)")
-        dist_weight = src["Distance (Mpc)"] ** -2
-
         weights_matrix = np.ones([len(self.seasons), len(self.sources)])
 
         for i, season in enumerate(self.seasons):
-            llh = self.llhs[season["Name"]]
-            acc = []
-
-            time_weights = []
-
-            for source in src:
-                time_weights.append(llh.time_pdf.effective_injection_time(
-                    source))
-                acc.append(llh.acceptance(source, params))
-
-            time_weights = np.array(time_weights)
-
-            acc = np.array(acc).T[0]
-
-            w = acc * dist_weight * time_weights
-
-            w = w[:, np.newaxis]
+            w = self.make_season_weight(params, season)
 
             for j, ind_w in enumerate(w):
                 weights_matrix[i][j] = ind_w
@@ -450,7 +457,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             dataset = self.injectors[season["Name"]].create_dataset(
                 scale, self.pull_correctors[season["Name"]])
             llh_f = self.llhs[season["Name"]].create_llh_function(
-                dataset, self.pull_correctors[season["Name"]])
+                dataset, self.pull_correctors[season["Name"]],
+                self.make_season_weight
+            )
             llh_functions[season["Name"]] = llh_f
             n_all[season["Name"]] = len(dataset)
 

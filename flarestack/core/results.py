@@ -96,6 +96,8 @@ class ResultsHandler:
             self.find_disc_potential()
         except RuntimeError:
             pass
+        except TypeError:
+            pass
 
         self.plot_bias()
 
