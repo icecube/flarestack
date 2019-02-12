@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 #             np.linspace(0.9, 1., 2 + 1),
 #         ]))
 
-energy_bins = np.linspace(1., 10., 50 + 1)
+energy_bins = np.linspace(1., 10., 25 + 1)
 
 energy_pdf = PowerLaw()
 
@@ -295,7 +295,6 @@ def make_spline(seasons):
                     norms[norms == 0.] = 1.
                     hist /= norms
                 else:
-                    pass
                     hist = np.log(np.array(hist))
                 plt.figure()
                 ax = plt.subplot(111)
@@ -397,7 +396,3 @@ def load_bkg_spatial_spline(season):
         res = Pickle.load(f)
 
     return res
-#
-# from data.icecube_pointsource_7_year import ps_7year
-# from data.icecube_gfu_2point5_year import gfu_v002_p01
-# make_spline(gfu_v002_p01)
