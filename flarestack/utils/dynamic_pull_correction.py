@@ -22,6 +22,8 @@ def get_pulls(mc):
 n_step = 50
 min_loge_gap = 0.2
 
+n_ebins = 5
+
 # def create_quantile_floor(floor_dict):
 #
 #     path = floor_pickle(floor_dict)
@@ -78,7 +80,7 @@ def create_quantile_floor_0d_e(floor_dict):
 
     save_path = floor_pickle(floor_dict)
 
-    res = [x_range, y_range]
+    res = [x_range, np.log(y_range)]
 
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
@@ -119,7 +121,7 @@ def create_quantile_floor_1d(floor_dict):
     y_range = np.array([y_range[0]] + list(y_range) + [y_range[-1]])
 
     save_path = floor_pickle(floor_dict)
-    res = [x_range, y_range]
+    res = [x_range, np.log(y_range)]
 
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
@@ -178,7 +180,7 @@ def create_quantile_floor_1d_e(floor_dict):
     z_range = np.array([z_range[0]] + z_range + [z_range[-1]])
 
     save_path = floor_pickle(floor_dict)
-    res = [x_range, e_range, z_range]
+    res = [x_range, e_range, np.log(z_range)]
 
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
@@ -222,7 +224,7 @@ def create_pull_0d_e(pull_dict):
 
     res_dict = dict()
 
-    x_range = np.array(list(gamma_support_points))
+    x_range = np.array(sorted(list(gamma_support_points)))
 
     y_range = []
 
@@ -231,14 +233,14 @@ def create_pull_0d_e(pull_dict):
         median_pull = weighted_quantile(
             pulls, 0.5, weights)
         y_range.append(median_pull)
-        res_dict[x] = median_pull
+        res_dict[x] = np.log(median_pull)
 
     y_range = np.array(y_range)
 
     save_path = pull_pickle(pull_dict)
     plot_path = save_path[:-3] + "pdf"
 
-    print x_range, y_range
+    # print x_range, y_range
 
     plt.figure()
     plt.plot(x_range, y_range)
@@ -261,7 +263,7 @@ def create_pull_1d(pull_dict):
     e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
     weights = e_pdf.weight_mc(mc)
 
-    bins = np.linspace(2., 6., 15)
+    bins = np.linspace(2., 6., n_ebins)
 
     x_range = 0.5 * (bins[1:] + bins[:-1])
     y_range = []
@@ -281,7 +283,7 @@ def create_pull_1d(pull_dict):
 
     save_path = pull_pickle(pull_dict)
 
-    res = [x_range, y_range]
+    res = [x_range, np.log(y_range)]
 
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
@@ -295,5 +297,137 @@ def create_pull_1d(pull_dict):
     plt.axhline(1.0, linestyle="--")
     plt.ylabel("Median Pull")
     plt.xlabel("Log(Energy Proxy/GeV)")
+    plt.savefig(plot_path)
+    plt.close()
+
+
+def create_pull_1d_e(floor_dict):
+
+    mc = get_mc(floor_dict)
+    pulls = get_pulls(mc)
+    e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
+
+    default, bounds, name = e_pdf.return_energy_parameters()
+
+    if name != ["gamma"]:
+        raise Exception("Trying to scan gamma parameter, "
+                        "but selected energy pdf gave the following parameters:"
+                        " {} {} {}".format(name, default, bounds))
+
+    e_range = np.array(sorted(list(gamma_support_points)))
+
+    bins = np.linspace(2., 6., 5)
+    x_range = 0.5 * (bins[1:] + bins[:-1])
+    x_range = np.array([0.] + list(x_range) + [10.])
+
+    res_dict = dict()
+
+    z_range = []
+
+    for e in sorted(e_range):
+        weights = e_pdf.weight_mc(mc, e)
+
+        vals = []
+
+        for j, lower in enumerate(bins[:-1]):
+            upper = bins[j + 1]
+            mask = np.logical_and(
+                mc["logE"] >= lower,
+                mc["logE"] < upper
+            )
+
+            median_pull = weighted_quantile(
+                pulls[mask], 0.5, weights[mask])
+
+            vals.append(median_pull)
+
+        vals = [vals[0]] + vals + [vals[-1]]
+
+        z_range.append(vals)
+        res_dict[e] = [x_range, np.log(vals)]
+
+    z_range = np.array(z_range)
+
+    # z_range = np.vstack((z_range.T[0], z_range.T)).T
+    #
+    # z_range = np.vstack((z_range.T, z_range.T[-1])).T
+
+    save_path = pull_pickle(floor_dict)
+
+    # res = [x_range, e_range, z_range]
+
+    with open(save_path, "wb") as f:
+        Pickle.dump(res_dict, f)
+    print "Saved to", save_path
+
+    plot_path = save_path[:-3] + "pdf"
+
+    ax = plt.subplot(111)
+    X, Y = np.meshgrid(x_range, e_range)
+    # cbar = ax.pcolor(X, Y, np.log(np.degrees(z_range.T)), cmap="viridis", )
+    cbar = ax.pcolor(X, Y, np.log(z_range), cmap="seismic",
+                     vmax=1.0, vmin=-1.0)
+    plt.colorbar(cbar, label="Log(Median Pull)")
+    plt.ylabel(name[0])
+    plt.xlabel("Log(Energy proxy)")
+    plt.savefig(plot_path)
+    plt.close()
+
+def create_pull_2d(pull_dict):
+    mc = get_mc(pull_dict)
+    pulls = get_pulls(mc)
+    e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
+    weights = e_pdf.weight_mc(mc)
+
+    x_bins = np.linspace(2., 6., n_ebins)
+    y_bins = pull_dict["season"]["sinDec bins"]
+
+    x_range = 0.5 * (x_bins[1:] + x_bins[:-1])
+    y_range = 0.5 * (y_bins[1:] + y_bins[:-1])
+
+    z_range = np.ones([len(x_range), len(y_range)])
+
+    for j, lower in enumerate(x_bins[:-1]):
+        upper = x_bins[j + 1]
+        mask = np.logical_and(
+            mc["logE"] >= lower,
+            mc["logE"] < upper
+        )
+
+        cut_mc = mc[mask]
+
+        for k, lower_dec in enumerate(y_bins[:-1]):
+            upper_dec = y_bins[k + 1]
+            bin_mask = np.logical_and(
+                cut_mc["sinDec"] >= lower_dec,
+                cut_mc["sinDec"] < upper_dec
+            )
+
+            median_pull = weighted_quantile(
+                pulls[mask][bin_mask], 0.5, weights[mask][bin_mask])
+
+            z_range[j][k] = np.log(median_pull)
+
+    # x_range = np.array([0.] + list(x_range) + [10.])
+    # y_range = np.array([y_range[0]] + list(y_range) + [y_range[-1]])
+
+    save_path = pull_pickle(pull_dict)
+
+    res = [x_range, y_range, z_range]
+
+    with open(save_path, "wb") as f:
+        Pickle.dump(res, f)
+
+    print "Saved to", save_path
+
+    plot_path = save_path[:-3] + "pdf"
+
+    ax = plt.subplot(111)
+    X, Y = np.meshgrid(x_bins, y_bins)
+    cbar = ax.pcolor(X, Y, z_range.T, cmap="seismic",
+                     vmax=1.0, vmin=-1.0)
+    plt.colorbar(cbar, label="Log(Median Pull)")
+    plt.ylabel(r"$\sin(\delta)$")
+    plt.xlabel("Log(Energy proxy)")
     plt.savefig(plot_path)
     plt.close()
