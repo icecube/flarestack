@@ -941,15 +941,9 @@ class StandardOverlappingLLH(StandardLLH):
         SoB_energy = self.estimate_energy_weights(
                 gamma, kwargs["SoB_energy_cache"])
 
-
-
-        # print np.mean(SoB_spacetime), len(SoB_spacetime[0])
-
         # Calculates the expected number of signal events for each source in
         # the season
         n_j = (n_s * np.sum(weights))
-
-        # print ((SoB_energy * SoB_spacetime) - 1.)
 
         # If n_s if negative, then removes the energy term from the likelihood
 
@@ -963,31 +957,90 @@ class StandardOverlappingLLH(StandardLLH):
             x = (1. + ((n_j / kwargs["n_all"]) * (
                 (SoB_energy * SoB_spacetime) - 1.)))
 
-        # print "X"
-        # print x
-        # raw_input("prompt")
-
 
         llh_value = np.sum(np.log(x))
-
-        # print params, llh_value
-        # raw_input("prompt")
-        # print params, np.sum(llh_value), n_j, kwargs["n_coincident"], kwargs["n_all"]
 
         llh_value += self.assume_background(
             n_j, kwargs["n_coincident"], kwargs["n_all"])
 
-        # raw_input("prompt")
-
-        # if np.logical_and(n_j < 0,
-        #                   np.sum(llh_value) < np.sum(-50. + n_j)):
-        #     llh_value = -50. + n_j
-
-        # print params, llh_value
-        # raw_input("prompt")
 
         # Definition of test statistic
         return 2. * np.sum(llh_value)
+
+@LLH.register_subclass('standard_matrix')
+class StandardMatrixLLH(StandardOverlappingLLH):
+
+    def create_kwargs(self, data, pull_corrector, weight_f=None):
+
+        if weight_f is None:
+            raise Exception("Weight function not passed, but is required for "
+                            "standard_overlapping LLH functions.")
+
+        coincidence_matrix = np.zeros((len(self.sources), len(data)),
+                                      dtype=bool)
+
+        kwargs = dict()
+
+        kwargs["n_all"] = float(len(data))
+
+        sources = np.sort(self.sources, order="Distance (Mpc)")
+
+        for i, source in enumerate(sources):
+
+            s_mask = self.select_spatially_coincident_data(data, [source])
+
+            coincident_data = data[s_mask]
+
+            if len(coincident_data) > 0:
+                # Only bother accepting neutrinos where the spacial
+                # likelihood is greater than 1e-21. This prevents 0s
+                # appearing in dynamic pull corrections, but also speeds
+                # things up (those neutrinos won't contribute anything to the
+                # likelihood!)
+
+                sig = self.signal_pdf(source, coincident_data)
+                nonzero_mask = (sig > 1e-21)
+                s_mask[s_mask] *= nonzero_mask
+
+                coincidence_matrix[i] = s_mask
+
+        coincident_nu_mask = np.sum(coincidence_matrix, axis=0) > 0
+        coincident_source_mask = np.sum(coincidence_matrix, axis=1) > 0
+
+        coincidence_matrix = coincidence_matrix[coincident_source_mask].T[
+            coincident_nu_mask].T
+
+        coincident_data = data[coincident_nu_mask]
+        coincident_sources = sources[coincident_source_mask]
+
+        season_weight = lambda x: weight_f([1.0, x], self.season)[coincident_source_mask]
+
+        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
+
+
+        def joint_SoB(dataset, gamma):
+
+            SoB_matrix = np.zeros_like(coincidence_matrix, dtype=float)
+
+            for i, src in enumerate(coincident_sources):
+                mask = coincidence_matrix[i]
+                SoB_matrix[i][mask] = self.signal_pdf(src, dataset[mask]) / \
+                                      self.background_pdf(src, dataset[mask])
+
+            SoB_matrix *= season_weight(gamma)/np.sum(season_weight(gamma))
+
+            return np.sum(SoB_matrix, axis=0)
+
+        SoB_spacetime = pull_corrector.create_spatial_cache(
+            coincident_data, joint_SoB
+        )
+
+        kwargs["n_coincident"] = np.sum(coincident_nu_mask)
+        kwargs["SoB_spacetime_cache"] = SoB_spacetime
+        kwargs["SoB_energy_cache"] = SoB_energy_cache
+        kwargs["pull_corrector"] = pull_corrector
+
+        return kwargs
 
 
 def generate_dynamic_flare_class(season, sources, llh_dict):
