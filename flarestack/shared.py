@@ -55,7 +55,7 @@ all_dirs = [
 
 host = socket.gethostname()
 
-if "ifh.de" in host:
+if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
     dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
     skylab_ref_dir = dataset_dir + "mirror-7year-PS-sens/"
     print "Loading datasets from", dataset_dir, "(DESY)"
