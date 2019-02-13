@@ -211,7 +211,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     """
 
     compatible_llh = ["spatial", "fixed_energy", "standard",
-                      "standard_overlapping"]
+                      "standard_overlapping", "standard_matrix"]
     compatible_negative_n_s = True
 
     def __init__(self, mh_dict):
