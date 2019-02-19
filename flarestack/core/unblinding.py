@@ -26,7 +26,8 @@ def confirm():
         sys.exit()
 
 
-def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False):
+def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
+                     disable_warning=False):
     """Dynamically create an Unblinder class that inherits corectly from the
     appropriate MinimisationHandler. The name of the parent is specified in
     the unblinder dictionary as 'mh_name'.
@@ -37,6 +38,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False):
     unblinding to occur.
     :param full_plots: Boolean, determines whether likelihood scans and
     limits be generated (can be computationally expensive)
+    :param disable_warning: By default, the unblinder gives a warning if real
+    data is unblinded. This can be disabled.
     :return: Instance of dynamically-generated Unblinder class
     """
 
@@ -62,7 +65,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False):
             unblind_dict["Mock Unblind"] = mock_unblind
             unblind_dict["inj kwargs"] = {}
 
-            if not mock_unblind:
+            if np.logical_and(not mock_unblind, not disable_warning):
                 self.check_unblind()
 
             ParentMiminisationHandler.__init__(self, unblind_dict)
