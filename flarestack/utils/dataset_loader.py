@@ -68,16 +68,18 @@ def grl_loader(season):
             order="run")
     else:
         grl = np.load(season["grl_path"])
-
+        
     # Check if bad runs are found in GRL
-
-    if np.sum(~grl["good_i3"]) == 0:
-        pass
-    else:
-        print "Trying to load", season
-        print "The following runs are included:"
-        print grl[~grl["good_i3"]]
-        raise Exception("Runs marked as 'bad' are found in Good Run List")
+    try:
+        if np.sum(~grl["good_i3"]) == 0:
+            pass
+        else:
+            print "Trying to load", season
+            print "The following runs are included:"
+            print grl[~grl["good_i3"]]
+            raise Exception("Runs marked as 'bad' are found in Good Run List")
+    except ValueError:
+        print "No field called 'good_i3'"
 
     if "length" not in grl.dtype.names:
 
@@ -88,14 +90,11 @@ def grl_loader(season):
                             "GoodRunList. (Searched for 'livetime' and "
                             "'length')")
 
-
-
     # Check if there are events in runs not found in GRL
 
     exp_data = data_loader(season["exp_path"])
     if "run" in exp_data.dtype.names:
         bad_runs = [x for x in set(exp_data["run"]) if x not in grl["run"]]
-
         if len(bad_runs) > 0:
             raise Exception("Trying to use GoodRunList, but events in data have "
                             "runs that are not included on this GoodRunList. \n"
