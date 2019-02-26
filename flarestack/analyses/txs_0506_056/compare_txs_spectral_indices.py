@@ -30,7 +30,6 @@ fixed_weights = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": False,
-    "Fit Weights?": False
 }
 
 fixed_weights_negative = {
@@ -38,7 +37,6 @@ fixed_weights_negative = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": True,
-    "Fit Weights?": False
 }
 
 gammas = [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.5, 2.7]
@@ -120,10 +118,10 @@ for e_min in power_law_start_energy:
 
             # rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
-            # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
+            # mh_power_law = MinimisationHandler(mh_dict_power_law)
+            # mh_power_law.iterate_run(mh_dict_power_law["scale"], mh_dict_power_law["n_steps"],
             #                n_trials=10)
-            # mh.clear()
+            # mh_power_law.clear()
 
             res[gamma] = mh_dict
 
