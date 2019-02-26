@@ -787,6 +787,18 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return inj_params
 
+@MinimisationHandler.register_subclass('large_catalogue')
+class LargeCatalogueMinimisationHandler(MinimisationHandler):
+    """Class to perform generic minimisations using a 'fixed weights' matrix.
+    However, unlike the 'fixed_weight' class, it is optimised for large
+    numbers of sources. It uses a custom 'LowMemoryInjector' which is slower
+    but much less burdensome for memory.
+    """
+
+    def add_injector(self, season, sources):
+        return LowMemoryInjector(season, sources, **self.inj_kwargs)
+
+    
 
 @MinimisationHandler.register_subclass('fit_weights')
 class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
