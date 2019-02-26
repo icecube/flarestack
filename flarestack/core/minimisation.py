@@ -181,6 +181,11 @@ class MinimisationHandler:
     def add_injector(self, season, sources):
         return Injector(season, sources, **self.inj_kwargs)
 
+    @staticmethod
+    def set_random_seed(seed):
+        np.random.seed(seed)
+
+
 
 @MinimisationHandler.register_subclass('fixed_weights')
 class FixedWeightMinimisationHandler(MinimisationHandler):
@@ -787,6 +792,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return inj_params
 
+
 @MinimisationHandler.register_subclass('large_catalogue')
 class LargeCatalogueMinimisationHandler(MinimisationHandler):
     """Class to perform generic minimisations using a 'fixed weights' matrix.
@@ -798,7 +804,7 @@ class LargeCatalogueMinimisationHandler(MinimisationHandler):
     def add_injector(self, season, sources):
         return LowMemoryInjector(season, sources, **self.inj_kwargs)
 
-    
+
 
 @MinimisationHandler.register_subclass('fit_weights')
 class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
