@@ -2,6 +2,8 @@ import sys
 import os
 import numpy as np
 from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.injector import  MockUnblindedInjector, \
+    TrueUnblindedInjector
 from flarestack.core.results import ResultsHandler
 from flarestack.core.time_PDFs import TimePDF
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
@@ -115,6 +117,14 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     self.neutrino_lightcurve()
                 else:
                     self.scan_likelihood()
+
+        def add_injector(self, season, sources):
+            if self.unblind_dict["Mock Unblind"] is False:
+                return TrueUnblindedInjector(
+                    season, sources, **self.inj_kwargs)
+            else:
+                return MockUnblindedInjector(
+                    season, sources, **self.inj_kwargs)
 
         def calculate_upper_limits(self):
 

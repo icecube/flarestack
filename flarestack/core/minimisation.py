@@ -6,8 +6,7 @@ import os, os.path
 import argparse
 import cPickle as Pickle
 import scipy.optimize
-from flarestack.core.injector import Injector, MockUnblindedInjector, \
-    TrueUnblindedInjector
+from flarestack.core.injector import Injector, LowMemoryInjector
 from flarestack.core.llh import LLH, generate_dynamic_flare_class
 from flarestack.shared import name_pickle_output_dir, fit_setup, \
     inj_dir_name, plot_output_dir, scale_shortener
@@ -90,18 +89,6 @@ class MinimisationHandler:
                              "allow negative n_s, but this is not compatible \n"
                              "with the selected MinimisationHandler.")
 
-        # Checks if data should be "mock-unblinded", where a fixed seed
-        # background scramble is done for injection stage. Only calls to the
-        # Unblinder class will have this attribute.
-
-        if hasattr(self, "unblind_dict"):
-            self.unblind = True
-            self.mock_unblind = mh_dict["Mock Unblind"]
-
-        else:
-            self.unblind = False
-            self.mock_unblind = False
-
         # Sets up whether what pull corrector should be used (default is
         # none), and whether an angular error floor should be applied (
         # default is a static floor.
@@ -121,16 +108,7 @@ class MinimisationHandler:
         # provided.
         for season in self.seasons:
             self.llhs[season["Name"]] = self.add_likelihood(season)
-            if self.mock_unblind:
-                self.injectors[season["Name"]] = MockUnblindedInjector(
-                    season, sources, **self.inj_kwargs)
-            elif self.unblind:
-                self.injectors[season["Name"]] = TrueUnblindedInjector(
-                    season, sources, **self.inj_kwargs)
-            else:
-                self.injectors[season["Name"]] = Injector(
-                    season, sources, **self.inj_kwargs)
-
+            self.injectors[season["Name"]] = self.add_injector(season, sources)
             self.pull_correctors[season["Name"]] = BasePullCorrector.create(
                 season, self.llh_dict["LLH Energy PDF"], self.floor_name,
                 self.pull_name
@@ -199,6 +177,9 @@ class MinimisationHandler:
 
     def add_likelihood(self, season):
         return LLH.create(season, self.sources, self.llh_dict)
+
+    def add_injector(self, season, sources):
+        return Injector(season, sources, **self.inj_kwargs)
 
 
 @MinimisationHandler.register_subclass('fixed_weights')
