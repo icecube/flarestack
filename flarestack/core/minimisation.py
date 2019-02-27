@@ -794,7 +794,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
 
 @MinimisationHandler.register_subclass('large_catalogue')
-class LargeCatalogueMinimisationHandler(MinimisationHandler):
+class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
     """Class to perform generic minimisations using a 'fixed weights' matrix.
     However, unlike the 'fixed_weight' class, it is optimised for large
     numbers of sources. It uses a custom 'LowMemoryInjector' which is slower
