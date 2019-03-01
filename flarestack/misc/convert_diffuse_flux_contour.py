@@ -2,8 +2,9 @@
 plotted as a 'butterfly contour'.
 
 The values are taken from https://arxiv.org/pdf/1507.03991, tracing the 68%
-contour in Figure 1.
+and 95% contours in Figure 1.
 
+C
 """
 import numpy as np
 import matplotlib.pyplot as plt
