@@ -186,7 +186,6 @@ class MinimisationHandler:
         np.random.seed(seed)
 
 
-
 @MinimisationHandler.register_subclass('fixed_weights')
 class FixedWeightMinimisationHandler(MinimisationHandler):
     """Class to perform generic minimisations using a 'fixed weights' matrix.
@@ -1589,7 +1588,7 @@ if __name__ == '__main__':
         mh_dict = Pickle.load(f)
 
     mh = MinimisationHandler.create(mh_dict)
-    
+
     if "fixed_scale" in mh_dict.keys():
         fixed_scale = mh_dict["fixed_scale"]
         print "Only scanning at scale", fixed_scale
