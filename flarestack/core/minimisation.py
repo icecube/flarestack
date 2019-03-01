@@ -1589,5 +1589,11 @@ if __name__ == '__main__':
         mh_dict = Pickle.load(f)
 
     mh = MinimisationHandler.create(mh_dict)
-    mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],
-                   n_trials=mh_dict["n_trials"])
+    
+    if "fixed_scale" in mh_dict.keys():
+        fixed_scale = mh_dict["fixed_scale"]
+        print "Only scanning at scale", fixed_scale
+        mh.run(n_trials=mh_dict["n_trials"], scale=fixed_scale)
+    else:
+        mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],
+                       n_trials=mh_dict["n_trials"])
