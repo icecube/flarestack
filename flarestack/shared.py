@@ -209,7 +209,7 @@ def scale_shortener(scale):
     :param scale: Flux Scale
     :return: Flux Scale to 4.s.f
     """
-    return '{0:.4G}'.format(scale)
+    return '{0:.4G}'.format(float(scale))
 
 
 def analysis_pickle_path(name):
