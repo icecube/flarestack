@@ -6,7 +6,7 @@ import os, os.path
 import argparse
 import cPickle as Pickle
 import scipy.optimize
-from flarestack.core.injector import Injector, LowMemoryInjector
+from flarestack.core.injector import Injector, LowMemoryInjector, SparseMatrixInjector
 from flarestack.core.llh import LLH, generate_dynamic_flare_class
 from flarestack.shared import name_pickle_output_dir, fit_setup, \
     inj_dir_name, plot_output_dir, scale_shortener
@@ -804,6 +804,16 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
     def add_injector(self, season, sources):
         return LowMemoryInjector(season, sources, **self.inj_kwargs)
 
+@MinimisationHandler.register_subclass('sparse_matrix')
+class SparceMatrixMinimisationHandler(FixedWeightMinimisationHandler):
+    """Class to perform generic minimisations using a 'fixed weights' matrix.
+    However, unlike the 'fixed_weight' class, it is optimised for large
+    numbers of sources. It uses a custom 'LowMemoryInjector' which is slower
+    but much less burdensome for memory.
+    """
+
+    def add_injector(self, season, sources):
+        return SparseMatrixInjector(season, sources, **self.inj_kwargs)
 
 
 @MinimisationHandler.register_subclass('fit_weights')
