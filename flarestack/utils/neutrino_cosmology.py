@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from flarestack.shared import plots_dir
-from flarestack.utils.neutrino_astronomy import  calculate_neutrinos
+from flarestack.utils.neutrino_astronomy import calculate_neutrinos
 from flarestack.core.energy_PDFs import EnergyPDF
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
@@ -24,26 +24,29 @@ def get_diffuse_flux_at_100TeV(fit="Joint"):
 
     if fit == "Joint":
         # IceCube Joint Best Fit
-        #
-        diffuse_flux = 2.2 * 10 ** -18 * (
+        # (https://arxiv.org/abs/1507.03991)
+        all_flavour_diffuse_flux = 6.7 * 10 ** -18 * (
                 u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
         )
+        diffuse_flux = all_flavour_diffuse_flux * 2. / 3.
+        # diffuse_flux = 6.7 * 10 ** -18 * (
+        #         u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
+        # )/3.
+        # # Specifically best-fit muon-neutrino flux
+        # # diffuse_flux = 3.0 * 10 ** -18 * (
+        # #         u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
+        # # ) / 2.0
         diffuse_gamma = 2.5
 
     elif fit == "Northern Tracks":
         # Best fit from the Northern Tracks 'Diffuse Sample'
         diffuse_flux = 1.01 * 10 ** -18 * (
-                u.GeV ** -1 * u.cm ** -2 * u.s** -1 * u.sr ** -1
+                u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
         )
         diffuse_gamma = 2.19
 
     else:
         raise Exception("Fit " + fit + " not recognised!")
-
-    # All diffuse flux values are quoted at 100TeV. They must be converted to
-    # 1GeV for use in flarestack.
-
-    diffuse_flux *= (4 * np.pi * u.sr)
 
     return diffuse_flux, diffuse_gamma
 
@@ -66,8 +69,6 @@ def sfr_madau(z):
     Madau & Dickinson 2014, Equation 15
     result is in solar masses/year/Mpc^3
 
-
-
     """
     rate = 0.015 * (1+z)**2.7 / (1 + ((1+z)/2.9)**5.6) /(
         u.Mpc**3 * u.year
@@ -85,7 +86,7 @@ def sfr_clash_candels(z):
 
     Can match Figure 6, if the h^3 factor is divided out
     """
-    rate = 0.015 * cosmo.h**3 * (1+z)**5.0 / (1 + ((1+z)/1.5)**6.1) /(
+    rate = 0.015 * (1+z)**5.0 / (1 + ((1+z)/1.5)**6.1) /(
         u.Mpc**3 * u.year
     )
 
@@ -125,24 +126,68 @@ def cumulative_z(f, zrange):
     return ints
 
 
-def define_cosmology_functions(rate, nu_e, gamma, nu_bright_fraction):
+def define_cosmology_functions(rate, nu_e_flux_1GeV, gamma,
+                               nu_bright_fraction=1.):
 
     def rate_per_z(z):
         """ Equals rate as a function of z, multiplied by the differential
         comoving volume, multiplied by 4pi steradians for full sphere,
         multiplied by the neutrino-bright fraction, and then divided by (1+z)
         to account for time dilation which reduces the rate of transients at
-        high redshifts."""
+        high redshifts.
+
+        :param z: Redshift
+        :return: Transient rate in shell at that redshift
+        """
         return rate(z) * cosmo.differential_comoving_volume(z) * \
                nu_bright_fraction * (4 * np.pi * u.sr)/(1+z)
 
+    def nu_flux_per_source(z):
+        """Calculate the time-integrated neutrino flux contribution on Earth
+        per source. Equal to the flux normalisation per source at 1GeV,
+        divided by the sphere 4 pi dl^2 to give the flux at 1GeV on Earth.
+        This then needs to be corrected by factors of (1+z)-gamma to account
+        for the redshifting of the spectrum to lower energy values. This
+        assumes that he power law extends beyond the traditional icecube
+        sensitivity range.
+
+        :param z: Redshift of shell
+        :return: Neutrino flux from shell at Earth
+        """
+        # Original
+        return nu_e_flux_1GeV * (1 + z) ** (3 - gamma) / (
+                       4 * np.pi * Distance(z=z).to("cm")**2)
+        # Check factor of gamma, 2 matches Alex!!!
+        # return nu_e_flux_1GeV * (1 + z) ** (2 - gamma) / (
+        #         4 * np.pi * Distance(z=z).to("cm") ** 2)
+
     def nu_flux_per_z(z):
-        return rate_per_z(z).to("s-1") * nu_e * (1+z)**(4-gamma) / (
-                4 * np.pi * Distance(z=z).to("cm")**2)
+        """Calculate the neutrino flux contribution on Earth that each
+        redshift shell contributes. Equal to the rate of sources per shell,
+        multiplied by the flux normalisation per source at 1GeV, divided by
+        the sphere 4 pi dl^2 to give the flux at 1GeV on Earth. This then
+        needs to be corrected by factors of (1+z)-gamma to account for the
+        redshifting of the spectrum to lower energy values. This assumes that
+        the power law extends beyond the traditional icecube sensitivity range.
 
-    cumulative_nu_flux = lambda z: cumulative_z(nu_flux_per_z, z)
+        :param z: Redshift of shell
+        :return: Neutrino flux from shell at Earth
+        """
+        return rate_per_z(z).to("s-1") * nu_flux_per_source(z) / (
+                4 * np.pi * u.sr)
 
-    return rate_per_z, nu_flux_per_z, cumulative_nu_flux
+    def cumulative_nu_flux(z):
+        """Calculates the integrated neutrino flux on Earth for all sources
+        lying within a sphere up to the given redshift. Uses numerical
+        intergration to calculate this, given the source rate and neutrino
+        flux per source.
+
+        :param z: Redshift up to which neutrino flux is integrated
+        :return: Cumulative neutrino flux at 1 GeV
+        """
+        return cumulative_z(nu_flux_per_z, z)
+
+    return rate_per_z, nu_flux_per_z, nu_flux_per_source, cumulative_nu_flux
 
 
 def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
@@ -153,6 +198,7 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
 
     print "Using the", diffuse_fit, "best fit values of the diffuse flux."
+    # print "Raw Diffuse Flux at 1 GeV:", diffuse_flux / (4 * np.pi * u.sr)
     print "Diffuse Flux at 1 GeV:", diffuse_flux
     print "Diffuse Spectral Index is", diffuse_gamma
 
@@ -181,30 +227,34 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
 
     nu_e = nu_e.to("GeV") / fluence_conversion
 
-    print "Flux at 1GeV is", nu_e, "/(luminosity distance)^2"
+    # print "Flux at 1GeV is", nu_e, "/(luminosity distance)^2"
+    # print "Flux at 1Mpc is", (nu_e / (1 * u.Mpc) ** 2).to("GeV-1 cm-2")
+    # print "Flux at 10Mpc is", (nu_e / (10 * u.Mpc)**2).to("GeV-1 cm-2")
 
     zrange, step = np.linspace(0.0, zmax, 1 + 1e3, retstep=True)
 
-    rate_per_z, nu_flux_per_z, cumulative_nu_flux = define_cosmology_functions(
-        rate, nu_e, gamma, nu_bright_fraction
-    )
+    rate_per_z, nu_flux_per_z, nu_flux_per_source, cumulative_nu_flux = \
+        define_cosmology_functions(rate, nu_e, gamma, nu_bright_fraction)
 
     print "Cumulative sources at z=8.0:",
     print "{:.3E}".format(cumulative_z(rate_per_z, 8.0)[-1].value)
+
+    # for x in [0.0, 0.00223, 0.1, 1.0]:
+    #     print x,  rate_per_z(x), nu_flux_per_source(x), nu_flux_per_z(x), \
+    #         nu_flux_per_z(x) * (4 * np.pi * u.sr)
+            # nu_e * (1 + x) ** (1 - gamma) / (
+            #      4 * np.pi * u.sr * Distance(z=x).to("cm")**2)
 
     nu_at_horizon = cumulative_nu_flux(8)[-1]
 
     print "Cumulative flux at z=8.0 (1 GeV):", "{:.3E}".format(nu_at_horizon)
     print "Cumulative annual flux at z=8.0 (1 GeV):", "{:.3E}".format((
-        nu_at_horizon * u.yr).to("GeV-1 cm-2"))
+        nu_at_horizon * u.yr).to("GeV-1 cm-2 sr-1"))
 
-    # nu_at_horizon_100TeV = nu_at_horizon.value * (10**5) ** -gamma
-    #
-    # print "Cumulative flux at z=8.0 (100 TeV):", "{:.3E}".format(
-    #     nu_at_horizon_100TeV)
-    # print "Neutrino diffuse flux at 100TeV:", "{:.3E}".format(diffuse_flux)
     ratio = nu_at_horizon.value / diffuse_flux.value
     print "Fraction of diffuse flux", ratio
+    print "Cumulative neutrino flux", nu_at_horizon,
+    print "Diffuse neutrino flux", diffuse_flux
 
     if diffuse_fraction is not None:
         print "Scaling flux so that, at z=8, the contribution is equal to", \
@@ -217,13 +267,14 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     plt.plot(zrange, rate(zrange))
     plt.yscale("log")
     plt.xlabel("Redshift")
+    plt.ylabel(r"Rate (Mpc$^{-3}$ year$^{-1}$")
     plt.savefig(savedir + 'rate.pdf')
     plt.close()
 
     print "Sanity Check:"
     print "Integrated Source Counts \n"
 
-    for z in [0.01, 0.08, 0.1, 0.2, 0.3]:
+    for z in [0.01, 0.08, 0.1, 0.2, 0.3, 8]:
         print z, Distance(z=z).to("Mpc"), cumulative_z(rate_per_z, z)[-1]
 
     print "Fraction from nearby sources", cumulative_nu_flux(0.3)[-1]/ \
@@ -270,8 +321,7 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
 
     plt.figure()
     plt.plot(zrange[1:-1],
-             [(nu_e / (4 * np.pi * Distance(z=z).to("cm")**2)).value
-              for z in zrange[1:-1]])
+             [(nu_flux_per_source(z)).value for z in zrange[1:-1]])
     plt.yscale("log")
     plt.xlabel("Redshift")
     plt.ylabel(
@@ -283,24 +333,34 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     plt.savefig(savedir + 'nu_flux_per_source_contribution.pdf')
     plt.close()
 
-    # print "\n"
-    #
-    # print "Let's assume that 50% of the diffuse flux is distributed on a \n" \
-    #       "single source in the northern sky. That's unrealistic, but \n " \
-    #       "should give us an idea of expected neutrino numbers! \n"
-    # #
-    # source = np.load(ps_catalogue_name(0.2))
-    #
-    # inj_kwargs = {
-    #     "Injection Time PDF": {
-    #         "Name": "Steady"
-    #     },
-    #     "Injection Energy PDF": {
-    #         "Name": "Power Law",
-    #         "Gamma": diffuse_gamma,
-    #         "Flux at 1GeV": diffuse_flux*0.5
-    #     }
-    # }
-    #
-    # calculate_neutrinos(source[0], gfu_dict, inj_kwargs)
+    return nu_at_horizon
 
+
+def estimate_northern_neutrinos(diffuse_fit="Joint"):
+    diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
+
+    print "\n"
+
+    print "Let's assume that 50% of the diffuse flux is distributed on a \n" \
+          "single source in the northern sky. That's unrealistic, but \n " \
+          "should give us an idea of expected neutrino numbers! \n"
+
+    source = np.load(ps_catalogue_name(0.2))
+
+    inj_kwargs = {
+        "Injection Time PDF": {
+            "Name": "Steady"
+        },
+        "Injection Energy PDF": {
+            "Name": "Power Law",
+            "Gamma": diffuse_gamma,
+            "Flux at 1GeV": diffuse_flux*0.5
+        }
+    }
+
+    calculate_neutrinos(source[0], IC86_1_dict, inj_kwargs)
+
+
+if __name__ == "__main__":
+    estimate_northern_neutrinos(diffuse_fit="Joint")
+    estimate_northern_neutrinos(diffuse_fit="Northern Tracks")
