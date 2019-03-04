@@ -56,17 +56,19 @@ def find_zfactor(distance):
 
 def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
+    flux /= (u. GeV * u.cm ** 2 * u.s)
+
     energy_PDF = EnergyPDF.create(e_pdf_dict)
 
     astro_res = dict()
 
-    phi_integral = energy_PDF.flux_integral()
+    phi_integral = energy_PDF.flux_integral() * u.GeV
 
-    e_integral = energy_PDF.fluence_integral() * u.GeV
+    e_integral = energy_PDF.fluence_integral() * u.GeV**2
 
     # Calculate fluence
 
-    tot_fluence = (flux * e_integral) / (u. GeV * u.cm ** 2 * u.s)
+    tot_fluence = (flux * e_integral)
 
     astro_res["Total Fluence (GeV cm^{-2} s^{-1})"] = tot_fluence.value
 
@@ -77,7 +79,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
     dist_weight = src_1["Distance (Mpc)"]**-2 / np.sum(
         catalogue["Distance (Mpc)"]**-2)
 
-    si = flux * dist_weight / (u.cm ** 2 * u.s)
+    si = flux * dist_weight
 
     astro_res["Flux from nearest source"] = si
 
@@ -190,20 +192,20 @@ def calculate_neutrinos(source, season, inj_kwargs):
 
     print "Flux at 1GeV would be", flux_1GeV, "\n"
     print "Time is", inj.time_pdf.effective_injection_time(source)/(
-            60*60*24*365)
+            60*60*24*365), "years"
     print "Raw Flux is", energy_pdf["Flux at 1GeV"]
 
     source_mc, omega, band_mask = inj.select_mc_band(inj._mc, source)
 
-    northern_mask = inj._mc["sinDec"] > 0.0
+    # northern_mask = inj._mc["sinDec"] > 0.0
 
-    print "OneWights:", np.sum(inj._mc["ow"])
-    print np.sum(inj._mc["ow"] * inj._mc["trueE"]**-energy_pdf["Gamma"])
-    print np.sum(inj.mc_weights * flux_1GeV)
-
-    print "Now Ludwig-style:",
-
-    print np.sum(flux_1GeV * inj.mc_weights[northern_mask])
+    # print "OneWights:", np.sum(inj._mc["ow"])
+    # print np.sum(inj._mc["ow"] * inj._mc["trueE"]**-energy_pdf["Gamma"])
+    # print np.sum(inj.mc_weights * flux_1GeV)
+    #
+    # print "Now Ludwig-style:",
+    #
+    # print np.sum(flux_1GeV * inj.mc_weights[northern_mask])
 
     source_mc["ow"] = flux_1GeV * (inj.mc_weights[band_mask] / omega)
     n_inj = np.sum(source_mc["ow"])
