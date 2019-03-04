@@ -7,11 +7,12 @@ from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.analyses.ccsn.shared_ccsn import sn_cats, sn_catalogue_name, \
-    sn_time_pdf
+    sn_time_pdfs
 from flarestack.cluster import run_desy_cluster as rd
 import math
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
+import os
 from flarestack.core.minimisation import MinimisationHandler
 
 analyses = dict()
@@ -23,11 +24,11 @@ llh_energy = {
 }
 
 gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
-gammas = [1.8, 2.0, 2.2, 2.5]
-
+# gammas = [1.8, 2.0, 2.5]
+# gamma = [2.0]
 raw = "analyses/ccsn/calculate_sensitivity/"
 
-cat_res = dict()
+full_res = dict()
 
 for cat in sn_cats:
 
@@ -38,144 +39,164 @@ for cat in sn_cats:
 
     closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
 
-    res = dict()
+    cat_res = dict()
 
-    llh_time = sn_time_pdf(cat)
+    time_pdfs = sn_time_pdfs(cat)
 
-    llh_kwargs = {
-        "LLH Energy PDF": llh_energy,
-        "LLH Time PDF": llh_time,
-        "Fit Gamma?": True,
-        "Fit Weights?": True
-    }
+    for llh_time in time_pdfs:
 
-    injection_time = llh_time
+        time_key = str(llh_time["Post-Window"] + llh_time["Pre-Window"])
 
-    for gamma in gammas:
+        time_name = name + time_key + "/"
 
-        full_name = name + str(gamma) + "/"
+        time_res = dict()
 
-        length = injection_time["Pre-Window"] + injection_time["Post-Window"]
+        for i, fit_weights in enumerate([False, True]):
 
-        scale = flux_to_k(reference_sensitivity(
-            np.sin(closest_src["dec"]), gamma=gamma
-        ) * 40 * math.sqrt(float(len(catalogue)))) * 300./length
+            res = dict()
 
-        injection_energy = dict(llh_energy)
-        injection_energy["Gamma"] = gamma
+            mh_name = ["fixed_weights", "fit_weights"][i]
 
-        inj_kwargs = {
-            "Injection Energy PDF": injection_energy,
-            "Injection Time PDF": injection_time,
-            "Poisson Smear?": True,
-        }
+            l_name = time_name + mh_name + "/"
 
-        mh_dict = {
-            "name": full_name,
-            "datasets": custom_dataset(ps_7year, catalogue,
-                                       llh_kwargs["LLH Time PDF"]),
-            "catalogue": cat_path,
-            "inj kwargs": inj_kwargs,
-            "llh kwargs": llh_kwargs,
-            "scale": scale,
-            "n_trials": 5,
-            "n_steps": 15
-        }
+            llh_kwargs = {
+                "name": "standard",
+                "LLH Energy PDF": llh_energy,
+                "LLH Time PDF": llh_time,
+            }
 
-        pkl_file = make_analysis_pickle(mh_dict)
+            injection_time = llh_time
 
-        # rd.submit_to_cluster(pkl_file, n_jobs=100)
+            for gamma in gammas:
 
-        # mh = MinimisationHandler(mh_dict)
-        # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
-        #                n_trials=1)
-        # mh.clear()
+                full_name = l_name + str(gamma) + "/"
 
-        res[gamma] = mh_dict
+                length = float(time_key)
 
-    cat_res[cat] = res
+                scale = flux_to_k(reference_sensitivity(
+                    np.sin(closest_src["dec"]), gamma=gamma
+                ) * 40 * math.sqrt(float(len(catalogue)))) * 200./length
+
+                injection_energy = dict(llh_energy)
+                injection_energy["Gamma"] = gamma
+
+                inj_kwargs = {
+                    "Injection Energy PDF": injection_energy,
+                    "Injection Time PDF": injection_time,
+                    "Poisson Smear?": True,
+                }
+
+                mh_dict = {
+                    "name": full_name,
+                    "mh_name": "standard",
+                    "datasets": custom_dataset(ps_7year, catalogue,
+                                               llh_kwargs["LLH Time PDF"]),
+                    "catalogue": cat_path,
+                    "inj kwargs": inj_kwargs,
+                    "llh_dict": llh_kwargs,
+                    "scale": scale,
+                    "n_trials": 5,
+                    "n_steps": 20
+                }
+
+                pkl_file = make_analysis_pickle(mh_dict)
+
+                # rd.submit_to_cluster(pkl_file, n_jobs=50)
+
+                mh = MinimisationHandler(mh_dict)
+                mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
+                               n_trials=1)
+
+                res[gamma] = mh_dict
+
+            time_res[mh_name] = res
+
+        cat_res[time_key] = time_res
+
+    full_res[cat] = cat_res
 
 rd.wait_for_cluster()
 
-for b, (cat_name, src_res) in enumerate(cat_res.iteritems()):
+for b, (cat_name, cat_res) in enumerate(full_res.iteritems()):
 
-    name = raw + cat_name + "/"
+    for (time_key, time_res) in cat_res.iteritems():
 
-    sens_livetime = []
-    fracs = []
-    disc_pots_livetime = []
-    sens_e = []
-    disc_e = []
+        for (mh_name, src_res) in time_res.iteritems():
 
-    labels = []
+            sens_livetime = []
+            fracs = []
+            disc_pots_livetime = []
+            sens_e = []
+            disc_e = []
 
-    for (gamma, rh_dict) in sorted(src_res.iteritems()):
-        rh = ResultsHandler(rh_dict["name"],
-                            rh_dict["llh kwargs"],
-                            rh_dict["catalogue"],
-                            show_inj=True
-                            )
+            labels = []
 
-        inj = rh_dict["inj kwargs"]["Injection Time PDF"]
-        injection_length = inj["Pre-Window"] + inj["Post-Window"]
+            for (gamma, rh_dict) in sorted(src_res.iteritems()):
 
-        inj_time = injection_length * 60 * 60 * 24
+                rh = ResultsHandler(rh_dict)
 
-        astro_sens, astro_disc = rh.astro_values(
-            rh_dict["inj kwargs"]["Injection Energy PDF"])
+                inj = rh_dict["inj kwargs"]["Injection Time PDF"]
+                injection_length = inj["Pre-Window"] + inj["Post-Window"]
 
-        key = "Total Fluence (GeV cm^{-2} s^{-1})"
+                inj_time = injection_length * 60 * 60 * 24
 
-        e_key = "Mean Luminosity (erg/s)"
+                astro_sens, astro_disc = rh.astro_values(
+                    rh_dict["inj kwargs"]["Injection Energy PDF"])
 
-        sens_livetime.append(astro_sens[key] * inj_time)
-        disc_pots_livetime.append(astro_disc[key] * inj_time)
+                key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
-        sens_e.append(astro_sens[e_key] * inj_time)
-        disc_e.append(astro_disc[e_key] * inj_time)
+                e_key = "Mean Luminosity (erg/s)"
 
-        fracs.append(gamma)
+                sens_livetime.append(astro_sens[key] * inj_time)
+                disc_pots_livetime.append(astro_disc[key] * inj_time)
+
+                sens_e.append(astro_sens[e_key] * inj_time)
+                disc_e.append(astro_disc[e_key] * inj_time)
+
+                fracs.append(gamma)
 
 
-        # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
+                # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-    for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
-                                          [disc_pots_livetime, disc_e]]):
+            name = os.path.dirname(src_res.itervalues.__next()["name"][:-1])
 
-        plt.figure()
-        ax1 = plt.subplot(111)
+            for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
+                                                  [disc_pots_livetime, disc_e]]):
 
-        ax2 = ax1.twinx()
+                plt.figure()
+                ax1 = plt.subplot(111)
 
-        # cols = ["#00A6EB", "#F79646", "g", "r"]
-        linestyle = ["-", "-"][j]
+                ax2 = ax1.twinx()
 
-        ax1.plot(fracs, fluence, label=labels, linestyle=linestyle,
-                 )
-        ax2.plot(fracs, energy, linestyle=linestyle,
-                 )
+                # cols = ["#00A6EB", "#F79646", "g", "r"]
+                linestyle = ["-", "-"][j]
 
-        y_label = [r"Total Fluence [GeV cm$^{-2}$]",
-                   r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
+                ax1.plot(fracs, fluence, label=labels, linestyle=linestyle,
+                         )
+                ax2.plot(fracs, energy, linestyle=linestyle,
+                         )
 
-        ax2.grid(True, which='both')
-        ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
-        ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
-        ax1.set_xlabel(r"Spectral Index ($\gamma$)")
-        ax1.set_yscale("log")
-        ax2.set_yscale("log")
+                y_label = [r"Total Fluence [GeV cm$^{-2}$]",
+                           r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
 
-        for k, ax in enumerate([ax1, ax2]):
-            y = [fluence, energy][k]
+                ax2.grid(True, which='both')
+                ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
+                ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
+                ax1.set_xlabel(r"Spectral Index ($\gamma$)")
+                ax1.set_yscale("log")
+                ax2.set_yscale("log")
 
-            ax.set_ylim(0.95 * min(y),
-                        1.1 * max(y))
+                for k, ax in enumerate([ax1, ax2]):
+                    y = [fluence, energy][k]
 
-        plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
-                  " for " + cat_name + " SNe")
+                    ax.set_ylim(0.95 * min(y),
+                                1.1 * max(y))
 
-        plt.tight_layout()
-        plt.savefig(plot_output_dir(name) + "/spectral_index_" +
-                    ["sens", "disc"][j] + "_" + cat_name + ".pdf")
-        plt.close()
+                plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
+                          " for " + cat_name + " SNe")
+
+                plt.tight_layout()
+                plt.savefig(plot_output_dir(name) + "/spectral_index_" +
+                            ["sens", "disc"][j] + "_" + cat_name + ".pdf")
+                plt.close()
 

@@ -1,12 +1,19 @@
 import os
+import numpy as np
 import cPickle as Pickle
+from scipy.interpolate import interp1d
 from flarestack.shared import limit_output_path
+from astropy import units as u
 
 ccsn_dir = os.path.abspath(os.path.dirname(__file__))
 ccsn_cat_dir = ccsn_dir + "/catalogues/"
 raw_cat_dir = ccsn_cat_dir + "raw/"
 
-sn_cats = ["IIn", "IIP", "Ibc"]
+# sn_cats = ["IIn", "IIP", "Ibc"]
+sn_cats = ["IIn"]
+
+sn_times = [100., 300., 1000.]
+sn_times = [300.]
 
 
 def sn_catalogue_name(sn_type, nearby=True):
@@ -20,22 +27,29 @@ def sn_catalogue_name(sn_type, nearby=True):
     return ccsn_cat_dir + sn_name
 
 
-def sn_time_pdf(sn_type):
+def sn_time_pdfs(sn_type):
+
+    time_pdfs = []
+
+    for i in sn_times:
+        time_pdfs.append(
+            {
+                "Name": "Box",
+                "Pre-Window": 20,
+                "Post-Window": i
+            }
+        )
 
     if sn_type == "Ibc":
-        time_pdf_dict = {
-            "Name": "Box",
-            "Pre-Window": 20,
-            "Post-Window": 0
-        }
-    else:
-        time_pdf_dict = {
-            "Name": "Box",
-            "Pre-Window": 20,
-            "Post-Window": 300
-        }
+        time_pdfs.append(
+            {
+                "Name": "Box",
+                "Pre-Window": 20,
+                "Post-Window": 0
+            }
+        )
 
-    return time_pdf_dict
+    return time_pdfs
 
 
 def ccsn_limits(sn_type):
@@ -47,5 +61,13 @@ def ccsn_limits(sn_type):
 
     print "Loading limits from", savepath
     with open(savepath, "r") as f:
-        res_dict = Pickle.load(f)
-    return res_dict
+        results = Pickle.load(f)
+    return results
+
+
+def ccsn_energy_limit(sn_type, gamma):
+    results = ccsn_limits(sn_type)
+
+    spline_y = np.exp(interp1d(results["x"], np.log(results["energy"]))(gamma))
+
+    return spline_y * u.erg
