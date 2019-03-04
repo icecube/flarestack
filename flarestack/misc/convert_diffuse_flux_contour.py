@@ -8,6 +8,7 @@ C
 """
 import numpy as np
 import matplotlib.pyplot as plt
+from flarestack.shared import illustration_dir
 
 contour_68 = [
     (2.362728669872589, 6.014203559565713),
@@ -99,7 +100,7 @@ def f(energy, norm, index):
 
 
 # Fit is valid from 25 TeV to 2.8 PeV
-e_range = np.logspace(np.log10(25) + 3, np.log10(2.8) + 6, 100)
+global_fit_e_range = np.logspace(np.log10(25) + 3, np.log10(2.8) + 6, 100)
 
 
 def upper_contour(energy_range, contour):
@@ -119,20 +120,36 @@ plt.figure()
 # Plot 68% contour
 
 for (index, norm) in contour_68:
-    plt.plot(e_range, e_range ** 2 * f(e_range, norm, index), alpha=0.6)
-plt.plot(e_range, e_range ** 2 * upper_contour(e_range, contour_68), color="k",
-         label="68% contour", linestyle="-")
-plt.plot(e_range, e_range ** 2 * lower_contour(e_range, contour_68), color="k",
-         linestyle="-",)
+    plt.plot(global_fit_e_range,
+             global_fit_e_range ** 2 * f(global_fit_e_range, norm, index),
+             alpha=0.6)
+plt.plot(
+    global_fit_e_range,
+    global_fit_e_range ** 2 * upper_contour(global_fit_e_range, contour_68),
+    color="k", label="68% contour", linestyle="-"
+)
+plt.plot(
+    global_fit_e_range,
+    global_fit_e_range ** 2 * lower_contour(global_fit_e_range, contour_68),
+    color="k", linestyle="-",
+)
 
 # Plot 95% contour
 
 for (index, norm) in contour_95:
-    plt.plot(e_range, e_range ** 2 * f(e_range, norm, index), alpha=0.3)
-plt.plot(e_range, e_range ** 2 * upper_contour(e_range, contour_95),
-         color="k", linestyle="--", label="95% contour")
-plt.plot(e_range, e_range ** 2 * lower_contour(e_range, contour_95),
-         color="k", linestyle="--")
+    plt.plot(global_fit_e_range,
+             global_fit_e_range ** 2 * f(global_fit_e_range, norm, index),
+             alpha=0.3)
+plt.plot(
+    global_fit_e_range,
+    global_fit_e_range ** 2 * upper_contour(global_fit_e_range, contour_95),
+    color="k", linestyle="--", label="95% contour"
+)
+plt.plot(
+    global_fit_e_range,
+    global_fit_e_range ** 2 * lower_contour(global_fit_e_range, contour_95),
+    color="k", linestyle="--"
+)
 
 plt.yscale("log")
 plt.xscale("log")
@@ -140,6 +157,6 @@ plt.legend()
 plt.title(r"Diffuse Flux Global Best Fit ($\nu_{\mu} + \bar{\nu}_{\mu})$")
 plt.ylabel(r"$E^{2}\frac{dN}{dE}$[GeV cm$^{-2}$ s$^{-1}$ sr$^{-1}$]")
 plt.xlabel(r"$E_{\nu}$ [GeV]")
-plt.savefig("diffuse_flux_global_fit.pdf")
+plt.savefig(illustration_dir + "diffuse_flux_global_fit.pdf")
 plt.close()
 
