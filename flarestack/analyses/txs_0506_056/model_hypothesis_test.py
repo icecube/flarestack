@@ -105,27 +105,27 @@ else:
     print "Empty TS array"
     ts_array = []
 
-# # Creates a Minimisation Handler using the dictionary, and runs the trials
-#
-# mh_pl = MinimisationHandler.create(mh_dict_pl)
-# mh_tm = MinimisationHandler.create(mh_dict_tm)
-#
-# n_trials = 400
-#
-# for i in range(n_trials):
-#
-#     seed = random.randint(0, 999999)
-#
-#     mh_pl.set_random_seed(seed)
-#     res_pl = mh_pl.run_trial(scale=0.)["TS"]
-#     mh_tm.set_random_seed(seed)
-#     res_tm = mh_tm.run_trial(scale=0.)["TS"]
-#     ts = res_tm - res_pl
-#     print i, seed, res_tm, res_pl, ts
-#     ts_array.append(ts)
-#
-# with open(ts_path, "wb") as f:
-#     Pickle.dump(ts_array, f)
+# Creates a Minimisation Handler using the dictionary, and runs the trials
+
+mh_pl = MinimisationHandler.create(mh_dict_pl)
+mh_tm = MinimisationHandler.create(mh_dict_tm)
+
+n_trials = 400
+
+for i in range(n_trials):
+
+    seed = random.randint(0, 999999)
+
+    mh_pl.set_random_seed(seed)
+    res_pl = mh_pl.run_trial(scale=0.)["TS"]
+    mh_tm.set_random_seed(seed)
+    res_tm = mh_tm.run_trial(scale=0.)["TS"]
+    ts = res_tm - res_pl
+    print i, seed, res_tm, res_pl, ts
+    ts_array.append(ts)
+
+with open(ts_path, "wb") as f:
+    Pickle.dump(ts_array, f)
 
 weights = np.ones_like(ts_array)
 weights /= np.sum(weights)

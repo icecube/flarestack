@@ -44,6 +44,11 @@ if __name__ == "__main__":
     convert_ergs_GeV = (1. * u.erg).to("GeV").value
 
     plt.figure()
+
+    ax1 = plt.subplot(111)
+    ax2 = ax1.twiny()
+    ax3 = ax1.twinx()
+
     for i in range(n_path):
         path = base_dir + "numu_y_" + str(i) + ".dat"
         yvals = 10**np.loadtxt(path) * (xvals**-2) * convert_ergs_GeV
@@ -59,14 +64,28 @@ if __name__ == "__main__":
             Pickle.dump(f, h)
 
         frac = float(i)/float(n_path)
-        plt.plot(xvals, yvals*xvals**2, alpha=0.3, color=(1-frac, frac, 0))
+        ax1.plot(#np.log10(xvals), #/ convert_hz_ev),
+                 xvals,
+                 (yvals * xvals**2)/convert_ergs_GeV,
+                 alpha=0.3, color=(1-frac, frac, 0))
+        ax2.plot(xvals / convert_hz_ev,
+                 (yvals * xvals**2)/convert_ergs_GeV, alpha=0.)
+        ax3.plot(xvals, (yvals * xvals**2), alpha=0.)
 
-    plt.ylim(10**-13, 10**-7)
-    plt.yscale("log")
-    plt.xscale("log")
-    plt.xlabel("Log(Energy/GeV)")
-    plt.ylabel(r"E$^{2}\frac{dN}{dE}$ @ 1GeV [GeV cm$^{-2}$ s$^{-1}$]")
-    plt.title("TXS 0506+056 Spectral Models")
+    ax1.set_ylim(10**-14, 10**-9)
+    ax3.set_ylim(10**-14*convert_ergs_GeV, 10**-9*convert_ergs_GeV)
+    ax1.set_yscale("log")
+    ax3.set_yscale("log")
+    ax1.set_xscale("log")
+    ax2.set_xscale("log")
+    # ax2.set_xlim(10**24, 10**32)
+    ax1.set_xlabel("Energy (GeV)")
+    ax2.set_xlabel("Frequency (Hz)")
+    ax1.set_ylabel(r"E$^{2}\frac{dN}{dE}$ @ 1GeV [erg cm$^{-2}$ s$^{-1}$]")
+    ax3.set_ylabel(r"E$^{2}\frac{dN}{dE}$ @ 1GeV [GeV cm$^{-2}$ s$^{-1}$]")
+    ax1.grid(True)
+    # plt.suptitle("TXS 0506+056 Spectral Models")
+    plt.tight_layout()
     print "Saving to", savepath
     plt.savefig(savepath)
     plt.close()
