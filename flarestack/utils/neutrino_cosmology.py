@@ -28,14 +28,7 @@ def get_diffuse_flux_at_100TeV(fit="Joint"):
         all_flavour_diffuse_flux = 6.7 * 10 ** -18 * (
                 u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
         )
-        diffuse_flux = all_flavour_diffuse_flux * 2. / 3.
-        # diffuse_flux = 6.7 * 10 ** -18 * (
-        #         u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
-        # )/3.
-        # # Specifically best-fit muon-neutrino flux
-        # # diffuse_flux = 3.0 * 10 ** -18 * (
-        # #         u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
-        # # ) / 2.0
+        diffuse_flux = all_flavour_diffuse_flux / 3.
         diffuse_gamma = 2.5
 
     elif fit == "Northern Tracks":
@@ -154,12 +147,8 @@ def define_cosmology_functions(rate, nu_e_flux_1GeV, gamma,
         :param z: Redshift of shell
         :return: Neutrino flux from shell at Earth
         """
-        # Original
         return nu_e_flux_1GeV * (1 + z) ** (3 - gamma) / (
                        4 * np.pi * Distance(z=z).to("cm")**2)
-        # Check factor of gamma, 2 matches Alex!!!
-        # return nu_e_flux_1GeV * (1 + z) ** (2 - gamma) / (
-        #         4 * np.pi * Distance(z=z).to("cm") ** 2)
 
     def nu_flux_per_z(z):
         """Calculate the neutrino flux contribution on Earth that each
@@ -227,10 +216,6 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
 
     nu_e = nu_e.to("GeV") / fluence_conversion
 
-    # print "Flux at 1GeV is", nu_e, "/(luminosity distance)^2"
-    # print "Flux at 1Mpc is", (nu_e / (1 * u.Mpc) ** 2).to("GeV-1 cm-2")
-    # print "Flux at 10Mpc is", (nu_e / (10 * u.Mpc)**2).to("GeV-1 cm-2")
-
     zrange, step = np.linspace(0.0, zmax, 1 + 1e3, retstep=True)
 
     rate_per_z, nu_flux_per_z, nu_flux_per_source, cumulative_nu_flux = \
@@ -238,12 +223,6 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
 
     print "Cumulative sources at z=8.0:",
     print "{:.3E}".format(cumulative_z(rate_per_z, 8.0)[-1].value)
-
-    # for x in [0.0, 0.00223, 0.1, 1.0]:
-    #     print x,  rate_per_z(x), nu_flux_per_source(x), nu_flux_per_z(x), \
-    #         nu_flux_per_z(x) * (4 * np.pi * u.sr)
-            # nu_e * (1 + x) ** (1 - gamma) / (
-            #      4 * np.pi * u.sr * Distance(z=x).to("cm")**2)
 
     nu_at_horizon = cumulative_nu_flux(8)[-1]
 
@@ -267,24 +246,44 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     plt.plot(zrange, rate(zrange))
     plt.yscale("log")
     plt.xlabel("Redshift")
-    plt.ylabel(r"Rate (Mpc$^{-3}$ year$^{-1}$")
+    plt.ylabel(r"Rate [Mpc$^{-3}$ year$^{-1}$]")
+    plt.tight_layout()
     plt.savefig(savedir + 'rate.pdf')
+    plt.close()
+
+    plt.figure()
+    plt.plot(zrange, rate_per_z(zrange)/rate(zrange))
+    plt.yscale("log")
+    plt.xlabel("Redshift")
+    plt.ylabel(r"Differential Comoving Volume [Mpc$^{3}$ dz]")
+    plt.tight_layout()
+    plt.savefig(savedir + 'comoving_volume.pdf')
     plt.close()
 
     print "Sanity Check:"
     print "Integrated Source Counts \n"
 
-    for z in [0.01, 0.08, 0.1, 0.2, 0.3, 8]:
+    for z in [0.01, 0.08, 0.1, 0.2, 0.3, 0.7,  8]:
         print z, Distance(z=z).to("Mpc"), cumulative_z(rate_per_z, z)[-1]
 
     print "Fraction from nearby sources", cumulative_nu_flux(0.3)[-1]/ \
                                           nu_at_horizon
 
     plt.figure()
+    plt.plot(zrange, rate_per_z(zrange))
+    plt.yscale("log")
+    plt.ylabel("Differential Source Rate [year$^{-1}$ dz]")
+    plt.xlabel("Redshift")
+    plt.tight_layout()
+    plt.savefig(savedir + 'diff_source_count.pdf')
+    plt.close()
+
+    plt.figure()
     plt.plot(zrange[1:-1], [x.value for x in cumulative_z(rate_per_z, zrange)])
     plt.yscale("log")
     plt.ylabel("Cumulative Sources")
     plt.xlabel("Redshift")
+    plt.tight_layout()
     plt.savefig(savedir + 'integrated_source_count.pdf')
     plt.close()
 
@@ -292,6 +291,7 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     plt.plot(zrange, nu_flux_per_z(zrange))
     plt.yscale("log")
     plt.xlabel("Redshift")
+    plt.tight_layout()
     plt.savefig(savedir + 'diff_vol_contribution.pdf')
     plt.close()
 
@@ -326,8 +326,6 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     plt.xlabel("Redshift")
     plt.ylabel(
         r"Time-Integrated Flux per Source [ GeV$^{-1}$ cm$^{-2}$]")
-    # plt.axhline(y=diffuse_fluence.value, color="red", linestyle="--",
-    #             label="1 month Time-Integrated Diffuse Flux")
     plt.legend()
     plt.tight_layout()
     plt.savefig(savedir + 'nu_flux_per_source_contribution.pdf')

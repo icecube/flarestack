@@ -1,5 +1,5 @@
 from flarestack.utils.neutrino_cosmology import calculate_transient, \
-    sfr_madau, sfr_clash_candels, get_diffuse_flux_at_100TeV
+    sfr_madau, sfr_clash_candels, get_diffuse_flux_at_1GeV
 from flarestack.analyses.ccsn.ccsn_limits import limits
 from flarestack.core.energy_PDFs import EnergyPDF
 from astropy import units as u
@@ -98,12 +98,11 @@ if __name__ == "__main__":
         e_pdf_dict = dict(e_pdf_dict_template)
 
         energy_pdf = EnergyPDF.create(e_pdf_dict)
-        diffuse_flux, diffuse_gamma = get_diffuse_flux_at_100TeV("Joint")
 
         e_pdf_dict["Source Energy (erg)"] = limits[name]["Fixed Energy (erg)"]
         # e_pdf_dict["Source Energy (erg)"] = ccsn_energy_limit(name,
         # diffuse_gamma)
-        norms[name] = calculate_transient(e_pdf_dict, f, name, zmax=1.0,
+        norms[name] = calculate_transient(e_pdf_dict, f, name, zmax=6.0,
                                           nu_bright_fraction=nu_bright,
                                           diffuse_fit="Joint")
 
@@ -131,18 +130,27 @@ if __name__ == "__main__":
         alpha=.5,
     )
 
+    diffuse_norm, diffuse_gamma = get_diffuse_flux_at_1GeV("Joint")
+
+    plt.plot(global_fit_e_range,
+             diffuse_norm * global_fit_e_range ** (2. - diffuse_gamma),
+             color="k")
+
     for i,(name, norm) in enumerate(norms.iteritems()):
         # plt.plot(e_range, z(e_range, norm), label=name)
         plt.errorbar(e_range, z(e_range, norm).value,
                      yerr=.25 * np.array([x.value for x in z(e_range, norm)]),
-                     uplims=True, color=["b", "r", "yellow"][i])
+                     uplims=True, color=["b", "r", "orange"][i],
+                     label="Supernovae Type {0}".format(name))
 
     plt.yscale("log")
     plt.xscale("log")
     plt.legend()
     plt.title(r"Diffuse Flux Global Best Fit ($\nu_{\mu} + \bar{\nu}_{\mu})$")
-    plt.ylabel(r"$E^{2}\frac{dN}{dE}$[GeV cm$^{-2}$ s$^{-1}$ sr$^{-1}$]")
+    plt.ylabel(r"$E^{2}\frac{dN}{dE}$ [GeV cm$^{-2}$ s$^{-1}$ sr$^{-1}$]")
     plt.xlabel(r"$E_{\nu}$ [GeV]")
+    plt.grid(True, linestyle=":")
+    plt.tight_layout()
     plt.savefig(base_dir + "diffuse_flux_global_fit.pdf")
     plt.close()
 

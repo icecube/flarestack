@@ -4,7 +4,7 @@ quantify the significance of the result. Produces relevant post-unblinding
 plots.
 """
 import numpy as np
-from flarestack.core.unblinding import Unblinder
+from flarestack.core.unblinding import create_unblinder
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.utils.custom_seasons import custom_dataset
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name, \
@@ -21,16 +21,22 @@ llh_energy = {
     "Gamma": 2.0,
 }
 
+# llh_time = {
+#     "Name": "FixedEndBox"
+# }
 llh_time = {
-    "Name": "FixedEndBox"
+    "Name": "Steady"
 }
+# llh_time = {
+#     "Name": "Box",
+#     "Pre-Window": 0,
+#     "Post-Window": 50
+# }
 
 unblind_llh = {
+    "name": "standard_matrix",
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Fit Negative n_s?": False,
-    "Fit Weights?": True
 }
 
 name_root = "analyses/tde/unblind_stacked_TDEs/"
@@ -40,7 +46,7 @@ cat_res = dict()
 
 res = []
 
-for j, cat in enumerate(tde_catalogues):
+for j, cat in enumerate(tde_catalogues[1:]):
 
     name = name_root + cat.replace(" ", "") + "/"
 
@@ -51,14 +57,17 @@ for j, cat in enumerate(tde_catalogues):
 
     unblind_dict = {
         "name": name,
+        "mh_name": "fixed_weights",
         "datasets": custom_dataset(txs_sample_v1, catalogue,
                                    unblind_llh["LLH Time PDF"]),
         "catalogue": cat_path,
-        "llh kwargs": unblind_llh,
+        "llh_dict": unblind_llh,
         "background TS": bkg_ts
     }
 
-    ub = Unblinder(unblind_dict, mock_unblind=False)
+    # ub = create_unblinder(unblind_dict, mock_unblind=False)
+    ub = create_unblinder(unblind_dict, mock_unblind=True)
+    raw_input("prompt")
 
     res.append((cat, ub.ts))
 
