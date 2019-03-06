@@ -6,7 +6,7 @@ import os, os.path
 import argparse
 import cPickle as Pickle
 import scipy.optimize
-from flarestack.core.injector import Injector, LowMemoryInjector, SparseMatrixInjector
+from flarestack.core.injector import Injector, LowMemoryInjector
 from flarestack.core.llh import LLH, generate_dynamic_flare_class
 from flarestack.shared import name_pickle_output_dir, fit_setup, \
     inj_dir_name, plot_output_dir, scale_shortener
