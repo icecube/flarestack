@@ -1,5 +1,5 @@
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict, IC86_234_dict
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.cluster import run_desy_cluster as rd
@@ -10,11 +10,13 @@ import matplotlib.pyplot as plt
 import json
 import numpy as np
 
+seasons = [IC86_1_dict,  IC86_234_dict]
+
 all_res = dict()
 
-basename = "analyses/angular_error_floor/compare_dpc/"
+basename = "analyses/angular_error_floor/compare_seasons/"
 
-for gamma in [3.0]:
+for gamma in [2.0, 3.0, 3.5]:
     gamma_name = basename + str(gamma) + "/"
 
     injection_energy = {
@@ -30,24 +32,24 @@ for gamma in [3.0]:
         "Injection Energy PDF": injection_energy,
         "Injection Time PDF": injection_time,
         "Poisson Smear?": False,
-        # "fixed_n": 100
+        "fixed_n": 100
     }
 
     # sin_decs = np.linspace(1.00, -1.00, 41)
     #
     # print sin_decs
 
-    # sin_decs = np.linspace(0.9, -0.9, 7)
+    sin_decs = np.linspace(0.9, -0.9, 37)
 
     # print sin_decs
 
     # raw_input("prompt")
 
-    sin_decs = [-0.5, 0.0, 0.5]
+    # sin_decs = [-0.5, 0.0, 0.5]
     res_dict = dict()
 
-    # for pull_corrector in ["no_pull", "median_1d", "median_2d"]:
-    for pull_corrector in ["no_pull", "median_2d",]:
+    for pull_corrector in ["no_pull", "median_1d"]:
+    # for pull_corrector in ["median_1d_e", ]:
         root_name = gamma_name + pull_corrector + "/"
 
         if "_e" in pull_corrector:
@@ -67,39 +69,41 @@ for gamma in [3.0]:
 
             config_mh = []
 
-            for sin_dec in sin_decs:
+            for season in seasons:
 
-                name = seed_name + "sindec=" + '{0:.2f}'.format(sin_dec) + "/"
+                name = seed_name + season["Data Sample"] + "/" + \
+                       season[ "Name"] + "/"
+
+                print name
 
                 llh_dict = {
-                    "name": "standard_overlapping",
+                    "name": "spatial",
                     "LLH Energy PDF": injection_energy,
                     "LLH Time PDF": injection_time,
                     "pull_name": pull_corrector,
                     "floor_name": floor
                 }
 
-                scale = flux_to_k(reference_sensitivity(sin_dec, gamma)) * 5
+                # scale = flux_to_k(reference_sensitivity(sin_dec, gamma)) * 10
 
                 mh_dict = {
                     "name": name,
                     "mh_name": "fixed_weights",
                     "datasets": [IC86_1_dict],
-                    "catalogue": ps_catalogue_name(sin_dec),
+                    "catalogue": ps_catalogue_name(-0.2),
                     "llh_dict": llh_dict,
                     "inj kwargs": inj_dict,
-                    "n_trials": 20,
-                    "n_steps": 15,
-                    "scale": scale
+                    "n_trials": 50,
+                    "n_steps": 2,
+                    "scale": 1.
                 }
 
                 pkl_file = make_analysis_pickle(mh_dict)
 
-                # rd.submit_to_cluster(pkl_file, n_jobs=150)
+                # rd.submit_to_cluster(pkl_file, n_jobs=50)
                 #
-                mh = MinimisationHandler.create(mh_dict)
-                # mh.iterate_run(n_steps=2, n_trials=20, scale=scale)
-                mh.run(10, scale=float(scale))
+                # mh = MinimisationHandler.create(mh_dict_power_law)
+                # mh.iterate_run(n_steps=2, n_trials=10)
 
                 config_mh.append(mh_dict)
 

@@ -12,9 +12,9 @@ import numpy as np
 
 all_res = dict()
 
-basename = "analyses/angular_error_floor/compare_dpc/"
+basename = "analyses/angular_error_floor/compare_feature/"
 
-for gamma in [3.0]:
+for gamma in [2.0, 3.0, 3.5]:
     gamma_name = basename + str(gamma) + "/"
 
     injection_energy = {
@@ -30,24 +30,24 @@ for gamma in [3.0]:
         "Injection Energy PDF": injection_energy,
         "Injection Time PDF": injection_time,
         "Poisson Smear?": False,
-        # "fixed_n": 100
+        "fixed_n": 100
     }
 
     # sin_decs = np.linspace(1.00, -1.00, 41)
     #
     # print sin_decs
 
-    # sin_decs = np.linspace(0.9, -0.9, 7)
+    sin_decs = np.linspace(0.9, -0.9, 7)
 
     # print sin_decs
 
     # raw_input("prompt")
 
-    sin_decs = [-0.5, 0.0, 0.5]
+    # sin_decs = [-0.5, 0.0, 0.5]
     res_dict = dict()
 
-    # for pull_corrector in ["no_pull", "median_1d", "median_2d"]:
-    for pull_corrector in ["no_pull", "median_2d",]:
+    for pull_corrector in ["no_pull", "median_1d"]:
+    # for pull_corrector in ["median_1d_e", ]:
         root_name = gamma_name + pull_corrector + "/"
 
         if "_e" in pull_corrector:
@@ -72,14 +72,14 @@ for gamma in [3.0]:
                 name = seed_name + "sindec=" + '{0:.2f}'.format(sin_dec) + "/"
 
                 llh_dict = {
-                    "name": "standard_overlapping",
+                    "name": "spatial",
                     "LLH Energy PDF": injection_energy,
                     "LLH Time PDF": injection_time,
                     "pull_name": pull_corrector,
                     "floor_name": floor
                 }
 
-                scale = flux_to_k(reference_sensitivity(sin_dec, gamma)) * 5
+                # scale = flux_to_k(reference_sensitivity(sin_dec, gamma)) * 10
 
                 mh_dict = {
                     "name": name,
@@ -88,18 +88,19 @@ for gamma in [3.0]:
                     "catalogue": ps_catalogue_name(sin_dec),
                     "llh_dict": llh_dict,
                     "inj kwargs": inj_dict,
-                    "n_trials": 20,
-                    "n_steps": 15,
-                    "scale": scale
+                    "n_trials": 50,
+                    "n_steps": 2,
+                    "scale": 1.
                 }
 
                 pkl_file = make_analysis_pickle(mh_dict)
 
-                # rd.submit_to_cluster(pkl_file, n_jobs=150)
+                # rd.submit_to_cluster(pkl_file, n_jobs=50)
                 #
-                mh = MinimisationHandler.create(mh_dict)
-                # mh.iterate_run(n_steps=2, n_trials=20, scale=scale)
-                mh.run(10, scale=float(scale))
+                # mh_power_law = MinimisationHandler.create(mh_dict_power_law)
+                # mh_power_law.iterate_run(n_steps=2, n_trials=10)
+
+                # raw_input("prompt")
 
                 config_mh.append(mh_dict)
 

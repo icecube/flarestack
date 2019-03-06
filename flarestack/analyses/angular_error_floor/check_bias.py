@@ -12,12 +12,13 @@ from flarestack.core.results import ResultsHandler
 
 path = fs_scratch_dir + "tester_spline.npy"
 
-injector_gamma = 3.7
+injector_gamma = 2.0
 sin_dec = 0.0
 
 root_name = "analyses/angular_error_floor/check_bias/"
 
-for i, llh_name in enumerate(["spatial", "fixed_energy", "standard"]):
+# for i, llh_name in enumerate(["spatial", "fixed_energy", "standard"]):
+for i, llh_name in enumerate(["standard", "standard_overlapping"]):
     base_name = root_name + llh_name + "/"
 
     llh_dict = {
@@ -27,13 +28,13 @@ for i, llh_name in enumerate(["spatial", "fixed_energy", "standard"]):
         }
     }
 
-    if llh_name is not "spatial":
+    if llh_name is not "spatial_overlapping":
         llh_dict["LLH Energy PDF"] = {
             "Name": "Power Law"
         }
 
-    for j, gamma in enumerate([1.5, 2.0, 3.0, 3.5]):
-    # for gamma in [1.]:
+    # for j, gamma in enumerate([1.5, 2.0, 3.0, 3.5]):
+    for j, gamma in enumerate([2.]):
         name = base_name + str(gamma) + "/"
 
         if llh_name == "fixed_energy":
@@ -46,14 +47,16 @@ for i, llh_name in enumerate(["spatial", "fixed_energy", "standard"]):
             "Injection Energy PDF": {
                 "Name": "Power Law",
                 "Gamma": gamma,
-            }
+            },
+            "fixed_n": 30
         }
 
         mh_dict = {
             "name": name,
             "mh_name": "fixed_weights",
             "datasets": [IC86_1_dict],
-            "catalogue": ps_catalogue_name(sin_dec),
+            # "catalogue": ps_catalogue_name(sin_dec),
+            "catalogue": tde_catalogue_name("jetted"),
             "llh_dict": llh_dict,
             "inj kwargs": inj_dict
         }
@@ -63,5 +66,5 @@ for i, llh_name in enumerate(["spatial", "fixed_energy", "standard"]):
         )
 
         mh = MinimisationHandler.create(mh_dict)
-        mh.iterate_run(scale=scale, n_steps=10, n_trials=1000)
+        mh.iterate_run(scale=scale, n_steps=2, n_trials=100)
         rh = ResultsHandler(mh_dict)
