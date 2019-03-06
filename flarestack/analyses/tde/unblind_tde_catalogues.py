@@ -58,7 +58,7 @@ for j, cat in enumerate(tde_catalogues):
         "background TS": bkg_ts
     }
 
-    ub = Unblinder(unblind_dict, mock_unblind=False)
+    ub = Unblinder(unblind_dict, mock_unblind=False, full_plots=True)
 
     res.append((cat, ub.ts))
 
