@@ -380,8 +380,10 @@ def create_pull_2d(pull_dict):
     weights = e_pdf.weight_mc(mc)
 
     x_bins = np.linspace(2., 6., n_ebins)
+    ymax = pull_dict["season"]["sinDec bins"][-1]
+    ymin = pull_dict["season"]["sinDec bins"][0]
+    # y_bins = np.linspace(ymin, ymax, 41)
     y_bins = pull_dict["season"]["sinDec bins"]
-
     x_range = 0.5 * (x_bins[1:] + x_bins[:-1])
     y_range = 0.5 * (y_bins[1:] + y_bins[:-1])
 
@@ -431,3 +433,76 @@ def create_pull_2d(pull_dict):
     plt.xlabel("Log(Energy proxy)")
     plt.savefig(plot_path)
     plt.close()
+
+def create_pull_2d_e(pull_dict):
+    save_path = pull_pickle(pull_dict)
+    base_dir = save_path[:-3] + "/"
+
+    try:
+        os.makedirs(base_dir)
+    except OSError:
+        pass
+
+    mc = get_mc(pull_dict)
+    pulls = get_pulls(mc)
+    e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
+
+    x_bins = np.linspace(2., 6., n_ebins)
+    ymax = pull_dict["season"]["sinDec bins"][-1]
+    ymin = pull_dict["season"]["sinDec bins"][0]
+    y_bins = np.linspace(ymin, ymax, 11)
+
+    x_range = 0.5 * (x_bins[1:] + x_bins[:-1])
+    y_range = 0.5 * (y_bins[1:] + y_bins[:-1])
+
+    res_dict = dict()
+
+    e_range = np.array(sorted(list(gamma_support_points)))
+
+    for e in e_range:
+
+        z_range = np.ones([len(x_range), len(y_range)])
+
+        weights = e_pdf.weight_mc(mc, e)
+
+        for j, lower in enumerate(x_bins[:-1]):
+            upper = x_bins[j + 1]
+            mask = np.logical_and(
+                mc["logE"] >= lower,
+                mc["logE"] < upper
+            )
+
+            cut_mc = mc[mask]
+
+            for k, lower_dec in enumerate(y_bins[:-1]):
+                upper_dec = y_bins[k + 1]
+                bin_mask = np.logical_and(
+                    cut_mc["sinDec"] >= lower_dec,
+                    cut_mc["sinDec"] < upper_dec
+                )
+
+                median_pull = weighted_quantile(
+                    pulls[mask][bin_mask], 0.5, weights[mask][bin_mask])
+
+                z_range[j][k] = np.log(median_pull)
+        res_dict[e] = [x_range, y_range, z_range]
+
+        plot_path = base_dir + str(e) + ".pdf"
+
+        ax = plt.subplot(111)
+        X, Y = np.meshgrid(x_bins, y_bins)
+        cbar = ax.pcolor(X, Y, z_range.T, cmap="seismic",
+                         vmax=1.0, vmin=-1.0)
+        plt.colorbar(cbar, label="Log(Median Pull)")
+        plt.ylabel(r"$\sin(\delta)$")
+        plt.xlabel("Log(Energy proxy)")
+        plt.savefig(plot_path)
+        plt.close()
+
+
+    save_path = pull_pickle(pull_dict)
+
+    with open(save_path, "wb") as f:
+        Pickle.dump(res_dict, f)
+
+    print "Saved to", save_path
