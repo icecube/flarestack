@@ -8,7 +8,7 @@ from flarestack.shared import min_angular_err, base_floor_quantile, \
 from flarestack.utils.dynamic_pull_correction import \
     create_quantile_floor_0d, create_quantile_floor_0d_e, \
     create_quantile_floor_1d, create_quantile_floor_1d_e, create_pull_0d_e, \
-    create_pull_1d, create_pull_1d_e, create_pull_2d
+    create_pull_1d, create_pull_1d_e, create_pull_2d, create_pull_2d_e
 from flarestack.utils.dataset_loader import data_loader
 import json
 import cPickle as Pickle
@@ -337,7 +337,9 @@ class StaticMedianPullCorrector(BaseMedianPullCorrector):
     def pull_correct_static(self, data):
         data = self.floor.apply_static(data)
         data = self.pull_correct(self.static_f, data)
+
         data["raw_sigma"] = data["sigma"]
+
         return data
 
 
@@ -426,15 +428,78 @@ class MedianPull2D(StaticMedianPullCorrector):
     def create_static(self):
         func = RectBivariateSpline(self.pickled_data[0], self.pickled_data[1],
                                    self.pickled_data[2])
-        import resource
-        mem_use = str(
-            float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        print ""
-        print 'Memory usage max: %s (Gb)' % mem_use
 
         return lambda data: [func(x["logE"], x["sinDec"])[0][0] for x in data]
         # return lambda data:
 
+@BasePullCorrector.register_subclass("median_2d_e")
+class MedianPullEParam2D(DynamicMedianPullCorrector):
+
+    def create_pickle(self):
+        create_pull_2d_e(self.pull_dict)
+
+    def create_dynamic(self, pickled_array):
+        func = RectBivariateSpline(pickled_array[0], pickled_array[1],
+                                   pickled_array[2])
+
+        return lambda data: func(data["logE"], data["sinDec"])
+
+
+if __name__ == "__main__":
+
+    from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
+    from flarestack.analyses.angular_error_floor.plot_bias import get_data, \
+        weighted_quantile
+    from scipy.stats import norm
+
+    print norm.cdf(1.0)
+
+    def symmetric_gauss(sigma):
+        return (1 - 2 * norm.sf(sigma))
+
+    def gauss_2d(sigma):
+        # return symmetric_gauss(sigma) ** 2
+        return symmetric_gauss(sigma)
+
+    print symmetric_gauss(1.0)
+    print gauss_2d(1.0)
+    print gauss_2d(1.177)
+
+    e_pdf_dict = {
+        "Name": "Power Law",
+        "Gamma": 3.0
+    }
+
+    e_pdf = EnergyPDF.create(e_pdf_dict)
+
+    pc = BasePullCorrector.create(IC86_1_dict, e_pdf_dict, "no_floor",
+                                  "median_2d")
+    mc, x, y = get_data(IC86_1_dict)[:10]
+
+    pulls = x/y
+
+    weights = e_pdf.weight_mc(mc)
+
+    median_pull = weighted_quantile(
+        pulls, 0.5, weights)
+
+    def med_pull(data):
+        y = np.degrees(data["sigma"])
+        pulls = x/y
+        med = weighted_quantile(pulls, 0.5, weights)
+        return med
+
+    print mc["sigma"][:5]
+
+    mc = pc.pull_correct_static(mc)
+
+    print mc["sigma"][:5]
+
+
+    print med_pull(mc)
+
+
+    print median_pull
 
 # @BasePullCorrector.register_subclass('static_pull_corrector')
 # class Static1DPullCorrector(BasePullCorrector):

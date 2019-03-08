@@ -70,7 +70,13 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             if np.logical_and(not mock_unblind, not disable_warning):
                 self.check_unblind()
 
+            if mock_unblind is False:
+                self.mock_unblind = False
+            else:
+                self.mock_unblind = True
+
             ParentMiminisationHandler.__init__(self, unblind_dict)
+
 
             try:
                 if self.mock_unblind:
@@ -119,7 +125,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     self.scan_likelihood()
 
         def add_injector(self, season, sources):
-            if self.unblind_dict["Mock Unblind"] is False:
+            if self.mock_unblind is False:
                 return TrueUnblindedInjector(
                     season, sources, **self.inj_kwargs)
             else:
