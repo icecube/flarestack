@@ -20,6 +20,17 @@ base_dir = "analyses/txs_0506_056/model_hypothesis_test/"
 
 # Initialise Injectors/LLHs
 
+inj_dict = {
+    "Injection Time PDF": {
+        "Name": "FixedEndBox"
+    },
+    "Injection Energy PDF": {
+        "Name": "Power Law",
+        "Gamma": 2.18,
+    },
+    "fixed_n": 13
+}
+
 # Set up the "likelihood" arguments, which determine how the fake data is
 # analysed.
 
@@ -54,7 +65,7 @@ mh_dict_pl = {
     "mh_name": "fixed_weights",
     "datasets": [IC86_234_dict],
     "catalogue": txs_cat_path,
-    "inj kwargs": {},
+    "inj kwargs": inj_dict,
     "llh_dict": llh_kwargs_pl
 }
 
@@ -84,11 +95,13 @@ mh_dict_tm = {
     "mh_name": "fixed_weights",
     "datasets": [IC86_234_dict],
     "catalogue": txs_cat_path,
-    "inj kwargs": {},
+    "inj kwargs": inj_dict,
     "llh_dict": llh_kwargs_tm
 }
 
 ts_path = plot_output_dir(base_dir) + "model_TS.pkl"
+
+print "TS path", ts_path
 
 try:
     os.makedirs(os.path.dirname(ts_path))
@@ -110,19 +123,19 @@ else:
 mh_pl = MinimisationHandler.create(mh_dict_pl)
 mh_tm = MinimisationHandler.create(mh_dict_tm)
 
-n_trials = 400
+n_trials = 100
 
 for i in range(n_trials):
 
     seed = random.randint(0, 999999)
-
     mh_pl.set_random_seed(seed)
-    res_pl = mh_pl.run_trial(scale=0.)["TS"]
+    res_pl = mh_pl.run_trial(scale=1.)
     mh_tm.set_random_seed(seed)
-    res_tm = mh_tm.run_trial(scale=0.)["TS"]
-    ts = res_tm - res_pl
+    res_tm = mh_tm.run_trial(scale=1.)
+    ts = res_tm["TS"] - res_pl["TS"]
     print i, seed, res_tm, res_pl, ts
     ts_array.append(ts)
+
 
 with open(ts_path, "wb") as f:
     Pickle.dump(ts_array, f)
