@@ -22,6 +22,9 @@ output_dir = fs_scratch_dir + "output/"
 cluster_dir = fs_scratch_dir + "cluster/"
 log_dir = cluster_dir + "logs/"
 
+cache_dir = storage_dir + "cache/"
+cat_cache_dir = cache_dir + "catalogue_cache/"
+
 catalogue_dir = input_dir + "catalogues/"
 transients_dir = catalogue_dir + "transients/"
 analysis_dir = input_dir + "analysis/"
@@ -46,7 +49,8 @@ all_dirs = [
     fs_scratch_dir, input_dir, storage_dir, output_dir, cluster_dir, pc_dir,
     log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir,
     SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
-    bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir
+    bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir,
+    cache_dir, cat_cache_dir
 ]
 
 # ==============================================================================
