@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import healpy as hp
-from flarestack.shared import k_to_flux, scale_shortener
+from flarestack.shared import k_to_flux, scale_shortener, band_mask_cache_name
 from flarestack.core.energy_PDFs import EnergyPDF
 from flarestack.core.time_PDFs import TimePDF
 from flarestack.utils.dataset_loader import data_loader
@@ -312,29 +312,29 @@ class LowMemoryInjector(Injector):
 
     def __init__(self, season, sources, **kwargs):
         Injector.__init__(self, season, sources, **kwargs)
-        self.injection_band_path = '/afs/ifh.de/user/b/bradascf/scratch/flarestack__data/' \
-                                   'injection_band/inj_band_name_test.npz'   #Something
+        self.injection_band_path = band_mask_cache_name(season, self.sources)
         if not os.path.isfile(self.injection_band_path):
-             self.make_injection_band_mask()
+            self.make_injection_band_mask()
         else:
             print "Loading injection band mask from", self.injection_band_path
 
     def make_injection_band_mask(self):
         # Make mask
-        injection_band_mask = sparse.lil_matrix((len(self.sources), len(self._mc)), dtype=bool)
+        injection_band_mask = sparse.lil_matrix((len(self.sources),
+                                                 len(self._mc)), dtype=bool)
         for i, source in enumerate(self.sources):
-            dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(self._mc, source)
+            dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
             band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
                                        np.less(self._mc["trueDec"], max_dec))
-            # inj_npmatrix[i,:] = band_mask
-            injection_band_mask[i,:] = band_mask 
+            injection_band_mask[i,:] = band_mask
         sparse.save_npz(self.injection_band_path, injection_band_mask.tocsr())
-        # injection_band_mask.to_npz(self.injection_band_path)
+
         del injection_band_mask
+
         print "Saving to", self.injection_band_path
 
     @staticmethod              
-    def get_dec_and_omega(mc, source):
+    def get_dec_and_omega( source):
         # Sets half width of band
         dec_width = np.deg2rad(2.)
 
@@ -356,7 +356,7 @@ class LowMemoryInjector(Injector):
         :return: omega: Solid Angle of the chosen band
         :return: band_mask: The mask which removes events outside band
         """
-        dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(mc, source)
+        dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
         band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
                                         np.less(mc["trueDec"], max_dec))
         return mc[band_mask], omega, band_mask
@@ -387,7 +387,7 @@ class LowMemoryInjector(Injector):
         # Loop over each source to be simulated
         for i, source in enumerate(self.sources):
 
-            dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(mc, source)
+            dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
             band_mask = injection_band_mask.getrow(i).toarray()[0]
             source_mc = mc[band_mask]
 
