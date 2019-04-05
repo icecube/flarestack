@@ -800,8 +800,124 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
     but much less burdensome for memory.
     """
 
+    compatible_llh = ["standard_matrix"]
+    compatible_negative_n_s = False
+
+    def __init__(self, mh_dict):
+        FixedWeightMinimisationHandler.__init__(self, mh_dict)
+        self.gamma_keys = [2.0, 2.5, 3.0]
+
+        if self.param_names != ["n_s", "gamma"]:
+            raise Exception("{0} parameters are given, when ['n_s','gamma'] was expected".format(self.param_names))
+
     def add_injector(self, season, sources):
         return LowMemoryInjector(season, sources, **self.inj_kwargs)
+
+    # @profile
+    def multi_trial_function(self, gamma, seed, scale=1.):
+
+        llh_functions = dict()
+        n_all = dict()
+
+        for season in self.seasons:
+            dataset = self.injectors[season["Name"]].create_dataset(
+                scale, self.pull_correctors[season["Name"]])
+            self.set_random_seed(seed)
+
+            llh_f = self.llhs[season["Name"]].create_llh_function(
+                dataset, self.pull_correctors[season["Name"]], gamma,
+                self.make_season_weight
+            )
+
+            llh_functions[season["Name"]] = llh_f
+            n_all[season["Name"]] = len(dataset)
+
+        def f_final(raw_params):
+
+            # If n_s is less than or equal to 0, set gamma to be 3.7 (equal to
+            # atmospheric background). This is continuous at n_s=0, but fixes
+            # relative weights of sources/seasons for negative n_s values.
+
+            params = list(raw_params) + [gamma]
+
+            # Calculate relative contribution of each source/season
+
+            weights_matrix = self.make_weight_matrix(params)
+            weights_matrix /= np.sum(weights_matrix)
+
+            # Having created the weight matrix, loops over each season of
+            # data and evaluates the TS function for that season
+
+            ts_val = 0
+            for i, season in enumerate(self.seasons):
+                w = weights_matrix[i][:, np.newaxis]
+                ts_val += np.sum(llh_functions[season["Name"]](params, w))
+
+            return ts_val
+
+        return f_final
+
+    def run_trial(self, scale):
+
+        seed = int(np.random.rand() * 1000000.)
+
+        best_ts = -1. * np.inf
+
+        for gamma in self.gamma_keys:
+
+            raw_f = self.multi_trial_function(gamma, seed, scale)
+
+            def llh_f(scale):
+                return -np.sum(raw_f(scale))
+
+            if self.brute:
+
+                brute_range = [
+                    (max(x, -30), min(y, 30)) for (x, y) in self.bounds]
+
+                start_seed = scipy.optimize.brute(
+                    llh_f, ranges=brute_range[:-1], finish=None, Ns=40)
+            else:
+                start_seed = self.p0
+
+            res = scipy.optimize.minimize(
+                llh_f, start_seed[:-1], bounds=self.bounds[:-1])
+
+            vals = res.x
+            flag = res.status
+            # If the minimiser does not converge, repeat with brute force
+            if flag == 1:
+                vals = scipy.optimize.brute(llh_f, ranges=self.bounds[:-1],
+                                            finish=None)
+
+            best_llh = raw_f(vals)
+
+            ts = np.sum(best_llh)
+
+            if ts == -0.0:
+                ts = 0.0
+
+            if ts > best_ts:
+                best_ts = ts
+                best_vals = list(vals) + [gamma]
+                best_res = res
+                best_llh_f = llh_f
+                best_flag = flag
+
+        parameters = dict()
+
+        for i, val in enumerate(best_vals):
+            parameters[self.param_names[i]] = val
+
+        res_dict = {
+            "res": best_res,
+            "Parameters": parameters,
+            "TS": best_ts,
+            "Flag": best_flag,
+            "f": best_llh_f
+        }
+
+        return res_dict
 
 @MinimisationHandler.register_subclass('sparse_matrix')
 class SparceMatrixMinimisationHandler(FixedWeightMinimisationHandler):
