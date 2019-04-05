@@ -2,6 +2,7 @@ import numexpr
 import flarestack.core.astro
 import numpy as np
 import scipy.interpolate
+from scipy import sparse
 import cPickle as Pickle
 from flarestack.shared import acceptance_path
 from flarestack.core.time_PDFs import TimePDF
@@ -12,7 +13,7 @@ from flarestack.utils.create_acceptance_functions import dec_range
 from flarestack.utils.dataset_loader import data_loader
 from flarestack.utils.make_SoB_splines import create_2d_ratio_spline
 import inspect
-
+from numpy import ravel
 
 class LLH:
     """Base class LLH.
@@ -657,20 +658,6 @@ class StandardLLH(FixedEnergyLLH):
                 SoB_spacetime.append([])
                 SoB_energy_cache.append([])
 
-        # coincident_data = data[~assumed_background_mask]
-        #
-        # for source in self.sources:
-        #     print source["Name"]
-        #     print self.signal_pdf(source, coincident_data)[:5]
-        #     print self.background_pdf(source, coincident_data)[:5]
-        #     print (self.signal_pdf(source,
-        #                            coincident_data)/self.background_pdf(
-        #         source, coincident_data))[:5]
-        #
-        #     # print n_bkg
-        # raw_input("prompt")
-
-
         kwargs["n_coincident"] = np.sum(~assumed_background_mask)
         kwargs["SoB_spacetime_cache"] = np.array(SoB_spacetime)
         kwargs["SoB_energy_cache"] = SoB_energy_cache
@@ -689,15 +676,9 @@ class StandardLLH(FixedEnergyLLH):
         n_s = np.array(params[:-1])
         gamma = params[-1]
 
-        # print kwargs["SoB_spacetime_cache"]
-        # raw_input("prompt")
-
         # Calculates the expected number of signal events for each source in
         # the season
         all_n_j = (n_s * weights.T[0])
-        #
-        # print all_n_j
-        # raw_input("prompt")
 
         x = []
 
@@ -718,8 +699,6 @@ class StandardLLH(FixedEnergyLLH):
                 SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
                     gamma, SoB_spacetime)
 
-                # print SoB_spacetime
-
                 if n_j < 0:
                     x.append(1. + ((n_j / kwargs["n_all"]) * (
                             SoB_spacetime - 1.)))
@@ -734,21 +713,14 @@ class StandardLLH(FixedEnergyLLH):
                     x.append((1. + ((n_j / kwargs["n_all"]) * (
                             (SoB_energy * SoB_spacetime) - 1.))))
 
-        # print "X"
-        # print x
-        # raw_input("prompt")
-
 
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
             llh_value = -50. + all_n_j
-        #
+
         else:
 
             llh_value = np.sum([np.sum(np.log(y)) for y in x])
-
-            # print params, llh_value
-            # raw_input("prompt")
 
             llh_value += np.sum(self.assume_background(
                 np.sum(all_n_j), kwargs["n_coincident"], kwargs["n_all"]))
@@ -756,9 +728,6 @@ class StandardLLH(FixedEnergyLLH):
             if np.logical_and(np.sum(all_n_j) < 0,
                               np.sum(llh_value) < np.sum(-50. + all_n_j)):
                 llh_value = -50. + all_n_j
-
-        # print params, llh_value
-        # raw_input("prompt")
 
         # Definition of test statistic
         return 2. * np.sum(llh_value)
@@ -898,17 +867,6 @@ class StandardOverlappingLLH(StandardLLH):
                 for i, source in enumerate(self.sources)], axis=0
             )/np.sum(season_weight(gamma))
 
-        # print joint_SoB(coincident_data)[:5]
-        # for source in self.sources:
-        #     print source["Name"]
-        #     print self.signal_pdf(source, coincident_data)[:5]
-        #     print self.background_pdf(source, coincident_data)[:5]
-        #     print (self.signal_pdf(source,
-        #                            coincident_data)/self.background_pdf(
-        #         source, coincident_data))[:5]
-        #
-        # raw_input("prompt")
-
         SoB_spacetime = pull_corrector.create_spatial_cache(
             coincident_data, joint_SoB
         )
@@ -934,9 +892,6 @@ class StandardOverlappingLLH(StandardLLH):
 
         SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
                 gamma, kwargs["SoB_spacetime_cache"])
-
-        # print SoB_spacetime
-        # raw_input("prompt")
 
         SoB_energy = self.estimate_energy_weights(
                 gamma, kwargs["SoB_energy_cache"])
@@ -970,14 +925,45 @@ class StandardOverlappingLLH(StandardLLH):
 @LLH.register_subclass('standard_matrix')
 class StandardMatrixLLH(StandardOverlappingLLH):
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_llh_function(self, data, pull_corrector, gamma, weight_f=None, ):
+        """Creates a likelihood function to minimise, based on the dataset.
+
+        :param data: Dataset
+        :return: LLH function that can be minimised
+        """
+
+        kwargs = self.create_kwargs(data, pull_corrector, gamma, weight_f)
+
+        def test_statistic(params, weights):
+            return self.calculate_test_statistic(
+                params, weights, **kwargs)
+
+        return test_statistic
+
+    def create_SoB_energy_cache(self, cut_data, gamma):
+        """Evaluates the Log(Signal/Background) values for all coincident
+        data. For each value of gamma in self.gamma_support_points, calculates
+        the Log(Signal/Background) values for the coincident data. Then saves
+        each weight array to a dictionary.
+
+        :param cut_data: Subset of the data containing only coincident events
+        :return: Dictionary containing SoB values for each event for each
+        gamma value.
+        """
+
+        energy_SoB_cache = self.SoB_spline_2Ds[gamma].ev(
+            cut_data["logE"], cut_data["sinDec"])
+
+        return energy_SoB_cache
+
+    def create_kwargs(self, data, pull_corrector, gamma, weight_f=None):
 
         if weight_f is None:
             raise Exception("Weight function not passed, but is required for "
                             "standard_overlapping LLH functions.")
 
-        coincidence_matrix = np.zeros((len(self.sources), len(data)),
-                                      dtype=bool)
+        coincidence_matrix = sparse.lil_matrix((len(self.sources), len(data)),
+                                                      dtype=bool)
 
         kwargs = dict()
 
@@ -1004,36 +990,47 @@ class StandardMatrixLLH(StandardOverlappingLLH):
 
                 coincidence_matrix[i] = s_mask
 
+        # Using Sparse matrixes
         coincident_nu_mask = np.sum(coincidence_matrix, axis=0) > 0
+        coincident_nu_mask = np.array(coincident_nu_mask).ravel()
         coincident_source_mask = np.sum(coincidence_matrix, axis=1) > 0
+        coincident_source_mask = np.array(coincident_source_mask).ravel()
 
         coincidence_matrix = coincidence_matrix[coincident_source_mask].T[
             coincident_nu_mask].T
+        coincidence_matrix.tocsr()
 
         coincident_data = data[coincident_nu_mask]
         coincident_sources = sources[coincident_source_mask]
 
         season_weight = lambda x: weight_f([1.0, x], self.season)[coincident_source_mask]
 
-        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
+        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data, gamma)
 
+        def joint_SoB(dataset):
 
-        def joint_SoB(dataset, gamma):
+            sweight = np.array(season_weight(gamma))
+            sweight = sweight/np.sum(sweight)
 
-            SoB_matrix = np.zeros_like(coincidence_matrix, dtype=float)
+            # create an empty lil_matrix (good for matrix creation) with shape of coincidence_matrix and type float
+            SoB_matrix_sparse = sparse.lil_matrix(coincidence_matrix.shape, dtype=float)
 
             for i, src in enumerate(coincident_sources):
-                mask = coincidence_matrix[i]
-                SoB_matrix[i][mask] = self.signal_pdf(src, dataset[mask]) / \
-                                      self.background_pdf(src, dataset[mask])
+                mask = (coincidence_matrix.getrow(i)).toarray()[0]
+                SoB_matrix_sparse[i, mask] = sweight[i] * self.signal_pdf(src, dataset[mask]) / \
+                                            self.background_pdf(src, dataset[mask])
 
-            SoB_matrix *= season_weight(gamma)/np.sum(season_weight(gamma))
 
-            return np.sum(SoB_matrix, axis=0)
+            SoB_sum = SoB_matrix_sparse.sum(axis=0)
+            return_value = np.array(SoB_sum).ravel()
+
+            return return_value
 
         SoB_spacetime = pull_corrector.create_spatial_cache(
             coincident_data, joint_SoB
         )
+
+        print "Done, now minimising..."
 
         kwargs["n_coincident"] = np.sum(coincident_nu_mask)
         kwargs["SoB_spacetime_cache"] = SoB_spacetime
@@ -1041,6 +1038,35 @@ class StandardMatrixLLH(StandardOverlappingLLH):
         kwargs["pull_corrector"] = pull_corrector
 
         return kwargs
+
+    def calculate_test_statistic(self, params, weights, **kwargs):
+        """Calculates the test statistic, given the parameters. Uses numexpr
+        for faster calculations.
+
+        :param params: Parameters from Minimisation
+        :param weights: Normalised fraction of n_s allocated to each source
+        :return: 2 * llh value (Equal to Test Statistic)
+        """
+        n_s = np.array(params[:-1])
+
+        SoB_spacetime = np.array(kwargs["SoB_spacetime_cache"])
+
+        SoB_energy = np.exp(kwargs["SoB_energy_cache"])
+
+        # Calculates the expected number of signal events for each source in
+        # the season
+        n_j = (n_s * np.sum(weights))
+
+        x = (1. + ((n_j / kwargs["n_all"]) * (
+            (SoB_energy * SoB_spacetime) - 1.)))
+
+        llh_value = np.sum(np.log(x))
+
+        llh_value += self.assume_background(
+            n_j, kwargs["n_coincident"], kwargs["n_all"])
+
+        # Definition of test statistic
+        return 2. * np.sum(llh_value)
 
 
 def generate_dynamic_flare_class(season, sources, llh_dict):
