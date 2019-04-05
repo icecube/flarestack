@@ -319,6 +319,12 @@ class LowMemoryInjector(Injector):
             print "Loading injection band mask from", self.injection_band_path
 
     def make_injection_band_mask(self):
+
+        try:
+            os.makedirs(os.path.dirname(self.injection_band_path))
+        except OSError:
+            pass
+
         # Make mask
         injection_band_mask = sparse.lil_matrix((len(self.sources),
                                                  len(self._mc)), dtype=bool)
