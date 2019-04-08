@@ -333,7 +333,8 @@ class LowMemoryInjector(Injector):
             band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
                                        np.less(self._mc["trueDec"], max_dec))
             injection_band_mask[i,:] = band_mask
-        sparse.save_npz(self.injection_band_path, injection_band_mask.tocsr())
+        injection_band_mask =injection_band_mask.tocsr()
+        sparse.save_npz(self.injection_band_path, injection_band_mask)
 
         del injection_band_mask
 
