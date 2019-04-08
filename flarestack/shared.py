@@ -119,13 +119,27 @@ def pull_pickle(pull_dict):
     return pull_dir + str(unique_key) + ".pkl"
 
 
+band_mask_chunk_size = 500
+
+
 def band_mask_hash_dir(catalogue):
     return cat_cache_dir + str(hash(str(catalogue))) + "/"
 
 
 def band_mask_cache_name(season_dict, catalogue):
-    return band_mask_hash_dir(catalogue) + season_dict["Data Sample"] + "/" + \
-        season_dict["Name"] + ".npz"
+    n_chunks = (len(catalogue) + band_mask_chunk_size - 1)/band_mask_chunk_size
+    print "Breaking catalogue into", n_chunks, "chunks of", band_mask_chunk_size
+
+    cats = []
+
+    for i in range(n_chunks):
+        cat = catalogue[(i*band_mask_chunk_size):((i+1) * band_mask_chunk_size)]
+        cats.append(cat)
+
+    paths = [band_mask_hash_dir(cat) + season_dict["Data Sample"] + "/" +
+             season_dict["Name"] + ".npz" for cat in cats]
+
+    return cats, paths
 
 def name_pickle_output_dir(name):
     return pickle_dir + name
