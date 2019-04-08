@@ -1030,8 +1030,6 @@ class StandardMatrixLLH(StandardOverlappingLLH):
             coincident_data, joint_SoB
         )
 
-        print "Done, now minimising..."
-
         kwargs["n_coincident"] = np.sum(coincident_nu_mask)
         kwargs["SoB_spacetime_cache"] = SoB_spacetime
         kwargs["SoB_energy_cache"] = SoB_energy_cache
