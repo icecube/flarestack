@@ -118,12 +118,14 @@ def pull_pickle(pull_dict):
     unique_key = hash(json.dumps(hash_dict, sort_keys=True))
     return pull_dir + str(unique_key) + ".pkl"
 
-def band_mask_cache_name(season_dict, catalogue):
-    base = cat_cache_dir + season_dict["Data Sample"] + "/" + \
-        season_dict["Name"] + "/"
-    unique_key = str(hash(str(catalogue)))
-    return base + unique_key + ".npz"
 
+def band_mask_hash_dir(catalogue):
+    return cat_cache_dir + str(hash(str(catalogue))) + "/"
+
+
+def band_mask_cache_name(season_dict, catalogue):
+    return band_mask_hash_dir(catalogue) + season_dict["Data Sample"] + "/" + \
+        season_dict["Name"] + ".npz"
 
 def name_pickle_output_dir(name):
     return pickle_dir + name
