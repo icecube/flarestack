@@ -39,7 +39,6 @@ def make_desy_submit_file():
            '2>"$TMPDIR"/${JOB_ID}_stderr.txt \n' \
            'eval $(/cvmfs/icecube.opensciencegrid.org/py2-v3/setup.sh) \n' \
            'export PYTHONPATH=' + root_dir + "/ \n" \
-           '$SROOT/metaprojects/offline-software/V16-10-00/env-shell.sh ' \
            'python ' + fs_dir + 'core/minimisation.py -f $1 \n' \
            'cp $TMPDIR/${JOB_ID}_stdout.txt ' + log_dir + '\n'\
            'cp $TMPDIR/${JOB_ID}_stderr.txt ' + log_dir + '\n '
