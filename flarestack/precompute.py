@@ -89,7 +89,7 @@ def run_precompute(all_data):
     print "********************************************************************"
     print "\n"
 
-    if "ifh.de" in host:
+    if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
         make_desy_submit_file()
     else:
         print "Host", host, "not recognised."
