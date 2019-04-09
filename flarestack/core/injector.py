@@ -397,9 +397,9 @@ class LowMemoryInjector(Injector):
         if scale_key not in self.ref_fluxes.keys():
             self.ref_fluxes[scale_key] = dict()
 
-        for j, path in self.injection_band_paths:
+        for j, path in enumerate(self.injection_band_paths):
 
-            injection_band_mask = sparse.load_npz(self.injection_band_path)
+            injection_band_mask = sparse.load_npz(path)
 
             # Loop over each source to be simulated
             for i, source in enumerate(self.split_cats[j]):
@@ -488,7 +488,7 @@ class LowMemoryInjector(Injector):
 
             del injection_band_mask
 
-        print "Injected", n_tot_exp, "events"
+        # print "Injected", n_tot_exp, "events"
 
         return sig_events
 
