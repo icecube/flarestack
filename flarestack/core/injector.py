@@ -488,7 +488,7 @@ class LowMemoryInjector(Injector):
 
             del injection_band_mask
 
-        # print "Injected", n_tot_exp, "events"
+        print "Injected", n_tot_exp, "events"
 
         return sig_events
 
