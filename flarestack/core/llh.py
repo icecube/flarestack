@@ -925,38 +925,38 @@ class StandardOverlappingLLH(StandardLLH):
 @LLH.register_subclass('standard_matrix')
 class StandardMatrixLLH(StandardOverlappingLLH):
 
-    def create_llh_function(self, data, pull_corrector, gamma, weight_f=None, ):
-        """Creates a likelihood function to minimise, based on the dataset.
+    # def create_llh_function(self, data, pull_corrector, gamma, weight_f=None, ):
+    #     """Creates a likelihood function to minimise, based on the dataset.
+    #
+    #     :param data: Dataset
+    #     :return: LLH function that can be minimised
+    #     """
+    #
+    #     kwargs = self.create_kwargs(data, pull_corrector, gamma, weight_f)
+    #
+    #     def test_statistic(params, weights):
+    #         return self.calculate_test_statistic(
+    #             params, weights, **kwargs)
+    #
+    #     return test_statistic
 
-        :param data: Dataset
-        :return: LLH function that can be minimised
-        """
+    # def create_SoB_energy_cache(self, cut_data, gamma):
+    #     """Evaluates the Log(Signal/Background) values for all coincident
+    #     data. For each value of gamma in self.gamma_support_points, calculates
+    #     the Log(Signal/Background) values for the coincident data. Then saves
+    #     each weight array to a dictionary.
+    #
+    #     :param cut_data: Subset of the data containing only coincident events
+    #     :return: Dictionary containing SoB values for each event for each
+    #     gamma value.
+    #     """
+    #
+    #     energy_SoB_cache = self.SoB_spline_2Ds[gamma].ev(
+    #         cut_data["logE"], cut_data["sinDec"])
+    #
+    #     return energy_SoB_cache
 
-        kwargs = self.create_kwargs(data, pull_corrector, gamma, weight_f)
-
-        def test_statistic(params, weights):
-            return self.calculate_test_statistic(
-                params, weights, **kwargs)
-
-        return test_statistic
-
-    def create_SoB_energy_cache(self, cut_data, gamma):
-        """Evaluates the Log(Signal/Background) values for all coincident
-        data. For each value of gamma in self.gamma_support_points, calculates
-        the Log(Signal/Background) values for the coincident data. Then saves
-        each weight array to a dictionary.
-
-        :param cut_data: Subset of the data containing only coincident events
-        :return: Dictionary containing SoB values for each event for each
-        gamma value.
-        """
-
-        energy_SoB_cache = self.SoB_spline_2Ds[gamma].ev(
-            cut_data["logE"], cut_data["sinDec"])
-
-        return energy_SoB_cache
-
-    def create_kwargs(self, data, pull_corrector, gamma, weight_f=None):
+    def create_kwargs(self, data, pull_corrector, weight_f=None):
 
         if weight_f is None:
             raise Exception("Weight function not passed, but is required for "
@@ -1005,9 +1005,9 @@ class StandardMatrixLLH(StandardOverlappingLLH):
 
         season_weight = lambda x: weight_f([1.0, x], self.season)[coincident_source_mask]
 
-        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data, gamma)
+        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
 
-        def joint_SoB(dataset):
+        def joint_SoB(dataset, gamma):
 
             sweight = np.array(season_weight(gamma))
             sweight = sweight/np.sum(sweight)
@@ -1037,34 +1037,34 @@ class StandardMatrixLLH(StandardOverlappingLLH):
 
         return kwargs
 
-    def calculate_test_statistic(self, params, weights, **kwargs):
-        """Calculates the test statistic, given the parameters. Uses numexpr
-        for faster calculations.
-
-        :param params: Parameters from Minimisation
-        :param weights: Normalised fraction of n_s allocated to each source
-        :return: 2 * llh value (Equal to Test Statistic)
-        """
-        n_s = np.array(params[:-1])
-
-        SoB_spacetime = np.array(kwargs["SoB_spacetime_cache"])
-
-        SoB_energy = np.exp(kwargs["SoB_energy_cache"])
-
-        # Calculates the expected number of signal events for each source in
-        # the season
-        n_j = (n_s * np.sum(weights))
-
-        x = (1. + ((n_j / kwargs["n_all"]) * (
-            (SoB_energy * SoB_spacetime) - 1.)))
-
-        llh_value = np.sum(np.log(x))
-
-        llh_value += self.assume_background(
-            n_j, kwargs["n_coincident"], kwargs["n_all"])
-
-        # Definition of test statistic
-        return 2. * np.sum(llh_value)
+    # def calculate_test_statistic(self, params, weights, **kwargs):
+    #     """Calculates the test statistic, given the parameters. Uses numexpr
+    #     for faster calculations.
+    #
+    #     :param params: Parameters from Minimisation
+    #     :param weights: Normalised fraction of n_s allocated to each source
+    #     :return: 2 * llh value (Equal to Test Statistic)
+    #     """
+    #     n_s = np.array(params[:-1])
+    #
+    #     SoB_spacetime = np.array(kwargs["SoB_spacetime_cache"])
+    #
+    #     SoB_energy = np.exp(kwargs["SoB_energy_cache"])
+    #
+    #     # Calculates the expected number of signal events for each source in
+    #     # the season
+    #     n_j = (n_s * np.sum(weights))
+    #
+    #     x = (1. + ((n_j / kwargs["n_all"]) * (
+    #         (SoB_energy * SoB_spacetime) - 1.)))
+    #
+    #     llh_value = np.sum(np.log(x))
+    #
+    #     llh_value += self.assume_background(
+    #         n_j, kwargs["n_coincident"], kwargs["n_all"])
+    #
+    #     # Definition of test statistic
+    #     return 2. * np.sum(llh_value)
 
 
 def generate_dynamic_flare_class(season, sources, llh_dict):
