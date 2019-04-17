@@ -79,7 +79,7 @@ def grl_loader(season):
             print grl[~grl["good_i3"]]
             raise Exception("Runs marked as 'bad' are found in Good Run List")
     except ValueError:
-        print "No field called 'good_i3'"
+        print "No field called 'good_i3'. Cannot check GoodRunList."
 
     if "length" not in grl.dtype.names:
 
