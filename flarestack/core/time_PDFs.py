@@ -16,7 +16,26 @@ def box_func(t, t0, t1):
     return val
 
 
-# def start_and
+def read_t_pdf_dict(t_pdf_dict):
+    """Ensures backwards compatibility for t_pdf_dict objects"""
+
+    maps = [
+        ("Offset", "offset"),
+        ("Pre Window", "pre_window"),
+        ("Post Window", "post_window"),
+        ("Fixed Ref Time (MJD)", "fixed_ref_time_mjd"),
+        ("Name", "time_pdf_name"),
+        ("Max Offset", "max_offset"),
+        ("Min Offset", "min_offset"),
+        ("Max Flare", "max_flare")
+    ]
+
+    for (old_key, new_key) in maps:
+
+        if old_key in t_pdf_dict.keys():
+            t_pdf_dict[new_key] = t_pdf_dict[old_key]
+
+    return t_pdf_dict
 
 
 class TimePDF:
@@ -90,7 +109,9 @@ class TimePDF:
     @classmethod
     def create(cls, t_pdf_dict, season):
 
-        t_pdf_name = t_pdf_dict["Name"]
+        t_pdf_dict = read_t_pdf_dict(t_pdf_dict)
+
+        t_pdf_name = t_pdf_dict["time_pdf_name"]
 
         if t_pdf_name not in cls.subclasses:
             raise ValueError('Bad time PDF name {}'.format(t_pdf_name))
@@ -262,12 +283,13 @@ class Box(TimePDF):
     """
 
     def __init__(self, t_pdf_dict, season):
-        TimePDF.__init__(self, t_pdf_dict, season)
-        self.pre_window = self.t_dict["Pre-Window"]
-        self.post_window = self.t_dict["Post-Window"]
 
-        if "Offset" in t_pdf_dict:
-            self.offset = self.t_dict["Offset"]
+        TimePDF.__init__(self, t_pdf_dict, season)
+        self.pre_window = self.t_dict["pre_window"]
+        self.post_window = self.t_dict["post_window"]
+
+        if "offset" in t_pdf_dict.keys():
+            self.offset = self.t_dict["offset"]
             self.pre_window -= self.offset
             self.post_window += self.offset
 
@@ -279,7 +301,7 @@ class Box(TimePDF):
         :param source: Source to be considered
         :return: Time of Window Start
         """
-        return max(self.t0, source["Ref Time (MJD)"] - self.pre_window)
+        return max(self.t0, source["ref_time_mjd"] - self.pre_window)
 
     def sig_t1(self, source):
         """Calculates the starting time for the window, equal to the
@@ -289,7 +311,7 @@ class Box(TimePDF):
         :param source: Source to be considered
         :return: Time of Window End
         """
-        return min(source["Ref Time (MJD)"] + self.post_window, self.t1)
+        return min(source["ref_time_mjd"] + self.post_window, self.t1)
 
     def signal_f(self, t, source):
         """In this case, the signal PDF is a uniform PDF for a fixed duration of
@@ -379,7 +401,7 @@ class FixedRefBox(Box):
     """
     def __init__(self, t_pdf_dict, season):
         Box.__init__(self, t_pdf_dict, season)
-        self.fixed_ref = t_pdf_dict["Fixed Ref Time (MJD)"]
+        self.fixed_ref = t_pdf_dict["fixed_ref_time_mjd"]
 
     def sig_t0(self, source):
         """Calculates the starting time for the window, equal to the
@@ -414,8 +436,8 @@ class FixedEndBox(Box):
 
     def __init__(self, t_pdf_dict, season):
         TimePDF.__init__(self, t_pdf_dict, season)
-        if "Offset" in t_pdf_dict:
-            self.offset = self.t_dict["Offset"]
+        if "offset" in t_pdf_dict:
+            self.offset = self.t_dict["offset"]
         else:
             self.offset = 0
 
@@ -428,7 +450,7 @@ class FixedEndBox(Box):
         :return: Time of Window Start
         """
 
-        t0 = source["Start Time (MJD)"] + self.offset
+        t0 = source["start_time_mjd"] + self.offset
 
         return max(self.t0, t0)
 
@@ -441,7 +463,7 @@ class FixedEndBox(Box):
         :return: Time of Window End
         """
 
-        t1 = source["End Time (MJD)"] + self.offset
+        t1 = source["end_time_mjd"] + self.offset
 
         return min(t1, self.t1)
 

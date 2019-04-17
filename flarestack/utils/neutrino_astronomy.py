@@ -74,16 +74,16 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     print "Total Fluence", tot_fluence
 
-    src_1 = np.sort(catalogue, order="Distance (Mpc)")[0]
+    src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
-    dist_weight = src_1["Distance (Mpc)"]**-2 / np.sum(
-        catalogue["Distance (Mpc)"]**-2)
+    dist_weight = src_1["distance_mpc"]**-2 / np.sum(
+        catalogue["distance_mpc"]**-2)
 
-    si = flux * dist_weight
+    si = flux * dist_weight * src_1["base_weight"]
 
     astro_res["Flux from nearest source"] = si
 
-    lumdist = src_1["Distance (Mpc)"] * u.Mpc
+    lumdist = src_1["distance_mpc"] * u.Mpc
 
     area = (4 * math.pi * (lumdist.to(u.cm)) ** 2)
 

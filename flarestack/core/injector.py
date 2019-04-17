@@ -2,10 +2,41 @@ import os
 import numpy as np
 import healpy as hp
 from flarestack.shared import k_to_flux, scale_shortener, band_mask_cache_name
-from flarestack.core.energy_PDFs import EnergyPDF
-from flarestack.core.time_PDFs import TimePDF
+from flarestack.core.energy_PDFs import EnergyPDF, read_e_pdf_dict
+from flarestack.core.time_PDFs import TimePDF, read_t_pdf_dict
 from flarestack.utils.dataset_loader import data_loader
 from scipy import sparse
+
+
+def read_injector_dict(inj_dict):
+    """Ensures that injection dictionaries remain backwards-compatible
+
+    :param inj_dict: Injection Dictionary
+    :return: Injection Dictionary compatible with new format
+    """
+
+    maps = [
+        ("Injection Time PDF", "injection_time_pdf"),
+        ("Injection Energy PDF", "injection_energy_pdf"),
+        ("Poisson Smear?", "poisson_smear_bool")
+    ]
+
+    for (old_key, new_key) in maps:
+
+        if old_key in inj_dict.keys():
+            inj_dict[new_key] = inj_dict[old_key]
+
+    pairs = [
+        ("injection_energy_pdf", read_e_pdf_dict),
+        ("injection_time_pdf", read_t_pdf_dict)
+    ]
+
+    for (key, f) in pairs:
+        if key in inj_dict.keys():
+            inj_dict[key] = f(inj_dict[key])
+
+    return inj_dict
+
 
 class Injector:
     """Core Injector Class, returns a dataset on which calculations can be
@@ -13,6 +44,9 @@ class Injector:
     """
 
     def __init__(self, season, sources, **kwargs):
+
+        kwargs = read_injector_dict(kwargs)
+
         print "Initialising Injector for", season["Name"]
         self.injection_band_mask = dict()
         self.season = season
@@ -24,16 +58,16 @@ class Injector:
         self.sources = sources
 
         try:
-            self.time_pdf = TimePDF.create(kwargs["Injection Time PDF"],
+            self.time_pdf = TimePDF.create(kwargs["injection_time_pdf"],
                                            season)
-            self.energy_pdf = EnergyPDF.create(kwargs["Injection Energy PDF"])
+            self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
             self.mc_weights = self.energy_pdf.weight_mc(self._mc)
         except KeyError:
             print "No Injection Arguments. Are you unblinding?"
             pass
 
         if "Poisson Smear?" in kwargs.keys():
-            self.poisson_smear = kwargs["Poisson Smear?"]
+            self.poisson_smear = kwargs["poisson_smear_bool"]
         else:
             self.poisson_smear = True
 
@@ -41,7 +75,7 @@ class Injector:
             scale_shortener(0.0): dict()
         }
         for source in sources:
-            self.ref_fluxes[scale_shortener(0.0)][source["Name"]] = 0.0
+            self.ref_fluxes[scale_shortener(0.0)][source["source_name"]] = 0.0
 
         try:
             self.fixed_n = kwargs["fixed_n"]
@@ -60,7 +94,7 @@ class Injector:
         # Assigns a flat random distribution for Right Ascension
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
-        np.random.shuffle(data[self.season["MJD Time Key"]])
+        np.random.shuffle(data["time"])
 
         return data
 
@@ -80,19 +114,19 @@ class Injector:
         dec_width = np.deg2rad(5.)
 
         # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2., source['dec'] - dec_width)
-        max_dec = min(np.pi / 2., source['dec'] + dec_width)
+        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
+        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
         # Gives the solid angle coverage of the sky for the band
         omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
 
         # Checks if the mask has already been evaluated for the source
         # If not, creates the mask for this source, and saves it
-        if source['Name'] in self.injection_band_mask.keys():
-            band_mask = self.injection_band_mask[source['Name']]
+        if source["source_name"] in self.injection_band_mask.keys():
+            band_mask = self.injection_band_mask[source["source_name"]]
         else:
             band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
                                        np.less(mc["trueDec"], max_dec))
-            self.injection_band_mask[source['Name']] = band_mask
+            self.injection_band_mask[source["source_name"]] = band_mask
 
         return mc[band_mask], omega, band_mask
 
@@ -110,7 +144,7 @@ class Injector:
 
         n_tot_exp = 0
 
-        dist_scale = np.sum(self.sources["Distance (Mpc)"]**-2)
+        dist_scale = np.sum(self.sources["distance_mpc"]**-2)
 
         scale_key = scale_shortener(scale)
 
@@ -118,8 +152,7 @@ class Injector:
             self.ref_fluxes[scale_key] = dict()
 
         # Loop over each source to be simulated
-        for i, source in enumerate(
-                np.sort(self.sources, order="Distance (Mpc)")):
+        for i, source in self.sources:
 
             # Selects MC events lying in a +/- 5 degree declination band
             source_mc, omega, band_mask = self.select_mc_band(mc, source)
@@ -130,15 +163,19 @@ class Injector:
             eff_inj_time = self.time_pdf.effective_injection_time(source)
 
             # All injection fluxes are given in terms of k, equal to 1e-9
-            inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
+            inj_flux = k_to_flux(source["injection_weight_modifier"] * scale)
 
             # Fraction of total flux allocated to given source, assuming
             # standard candles with flux proportional to 1/d^2
 
-            dist_weight = (source["Distance (Mpc)"] ** -2) / dist_scale
+            dist_weight = (source["distance_mpc"] ** -2) / dist_scale
+
+            # Weight coming from relative strength of sources.
+
+            base_weight = source["base_weight"]
 
             # Calculate the fluence, using the effective injection time.
-            fluence = inj_flux * eff_inj_time * dist_weight
+            fluence = inj_flux * eff_inj_time * dist_weight * base_weight
 
             # Recalculates the oneweights to account for the declination
             # band, and the relative distance of the sources.
@@ -153,10 +190,8 @@ class Injector:
 
                 n_tot_exp += n_inj
 
-                if source["Name"] not in self.ref_fluxes[scale_key].keys():
-                    self.ref_fluxes[scale_key][source["Name"]] = n_inj
-
-                # print self.season["Name"], source["Name"], "expecting", n_inj,
+                if source["source_name"] not in self.ref_fluxes[scale_key].keys():
+                    self.ref_fluxes[scale_key][source["source_name"]] = n_inj
 
                 # Simulates poisson noise around the expectation value n_inj.
                 if self.poisson_smear:
@@ -168,8 +203,8 @@ class Injector:
             else:
                 n_s = int(self.fixed_n)
 
-                if source["Name"] not in self.ref_fluxes[scale_key].keys():
-                    self.ref_fluxes[scale_key][source["Name"]] = n_s
+                if source["source_name"] not in self.ref_fluxes[scale_key].keys():
+                    self.ref_fluxes[scale_key][source["source_name"]] = n_s
 
             #  If n_s = 0, skips simulation step.
             if n_s < 1:
@@ -188,14 +223,14 @@ class Injector:
             sim_ev = source_mc[ind]
 
             # Rotates the Monte Carlo events onto the source_path
-            sim_ev = self.rotate_to_source(sim_ev, source['ra'], source['dec'])
-            # sim_ev = np.array(sim_ev, dtype=self._raw_data.dtype)
+            sim_ev = self.rotate_to_source(
+                sim_ev, source['ra_rad'], source['dec_rad']
+            )
 
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.
 
-            sim_ev[self.season["MJD Time Key"]] = \
-                self.time_pdf.simulate_times(source, n_s)
+            sim_ev["time"] = self.time_pdf.simulate_times(source, n_s)
 
             # Joins the new events to the signal events
             sig_events = np.concatenate(
@@ -228,7 +263,6 @@ class Injector:
         simulated_data = pull_corrector.pull_correct_static(simulated_data)
 
         return simulated_data
-
 
     def rotate(self, ra1, dec1, ra2, dec2, ra3, dec3):
         """Rotate ra1 and dec1 in a way that ra2 and dec2 will exactly map
@@ -280,8 +314,8 @@ class Injector:
             OneWeight
 
         :param ev: Events
-        :param ra: Source Right Ascension
-        :param dec: Source Declination
+        :param ra: Source Right Ascension (radians)
+        :param dec: Source Declination (radians)
         :return: Events (modified)
         """
         names = ev.dtype.names
@@ -354,8 +388,8 @@ class LowMemoryInjector(Injector):
         dec_width = np.deg2rad(2.)
 
         # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2., source['dec'] - dec_width)
-        max_dec = min(np.pi / 2., source['dec'] + dec_width)
+        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
+        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
         # Gives the solid angle coverage of the sky for the band
         omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
         return dec_width, min_dec, max_dec, omega
@@ -373,7 +407,7 @@ class LowMemoryInjector(Injector):
         """
         dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
         band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
-                                        np.less(mc["trueDec"], max_dec))
+                                   np.less(mc["trueDec"], max_dec))
         return mc[band_mask], omega, band_mask
 
     def inject_signal(self, scale):
@@ -390,7 +424,7 @@ class LowMemoryInjector(Injector):
 
         n_tot_exp = 0
 
-        dist_scale = np.sum(self.sources["Distance (Mpc)"]**-2)
+        dist_scale = np.sum(self.sources["distance_mpc"]**-2)
 
         scale_key = scale_shortener(scale)
 
@@ -417,15 +451,20 @@ class LowMemoryInjector(Injector):
                 eff_inj_time = self.time_pdf.effective_injection_time(source)
 
                 # All injection fluxes are given in terms of k, equal to 1e-9
-                inj_flux = k_to_flux(source['Relative Injection Weight'] * scale)
+                inj_flux = k_to_flux(
+                    source["injection_weight_modifier"] * scale)
 
                 # Fraction of total flux allocated to given source, assuming
                 # standard candles with flux proportional to 1/d^2
 
-                dist_weight = (source["Distance (Mpc)"] ** -2) / dist_scale
+                dist_weight = (source["distance_mpc"] ** -2) / dist_scale
+
+                # Weight coming from relative strength of sources.
+
+                base_weight = source["base_weight"]
 
                 # Calculate the fluence, using the effective injection time.
-                fluence = inj_flux * eff_inj_time * dist_weight
+                fluence = inj_flux * eff_inj_time * dist_weight * base_weight
 
                 # Recalculates the oneweights to account for the declination
                 # band, and the relative distance of the sources.
@@ -440,8 +479,9 @@ class LowMemoryInjector(Injector):
 
                     n_tot_exp += n_inj
 
-                    if source["Name"] not in self.ref_fluxes[scale_key].keys():
-                        self.ref_fluxes[scale_key][source["Name"]] = n_inj
+                    if source["source_name"] not in self.ref_fluxes[scale_key].keys():
+                        self.ref_fluxes[scale_key][
+                            source["source_name"]] = n_inj
 
                     # Simulates poisson noise around the expectation value n_inj.
                     if self.poisson_smear:
@@ -453,8 +493,8 @@ class LowMemoryInjector(Injector):
                 else:
                     n_s = int(self.fixed_n)
 
-                    if source["Name"] not in self.ref_fluxes[scale_key].keys():
-                        self.ref_fluxes[scale_key][source["Name"]] = n_s
+                    if source["source_name"] not in self.ref_fluxes[scale_key].keys():
+                        self.ref_fluxes[scale_key][source["source_name"]] = n_s
 
                 #  If n_s = 0, skips simulation step.
                 if n_s < 1:
@@ -473,22 +513,20 @@ class LowMemoryInjector(Injector):
                 sim_ev = source_mc[ind]
 
                 # Rotates the Monte Carlo events onto the source_path
-                sim_ev = self.rotate_to_source(sim_ev, source['ra'], source['dec'])
-                # sim_ev = np.array(sim_ev, dtype=self._raw_data.dtype)
+                sim_ev = self.rotate_to_source(
+                    sim_ev, source['ra_rad'], source['dec_rad']
+                )
 
                 # Generates times for each simulated event, drawing from the
                 # Injector time PDF.
 
-                sim_ev[self.season["MJD Time Key"]] = \
-                    self.time_pdf.simulate_times(source, n_s)
+                sim_ev["time"] = self.time_pdf.simulate_times(source, n_s)
 
                 # Joins the new events to the signal events
                 sig_events = np.concatenate(
                     (sig_events, sim_ev[list(self._raw_data.dtype.names)]))
 
             del injection_band_mask
-
-        print "Injected", n_tot_exp, "events"
 
         return sig_events
 
@@ -518,20 +556,20 @@ class SparseMatrixInjector(Injector):
         dec_width = np.deg2rad(5.)
 
         # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2., source['dec'] - dec_width)
-        max_dec = min(np.pi / 2., source['dec'] + dec_width)
+        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
+        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
         # Gives the solid angle coverage of the sky for the band
         omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
 
         # Checks if the mask has already been evaluated for the source
         # If not, creates the mask for this source, and saves it
-        if source['Name'] in self.injection_band_mask.keys():
+        if source["source_name"] in self.injection_band_mask.keys():
             # convert sparse matrix back to nparray
-            band_mask = self.injection_band_mask[source['Name']]
+            band_mask = self.injection_band_mask[source["source_name"]]
         else:
             band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
                                        np.less(mc["trueDec"], max_dec))
-            self.injection_band_mask[source['Name']] = band_mask
+            self.injection_band_mask[source['source_name']] = band_mask
 
         return mc[band_mask], omega, band_mask
 

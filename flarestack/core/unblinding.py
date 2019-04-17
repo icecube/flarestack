@@ -1,8 +1,8 @@
 import sys
 import os
 import numpy as np
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.core.injector import  MockUnblindedInjector, \
+from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
+from flarestack.core.injector import MockUnblindedInjector, \
     TrueUnblindedInjector
 from flarestack.core.results import ResultsHandler
 from flarestack.core.time_PDFs import TimePDF
@@ -45,6 +45,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
     :return: Instance of dynamically-generated Unblinder class
     """
 
+    unblind_dict = read_mh_dict(unblind_dict)
+    print unblind_dict
+
     try:
         mh_name = unblind_dict["mh_name"]
     except KeyError:
@@ -63,9 +66,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
         def __init__(self, unblind_dict):
             self.unblind_dict = unblind_dict
-            unblind_dict["Unblind"] = True
-            unblind_dict["Mock Unblind"] = mock_unblind
-            unblind_dict["inj kwargs"] = {}
+            unblind_dict["unblind_bool"] = True
+            unblind_dict["mock_unblind_bool"] = mock_unblind
+            unblind_dict["inj_dict"] = {}
 
             if np.logical_and(not mock_unblind, not disable_warning):
                 self.check_unblind()
@@ -153,10 +156,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     with open(analysis_pickle_path(new_path), "r") as f:
                         mh_dict = Pickle.load(f)
-                        e_pdf_dict = mh_dict["inj kwargs"]["Injection Energy PDF"]
+                        e_pdf_dict = mh_dict["inj_dict"]["injection_energy_pdf"]
 
-                    rh = ResultsHandler(new_path, self.unblind_dict["llh kwargs"],
-                                        self.unblind_dict["catalogue"])
+                    rh = ResultsHandler(self.unblind_dict)
 
                     savepath = ul_dir + subdir + ".pdf"
 
@@ -172,7 +174,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     for season in mh_dict["datasets"]:
 
                         t_pdf = TimePDF.create(
-                            mh_dict["inj kwargs"]["Injection Time PDF"], season
+                            mh_dict["inj_dict"]["injection_time_pdf"], season
                         )
 
                         for src in self.sources:

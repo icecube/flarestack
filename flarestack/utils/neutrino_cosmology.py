@@ -13,7 +13,7 @@ from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_dict
 
 
-def get_diffuse_flux_at_100TeV(fit="Joint"):
+def get_diffuse_flux_at_100TeV(fit="joint"):
     """Returns value for the diffuse neutrino flux, based on IceCube's data.
     The fit can be specified (either 'Joint' or 'Northern Tracks') to get
     corresponding values from different analyses
@@ -22,7 +22,7 @@ def get_diffuse_flux_at_100TeV(fit="Joint"):
     :return: Best fit diffuse flux at 100 TeV, and best fit spectral index
     """
 
-    if fit == "Joint":
+    if fit == "joint":
         # IceCube Joint Best Fit
         # (https://arxiv.org/abs/1507.03991)
         all_flavour_diffuse_flux = 6.7 * 10 ** -18 * (
@@ -31,7 +31,7 @@ def get_diffuse_flux_at_100TeV(fit="Joint"):
         diffuse_flux = all_flavour_diffuse_flux / 3.
         diffuse_gamma = 2.5
 
-    elif fit == "Northern Tracks":
+    elif fit == "northern_tracks":
         # Best fit from the Northern Tracks 'Diffuse Sample'
         diffuse_flux = 1.01 * 10 ** -18 * (
                 u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
@@ -44,7 +44,7 @@ def get_diffuse_flux_at_100TeV(fit="Joint"):
     return diffuse_flux, diffuse_gamma
 
 
-def get_diffuse_flux_at_1GeV(fit="Joint"):
+def get_diffuse_flux_at_1GeV(fit="joint"):
     """Returns the IceCube diffuse flux at 1GeV, to match flarestack
     convention for flux measurements.
 
@@ -182,7 +182,7 @@ def define_cosmology_functions(rate, nu_e_flux_1GeV, gamma,
 def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
                         nu_bright_fraction=1.0,
                         diffuse_fraction=None,
-                        diffuse_fit="Joint"):
+                        diffuse_fit="joint"):
 
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
 
@@ -193,11 +193,11 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
 
     if "Gamma" not in e_pdf_dict:
         print "Assuming source has spectral index matching diffuse flux"
-        e_pdf_dict["Gamma"] = diffuse_gamma
+        e_pdf_dict["gamma"] = diffuse_gamma
 
     energy_pdf = EnergyPDF.create(e_pdf_dict)
     nu_e = e_pdf_dict["Source Energy (erg)"]
-    gamma = e_pdf_dict["Gamma"]
+    gamma = e_pdf_dict["gamma"]
 
     print "\n"
     print name
@@ -334,7 +334,7 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     return nu_at_horizon
 
 
-def estimate_northern_neutrinos(diffuse_fit="Joint"):
+def estimate_northern_neutrinos(diffuse_fit="joint"):
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
 
     print "\n"
@@ -346,13 +346,13 @@ def estimate_northern_neutrinos(diffuse_fit="Joint"):
     source = np.load(ps_catalogue_name(0.2))
 
     inj_kwargs = {
-        "Injection Time PDF": {
-            "Name": "Steady"
+        "injection_time_pdf": {
+            "time_pdf_name": "Steady"
         },
-        "Injection Energy PDF": {
-            "Name": "Power Law",
-            "Gamma": diffuse_gamma,
-            "Flux at 1GeV": diffuse_flux*0.5
+        "injection_energy_pdf": {
+            "energy_pdf_name": "PowerLaw",
+            "gamma": diffuse_gamma,
+            "flux_at_1_gev": diffuse_flux*0.5
         }
     }
 
@@ -360,5 +360,5 @@ def estimate_northern_neutrinos(diffuse_fit="Joint"):
 
 
 if __name__ == "__main__":
-    estimate_northern_neutrinos(diffuse_fit="Joint")
-    estimate_northern_neutrinos(diffuse_fit="Northern Tracks")
+    estimate_northern_neutrinos(diffuse_fit="joint")
+    estimate_northern_neutrinos(diffuse_fit="northern_tracks")

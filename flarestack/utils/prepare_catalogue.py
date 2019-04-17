@@ -13,12 +13,13 @@ from sys import stdout
 from flarestack.shared import catalogue_dir
 
 cat_dtype = [
-    ("ra", np.float), ("dec", np.float),
-    ("Relative Injection Weight", np.float),
-    ("Ref Time (MJD)", np.float),
-    ("Start Time (MJD)", np.float),
-    ("End Time (MJD)", np.float),
-    ('Distance (Mpc)', np.float), ('Name', 'a30'),
+    ("ra_rad", np.float), ("dec_rad", np.float),
+    ("base_weight", np.float),
+    ("injection_weight_modifier", np.float),
+    ("ref_time_mjd", np.float),
+    ("start_time_mjd", np.float),
+    ("end_time_mjd", np.float),
+    ('distance_mpc', np.float), ('source_name', 'a30'),
 ]
 
 
@@ -33,14 +34,15 @@ def single_source(sindec):
 
     ref_time = 55800.4164699
 
-    sources['ra'] = np.array([np.deg2rad(180.)])
-    sources['dec'] = np.arcsin(sindec)
-    sources['Relative Injection Weight'] = np.array([1.])
-    sources['Distance (Mpc)'] = np.array([1.0])
-    sources['Ref Time (MJD)'] = (np.array([ref_time]))
-    sources['Start Time (MJD)'] = (np.array([ref_time - 50]))
-    sources['End Time (MJD)'] = (np.array([ref_time + 100]))
-    sources['Name'] = 'PS_dec=' + str(sindec)
+    sources['ra_rad'] = np.array([np.deg2rad(180.)])
+    sources['dec_rad'] = np.arcsin(sindec)
+    sources['base_weight'] = np.array([1.])
+    sources['injection_weight_modifier'] = np.array([1.])
+    sources['distance_mpc'] = np.array([1.0])
+    sources['ref_time_mjd'] = (np.array([ref_time]))
+    sources['start_time_mjd'] = (np.array([ref_time - 50]))
+    sources['end_time_mjd)'] = (np.array([ref_time + 100]))
+    sources['source_name'] = 'PS_dec=' + str(sindec)
 
     return sources
 
@@ -81,7 +83,7 @@ def custom_sources(name, ra, dec, weight, distance, ref_time=np.nan,
     :param name: Source Name
     :param ra: Right Ascension (Degrees)
     :param dec: Declination (Degrees)
-    :param weight: Relative Weights for Source Injection
+    :param weight: Relative Weights
     :param distance: Distance to source (a.u.)
     :param ref_time: Reference Time (MJD)
     :param start_time: Start Time for window (MJD)
@@ -91,33 +93,31 @@ def custom_sources(name, ra, dec, weight, distance, ref_time=np.nan,
     """
     sources = np.empty(np.array([ra]).__len__(), dtype=cat_dtype)
 
-    sources['ra'] = np.array([np.deg2rad(ra)])
-    sources['dec'] = np.deg2rad(np.array([dec]))
+    sources['ra_rad'] = np.deg2rad(np.array([ra]))
+    sources['dec_rad'] = np.deg2rad(np.array([dec]))
 
     # If some sources are to be brighter than others, a non-uniform weight
-    # array can be passed. This array is normalised, such that the mean
-    # weight is 1.
-    sources['Relative Injection Weight'] = np.array([weight]) * float(len(
-        np.array([weight])))/np.sum(weight)
+    # array can be passed.
+    sources['base_weight'] = np.array([weight])
 
     # The source distance can be provided, in arbitrary units. The injector
     # and reconstructor will weight sources according to 1/ (distance ^ 2).
 
-    sources['Distance (Mpc)'] = np.array([distance])
+    sources['distance_mpc'] = np.array([distance])
 
     # The source reference time can be arbitrarily defined, for example as
     # the discovery date or the date of lightcurve peak. It is important that
     # this is consistently defined between sources. Box Time PDFs can be defined
     # relative to this point.
-    sources['Ref Time (MJD)'] = (np.array([ref_time]))
+    sources['ref_time_mjd'] = (np.array([ref_time]))
 
     # The source csan also be assigned fixed start and end times. Fixed Box
     # Time PDFs can be defined relative to these values. This allows for the
     # Time PDF duration to vary between sources.
-    sources['Start Time (MJD)'] = (np.array([start_time]))
-    sources['End Time (MJD)'] = (np.array([end_time]))
+    sources['start_time_mjd'] = (np.array([start_time]))
+    sources['end_time_mjd'] = (np.array([end_time]))
 
-    sources['Name'] = np.array([name])
+    sources['source_name'] = np.array([name])
 
     return sources
 

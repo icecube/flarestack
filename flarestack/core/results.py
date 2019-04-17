@@ -11,6 +11,7 @@ from flarestack.core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
 from flarestack.core.minimisation import MinimisationHandler
+from flarestack.utils.catalogue_loader import load_catalogue
 import sys
 
 
@@ -18,8 +19,7 @@ class ResultsHandler:
 
     def __init__(self, rh_dict):
 
-        self.sources = np.sort(np.load(rh_dict["catalogue"]),
-                               order="Distance (Mpc)")
+        self.sources = load_catalogue(rh_dict["catalogue"])
 
         self.name = rh_dict["name"]
 

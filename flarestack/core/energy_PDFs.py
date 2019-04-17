@@ -13,19 +13,48 @@ default_emin = 100
 default_emax = 10**7
 
 
+def read_e_pdf_dict(e_pdf_dict):
+    """Ensures backwards compatibility of e_pdf_dict objects.
+
+    :param e_pdf_dict: Energy PDF dictionary
+    :return: Updated Energy PDF dictionary compatible with new format
+    """
+
+    maps = [
+        ("E Min", "e_min_gev"),
+        ("E Max", "e_max_gev"),
+        ("Name", "energy_pdf_name"),
+        ("Gamma", "gamma"),
+        ("Spline Path", "spline_path")
+    ]
+
+    for (old_key, new_key) in maps:
+
+        if old_key in e_pdf_dict.keys():
+            e_pdf_dict[new_key] = e_pdf_dict[old_key]
+
+    if e_pdf_dict["energy_pdf_name"] == "Power Law":
+        e_pdf_dict["energy_pdf_name"] = "PowerLaw"
+
+    return e_pdf_dict
+
+
 class EnergyPDF:
     subclasses = {}
 
     def __init__(self, e_pdf_dict):
-        if "E Min" in e_pdf_dict.keys():
-            self.e_min = e_pdf_dict["E Min"]
+
+        # Set up minimum/maximum energy
+
+        if "e_min_gev" in e_pdf_dict.keys():
+            self.e_min = e_pdf_dict["e_min_gev"]
             print "Minimum Energy is", self.e_min, "GeV."
             self.integral_e_min = self.e_min
         else:
             self.integral_e_min = default_emin
 
-        if "E Max" in e_pdf_dict.keys():
-            self.e_max = e_pdf_dict["E Max"]
+        if "e_max_gev" in e_pdf_dict.keys():
+            self.e_max = e_pdf_dict["e_max_gev"]
             print "Maximum Energy is", self.e_max, "GeV."
             self.integral_e_max = self.e_max
         else:
@@ -45,7 +74,10 @@ class EnergyPDF:
 
     @classmethod
     def create(cls, e_pdf_dict):
-        e_pdf_name = e_pdf_dict["Name"]
+
+        e_pdf_dict = read_e_pdf_dict(e_pdf_dict)
+
+        e_pdf_name = e_pdf_dict["energy_pdf_name"]
 
         if e_pdf_name not in cls.subclasses:
             raise ValueError('Bad energy PDF name {}'.format(e_pdf_name))
@@ -100,7 +132,7 @@ class EnergyPDF:
         return default, bounds, name
 
 
-@EnergyPDF.register_subclass('Power Law')
+@EnergyPDF.register_subclass('PowerLaw')
 class PowerLaw(EnergyPDF):
     """A Power Law energy PDF. Takes an argument of gamma in the dictionary
     for the init function, where gamma is the spectral index of the Power Law.
@@ -115,8 +147,9 @@ class PowerLaw(EnergyPDF):
         :param e_pdf_dict: Dictionary containing parameters
         """
         EnergyPDF.__init__(self, e_pdf_dict)
-        if "Gamma" in e_pdf_dict.keys():
-            self.gamma = float(e_pdf_dict["Gamma"])
+
+        if "gamma" in e_pdf_dict.keys():
+            self.gamma = float(e_pdf_dict["gamma"])
 
     def weight_mc(self, mc, gamma=None):
         """Returns an array containing the weights for each MC event,
@@ -225,7 +258,7 @@ class Spline(EnergyPDF):
         """
         EnergyPDF.__init__(self, e_pdf_dict)
 
-        with open(e_pdf_dict["Spline Path"], "r") as g:
+        with open(e_pdf_dict["spline_path"], "r") as g:
             f = Pickle.load(g)
             self.f = lambda x: np.exp(f(x))
 
