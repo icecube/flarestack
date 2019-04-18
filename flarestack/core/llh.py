@@ -999,11 +999,8 @@ class StandardMatrixLLH(StandardOverlappingLLH):
 
         def joint_SoB(dataset, gamma):
 
-            weight = np.array(season_weight(gamma)).T
-            weight *= coincident_sources["base_weight"]
-            weight *= coincident_sources["distance_mpc"] ** -2
+            weight = np.array(season_weight(gamma))
             weight /= np.sum(weight)
-            weight = weight.T
 
             # create an empty lil_matrix (good for matrix creation) with shape
             # of coincidence_matrix and type float
