@@ -826,7 +826,7 @@ class StandardLLH(FixedEnergyLLH):
             inj = mh_dict["inj_dict"]["injection_energy_pdf"]
             llh = mh_dict["llh_dict"]["llh_energy_pdf"]
 
-            if inj["Name"] == llh["Name"]:
+            if inj["energy_pdf_name"] == llh["energy_pdf_name"]:
                 e_pdf = EnergyPDF.create(inj)
                 return e_pdf.return_injected_parameters()
 
