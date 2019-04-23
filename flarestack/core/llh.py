@@ -23,7 +23,7 @@ def read_llh_dict(llh_dict):
     """
 
     maps = [
-        ("Name", "llh_name"),
+        ("name", "llh_name"),
         ("LLH Time PDF", "llh_time_pdf"),
         ("LLH Energy PDF", "llh_energy_pdf"),
         ("Fit Negative n_s?", "negative_ns_bool")
