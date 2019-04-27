@@ -79,6 +79,7 @@ class ResultsHandler:
         self.bkg_median = np.nan
         self.frac_over = np.nan
         self.disc_potential = np.nan
+        self.disc_potential_25 = np.nan
         self.extrapolated_sens = False
         self.extrapolated_disc = False
         # self.show_inj = show_inj
@@ -383,6 +384,7 @@ class ResultsHandler:
         bkg_median = np.median(bkg_ts)
         x = sorted(self.results.keys())
         y = []
+        y_25 = []
 
         x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
 
@@ -391,8 +393,15 @@ class ResultsHandler:
             ts_array = np.array(self.results[scale]["TS"])
             frac = float(len(ts_array[ts_array > disc_threshold])) / (
                 float(len(ts_array)))
-            print "Fraction of overfluctuations is", "{0:.2f}".format(frac)
+            print "Fraction of overfluctuations is", "{0:.2f}".format(frac), \
+                "above", disc_threshold
             y.append(frac)
+            frac_25 = float(len(ts_array[ts_array > 25.])) / (
+                float(len(ts_array)))
+            print "Fraction of overfluctuations is", "{0:.2f}".format(
+                frac_25), \
+                "above", 25.
+            y_25.append(frac_25)
 
         x = np.array([float(s) for s in x])
 
@@ -400,48 +409,54 @@ class ResultsHandler:
 
         threshold = 0.5
 
-        def f(x, a, b, c):
-            value = scipy.stats.gamma.cdf(x, a, b, c)
-            return value
+        sols = []
 
-        res = scipy.optimize.curve_fit(
-            f, x, y,  p0=[6, -0.1 * max(x), 0.1 * max(x)])
+        for i, y_val in enumerate([y, y_25]):
 
-        best_a = res[0][0]
-        best_b = res[0][1]
-        best_c = res[0][2]
+            def f(x, a, b, c):
+                value = scipy.stats.gamma.cdf(x, a, b, c)
+                return value
 
-        def best_f(x):
-            return f(x, best_a, best_b, best_c)
+            res = scipy.optimize.curve_fit(
+                f, x, y_val,  p0=[6, -0.1 * max(x), 0.1 * max(x)])
 
-        sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
+            best_a = res[0][0]
+            best_b = res[0][1]
+            best_c = res[0][2]
 
-        self.disc_potential = k_to_flux(sol)
+            def best_f(x):
+                return f(x, best_a, best_b, best_c)
+
+            sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
+            setattr(self, ["disc_potential", "disc_potential_25"][i],
+                    k_to_flux(sol))
+
+            xrange = np.linspace(0.0, 1.1 * max(x), 1000)
+
+            savepath = self.plot_dir + "disc" + ["", "_25"][i] + ".pdf"
+
+            plt.figure()
+            plt.scatter(x_flux, y_val, color="black")
+            plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
+            plt.axhline(threshold, lw=1, color="red", linestyle="--")
+            plt.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
+            plt.axvline(self.disc_potential, lw=2, color="red")
+            plt.ylim(0., 1.)
+            plt.xlim(0., k_to_flux(max(xrange)))
+            plt.ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
+            plt.xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+            plt.savefig(savepath)
+            plt.close()
 
         if self.disc_potential > max(x_flux):
             self.extrapolated_disc = True
-
-        xrange = np.linspace(0.0, 1.1 * max(x), 1000)
-
-        savepath = self.plot_dir + "disc.pdf"
-
-        plt.figure()
-        plt.scatter(x_flux, y, color="black")
-        plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
-        plt.axhline(threshold, lw=1, color="red", linestyle="--")
-        plt.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
-        plt.axvline(self.disc_potential, lw=2, color="red")
-        plt.ylim(0., 1.)
-        plt.xlim(0., k_to_flux(max(xrange)))
-        plt.ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
-        plt.xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-        plt.savefig(savepath)
-        plt.close()
 
         if self.extrapolated_disc:
             print "EXTRAPOLATED",
 
         print "Discovery Potential is", "{0:.3g}".format(self.disc_potential)
+        print "Discovery Potential (TS=25) is", "{0:.3g}".format(
+            self.disc_potential_25)
 
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
