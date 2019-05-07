@@ -310,7 +310,7 @@ class LLH:
 
 @LLH.register_subclass('spatial')
 class SpatialLLH(LLH):
-    """Most basic LLH, in which only spatial, and otionally slso temporal,
+    """Most basic LLH, in which only spatial, and optionally also temporal,
     information is included. No Energy PDF is used, and no energy weighting
     is applied.
 
@@ -320,10 +320,10 @@ class SpatialLLH(LLH):
     def __init__(self, season, sources, llh_dict):
         LLH.__init__(self, season, sources, llh_dict)
 
-        # if "LLH Energy PDF" in llh_dict.keys():
-        #     raise Exception("Found 'LLH Energy PDF' entry in llh_dict, "
-        #                     "but SpatialLLH does not use Energy PDFs. \n"
-        #                     "Please remove this entry, and try again.")
+        if "llh_energy_pdf" in llh_dict.keys():
+            raise Exception("Found 'llh_energy_pdf' entry in llh_dict, "
+                            "but SpatialLLH does not use Energy PDFs. \n"
+                            "Please remove this entry, and try again.")
 
     def create_acceptance_function(self):
         """In the most simple case of spatial-only weighting, you would
@@ -668,7 +668,6 @@ class StandardLLH(FixedEnergyLLH):
                     spatial_cache = pull_corrector.create_spatial_cache(
                         coincident_data, SoB_pdf
                     )
-
 
                     SoB_spacetime.append(spatial_cache)
 

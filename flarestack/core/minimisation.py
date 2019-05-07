@@ -222,6 +222,121 @@ class MinimisationHandler:
     def set_random_seed(seed):
         np.random.seed(seed)
 
+    def guess_scale(self):
+        """Method to guess flux scale for sensitivity + discovery potential
+        :return:
+        """
+        print "Trying to guess scale!"
+
+        season_bkg = []
+        season_sig = []
+
+        angle_deg = 1.0
+
+        area = np.pi * np.radians(1.177 * angle_deg)**2
+
+        print "Assuming a typical angle of {0} degrees," \
+              " we have {1} steradians".format(angle_deg, area)
+
+        for (season, inj) in self.injectors.iteritems():
+            llh = self.llhs[season]
+
+            print "Season", season
+            n_bkg_tot = len(inj._raw_data)
+            print "Number of events", n_bkg_tot
+            livetime = inj.time_pdf.livetime * 60 * 60 * 24
+            print "Livetime is {0} seconds ({1} days)".format(
+                livetime, inj.time_pdf.livetime
+            )
+            rate = n_bkg_tot/(4 * np.pi)/livetime
+            print "Rate is", rate, "per steradian per second"
+
+            n_sigs = []
+            times = []
+
+            for source in self.sources:
+                source_mc = inj.calculate_single_source(source, scale=1.)
+
+
+
+                n_sigs.append(np.sum(source_mc["ow"]))
+                times.append(inj.time_pdf.effective_injection_time(source))
+
+            n_sigs = np.array(n_sigs)
+            times = np.array(times)
+
+            # Convert local background rate using data rate splines. These
+            # are normalised PDFs, so should be multiplied by 2.
+
+            local_bkg_rates = 2 * np.exp(
+                llh.bkg_spatial(np.sin(self.sources["dec_rad"])))
+
+            n_bkgs = times * rate * area * local_bkg_rates
+
+            weights = n_sigs / np.sum(n_sigs)
+
+            sum_n_sigs = np.sum(n_sigs * weights)
+            sum_n_bkgs = np.sum(n_bkgs * weights)
+
+            season_sig.append(sum_n_sigs)
+            season_bkg.append(sum_n_bkgs)
+
+            # significance = sum_n_sigs / np.sqrt(sum_n_bkgs)
+            #
+            # from scipy.stats import poisson, norm
+            # prob = poisson.cdf(sum_n_sigs + sum_n_bkgs, sum_n_bkgs)
+            # print "Combined:", sum_n_sigs, sum_n_bkgs, \
+            #     norm.ppf(poisson.cdf(sum_n_sigs + sum_n_bkgs, sum_n_bkgs))
+            # disc_count = poisson.ppf(norm.cdf(5.0), sum_n_bkgs)
+            # print "Discovery Count:", disc_count
+            # disc_pot = disc_count - int(sum_n_bkgs)
+            # print "Discovery Potential:", disc_pot
+            #
+            # for i, sig in enumerate(n_sigs):
+            #     print i, sig,
+            #     bkg = n_bkgs[i]
+            #     print bkg,
+            #     print sig / np.sqrt(bkg),
+            #     print norm.ppf(poisson.cdf(sig + bkg, bkg))
+            #     disc_count = poisson.ppf(norm.cdf(5.0), bkg)
+            #     print "Discovery Count:", disc_count
+            #     disc_pot = disc_count - int(bkg)
+            #     print "Discovery Potential:", disc_pot
+
+            # print sum_n_sigs, sum_n_bkgs, significance, n_sigs/np.sqrt(n_bkgs)
+            # print prob
+            # print norm.ppf(prob)
+
+            # sum_n_sigs = np.sum(n_sigs)
+            # sum_n_bkgs = np.sum(n_bkgs * n_sigs/np.sum(n_sigs))
+            #
+            # significance = sum_n_sigs / np.sqrt(sum_n_bkgs)
+            #
+            # print sum_n_sigs, np.sum(n_bkgs), sum_n_bkgs, np.sqrt(n_bkgs), \
+            #     significance
+
+            # scale = 5. / significance
+            # print "Scale is", scale
+
+        season_sig = np.array(season_sig)
+        season_bkg = np.array(season_bkg)
+
+        season_weights = season_sig/np.sum(season_sig)
+
+        int_sig = np.sum(season_sig * season_weights)
+        int_bkg = np.sum(season_bkg * season_weights)
+
+        from scipy.stats import poisson, norm
+
+        disc_count = poisson.ppf(norm.cdf(5.0), int_bkg)
+        print "Discovery Count:", disc_count, "events"
+        disc_pot = disc_count - int(int_bkg)
+        print "Discovery Potential:", disc_pot, "signal events"
+        scale = disc_pot / int_sig
+        print "Estimated Scale is:", scale, "GeV sr^-1 s^-1 cm^-2"
+        print "(Energy weighting would probably reduce this somewhat)"
+        return scale
+
 
 @MinimisationHandler.register_subclass('fixed_weights')
 class FixedWeightMinimisationHandler(MinimisationHandler):
