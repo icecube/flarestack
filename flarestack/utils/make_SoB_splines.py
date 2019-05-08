@@ -176,6 +176,12 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, weight_function):
 
     ratio = create_2d_ratio_hist(exp, mc, sin_dec_bins, weight_function)
 
+    spline = make_2d_spline_from_hist(ratio, sin_dec_bins)
+
+    return spline
+
+
+def make_2d_spline_from_hist(ratio, sin_dec_bins):
     # Sets bin centers, and order of spline (for x and y)
     sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
     log_e_bin_center = (energy_bins[:-1] + energy_bins[1:]) / 2.
@@ -186,7 +192,6 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, weight_function):
     spline = scipy.interpolate.RectBivariateSpline(
         log_e_bin_center, sin_bin_center, np.log(ratio),
         kx=order, ky=order, s=0)
-
     return spline
 
 

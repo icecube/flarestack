@@ -242,6 +242,7 @@ class MinimisationHandler:
             llh = self.llhs[season]
 
             print "Season", season
+            data = inj._raw_data
             n_bkg_tot = len(inj._raw_data)
             print "Number of events", n_bkg_tot
             livetime = inj.time_pdf.livetime * 60 * 60 * 24
@@ -257,7 +258,20 @@ class MinimisationHandler:
             for source in self.sources:
                 source_mc = inj.calculate_single_source(source, scale=1.)
 
+                print source.dtype.names
+                # Sets half width of band
+                dec_width = np.deg2rad(5.)
 
+                # Sets a declination band 5 degrees above and below the source
+                min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
+                max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
+                # Gives the solid angle coverage of the sky for the band
+                omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+
+                data_mask = np.logical_and(
+                    np.greater(data["dec"], min_dec),
+                    np.less(data["dec"], max_dec))
+                local_data = data[data_mask]
 
                 n_sigs.append(np.sum(source_mc["ow"]))
                 times.append(inj.time_pdf.effective_injection_time(source))

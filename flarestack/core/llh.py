@@ -1,19 +1,19 @@
 import numexpr
+import os
 import flarestack.core.astro
 import numpy as np
 import scipy.interpolate
 from scipy import sparse
 import cPickle as Pickle
-from flarestack.shared import acceptance_path
+from flarestack.shared import acceptance_path, llh_energy_hash_pickles
 from flarestack.core.time_PDFs import TimePDF, read_t_pdf_dict
 from flarestack.utils.make_SoB_splines import load_spline, \
     load_bkg_spatial_spline
 from flarestack.core.energy_PDFs import EnergyPDF, read_e_pdf_dict
 from flarestack.utils.create_acceptance_functions import dec_range
 from flarestack.utils.dataset_loader import data_loader
-from flarestack.utils.make_SoB_splines import create_2d_ratio_spline
-import inspect
-from numpy import ravel
+from flarestack.utils.make_SoB_splines import create_2d_ratio_spline, \
+    create_2d_ratio_hist, energy_bins, make_2d_spline_from_hist
 
 def read_llh_dict(llh_dict):
     """Ensures that llh dictionaries remain backwards-compatible
@@ -56,6 +56,7 @@ class LLH:
     def __init__(self, season, sources, llh_dict):
         self.season = season
         self.sources = sources
+        self.llh_dict = llh_dict
 
         try:
             time_dict = llh_dict["llh_time_pdf"]
@@ -67,7 +68,7 @@ class LLH:
                            "likelihood, please specify a 'Steady' Time PDF.")
 
         self.bkg_spatial = load_bkg_spatial_spline(self.season)
-        self.acceptance_f = self.create_acceptance_function()
+        self.acceptance, self.energy_weight_f = self.create_energy_functions()
 
     @classmethod
     def register_subclass(cls, llh_name):
@@ -195,20 +196,33 @@ class LLH:
         # space_term = (1 / (4 * np.pi))
         return space_term
 
-    def acceptance(self, source, params=None):
-        """Calculates the detector acceptance for a given source, using the
-        1D interpolation of the acceptance as a function of declination based
-        on the IC data rate. This is a crude estimation.
+    # def acceptance(self, source, params=None):
+    #     """Calculates the detector acceptance for a given source, using the
+    #     1D interpolation of the acceptance as a function of declination based
+    #     on the IC data rate. This is a crude estimation.
+    #
+    #     :param source: Source to be considered
+    #     :param params: Parameter array
+    #     :return: Value for the acceptance of the detector, in the given
+    #     season, for the source
+    #     """
+    #     return self.acceptance_f(source, params)
 
-        :param source: Source to be considered
-        :param params: Parameter array
-        :return: Value for the acceptance of the detector, in the given
-        season, for the source
+    def create_energy_functions(self):
+        """Creates the acceptance function, which parameterises signal
+        acceptance as a function of declination, and the energy weighting
+        function, which gives the energy signal-over-background ratio
+
+        :return: Acceptance function, energy_weighting_function
         """
-        return self.acceptance_f(source["dec_rad"])
 
-    def create_acceptance_function(self):
-        pass
+        def acc_f(source, params):
+            return 1.
+
+        def energy_weight_f(event):
+            return 1.
+
+        return acc_f, energy_weight_f
 
     def select_spatially_coincident_data(self, data, sources):
         """Checks each source, and only identifies events in data which are
@@ -325,7 +339,7 @@ class SpatialLLH(LLH):
                             "but SpatialLLH does not use Energy PDFs. \n"
                             "Please remove this entry, and try again.")
 
-    def create_acceptance_function(self):
+    def create_energy_function(self):
         """In the most simple case of spatial-only weighting, you would
         neglect the energy weighting of events. Then, you can simply assume
         that the detector acceptance is roughly proportional to the data rate,
@@ -444,7 +458,51 @@ class FixedEnergyLLH(LLH):
 
         LLH.__init__(self, season, sources, llh_dict)
 
-    def create_acceptance_function(self):
+    def create_energy_functions(self):
+        """Creates the acceptance function, which parameterises signal
+        acceptance as a function of declination, and the energy weighting
+        function, which gives the energy signal-over-background ratio
+
+        :return: Acceptance function, energy_weighting_function
+        """
+
+        SoB_path, acc_path = llh_energy_hash_pickles(self.llh_dict, self.season)
+
+        # Set up acceptance function, creating values if they have not been
+        # created before
+
+        if not os.path.isfile(acc_path):
+            self.create_acceptance_function(acc_path)
+
+        print "Loading from", acc_path
+
+        with open(acc_path, "r") as f:
+            [dec_vals, acc] = Pickle.load(f)
+
+        acc_spline = scipy.interpolate.interp1d(dec_vals, acc, kind='linear')
+
+        def acc_f(source, params):
+            return acc_spline(source["dec_rad"])
+
+        # Sets up energy weighting function, creating values if they have not
+        # been created before
+
+        if not os.path.isfile(SoB_path):
+            self.create_energy_weighting_function(SoB_path)
+
+        print "Loading from", SoB_path
+
+        with open(SoB_path, "r") as f:
+            [dec_vals, ratio_hist] = Pickle.load(f)
+
+        spline = make_2d_spline_from_hist(np.array(ratio_hist), dec_vals)
+
+        def energy_weight_f(event):
+            return np.exp(spline(event["logE"], event["sinDec"], grid=False))
+
+        return acc_f, energy_weight_f
+
+    def create_acceptance_function(self, acc_path):
         print "Building acceptance functions in sin(dec) bins " \
               "(with fixed energy weighting)"
 
@@ -470,10 +528,40 @@ class FixedEnergyLLH(LLH):
             weights = self.energy_pdf.weight_mc(cut_mc)
             acc[i] = np.sum(weights / omega)
 
-        f = scipy.interpolate.interp1d(
-            dec_range, acc, kind='linear')
-
         del mc
+
+        try:
+            os.makedirs(os.path.dirname(acc_path))
+        except OSError:
+            pass
+
+        print "Saving to", acc_path
+
+        with open(acc_path, "wb") as f:
+            Pickle.dump([dec_range, acc], f)
+
+        return f
+
+    def create_energy_weighting_function(self, SoB_path):
+        print "Building energy-weighting functions in sin(dec) vs log E bins " \
+              "(with fixed energy weighting)"
+
+        # dec_range = self.season["sinDec bins"]
+
+        ratio_hist = create_2d_ratio_hist(
+            exp=data_loader(self.season["exp_path"]),
+            mc=data_loader(self.season["mc_path"]),
+            sin_dec_bins=dec_range,
+            weight_function=self.energy_pdf.weight_mc
+        )
+
+        try:
+            os.makedirs(os.path.dirname(SoB_path))
+        except OSError:
+            pass
+
+        with open(SoB_path, "wb") as f:
+            Pickle.dump([dec_range, ratio_hist], f)
 
         return f
 
@@ -489,13 +577,6 @@ class FixedEnergyLLH(LLH):
 
         assumed_bkg_mask = np.ones(len(data), dtype=np.bool)
 
-        ratio_spline = create_2d_ratio_spline(
-            exp=data_loader(self.season["exp_path"]),
-            mc=data_loader(self.season["mc_path"]),
-            sin_dec_bins=self.season["sinDec bins"],
-            weight_function=self.energy_pdf.weight_mc
-        )
-
         for i, source in enumerate(self.sources):
 
             s_mask = self.select_spatially_coincident_data(data, [source])
@@ -508,10 +589,7 @@ class FixedEnergyLLH(LLH):
                 sig = self.signal_pdf(source, coincident_data)
                 bkg = np.array(self.background_pdf(source, coincident_data))
 
-                SoB_energy_ratio = [
-                    np.exp(ratio_spline(x["logE"], x["sinDec"]))[0][0]
-                    for x in coincident_data
-                ]
+                SoB_energy_ratio = self.energy_weight_f(coincident_data)
 
                 SoB.append(SoB_energy_ratio * sig/bkg)
 
@@ -580,6 +658,8 @@ class StandardLLH(FixedEnergyLLH):
         # print "Loaded", len(self.SoB_spline_2Ds), "Splines."
 
         self.acceptance_f = self.create_acceptance_function()
+
+        self.SoB_energy_cache = []
 
     def _around(self, value):
         """Produces an array in which the precision of the value
@@ -858,7 +938,7 @@ class StandardOverlappingLLH(StandardLLH):
 
         assumed_background_mask = np.ones(len(data), dtype=np.bool)
 
-        for i, source in enumerate(self.source):
+        for i, source in enumerate(self.sources):
 
             s_mask = self.select_spatially_coincident_data(data, [source])
 

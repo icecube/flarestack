@@ -111,12 +111,25 @@ def floor_pickle(floor_dict):
     unique_key = hash(json.dumps(hash_dict, sort_keys=True))
     return floor_dir + str(unique_key) + ".pkl"
 
+
 def pull_pickle(pull_dict):
     hash_dict = dict(pull_dict)
     hash_dict["season"] = dict(pull_dict["season"])
     hash_dict["season"]["sinDec bins"] = list(hash_dict["season"]["sinDec bins"])
     unique_key = hash(json.dumps(hash_dict, sort_keys=True))
     return pull_dir + str(unique_key) + ".pkl"
+
+
+def llh_energy_hash_pickles(llh_dict, season_dict):
+    hash_dict = dict(llh_dict["llh_energy_pdf"])
+    hash_dict["llh_name"] = llh_dict["llh_name"]
+    key = hash(json.dumps(hash_dict, sort_keys=True))
+    season_path = str(key) + "/" + season_dict["Name"] + "/" + \
+                  season_dict["Data Sample"] + ".pkl"
+
+    SoB_path = SoB_spline_dir + season_path
+    acc_path = acc_f_dir + season_path
+    return SoB_path, acc_path
 
 
 band_mask_chunk_size = 500
