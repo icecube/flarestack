@@ -233,6 +233,9 @@ class MinimisationHandler:
         season_bkg = []
         season_sig = []
 
+        def weight_f(metric):
+            return metric / np.sum(metric) / np.median(metric)
+
         for (season, inj) in self.injectors.iteritems():
 
             llh_dict = {"llh_name": "fixed_energy"}
@@ -285,7 +288,8 @@ class MinimisationHandler:
 
                 mc_weights = signalness(llh.energy_weight_f(source_mc))
 
-                n_sig = np.sum(source_mc["ow"] * mc_weights)
+                n_sig = np.sum(source_mc["ow"] * mc_weights) * \
+                        source["base_weight"] * 0.5
 
                 n_sigs.append(n_sig/np.mean(data_weights))
 
@@ -296,13 +300,23 @@ class MinimisationHandler:
 
                 local_rate = np.sum(data_weights) / omega
 
+                # print median_sigma, weighted_quantile(
+                #     local_data["sigma"], 0.5, source_mc["ow"] * mc_weights)
+                #
+                # raw_input("prompt")
+
                 n_bkg = local_rate * area
                 n_bkgs.append(n_bkg/np.mean(data_weights))
 
             n_sigs = np.array(n_sigs)
             n_bkgs = np.array(n_bkgs)
 
-            weights = n_sigs / np.sum(n_sigs)
+            weights = weight_f(n_sigs)
+
+
+            #weights = (n_sigs / np.sum(n_sigs)) / np.mean(n_sigs)
+            # weights = n_sigs / np.sqrt(n_bkgs)
+            # weights /= np.sum(weights)
 
             sum_n_sigs = np.sum(n_sigs * weights)
             sum_n_bkgs = np.sum(n_bkgs * weights)
@@ -313,15 +327,13 @@ class MinimisationHandler:
         season_sig = np.array(season_sig)
         season_bkg = np.array(season_bkg)
 
-        season_weights = season_sig/np.sum(season_sig)
+        season_weights = weight_f(season_sig)
 
         int_sig = np.sum(season_sig * season_weights)
         int_bkg = np.sum(season_bkg * season_weights)
 
         disc_count = poisson.ppf(norm.cdf(5.0), int_bkg)
-        print "Discovery Count:", disc_count, "events"
         disc_pot = disc_count - int_bkg
-        print "Discovery Potential:", disc_pot, "signal events"
         scale = disc_pot / int_sig
         print "Estimated Scale is:", scale, "GeV sr^-1 s^-1 cm^-2"
         return scale
