@@ -6,17 +6,19 @@ import os, os.path
 import argparse
 import cPickle as Pickle
 import scipy.optimize
+from scipy.stats import poisson, norm
 from flarestack.core.injector import Injector, LowMemoryInjector, \
     read_injector_dict
 from flarestack.core.llh import LLH, generate_dynamic_flare_class, read_llh_dict
 from flarestack.shared import name_pickle_output_dir, fit_setup, \
-    inj_dir_name, plot_output_dir, scale_shortener
+    inj_dir_name, plot_output_dir, scale_shortener, weighted_quantile
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib as mpl
 from flarestack.core.time_PDFs import TimePDF, Box, Steady
 from flarestack.core.pull_corrector import BasePullCorrector
 from flarestack.utils.catalogue_loader import load_catalogue
+
 
 
 def time_smear(inj):
@@ -221,6 +223,120 @@ class MinimisationHandler:
     @staticmethod
     def set_random_seed(seed):
         np.random.seed(seed)
+
+    def guess_scale(self):
+        """Method to guess flux scale for sensitivity + discovery potential
+        :return:
+        """
+        print "Trying to guess scale!"
+
+        season_bkg = []
+        season_sig = []
+
+        def weight_f(metric):
+            return metric / np.sum(metric) / np.median(metric)
+
+        for (season, inj) in self.injectors.iteritems():
+
+            llh_dict = {"llh_name": "fixed_energy"}
+
+            llh_dict["llh_energy_pdf"] = inj.inj_kwargs["injection_energy_pdf"]
+            llh_dict["llh_time_pdf"] = inj.inj_kwargs["injection_time_pdf"]
+            llh = LLH.create(inj.season, self.sources, llh_dict)
+
+            print "Season", season
+            data = inj._raw_data
+            n_bkg_tot = len(inj._raw_data)
+            print "Number of events", n_bkg_tot
+            livetime = inj.time_pdf.livetime * 60 * 60 * 24
+            print "Livetime is {0} seconds ({1} days)".format(
+                livetime, inj.time_pdf.livetime
+            )
+
+            def signalness(sig_over_background):
+                """Converts a signal over background ratio into a signal
+                probability. This is ratio/(1 + ratio)
+
+                :param sig_over_background: Ratio of signal to background
+                probability
+                :return: Percentage probability of signal
+                """
+
+                return sig_over_background/(1. + sig_over_background)
+
+            n_sigs = []
+            n_bkgs = []
+
+            for source in self.sources:
+                source_mc = inj.calculate_single_source(source, scale=1.)
+
+                # Sets half width of band
+                dec_width = np.deg2rad(5.)
+
+                # Sets a declination band 5 degrees above and below the source
+                min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
+                max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
+                # Gives the solid angle coverage of the sky for the band
+                omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+
+                data_mask = np.logical_and(
+                    np.greater(data["dec"], min_dec),
+                    np.less(data["dec"], max_dec))
+                local_data = data[data_mask]
+
+                data_weights = signalness(llh.energy_weight_f(local_data))
+
+                mc_weights = signalness(llh.energy_weight_f(source_mc))
+
+                n_sig = np.sum(source_mc["ow"] * mc_weights) * \
+                        source["base_weight"] * 0.5
+
+                n_sigs.append(n_sig/np.mean(data_weights))
+
+                median_sigma = weighted_quantile(
+                    source_mc["sigma"], 0.5, source_mc["ow"] * mc_weights)
+
+                area = np.pi * (1.177 * median_sigma) ** 2
+
+                local_rate = np.sum(data_weights) / omega
+
+                # print median_sigma, weighted_quantile(
+                #     local_data["sigma"], 0.5, source_mc["ow"] * mc_weights)
+                #
+                # raw_input("prompt")
+
+                n_bkg = local_rate * area
+                n_bkgs.append(n_bkg/np.mean(data_weights))
+
+            n_sigs = np.array(n_sigs)
+            n_bkgs = np.array(n_bkgs)
+
+            weights = weight_f(n_sigs)
+
+
+            #weights = (n_sigs / np.sum(n_sigs)) / np.mean(n_sigs)
+            # weights = n_sigs / np.sqrt(n_bkgs)
+            # weights /= np.sum(weights)
+
+            sum_n_sigs = np.sum(n_sigs * weights)
+            sum_n_bkgs = np.sum(n_bkgs * weights)
+
+            season_sig.append(sum_n_sigs)
+            season_bkg.append(sum_n_bkgs)
+
+        season_sig = np.array(season_sig)
+        season_bkg = np.array(season_bkg)
+
+        season_weights = weight_f(season_sig)
+
+        int_sig = np.sum(season_sig * season_weights)
+        int_bkg = np.sum(season_bkg * season_weights)
+
+        disc_count = poisson.ppf(norm.cdf(5.0), int_bkg)
+        disc_pot = disc_count - int_bkg
+        scale = disc_pot / int_sig
+        print "Estimated Scale is:", scale, "GeV sr^-1 s^-1 cm^-2"
+        return scale
 
 
 @MinimisationHandler.register_subclass('fixed_weights')

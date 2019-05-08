@@ -21,8 +21,8 @@ def read_t_pdf_dict(t_pdf_dict):
 
     maps = [
         ("Offset", "offset"),
-        ("Pre Window", "pre_window"),
-        ("Post Window", "post_window"),
+        ("Pre-Window", "pre_window"),
+        ("Post-Window", "post_window"),
         ("Fixed Ref Time (MJD)", "fixed_ref_time_mjd"),
         ("Name", "time_pdf_name"),
         ("Max Offset", "max_offset"),

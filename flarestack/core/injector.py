@@ -46,6 +46,7 @@ class Injector:
     def __init__(self, season, sources, **kwargs):
 
         kwargs = read_injector_dict(kwargs)
+        self.inj_kwargs = kwargs
 
         print "Initialising Injector for", season["Name"]
         self.injection_band_mask = dict()
@@ -56,6 +57,7 @@ class Injector:
         self._mc = data_loader(season["mc_path"])
 
         self.sources = sources
+        self.dist_scale = np.sum(self.sources["distance_mpc"]**-2)
 
         try:
             self.time_pdf = TimePDF.create(kwargs["injection_time_pdf"],
@@ -66,7 +68,7 @@ class Injector:
             print "No Injection Arguments. Are you unblinding?"
             pass
 
-        if "Poisson Smear?" in kwargs.keys():
+        if "poisson_smear_bool" in kwargs.keys():
             self.poisson_smear = kwargs["poisson_smear_bool"]
         else:
             self.poisson_smear = True
@@ -98,12 +100,11 @@ class Injector:
 
         return data
 
-    def select_mc_band(self, mc, source):
+    def select_mc_band(self, source):
         """For a given source, selects MC events within a declination band of
         width +/- 5 degrees that contains the source. Then returns the MC data
         subset containing only those MC events.
 
-        :param mc: Monte Carlo simulation
         :param source: Source to be simulated
         :return: mc (cut): Simulated events which lie within the band
         :return: omega: Solid Angle of the chosen band
@@ -124,11 +125,51 @@ class Injector:
         if source["source_name"] in self.injection_band_mask.keys():
             band_mask = self.injection_band_mask[source["source_name"]]
         else:
-            band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
-                                       np.less(mc["trueDec"], max_dec))
+            band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
+                                       np.less(self._mc["trueDec"], max_dec))
             self.injection_band_mask[source["source_name"]] = band_mask
 
-        return mc[band_mask], omega, band_mask
+        return np.copy(self._mc[band_mask]), omega, band_mask
+
+    def calculate_single_source(self, source, scale):
+        """Calculate the weighted MC for a signle source, given a flux scale
+        and a distance scale.
+
+        :param source:
+        :param scale:
+        :return:
+        """
+        # Selects MC events lying in a +/- 5 degree declination band
+        source_mc, omega, band_mask = self.select_mc_band(source)
+
+        # Calculate the effective injection time for simulation. Equal to
+        # the overlap between the season and the injection time PDF for
+        # the source, scaled if the injection PDF is not uniform in time.
+        eff_inj_time = self.time_pdf.effective_injection_time(source)
+
+        # All injection fluxes are given in terms of k, equal to 1e-9
+        inj_flux = k_to_flux(source["injection_weight_modifier"] * scale)
+
+        # Fraction of total flux allocated to given source, assuming
+        # standard candles with flux proportional to 1/d^2
+
+        dist_weight = (source["distance_mpc"] ** -2) / self.dist_scale
+
+        # Weight coming from relative strength of sources.
+
+        base_weight = source["base_weight"]
+
+        # Calculate the fluence, using the effective injection time.
+        fluence = inj_flux * eff_inj_time * dist_weight * base_weight
+
+        # Recalculates the oneweights to account for the declination
+        # band, and the relative distance of the sources.
+        # Multiplies by the fluence, to enable calculations of n_inj,
+        # the expected number of injected events
+
+        source_mc["ow"] = fluence * (self.mc_weights[band_mask] / omega)
+
+        return source_mc
 
     def inject_signal(self, scale):
         """Randomly select simulated events from the Monte Carlo dataset to
@@ -138,13 +179,10 @@ class Injector:
         :param scale: Ratio of Injected Flux to source flux.
         :return: Set of signal events for the given IC Season.
         """
-        mc = self._mc
         # Creates empty signal event array
         sig_events = np.empty((0, ), dtype=self._raw_data.dtype)
 
         n_tot_exp = 0
-
-        dist_scale = np.sum(self.sources["distance_mpc"]**-2)
 
         scale_key = scale_shortener(scale)
 
@@ -152,59 +190,29 @@ class Injector:
             self.ref_fluxes[scale_key] = dict()
 
         # Loop over each source to be simulated
-        for i, source in self.sources:
+        for i, source in enumerate(self.sources):
 
-            # Selects MC events lying in a +/- 5 degree declination band
-            source_mc, omega, band_mask = self.select_mc_band(mc, source)
+            source_mc = self.calculate_single_source(source, scale)
 
-            # Calculate the effective injection time for simulation. Equal to
-            # the overlap between the season and the injection time PDF for
-            # the source, scaled if the injection PDF is not uniform in time.
-            eff_inj_time = self.time_pdf.effective_injection_time(source)
+            # If a number of neutrinos to inject is specified, use that.
+            # Otherwise, inject based on the flux scale as normal.
 
-            # All injection fluxes are given in terms of k, equal to 1e-9
-            inj_flux = k_to_flux(source["injection_weight_modifier"] * scale)
-
-            # Fraction of total flux allocated to given source, assuming
-            # standard candles with flux proportional to 1/d^2
-
-            dist_weight = (source["distance_mpc"] ** -2) / dist_scale
-
-            # Weight coming from relative strength of sources.
-
-            base_weight = source["base_weight"]
-
-            # Calculate the fluence, using the effective injection time.
-            fluence = inj_flux * eff_inj_time * dist_weight * base_weight
-
-            # Recalculates the oneweights to account for the declination
-            # band, and the relative distance of the sources.
-            # Multiplies by the fluence, to enable calculations of n_inj,
-            # the expected number of injected events
-
-            source_mc["ow"] = fluence * (self.mc_weights[band_mask] / omega)
-
-            if np.isnan(self.fixed_n):
-
+            if not np.isnan(self.fixed_n):
+                n_inj = int(self.fixed_n)
+            else:
                 n_inj = np.sum(source_mc["ow"])
 
-                n_tot_exp += n_inj
+            n_tot_exp += n_inj
 
-                if source["source_name"] not in self.ref_fluxes[scale_key].keys():
-                    self.ref_fluxes[scale_key][source["source_name"]] = n_inj
+            if source["source_name"] not in self.ref_fluxes[scale_key].keys():
+                self.ref_fluxes[scale_key][source["source_name"]] = n_inj
 
-                # Simulates poisson noise around the expectation value n_inj.
-                if self.poisson_smear:
-                    n_s = np.random.poisson(n_inj)
-                # If there is no poisson noise, rounds n_s down to nearest integer
-                else:
-                    n_s = int(n_inj)
-
+            # Simulates poisson noise around the expectation value n_inj.
+            if self.poisson_smear:
+                n_s = np.random.poisson(n_inj)
+            # If there is no poisson noise, rounds n_s down to nearest integer
             else:
-                n_s = int(self.fixed_n)
-
-                if source["source_name"] not in self.ref_fluxes[scale_key].keys():
-                    self.ref_fluxes[scale_key][source["source_name"]] = n_s
+                n_s = int(n_inj)
 
             #  If n_s = 0, skips simulation step.
             if n_s < 1:
@@ -336,7 +344,6 @@ class Injector:
 
         return ev
 
-
 class LowMemoryInjector(Injector):
     """For large numbers of sources O(~100), saving MC masks becomes
     increasingly burdensome. As a solution, the LowMemoryInjector should be
@@ -394,7 +401,7 @@ class LowMemoryInjector(Injector):
         omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
         return dec_width, min_dec, max_dec, omega
 
-    def select_mc_band(self, mc, source):
+    def select_mc_band(self, source):
         """For a given source, selects MC events within a declination band of
         width +/- 5 degrees that contains the source. Then returns the MC data
         subset containing only those MC events.
@@ -406,9 +413,9 @@ class LowMemoryInjector(Injector):
         :return: band_mask: The mask which removes events outside band
         """
         dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
-        band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
-                                   np.less(mc["trueDec"], max_dec))
-        return mc[band_mask], omega, band_mask
+        band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
+                                   np.less(self._mc["trueDec"], max_dec))
+        return np.copy(self._mc[band_mask]), omega, band_mask
 
     def inject_signal(self, scale):
         """Randomly select simulated events from the Monte Carlo dataset to
@@ -418,13 +425,10 @@ class LowMemoryInjector(Injector):
         :param scale: Ratio of Injected Flux to source flux.
         :return: Set of signal events for the given IC Season.
         """
-        mc = self._mc
         # Creates empty signal event array
         sig_events = np.empty((0, ), dtype=self._raw_data.dtype)
 
         n_tot_exp = 0
-
-        dist_scale = np.sum(self.sources["distance_mpc"]**-2)
 
         scale_key = scale_shortener(scale)
 
@@ -457,7 +461,7 @@ class LowMemoryInjector(Injector):
                 # Fraction of total flux allocated to given source, assuming
                 # standard candles with flux proportional to 1/d^2
 
-                dist_weight = (source["distance_mpc"] ** -2) / dist_scale
+                dist_weight = (source["distance_mpc"] ** -2) / self.dist_scale
 
                 # Weight coming from relative strength of sources.
 
@@ -527,6 +531,11 @@ class LowMemoryInjector(Injector):
                     (sig_events, sim_ev[list(self._raw_data.dtype.names)]))
 
             del injection_band_mask
+
+        # print "Injecting", n_tot_exp
+        # print max([x/n_tot_exp for x
+        #            in self.ref_fluxes[scale_key].itervalues()])
+        # raw_input("prompt")
 
         return sig_events
 
