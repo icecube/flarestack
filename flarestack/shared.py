@@ -126,7 +126,6 @@ def llh_energy_hash_pickles(llh_dict, season_dict):
     key = hash(json.dumps(hash_dict, sort_keys=True))
     season_path = str(key) + "/" + season_dict["Name"] + "/" + \
                   season_dict["Data Sample"] + ".pkl"
-
     SoB_path = SoB_spline_dir + season_path
     acc_path = acc_f_dir + season_path
     return SoB_path, acc_path

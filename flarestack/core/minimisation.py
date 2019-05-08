@@ -239,7 +239,13 @@ class MinimisationHandler:
               " we have {1} steradians".format(angle_deg, area)
 
         for (season, inj) in self.injectors.iteritems():
-            llh = self.llhs[season]
+            # llh = self.llhs[season]
+
+            llh_dict = {"llh_name": "fixed_energy"}
+
+            llh_dict["llh_energy_pdf"] = inj.inj_kwargs["injection_energy_pdf"]
+            llh_dict["llh_time_pdf"] = inj.inj_kwargs["injection_time_pdf"]
+            llh = LLH.create(inj.season, self.sources, llh_dict)
 
             print "Season", season
             data = inj._raw_data

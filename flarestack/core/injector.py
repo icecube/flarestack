@@ -46,6 +46,7 @@ class Injector:
     def __init__(self, season, sources, **kwargs):
 
         kwargs = read_injector_dict(kwargs)
+        self.inj_kwargs = kwargs
 
         print "Initialising Injector for", season["Name"]
         self.injection_band_mask = dict()
