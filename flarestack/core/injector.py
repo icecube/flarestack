@@ -57,7 +57,9 @@ class Injector:
         self._mc = data_loader(season["mc_path"])
 
         self.sources = sources
-        self.dist_scale = np.sum(self.sources["distance_mpc"]**-2)
+
+        if len(sources) > 0:
+            self.dist_scale = np.sum(self.sources["distance_mpc"]**-2)
 
         try:
             self.time_pdf = TimePDF.create(kwargs["injection_time_pdf"],
@@ -83,6 +85,19 @@ class Injector:
             self.fixed_n = kwargs["fixed_n"]
         except KeyError:
             self.fixed_n = np.nan
+
+    def update_sources(self, sources):
+        """Reuses an injector with new sources
+
+        :param sources: Sources to be added
+        """
+        self.sources = sources
+        self.dist_scale = np.sum(self.sources["distance_mpc"] ** -2)
+        self.ref_fluxes = {
+            scale_shortener(0.0): dict()
+        }
+        for source in sources:
+            self.ref_fluxes[scale_shortener(0.0)][source["source_name"]] = 0.0
 
     def scramble_data(self):
         """Scrambles the raw dataset to "blind" the data. Assigns a flat Right

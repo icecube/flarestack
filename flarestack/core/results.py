@@ -126,6 +126,7 @@ class ResultsHandler:
 
         return astro_sens, astro_disc
 
+
     def nu_astronomy(self, flux, e_pdf_dict):
         """Function to convert a local flux in the detector at 1GeV to physical
         quantities for a source of mean luminosity. The
