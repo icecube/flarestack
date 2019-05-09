@@ -11,7 +11,7 @@ from flarestack.core.injector import Injector, LowMemoryInjector, \
     read_injector_dict
 from flarestack.core.llh import LLH, generate_dynamic_flare_class, read_llh_dict
 from flarestack.shared import name_pickle_output_dir, fit_setup, \
-    inj_dir_name, plot_output_dir, scale_shortener, weighted_quantile
+    inj_dir_name, plot_output_dir, scale_shortener, flux_to_k
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib as mpl
@@ -229,7 +229,7 @@ class MinimisationHandler:
         """Method to guess flux scale for sensitivity + discovery potential
         :return:
         """
-        return
+        return 1.5 * flux_to_k(self.guess_discovery_potential())
 
     def guess_discovery_potential(self):
         return estimate_discovery_potential(self.injectors, self.sources)
