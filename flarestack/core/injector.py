@@ -459,7 +459,7 @@ class LowMemoryInjector(Injector):
 
                 dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
                 band_mask = injection_band_mask.getrow(i).toarray()[0]
-                source_mc = np.copy(self.mc[band_mask])
+                source_mc = np.copy(self._mc[band_mask])
 
                 # Selects MC events lying in a +/- 5 degree declination band
                 # source_mc, omega, band_mask = self.select_mc_band(mc, source)
