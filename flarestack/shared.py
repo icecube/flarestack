@@ -243,7 +243,7 @@ def flux_to_k(flux):
     :param flux: Flux value
     :return: Flux scale (k)
     """
-    return old_div(flux, k_flux_factor)
+    return flux / k_flux_factor
 
 
 def scale_shortener(scale):
