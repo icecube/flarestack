@@ -172,7 +172,7 @@ class ResultsHandler(object):
         for file in os.listdir(load_dir):
             path = load_dir + file
 
-            with open(path) as f:
+            with open(path, "rb") as f:
                 inj_values[os.path.splitext(file)[0]] = Pickle.load(f)
 
         return inj_values
@@ -195,7 +195,7 @@ class ResultsHandler(object):
             merged_path = self.merged_dir + sub_dir_name + ".pkl"
 
             if os.path.isfile(merged_path):
-                with open(merged_path) as mp:
+                with open(merged_path, "rb") as mp:
                     merged_data = Pickle.load(mp)
             else:
                 merged_data = {}
@@ -204,7 +204,7 @@ class ResultsHandler(object):
                 path = sub_dir + filename
 
                 try:
-                    with open(path) as f:
+                    with open(path, "rb") as f:
                         data = Pickle.load(f)
                 except EOFError:
                     print("Failed loading", path)
