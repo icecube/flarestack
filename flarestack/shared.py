@@ -5,11 +5,12 @@ from builtins import str
 from builtins import range
 import os
 import numpy as np
-from . import config
+from flarestack import config
 import socket
 import pickle as Pickle
 from flarestack.core.energy_PDFs import gamma_range, EnergyPDF
 import json
+import zlib
 
 # ==============================================================================
 # Directory substructure creation
@@ -96,6 +97,17 @@ def set_dataset_directory(path):
 # gamma_range = [1., 4.]
 gamma_precision = .025
 
+
+def deterministic_hash(hash_dict):
+    """Generic function to convert a given dictionary into a 32bit hash
+    value. This process is deterministic, so can be used as a general uid to
+    save/load values.
+
+    :param hash_dict: Dictionary contaiing relevant information
+    :return: A 32bit number representing the data
+    """
+    return zlib.adler32((json.dumps(hash_dict, sort_keys=True)).encode())
+
 # Sets the minimum angular error
 
 min_angular_err = np.deg2rad(0.0)
@@ -113,7 +125,7 @@ def floor_pickle(floor_dict):
     except KeyError:
         pass
     hash_dict["season"]["sinDec bins"] = list(hash_dict["season"]["sinDec bins"])
-    unique_key = hash(json.dumps(hash_dict, sort_keys=True))
+    unique_key = deterministic_hash(hash_dict)
     return floor_dir + str(unique_key) + ".pkl"
 
 
@@ -121,14 +133,14 @@ def pull_pickle(pull_dict):
     hash_dict = dict(pull_dict)
     hash_dict["season"] = dict(pull_dict["season"])
     hash_dict["season"]["sinDec bins"] = list(hash_dict["season"]["sinDec bins"])
-    unique_key = hash(json.dumps(hash_dict, sort_keys=True))
+    unique_key = deterministic_hash(hash_dict)
     return pull_dir + str(unique_key) + ".pkl"
 
 
 def llh_energy_hash_pickles(llh_dict, season_dict):
     hash_dict = dict(llh_dict["llh_energy_pdf"])
     hash_dict["llh_name"] = llh_dict["llh_name"]
-    key = hash(json.dumps(hash_dict, sort_keys=True))
+    key = deterministic_hash(hash_dict)
     season_path = str(key) + "/" + season_dict["Name"] + "/" + \
                   season_dict["Data Sample"] + ".pkl"
     SoB_path = SoB_spline_dir + season_path
