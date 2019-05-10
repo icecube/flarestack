@@ -9,6 +9,7 @@ from flarestack.shared import k_to_flux, scale_shortener, band_mask_cache_name
 from flarestack.core.energy_PDFs import EnergyPDF, read_e_pdf_dict
 from flarestack.core.time_PDFs import TimePDF, read_t_pdf_dict
 from flarestack.utils.dataset_loader import data_loader
+from flarestack.utils.catalogue_loader import calculate_source_weight
 from scipy import sparse
 
 
@@ -63,8 +64,7 @@ class Injector(object):
         self.sources = sources
 
         if len(sources) > 0:
-            self.weight_scale = np.sum(
-                self.sources["base_weight"] * self.sources["distance_mpc"]**-2)
+            self.weight_scale = calculate_source_weight(self.sources)
 
         try:
             self.time_pdf = TimePDF.create(kwargs["injection_time_pdf"],
@@ -163,6 +163,23 @@ class Injector(object):
         # Selects MC events lying in a +/- 5 degree declination band
         source_mc, omega, band_mask = self.select_mc_band(source)
 
+        source_mc = self.calculate_fluence(source, scale, source_mc,
+                                           band_mask, omega)
+
+        return source_mc
+
+    def calculate_fluence(self, source, scale, source_mc, band_mask, omega):
+        """Function to calculate the fluence for a given source, and multiply
+        the oneweights by this. After this step, the oneweight sum is equal
+        to the expected neutrino number.
+
+        :param source: Source to be calculated
+        :param scale: Flux scale
+        :param source_mc: MC that is close to source
+        :param band_mask: Closeness mask for MC
+        :param omega: Solid angle covered by MC mask
+        :return: Modified source MC
+        """
         # Calculate the effective injection time for simulation. Equal to
         # the overlap between the season and the injection time PDF for
         # the source, scaled if the injection PDF is not uniform in time.
@@ -172,14 +189,13 @@ class Injector(object):
         inj_flux = k_to_flux(source["injection_weight_modifier"] * scale)
 
         # Fraction of total flux allocated to given source, assuming
-        # standard candles with flux proportional to 1/d^2
+        # standard candles with flux proportional to 1/d^2 multiplied by the
+        # sources weight
 
-        weight = source["distance_mpc"] ** -2 * source["base_weight"] /\
-                 self.weight_scale
-
+        weight = calculate_source_weight(source) / self.weight_scale
 
         # Calculate the fluence, using the effective injection time.
-        fluence = inj_flux * eff_inj_time * dist_weight * base_weight
+        fluence = inj_flux * eff_inj_time * weight
 
         # Recalculates the oneweights to account for the declination
         # band, and the relative distance of the sources.
@@ -464,37 +480,9 @@ class LowMemoryInjector(Injector):
                 dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
                 band_mask = injection_band_mask.getrow(i).toarray()[0]
                 source_mc = np.copy(self._mc[band_mask])
-
-                # Selects MC events lying in a +/- 5 degree declination band
-                # source_mc, omega, band_mask = self.select_mc_band(mc, source)
-
-                # Calculate the effective injection time for simulation. Equal to
-                # the overlap between the season and the injection time PDF for
-                # the source, scaled if the injection PDF is not uniform in time.
-                eff_inj_time = self.time_pdf.effective_injection_time(source)
-
-                # All injection fluxes are given in terms of k, equal to 1e-9
-                inj_flux = k_to_flux(
-                    source["injection_weight_modifier"] * scale)
-
-                # Fraction of total flux allocated to given source, assuming
-                # standard candles with flux proportional to 1/d^2
-
-                dist_weight = (source["distance_mpc"] ** -2) / self.dist_scale
-
-                # Weight coming from relative strength of sources.
-
-                base_weight = source["base_weight"]
-
-                # Calculate the fluence, using the effective injection time.
-                fluence = inj_flux * eff_inj_time * dist_weight * base_weight
-
-                # Recalculates the oneweights to account for the declination
-                # band, and the relative distance of the sources.
-                # Multiplies by the fluence, to enable calculations of n_inj,
-                # the expected number of injected events
-
-                source_mc["ow"] = fluence * self.mc_weights[band_mask] / omega
+                
+                source_mc = self.calculate_fluence(source, scale, source_mc,
+                                                   band_mask, omega)
 
                 if np.isnan(self.fixed_n):
 
@@ -617,7 +605,7 @@ class MockUnblindedInjector(Injector):
 
         :return: Scrambled data
         """
-        seed = int(123456)
+        seed = int(223456)
         np.random.seed(seed)
 
         simulated_data = self.scramble_data()
