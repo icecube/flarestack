@@ -88,6 +88,14 @@ class TimePDF:
 
         if stitch_t != sorted(stitch_t):
             print "Error in ordering GoodRunList!"
+            print "Runs are out of order!"
+
+            print self.grl[:5]
+            raw_input("prompt")
+
+            for j, t in enumerate(stitch_t):
+                if t != sorted(stitch_t)[j]:
+                    print j, t, self.grl[j]
             raw_input("prompt")
 
         mjd.append(1e5)
