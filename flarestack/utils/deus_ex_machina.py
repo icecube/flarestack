@@ -11,7 +11,7 @@ import numpy as np
 from flarestack.core.llh import LLH
 from flarestack.core.injector import Injector
 from flarestack.core.astro import angular_distance
-from flarestack.shared import weighted_quantile
+from flarestack.shared import weighted_quantile, k_to_flux
 from flarestack.utils.catalogue_loader import load_catalogue
 from scipy.stats import norm
 
@@ -159,7 +159,12 @@ def estimate_discovery_potential(injectors, sources):
 
     scale /= fudge_factor
 
-    print("Estimated Scale is:", scale, "GeV sr^-1 s^-1 cm^-2")
+    # Convert from scale factor to flux units
+
+    scale = k_to_flux(scale)
+
+    print("Estimated Discovery Potential is:", scale,
+          "x 10^-9 GeV sr^-1 s^-1 cm^-2")
     return scale
 
 
