@@ -77,7 +77,8 @@ def make_single_sources():
     print("Single Source catalogues created!", "\n")
 
 
-def custom_sources(name, ra, dec, weight, distance, ref_time=np.nan,
+def custom_sources(name, ra, dec, weight, distance,
+                   injection_modifier=None, ref_time=np.nan,
                    start_time=np.nan, end_time=np.nan):
     """Creates a catalogue array,
 
@@ -105,6 +106,15 @@ def custom_sources(name, ra, dec, weight, distance, ref_time=np.nan,
     # and reconstructor will weight sources according to 1/ (distance ^ 2).
 
     sources['distance_mpc'] = np.array([distance])
+
+    # The sources can have a modified injection weight. This means the
+    # weights used in the likelihood will not match the weights used in the
+    # injection stage
+
+    if injection_modifier is not None:
+        sources["injection_weight_modifier"] = np.array(injection_modifier)
+    else:
+        sources["injection_weight_modifier"] = np.ones_like(ra)
 
     # The source reference time can be arbitrarily defined, for example as
     # the discovery date or the date of lightcurve peak. It is important that
