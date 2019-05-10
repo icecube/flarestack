@@ -223,8 +223,7 @@ class PowerLaw(EnergyPDF):
         """
 
         if self.gamma == 2:
-            e_integral = np.log(old_div(self.integral_e_max,
-                                self.integral_e_min))
+            e_integral = np.log(self.integral_e_max/self.integral_e_min)
         else:
             power = 2 - self.gamma
 
