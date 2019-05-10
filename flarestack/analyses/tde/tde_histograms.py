@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from flarestack.shared import catalogue_dir, plot_output_dir
 import matplotlib.pyplot as plt
@@ -16,7 +17,7 @@ for j, cat in enumerate(cats):
 
     times = catalogue["End Time (MJD)"] - catalogue["Start Time (MJD)"]
 
-    print cat, "Livetime", np.sum(times)
+    print(cat, "Livetime", np.sum(times))
 
     savepath = plot_output_dir("analyses/tde/") + cat + "_hist.pdf"
     plt.figure()

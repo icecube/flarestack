@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import input
 import os
 import sys
 import argparse
@@ -19,17 +21,18 @@ def set_scratch_directory(path):
     if not os.path.isdir(path):
         raise Exception("Attempting to set invalid path for scratch. "
                         "Directory", path, "does not exist!")
-    print "Setting scratch path to", path
+    print("Setting scratch path to", path)
 
     with open(config_path, "wb") as f:
-        f.write("scratch_path = '" + path + "'")
+        f.write(("scratch_path = '" + path + "'").encode())
 
 
-def run_precompute(all_data):
+def run_precompute(all_data, ask=True):
     """Builds directory substructure, creates standard source catalogues and
     creates acceptance functions + Signal/Background splines
 
     :param all_data: All datasets to be used for setup
+    :param ask: Explicitly ask before running precompute
     """
     import flarestack.config
     from flarestack.shared import fs_scratch_dir, dataset_dir, all_dirs
@@ -41,123 +44,124 @@ def run_precompute(all_data):
     from flarestack.cluster.make_desy_cluster_script import \
         make_desy_submit_file
 
+    print("\n \n")
+    print("********************************************************************")
+    print("*                                                                  *")
+    print("*                Initialising setup for FlareStack                 *")
+    print("*                                                                  *")
+    print("********************************************************************")
+    print("\n")
+    print("  Initialising directory for data storage. This could be a scratch  ")
+    print("                   space or local directory.                        ")
+    print("\n")
 
-    print "\n \n"
-    print "********************************************************************"
-    print "*                                                                  *"
-    print "*                Initialising setup for FlareStack                 *"
-    print "*                                                                  *"
-    print "********************************************************************"
-    print "\n"
-    print "  Initialising directory for data storage. This could be a scratch  "
-    print "                   space or local directory.                        "
-    print "\n"
+    print("The following parent directory has been found in config.py: \n")
+    print("\t", flarestack.config.scratch_path)
+    print()
+    print("A new data storage directory will be created at: \n")
+    print("\t", fs_scratch_dir)
+    print()
 
-    print "The following parent directory has been found in config.py: \n"
-    print "\t", flarestack.config.scratch_path
-    print
-    print "A new data storage directory will be created at: \n"
-    print "\t", fs_scratch_dir
-    print
-    print "Is this correct? (y/n)"
+    if ask:
+        print("Is this correct? (y/n)")
 
-    x = ""
+        x = ""
 
-    while x not in ["y", "n"]:
-        x = raw_input("")
+        while x not in ["y", "n"]:
+            x = input("")
 
-    if x == "n":
-        print "\n"
-        print "Please edit config.py to include the correct directory!"
-        print "\n"
-        return
+        if x == "n":
+            print("\n")
+            print("Please edit config.py to include the correct directory!")
+            print("\n")
+            return
 
     for dirname in all_dirs:
         if not os.path.isdir(dirname):
-            print "Making Directory:", dirname
+            print("Making Directory:", dirname)
             os.makedirs(dirname)
         else:
-            print "Found Directory:", dirname
+            print("Found Directory:", dirname)
 
     host = socket.gethostname()
 
-    print "\n"
-    print "********************************************************************"
-    print "*                                                                  *"
-    print "*                    Generating Cluster Scripts                    *"
-    print "*                                                                  *"
-    print "********************************************************************"
-    print "\n"
+    print("\n")
+    print("********************************************************************")
+    print("*                                                                  *")
+    print("*                    Generating Cluster Scripts                    *")
+    print("*                                                                  *")
+    print("********************************************************************")
+    print("\n")
 
     if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
         make_desy_submit_file()
     else:
-        print "Host", host, "not recognised."
-        print "No Cluster Scripts generated."
+        print("Host", host, "not recognised.")
+        print("No Cluster Scripts generated.")
 
-    print "\n"
-    print "********************************************************************"
-    print "*                                                                  *"
-    print "*                 Initialising catalogue creation                  *"
-    print "*                                                                  *"
-    print "********************************************************************"
-    print "\n"
+    print("\n")
+    print("********************************************************************")
+    print("*                                                                  *")
+    print("*                 Initialising catalogue creation                  *")
+    print("*                                                                  *")
+    print("********************************************************************")
+    print("\n")
     make_single_sources()
 
     # Check to ensure there is at least one IceCube dataset present
 
     x = np.sum([os.path.isdir(os.path.dirname(y["mc_path"])) for y in all_data])
 
-    print "********************************************************************"
-    print "*                                                                  *"
-    print "*                     Checking data directories                    *"
-    print "*                                                                  *"
-    print "********************************************************************"
+    print("********************************************************************")
+    print("*                                                                  *")
+    print("*                     Checking data directories                    *")
+    print("*                                                                  *")
+    print("********************************************************************")
 
     roots = list(set([os.path.dirname(y["mc_path"]) for y in all_data]))
 
     if x == 0:
-        print "No IceCube data files found. Tried searching for: \n"
+        print("No IceCube data files found. Tried searching for: \n")
         for y in roots:
-            print "\t", y
+            print("\t", y)
 
-        print ""
-        print "Download these data files yourself, and save them to: \n"
-        print "\t", dataset_dir
-        print "\n"
+        print("")
+        print("Download these data files yourself, and save them to: \n")
+        print("\t", dataset_dir)
+        print("\n")
         sys.exit()
 
     else:
-        print "Searched for the following directories: \n"
+        print("Searched for the following directories: \n")
         for y in roots:
-            print "\t", y,
-            print "Found?", os.path.isdir(y)
+            print("\t", y, end=' ')
+            print("Found?", os.path.isdir(y))
 
-    print "\n"
-    print "********************************************************************"
-    print "*                                                                  *"
-    print "*                       Checking GoodRunLists                      *"
-    print "*                                                                  *"
-    print "********************************************************************"
-    print "\n"
+    print("\n")
+    print("********************************************************************")
+    print("*                                                                  *")
+    print("*                       Checking GoodRunLists                      *")
+    print("*                                                                  *")
+    print("********************************************************************")
+    print("\n")
     verify_grl_with_data(all_data)
 
-    print "\n"
-    print "********************************************************************"
-    print "*                                                                  *"
-    print "*                   Making Acceptance Functions                    *"
-    print "*                                                                  *"
-    print "********************************************************************"
-    print "\n"
+    print("\n")
+    print("********************************************************************")
+    print("*                                                                  *")
+    print("*                   Making Acceptance Functions                    *")
+    print("*                                                                  *")
+    print("********************************************************************")
+    print("\n")
     make_acceptance_f(all_data)
 
-    print "\n"
-    print "********************************************************************"
-    print "*                                                                  *"
-    print "*    Creating Log(Energy) vs. Sin(Declination) Sig/Bkg splines     *"
-    print "*                                                                  *"
-    print "********************************************************************"
-    print "\n"
+    print("\n")
+    print("********************************************************************")
+    print("*                                                                  *")
+    print("*    Creating Log(Energy) vs. Sin(Declination) Sig/Bkg splines     *")
+    print("*                                                                  *")
+    print("********************************************************************")
+    print("\n")
     make_spline(all_data)
 
 
@@ -178,9 +182,6 @@ if __name__ == "__main__":
         del scratch_path
         set_scratch_directory(cfg.scratch_path)
 
-    from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-    from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
+    from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
 
-    icecube_data = txs_sample_v1 + gfu_v002_p04
-
-    run_precompute(icecube_data)
+    run_precompute(ps_10year)

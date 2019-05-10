@@ -1,3 +1,5 @@
+from __future__ import division
+from builtins import str
 from flarestack.utils.neutrino_cosmology import calculate_transient, \
     sfr_madau, sfr_clash_candels, get_diffuse_flux_at_1GeV
 from flarestack.analyses.ccsn.ccsn_limits import limits
@@ -136,7 +138,7 @@ if __name__ == "__main__":
              diffuse_norm * global_fit_e_range ** (2. - diffuse_gamma),
              color="k")
 
-    for i,(name, norm) in enumerate(norms.iteritems()):
+    for i,(name, norm) in enumerate(norms.items()):
         # plt.plot(e_range, z(e_range, norm), label=name)
         plt.errorbar(e_range, z(e_range, norm).value,
                      yerr=.25 * np.array([x.value for x in z(e_range, norm)]),

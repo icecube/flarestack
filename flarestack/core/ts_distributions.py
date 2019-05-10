@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import object
 import numpy as np
 import os
 from flarestack.shared import plots_dir
@@ -8,7 +12,7 @@ from scipy.stats import norm
 raw_five_sigma = norm.cdf(5)
 n_bins = 100
 
-class Chi2:
+class Chi2(object):
 
     """ A class similar to the ones from scipy.stats
        allowing to fit left-truncated chi^2 distributions.
@@ -36,14 +40,14 @@ class Chi2:
 
             dist = scipy.stats.chi2(p[0], loc=0., scale=p[1])
             loglh = dist.logpdf(data).sum()
-            print loglh
+            print(loglh)
 
             return -loglh
 
         res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
 
         if not res.success:
-            print 'Chi2 fit did not converge! Result is likely garbage.'
+            print('Chi2 fit did not converge! Result is likely garbage.')
 
         # self._q_left = N_left / float(N_all)
         self._cut = 0.
@@ -190,7 +194,7 @@ class Double_Chi2(object):
         self.res_left = res
         self._f_left = scipy.stats.chi2(*res.x)
 
-class Chi2_one_side:
+class Chi2_one_side(object):
 
     def __init__(self, data):
         p_start = [2., -1., 1.]
@@ -212,7 +216,7 @@ class Chi2_one_side:
         self._res = res
 
 
-class Chi2_one_side_free:
+class Chi2_one_side_free(object):
 
     def __init__(self, data):
         # p_start = [4., -1., 1.]
@@ -376,7 +380,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     ts_array = ts_array[~np.isnan(ts_array)]
 
     if np.sum(np.isnan(ts_array)) > 0:
-        print "TS distribution has", np.sum(np.isnan(ts_array)), "nan entries."
+        print("TS distribution has", np.sum(np.isnan(ts_array)), "nan entries.")
 
     if np.median(ts_array) < 0.:
         plot_expanded_negative(ts_array, path)
@@ -411,20 +415,21 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     plt.axvline(disc_potential, color="r", label=r"5 $\sigma$ Threshold")
 
     if ts_val is not None:
-        print "\n"
+        print("\n")
 
         if not isinstance(ts_val, float):
             ts_val = float(ts_val[0])
 
         # print
 
-        print "Quantifying TS:", "{:.2f}".format(ts_val)
+        print("Quantifying TS:", "{:.2f}".format(ts_val))
 
         if ts_val > np.median(ts_array):
 
             val = (ts_val - frac_under) / (1. - frac_under)
 
-            cdf = frac_under + frac_over*scipy.stats.chi2.cdf(val, df, loc, scale)
+            cdf = frac_under + frac_over * scipy.stats.chi2.cdf(
+                val, df, loc, scale)
 
             sig = norm.ppf(cdf)
 
@@ -432,9 +437,9 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
             cdf = 0.
             sig = 0.
 
-        print "Pre-trial P-value is", "{:.2E}".format(1-cdf), 1-cdf
-        print "Significance is", "{:.2f}".format(sig), "Sigma"
-        print "\n"
+        print("Pre-trial P-value is", "{:.2E}".format(1-cdf), 1-cdf)
+        print("Significance is", "{:.2f}".format(sig), "Sigma")
+        print("\n")
 
         plt.axvline(ts_val, color="purple",
                     label="{:.2f}".format(ts_val) + " TS/" +
@@ -469,7 +474,7 @@ def plot_fit_results(results, path, inj):
     except OSError:
         pass
 
-    n_dim = len(results.keys())
+    n_dim = len(list(results.keys()))
 
     try:
 
@@ -478,7 +483,7 @@ def plot_fit_results(results, path, inj):
         fig.set_size_inches(7, n_dim*3)
         fig.subplots_adjust(hspace=.5)
 
-        for i, (label, row) in enumerate(results.iteritems()):
+        for i, (label, row) in enumerate(results.items()):
 
             weights = np.ones(len(row))/float(len(row))
 

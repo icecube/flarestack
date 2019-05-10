@@ -1,3 +1,4 @@
+from __future__ import division
 from flarestack.utils.neutrino_cosmology import calculate_transient
 from astropy import units as u
 import matplotlib.pyplot as plt
@@ -39,7 +40,7 @@ def normed_tde_evolution(z):
     :param z: Redshift
     :return: Normalised scaling of density with redshift
     """
-    return raw_tde_evolution(z)/raw_tde_evolution(0.0)
+    return raw_tde_evolution(z) / raw_tde_evolution(0.0)
 
 
 
@@ -51,7 +52,7 @@ def tde_rate(z):
     :param z: Redshift
     :return: TDE rate at redshift z
     """
-    return normed_tde_evolution(z) * 8 * 10**-7 / (u.Mpc**3 * u.yr)
+    return (normed_tde_evolution(z) * 8 * 10**-7) / (u.Mpc**3 * u.yr)
 
 
 def theoretical_tde_rate(z):
@@ -62,7 +63,7 @@ def theoretical_tde_rate(z):
     :param z: Redshift
     :return: TDE rate at redshift z
     """
-    return normed_tde_evolution(z) * 1.5 * 10**-6 / (u.Mpc**3 * u.yr)
+    return (normed_tde_evolution(z) * 1.5 * 10**-6) / (u.Mpc**3 * u.yr)
 
 
 res = [
@@ -109,7 +110,7 @@ def biehl_jetted_rate(z):
 
 def standard_jetted_rate(z):
     """Rate taken from appendix of https://arxiv.org/pdf/1706.00391"""
-    return normed_tde_evolution(z) * 3 * 10**-11 / (u.Mpc**3 * u.yr)
+    return (normed_tde_evolution(z) * 3 * 10**-11) / (u.Mpc**3 * u.yr)
 
 #
 norms["Jetted TDEs"] = dict()
@@ -164,9 +165,9 @@ linestyles = {
 }
 
 
-for i, (name, res_dict) in enumerate(norms.iteritems()):
+for i, (name, res_dict) in enumerate(norms.items()):
     # plt.plot(e_range, z(e_range, norm), label=name)
-    for (rate, norm) in res_dict.iteritems():
+    for (rate, norm) in res_dict.items():
         plt.errorbar(e_range, z(e_range, norm).value,
                      yerr=.25 * np.array([x.value for x in z(e_range, norm)]),
                      uplims=True, label=name,

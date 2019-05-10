@@ -1,6 +1,8 @@
+from __future__ import division
+from builtins import str
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
@@ -122,7 +124,7 @@ all_sens = []
 all_fracs = []
 
 
-for i, (label, src_res) in enumerate(analyses.iteritems()):
+for i, (label, src_res) in enumerate(analyses.items()):
 
     cols = ["b", "orange", "g"]
 
@@ -130,12 +132,11 @@ for i, (label, src_res) in enumerate(analyses.iteritems()):
     fracs = []
     disc_pots = []
 
-    for (sindec, rh_dict) in sorted(src_res.iteritems()):
+    for (sindec, rh_dict) in sorted(src_res.items()):
 
         try:
         #
-            rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                rh_dict["catalogue"])
+            rh = ResultsHandler(rh_dict)
             sens.append(rh.sensitivity)
             disc_pots.append(rh.disc_potential)
         except EOFError:

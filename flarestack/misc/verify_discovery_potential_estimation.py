@@ -1,17 +1,14 @@
+from __future__ import division
 import numpy as np
 import os
-import cPickle as Pickle
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
 from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 from flarestack.data.icecube.northern_tracks.nt_v002_p05 import diffuse_8year
 from flarestack.shared import plot_output_dir, flux_to_k, k_to_flux
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.utils.reference_sensitivity import reference_sensitivity,\
+from flarestack.utils.reference_sensitivity import \
     reference_7year_discovery_potential
-import flarestack.cluster.run_desy_cluster as rd
 import matplotlib.pyplot as plt
 from flarestack.analyses.agn_cores.shared_agncores import agn_catalogue_name
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
@@ -114,7 +111,7 @@ for j, (sample_name, dataset, fullsky) in enumerate(datasets):
     ax1.plot(sindecs[mask], disc_pots, color=color,
              label="Flarestack Estimation ({0})".format(sample_name))
 
-    disc_ratios = np.array(disc_pots) / refs[mask]
+    disc_ratios = np.array(disc_pots)/refs[mask]
 
     ax2.scatter(sindecs[mask], disc_ratios, color=color)
     ax2.plot(sindecs[mask], disc_ratios, color=color, linestyle="--")

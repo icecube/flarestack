@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 import numpy as np
 from flarestack.shared import catalogue_dir
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1, ps_7year
@@ -37,7 +39,7 @@ f_nu_to_cr = f_pi * waxmann_bachall
 # The Cosmic Ray Energy itself can be calculated assuming an E^-2 power law
 # The minimal energy of the power law is 1GeV, and it extends to 10^17 eV.
 
-cr_integral = np.log(10**21/10**9)
+cr_integral = np.log(10**21 / 10**9)
 
 int_cr_energy = cr_flux * cr_integral
 
@@ -84,17 +86,17 @@ for source in sources:
 
     n_injs = []
 
-    print source["Name"]
+    print(source["Name"])
 
     for cr_energy in [base_cr_energy, custom_cr_energy]:
 
-        print cr_energy
+        print(cr_energy)
 
         time = injection_window * 60 * 60 * 24
 
         # Convert cosmic ray energy back to differential flux
 
-        cr_flux = cr_energy/(cr_integral * time)
+        cr_flux = cr_energy / (cr_integral * time)
 
         nu_flux = f_nu_to_cr * cr_flux
 
@@ -122,10 +124,10 @@ for source in sources:
 
     res_dict[source["Name"]] = n_injs
 
-print "\n"
+print("\n")
 
-print "N_base \t N_scale \t Source"
+print("N_base \t N_scale \t Source")
 
-for (source, n_inj) in res_dict.iteritems():
+for (source, n_inj) in res_dict.items():
 
-    print n_inj[0], "\t", n_inj[1], "\t", source
+    print(n_inj[0], "\t", n_inj[1], "\t", source)

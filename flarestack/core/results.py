@@ -1,5 +1,9 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import object
 import os
-import cPickle as Pickle
+import pickle as Pickle
 import numpy as np
 import math
 import scipy
@@ -15,7 +19,7 @@ from flarestack.utils.catalogue_loader import load_catalogue
 import sys
 
 
-class ResultsHandler:
+class ResultsHandler(object):
 
     def __init__(self, rh_dict):
 
@@ -203,31 +207,31 @@ class ResultsHandler:
                     with open(path) as f:
                         data = Pickle.load(f)
                 except EOFError:
-                    print "Failed loading", path
+                    print("Failed loading", path)
                     continue
                 os.remove(path)
 
                 if merged_data == {}:
                     merged_data = data
                 else:
-                    for (key, info) in data.iteritems():
+                    for (key, info) in data.items():
                         if isinstance(info, list):
                             merged_data[key] += info
                         else:
-                            for (param_name, params) in info.iteritems():
+                            for (param_name, params) in info.items():
                                 merged_data[key][param_name] += params
 
             with open(merged_path, "wb") as mp:
                 Pickle.dump(merged_data, mp)
 
-            if len(merged_data.keys()) > 0:
+            if len(list(merged_data.keys())) > 0:
                 self.results[scale_shortener(float(sub_dir_name))] = merged_data
 
-        if len(self.results.keys()) == 0:
-            print "No data was found by ResultsHandler object! \n"
-            print "Tried root directory: \n"
-            print self.pickle_output_dir
-            print ""
+        if len(list(self.results.keys())) == 0:
+            print("No data was found by ResultsHandler object! \n")
+            print("Tried root directory: \n")
+            print(self.pickle_output_dir)
+            print("")
             sys.exit()
 
     def find_sensitivity(self):
@@ -240,7 +244,7 @@ class ResultsHandler:
         try:
             bkg_dict = self.results[scale_shortener(0.0)]
         except KeyError:
-            print "No key equal to '0'"
+            print("No key equal to '0'")
             return
 
         bkg_ts = bkg_dict["TS"]
@@ -254,9 +258,9 @@ class ResultsHandler:
             bkg_median, savepath)
 
         if self.extrapolated_sens:
-            print "EXTRAPOLATED",
+            print("EXTRAPOLATED", end=' ')
 
-        print "Sensitivity is", "{0:.3g}".format(self.sensitivity)
+        print("Sensitivity is", "{0:.3g}".format(self.sensitivity))
 
     # def set_upper_limit(self, ts_val, savepath):
     #     """Set an upper limit, based on a Test Statistic value from
@@ -308,13 +312,13 @@ class ResultsHandler:
         x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
 
         for scale in x:
-            print scale,
+            print(scale, end=' ')
             ts_array = np.array(self.results[scale]["TS"])
             frac = float(len(ts_array[ts_array > ts_val])) / (float(len(
                 ts_array)))
-            print "Fraction of overfluctuations is", "{0:.2f}".format(frac),
-            print "above", "{0:.2f}".format(ts_val),
-            print "(", len(ts_array), ")"
+            print("Fraction of overfluctuations is", "{0:.2f}".format(frac), end=' ')
+            print("above", "{0:.2f}".format(ts_val), end=' ')
+            print("(", len(ts_array), ")")
 
             if scale == scale_shortener(0.0):
                 self.frac_over = frac
@@ -375,7 +379,7 @@ class ResultsHandler:
         try:
             bkg_dict = self.results[scale_shortener(0.0)]
         except KeyError:
-            print "No key equal to '0'"
+            print("No key equal to '0'")
             return
 
         bkg_ts = bkg_dict["TS"]
@@ -390,18 +394,18 @@ class ResultsHandler:
         x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
 
         for scale in x:
-            print scale,
+            print(scale, end=' ')
             ts_array = np.array(self.results[scale]["TS"])
             frac = float(len(ts_array[ts_array > disc_threshold])) / (
                 float(len(ts_array)))
-            print "Fraction of overfluctuations is", "{0:.2f}".format(frac), \
-                "above", disc_threshold
+            print("Fraction of overfluctuations is", "{0:.2f}".format(frac), \
+                "above", disc_threshold)
             y.append(frac)
             frac_25 = float(len(ts_array[ts_array > 25.])) / (
                 float(len(ts_array)))
-            print "Fraction of overfluctuations is", "{0:.2f}".format(
+            print("Fraction of overfluctuations is", "{0:.2f}".format(
                 frac_25), \
-                "above", 25.
+                "above", 25.)
             y_25.append(frac_25)
 
         x = np.array([float(s) for s in x])
@@ -453,11 +457,11 @@ class ResultsHandler:
             self.extrapolated_disc = True
 
         if self.extrapolated_disc:
-            print "EXTRAPOLATED",
+            print("EXTRAPOLATED", end=' ')
 
-        print "Discovery Potential is", "{0:.3g}".format(self.disc_potential)
-        print "Discovery Potential (TS=25) is", "{0:.3g}".format(
-            self.disc_potential_25)
+        print("Discovery Potential is", "{0:.3g}".format(self.disc_potential))
+        print("Discovery Potential (TS=25) is", "{0:.3g}".format(
+            self.disc_potential_25))
 
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
@@ -544,7 +548,7 @@ class ResultsHandler:
             plt.title("Bias (" + param + ")")
 
             savepath = self.plot_dir + "bias_" + param + ".pdf"
-            print "Saving bias plot to", savepath
+            print("Saving bias plot to", savepath)
             plt.savefig(savepath)
             plt.close()
 

@@ -1,5 +1,6 @@
+from __future__ import print_function
+from builtins import zip
 import os
-import cPickle as Pickle
 from flarestack.shared import limit_output_path, plot_output_dir
 
 agncores_dir = os.path.abspath(os.path.dirname(__file__))
@@ -7,6 +8,7 @@ agncores_cat_dir = agncores_dir + "/catalogues/"
 raw_cat_dir = agncores_cat_dir + "raw/"
 
 agn_cats = ["radioloud", "colorselected", "llang"]
+
 
 def agn_cores_output_dir(name='foldername'):
     return plot_output_dir('analyses/agn_cores/'+name+'/')
@@ -17,7 +19,8 @@ def agn_catalogue_name(agn_type, xraycat='2rxs'):
 
     return agncores_cat_dir + agn_name
 
-def create_random_src(min_distance = 10, nr_sources = 100):
+
+def create_random_src(min_distance=10, nr_sources=100):
     '''
     Create nr_sources random sources in RA and DEC (in degree)
     min_distance  : create sources with distance > than min_distance among each other (in degree)
@@ -30,7 +33,8 @@ def create_random_src(min_distance = 10, nr_sources = 100):
     import numpy as np
 
     min_distance = min_distance * u.deg
-    print 'Minimum distance between sources is: ', min_distance, '\nNumber of random sources is: ', nr_sources
+    print('Minimum distance between sources is: ', min_distance,
+          '\nNumber of random sources is: ', nr_sources)
     sources_ra = []
     sources_dec = []
     ra_first = np.random.uniform(-180, 180, 1)
@@ -67,16 +71,16 @@ def create_random_src(min_distance = 10, nr_sources = 100):
 
 
 def plot_catalogue(src_ra, src_dec, src_weight, radians=False,
-                   filename = '2rxs_100brightest_skyplot_equatorial',plot_path = agn_cores_output_dir('catalogues')):
-    '''
-    Plot the catalogue in equatorial mollewide projection
+                   filename='2rxs_100brightest_skyplot_equatorial',
+                   plot_path=agn_cores_output_dir('catalogues')):
+    '''Plot the catalogue in equatorial mollewide projection
     :param src_ra: in degree
     :param src_dec: in degree
     :param src_weight: variable for the colorbar axis. If no weight is given, all sources will be weighted equally
     :param radians: if ra and dec are given in radians, set it to True.
     :param filename:
     :param plot_path:
-    :return: mollewvied plot in equatorial coordinates
+    :return: mollewied plot in equatorial coordinates
     '''
 
     import numpy as np
@@ -113,12 +117,10 @@ def plot_catalogue(src_ra, src_dec, src_weight, radians=False,
             transform=ax.transAxes,
             color='black', fontsize=20)
 
-    fig.savefig(plot_path +filename + '.png', format='png',  bbox_inches="tight")
-    print "Saving to", plot_path
+    fig.savefig(plot_path + filename + '.png', format='png',
+                bbox_inches="tight")
+    print("Saving to", plot_path)
     plt.close(fig)
-
-
-
 
 
 # def agncores_limits(agn_type):

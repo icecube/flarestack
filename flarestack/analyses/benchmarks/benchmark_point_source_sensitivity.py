@@ -1,6 +1,7 @@
+from __future__ import division
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year

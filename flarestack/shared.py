@@ -1,8 +1,13 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from builtins import str
+from builtins import range
 import os
 import numpy as np
-import config
+from . import config
 import socket
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.energy_PDFs import gamma_range, EnergyPDF
 import json
 
@@ -62,11 +67,11 @@ host = socket.gethostname()
 if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
     dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
     skylab_ref_dir = dataset_dir + "mirror-7year-PS-sens/"
-    print "Loading datasets from", dataset_dir, "(DESY)"
+    print("Loading datasets from", dataset_dir, "(DESY)")
 elif "icecube.wisc.edu" in host:
     dataset_dir = "/data/ana/analyses/"
     skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
-    print "Loading datasets from", dataset_dir, "(WIPAC)"
+    print("Loading datasets from", dataset_dir, "(WIPAC)")
 else:
     dataset_dir = "a dataset directory, which can be set with " \
                   "flarestack.shared.set_dataset_directory"
@@ -82,7 +87,7 @@ def set_dataset_directory(path):
     if not os.path.isdir(path):
         raise Exception("Attempting to set invalid path for datasets. "
                         "Directory", path, "does not exist!")
-    print "Loading datasets from", path
+    print("Loading datasets from", path)
 
     global dataset_dir
     dataset_dir = path
@@ -139,8 +144,9 @@ def band_mask_hash_dir(catalogue):
 
 
 def band_mask_cache_name(season_dict, catalogue):
-    n_chunks = (len(catalogue) + band_mask_chunk_size - 1)/band_mask_chunk_size
-    print "Breaking catalogue into", n_chunks, "chunks of", band_mask_chunk_size
+    n_chunks = int((len(catalogue) + band_mask_chunk_size - 1) \
+               / band_mask_chunk_size)
+    print("Breaking catalogue into", n_chunks, "chunks of", band_mask_chunk_size)
 
     cats = []
 
@@ -198,7 +204,7 @@ def fit_setup(llh_kwargs, sources, fit_energy, flare=False):
 
     # If weights are to be fitted, then each source has an independent
     # n_s in the same 0-1000 range.
-    if "Fit Weights?" in llh_kwargs.keys():
+    if "Fit Weights?" in list(llh_kwargs.keys()):
         if llh_kwargs["Fit Weights?"]:
             p0 = [1. for x in sources]
             bounds = [bounds[0] for x in sources]
@@ -237,7 +243,7 @@ def flux_to_k(flux):
     :param flux: Flux value
     :return: Flux scale (k)
     """
-    return flux / k_flux_factor
+    return old_div(flux, k_flux_factor)
 
 
 def scale_shortener(scale):

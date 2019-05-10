@@ -34,7 +34,7 @@ This will give you the very latest copy of the code, update the installed versio
 
 ### What actually are the dependencies, by the way?
 
-Flarestack uses python 2.7, and requires the following packages:
+Flarestack uses python 3.6, and requires the following packages:
 
 * numpy
 * scipy
@@ -43,7 +43,7 @@ Flarestack uses python 2.7, and requires the following packages:
 * matplotlib
 * numexpr
 
-All required dependencies can be found using the IceCube py2-v3 environment. They can collectively be installed with ```pip install -r requirements.txt```, if you don't want to install flarestack via pip.
+All required dependencies can be found using the IceCube py3-v4 environment. They can collectively be installed with ```pip install -r requirements.txt```, if you don't want to install flarestack via pip.
  
 ### Right, anyway, I've now downloaded Flarestack. Can I use it right away?
  

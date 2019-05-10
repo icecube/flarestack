@@ -1,3 +1,4 @@
+from __future__ import print_function
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.shared import flux_to_k
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
@@ -36,19 +37,19 @@ class TestSpatialLikelihood(unittest.TestCase):
         pass
 
     def test_spatial(self):
-        print "\n"
-        print "\n"
-        print "Testing spatial LLH class"
-        print "\n"
-        print "\n"
+        print("\n")
+        print("\n")
+        print("Testing spatial LLH class")
+        print("\n")
+        print("\n")
 
         ub = create_unblinder(unblind_dict)
-        key = [x for x in ub.res_dict.iterkeys() if x != "TS"][0]
+        key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
         self.assertEqual(list(res["x"]), true_parameters)
 
-        print "Best fit values", list(res["x"])
-        print "Reference best fit", true_parameters
+        print("Best fit values", list(res["x"]))
+        print("Reference best fit", true_parameters)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import object
 import numpy as np
 import math
 import os
@@ -11,7 +14,7 @@ from flarestack.utils.dynamic_pull_correction import \
     create_pull_1d, create_pull_1d_e, create_pull_2d, create_pull_2d_e
 from flarestack.utils.dataset_loader import data_loader
 import json
-import cPickle as Pickle
+import pickle as Pickle
 from scipy.interpolate import interp1d, RectBivariateSpline
 from flarestack.utils.make_SoB_splines import gamma_support_points, \
     gamma_precision, _around
@@ -19,7 +22,7 @@ import numexpr
 import inspect
 
 
-class BaseFloorClass:
+class BaseFloorClass(object):
     subclasses = {}
 
     def __init__(self, floor_dict):
@@ -106,8 +109,8 @@ class StaticFloor(BaseStaticFloor):
         except KeyError:
             self.min_error = min_angular_err
 
-        print "Applying an angular error floor of", np.degrees(self.min_error),
-        print "degrees"
+        print("Applying an angular error floor of", np.degrees(self.min_error), end=' ')
+        print("degrees")
 
     def floor(self, data):
         return np.array([self.min_error for _ in data])
@@ -125,13 +128,13 @@ class BaseQuantileFloor(BaseFloorClass):
 
         BaseFloorClass.__init__(self, floor_dict)
 
-        print "Applying an angular error floor using quantile",
-        print self.floor_quantile
+        print("Applying an angular error floor using quantile", end=' ')
+        print(self.floor_quantile)
 
         if not os.path.isfile(self.pickle_name):
             self.create_pickle()
         else:
-            print "Loading from", self.pickle_name
+            print("Loading from", self.pickle_name)
 
         with open(self.pickle_name, "r") as f:
             pickled_data = Pickle.load(f)
@@ -193,7 +196,7 @@ class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
             [np.exp(func(x["logE"], params[0])[0]) for x in data]).T
 
 
-class BasePullCorrector:
+class BasePullCorrector(object):
     subclasses = {}
 
     def __init__(self, pull_dict):
@@ -267,7 +270,7 @@ class BasePullCorrector:
         :param spatial_cache: Median Pull cache
         :return: Estimated value for S(gamma)
         """
-        if gamma in spatial_cache.keys():
+        if gamma in list(spatial_cache.keys()):
             val = np.exp(spatial_cache[gamma])
             # val = spatial_cache[gamma]
         else:
@@ -308,7 +311,7 @@ class BaseMedianPullCorrector(BasePullCorrector):
         if not os.path.isfile(self.pull_name):
             self.create_pickle()
         else:
-            print "Loading from", self.pull_name
+            print("Loading from", self.pull_name)
 
         with open(self.pull_name, "r") as f:
             self.pickled_data = Pickle.load(f)
@@ -370,7 +373,7 @@ class DynamicMedianPullCorrector(BaseMedianPullCorrector):
 
         spatial_cache = dict()
 
-        for key in sorted(self.pickled_data.iterkeys()):
+        for key in sorted(self.pickled_data.keys()):
 
             cut_data = self.pull_correct_dynamic(cut_data, key)
 
@@ -452,7 +455,7 @@ if __name__ == "__main__":
         weighted_quantile
     from scipy.stats import norm
 
-    print norm.cdf(1.0)
+    print(norm.cdf(1.0))
 
     def symmetric_gauss(sigma):
         return (1 - 2 * norm.sf(sigma))
@@ -461,9 +464,9 @@ if __name__ == "__main__":
         # return symmetric_gauss(sigma) ** 2
         return symmetric_gauss(sigma)
 
-    print symmetric_gauss(1.0)
-    print gauss_2d(1.0)
-    print gauss_2d(1.177)
+    print(symmetric_gauss(1.0))
+    print(gauss_2d(1.0))
+    print(gauss_2d(1.177))
 
     e_pdf_dict = {
         "Name": "Power Law",
@@ -476,7 +479,7 @@ if __name__ == "__main__":
                                   "median_2d")
     mc, x, y = get_data(IC86_1_dict)[:10]
 
-    pulls = x/y
+    pulls = x / y
 
     weights = e_pdf.weight_mc(mc)
 
@@ -485,21 +488,21 @@ if __name__ == "__main__":
 
     def med_pull(data):
         y = np.degrees(data["sigma"])
-        pulls = x/y
+        pulls = x / y
         med = weighted_quantile(pulls, 0.5, weights)
         return med
 
-    print mc["sigma"][:5]
+    print(mc["sigma"][:5])
 
     mc = pc.pull_correct_static(mc)
 
-    print mc["sigma"][:5]
+    print(mc["sigma"][:5])
 
 
-    print med_pull(mc)
+    print(med_pull(mc))
 
 
-    print median_pull
+    print(median_pull)
 
 # @BasePullCorrector.register_subclass('static_pull_corrector')
 # class Static1DPullCorrector(BasePullCorrector):

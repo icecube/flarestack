@@ -1,3 +1,5 @@
+from __future__ import division
+from builtins import zip
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -24,7 +26,7 @@ y = np.concatenate((sig_y, bkg_y))
 s = (0.5 / np.pi) * np.exp(-(x**2 + y**2))
 bkg = 1. / (2 * w) ** 2
 
-z = s/bkg
+z = old_div(s,bkg)
 
 cmap = cm.get_cmap('jet')
 
@@ -48,7 +50,7 @@ def ic_power_law(f, gamma):
     p = 1 - gamma
 
     if p == -2.:
-        e = min_e * (max_e/min_e)**f
+        e = min_e * (old_div(max_e,min_e))**f
     else:
         e = (f * (max_e ** p - min_e ** p) + min_e**p) ** (1./p)
 
@@ -59,8 +61,8 @@ b_g = 3.7
 
 def energy_ratio(e):
 
-    k = (max_e ** (s_g - 1) - min_e ** (s_g - 1))/ \
-        (max_e ** (b_g - 1) - min_e ** (b_g - 1))
+    k = old_div((max_e ** (s_g - 1) - min_e ** (s_g - 1)), \
+        (max_e ** (b_g - 1) - min_e ** (b_g - 1)))
 
     ratio = e ** (b_g - s_g)
 
@@ -111,7 +113,7 @@ w_s = np.random.uniform(1.1, 3.5, n_sig)
 w_b = np.random.uniform(0.2, 0.9, n_bkg)
 
 all_sob = np.concatenate((w_s, w_b), axis=0)
-col = cmap(all_sob/max(all_sob))
+col = cmap(old_div(all_sob,max(all_sob)))
 
 time_path = illustration_dir + "time.pdf"
 

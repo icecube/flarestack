@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from builtins import object
 import os
 import numpy as np
 import healpy as hp
@@ -23,7 +27,7 @@ def read_injector_dict(inj_dict):
 
     for (old_key, new_key) in maps:
 
-        if old_key in inj_dict.keys():
+        if old_key in list(inj_dict.keys()):
             inj_dict[new_key] = inj_dict[old_key]
 
     pairs = [
@@ -32,13 +36,13 @@ def read_injector_dict(inj_dict):
     ]
 
     for (key, f) in pairs:
-        if key in inj_dict.keys():
+        if key in list(inj_dict.keys()):
             inj_dict[key] = f(inj_dict[key])
 
     return inj_dict
 
 
-class Injector:
+class Injector(object):
     """Core Injector Class, returns a dataset on which calculations can be
     performed.
     """
@@ -48,7 +52,7 @@ class Injector:
         kwargs = read_injector_dict(kwargs)
         self.inj_kwargs = kwargs
 
-        print "Initialising Injector for", season["Name"]
+        print("Initialising Injector for", season["Name"])
         self.injection_band_mask = dict()
         self.season = season
 
@@ -59,7 +63,8 @@ class Injector:
         self.sources = sources
 
         if len(sources) > 0:
-            self.dist_scale = np.sum(self.sources["distance_mpc"]**-2)
+            self.weight_scale = np.sum(
+                self.sources["base_weight"] * self.sources["distance_mpc"]**-2)
 
         try:
             self.time_pdf = TimePDF.create(kwargs["injection_time_pdf"],
@@ -67,10 +72,10 @@ class Injector:
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
             self.mc_weights = self.energy_pdf.weight_mc(self._mc)
         except KeyError:
-            print "No Injection Arguments. Are you unblinding?"
+            print("No Injection Arguments. Are you unblinding?")
             pass
 
-        if "poisson_smear_bool" in kwargs.keys():
+        if "poisson_smear_bool" in list(kwargs.keys()):
             self.poisson_smear = kwargs["poisson_smear_bool"]
         else:
             self.poisson_smear = True
@@ -92,7 +97,8 @@ class Injector:
         :param sources: Sources to be added
         """
         self.sources = sources
-        self.dist_scale = np.sum(self.sources["distance_mpc"] ** -2)
+        self.weight_scale = np.sum(
+                self.sources["base_weight"] * self.sources["distance_mpc"]**-2)
         self.ref_fluxes = {
             scale_shortener(0.0): dict()
         }
@@ -137,7 +143,7 @@ class Injector:
 
         # Checks if the mask has already been evaluated for the source
         # If not, creates the mask for this source, and saves it
-        if source["source_name"] in self.injection_band_mask.keys():
+        if source["source_name"] in list(self.injection_band_mask.keys()):
             band_mask = self.injection_band_mask[source["source_name"]]
         else:
             band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
@@ -168,11 +174,9 @@ class Injector:
         # Fraction of total flux allocated to given source, assuming
         # standard candles with flux proportional to 1/d^2
 
-        dist_weight = (source["distance_mpc"] ** -2) / self.dist_scale
+        weight = source["distance_mpc"] ** -2 * source["base_weight"] /\
+                 self.weight_scale
 
-        # Weight coming from relative strength of sources.
-
-        base_weight = source["base_weight"]
 
         # Calculate the fluence, using the effective injection time.
         fluence = inj_flux * eff_inj_time * dist_weight * base_weight
@@ -182,7 +186,7 @@ class Injector:
         # Multiplies by the fluence, to enable calculations of n_inj,
         # the expected number of injected events
 
-        source_mc["ow"] = fluence * (self.mc_weights[band_mask] / omega)
+        source_mc["ow"] = fluence * self.mc_weights[band_mask] / omega
 
         return source_mc
 
@@ -201,7 +205,7 @@ class Injector:
 
         scale_key = scale_shortener(scale)
 
-        if scale_key not in self.ref_fluxes.keys():
+        if scale_key not in list(self.ref_fluxes.keys()):
             self.ref_fluxes[scale_key] = dict()
 
         # Loop over each source to be simulated
@@ -219,7 +223,7 @@ class Injector:
 
             n_tot_exp += n_inj
 
-            if source["source_name"] not in self.ref_fluxes[scale_key].keys():
+            if source["source_name"] not in list(self.ref_fluxes[scale_key].keys()):
                 self.ref_fluxes[scale_key][source["source_name"]] = n_inj
 
             # Simulates poisson noise around the expectation value n_inj.
@@ -259,7 +263,7 @@ class Injector:
             sig_events = np.concatenate(
                 (sig_events, sim_ev[list(self._raw_data.dtype.names)]))
 
-        print "Injected", n_tot_exp, "events"
+        print("Injected", n_tot_exp, "events")
 
         return sig_events
 
@@ -376,7 +380,7 @@ class LowMemoryInjector(Injector):
                 > 0.:
             self.make_injection_band_mask()
         else:
-            print "Loading injection band mask from", self.injection_band_paths
+            print("Loading injection band mask from", self.injection_band_paths)
 
     def make_injection_band_mask(self):
 
@@ -402,7 +406,7 @@ class LowMemoryInjector(Injector):
 
             del injection_band_mask
 
-            print "Saving to", path
+            print("Saving to", path)
 
     @staticmethod              
     def get_dec_and_omega( source):
@@ -447,7 +451,7 @@ class LowMemoryInjector(Injector):
 
         scale_key = scale_shortener(scale)
 
-        if scale_key not in self.ref_fluxes.keys():
+        if scale_key not in list(self.ref_fluxes.keys()):
             self.ref_fluxes[scale_key] = dict()
 
         for j, path in enumerate(self.injection_band_paths):
@@ -490,7 +494,7 @@ class LowMemoryInjector(Injector):
                 # Multiplies by the fluence, to enable calculations of n_inj,
                 # the expected number of injected events
 
-                source_mc["ow"] = fluence * (self.mc_weights[band_mask] / omega)
+                source_mc["ow"] = fluence * self.mc_weights[band_mask] / omega
 
                 if np.isnan(self.fixed_n):
 
@@ -498,7 +502,7 @@ class LowMemoryInjector(Injector):
 
                     n_tot_exp += n_inj
 
-                    if source["source_name"] not in self.ref_fluxes[scale_key].keys():
+                    if source["source_name"] not in list(self.ref_fluxes[scale_key].keys()):
                         self.ref_fluxes[scale_key][
                             source["source_name"]] = n_inj
 
@@ -512,7 +516,7 @@ class LowMemoryInjector(Injector):
                 else:
                     n_s = int(self.fixed_n)
 
-                    if source["source_name"] not in self.ref_fluxes[scale_key].keys():
+                    if source["source_name"] not in list(self.ref_fluxes[scale_key].keys()):
                         self.ref_fluxes[scale_key][source["source_name"]] = n_s
 
                 #  If n_s = 0, skips simulation step.
@@ -587,7 +591,7 @@ class SparseMatrixInjector(Injector):
 
         # Checks if the mask has already been evaluated for the source
         # If not, creates the mask for this source, and saves it
-        if source["source_name"] in self.injection_band_mask.keys():
+        if source["source_name"] in list(self.injection_band_mask.keys()):
             # convert sparse matrix back to nparray
             band_mask = self.injection_band_mask[source["source_name"]]
         else:

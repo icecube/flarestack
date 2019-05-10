@@ -1,6 +1,7 @@
+from __future__ import print_function
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
@@ -102,8 +103,7 @@ mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],
 # sensitivity. This is the flux that needs to arrive at Earth, in order for
 # IceCube to see an overfluctuation 90% of the time. Prints this information.
 
-rh = ResultsHandler(mh_dict["name"], mh_dict["llh kwargs"],
-                    mh_dict["catalogue"])
+rh = ResultsHandler(mh_dict)
 sens = rh.sensitivity
 
 # Converts the flux at Earth to a required luminosity from the source,
@@ -115,19 +115,19 @@ astro_sens, astro_disc = rh.astro_values(
 # Print output
 
 # Load the source
-print "\n \n \n"
-print "The source to be analysed is:"
-print txs_catalogue["Name"][0]
+print("\n \n \n")
+print("The source to be analysed is:")
+print(txs_catalogue["Name"][0])
 
 for field in txs_catalogue.dtype.names:
-    print field, ": \t", txs_catalogue[field][0]
-print "\n"
+    print(field, ": \t", txs_catalogue[field][0])
+print("\n")
 
-print "FINAL RESULT", "\n"
+print("FINAL RESULT", "\n")
 
-print "Sensitivity is", sens, "GeV/cm^2"
+print("Sensitivity is", sens, "GeV/cm^2")
 
-print "This requires a neutrino luminosity of",
-print astro_sens["Mean Luminosity (erg/s)"], "erg/s"
+print("This requires a neutrino luminosity of", end=' ')
+print(astro_sens["Mean Luminosity (erg/s)"], "erg/s")
 
-print "\n \n \n"
+print("\n \n \n")

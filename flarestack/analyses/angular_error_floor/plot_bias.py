@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import input
+from builtins import str
+from builtins import range
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,7 +78,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.title("Fraction of MC events with underestimated angular errors")
     path = basedir + "underfluctuations_index.pdf"
-    print "Saving to", path
+    print("Saving to", path)
     plt.savefig(path)
     plt.close()
 
@@ -82,7 +87,7 @@ if __name__ == "__main__":
     for season in data_samples:
 
         mc, x, y = get_data(season)
-        pulls = x/y
+        pulls = x / y
 
         # mask = x > y
         gammas = np.linspace(1.0, 4.0, 16 + 1)
@@ -102,7 +107,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.title("Median Pulls")
     path = basedir + "pulls_index.pdf"
-    print "Saving to", path
+    print("Saving to", path)
     plt.savefig(path)
     plt.close()
 
@@ -144,7 +149,7 @@ if __name__ == "__main__":
     plt.title("Fraction of MC events with underestimated angular errors")
     ax.set_ylim(bottom=0.4)
     path = basedir + "underfluctuations_loge_true.pdf"
-    print "Saving to", path
+    print("Saving to", path)
     plt.savefig(path)
     plt.close()
 
@@ -158,7 +163,7 @@ if __name__ == "__main__":
         gamma = 2.0
 
         mc, x, y = get_data(season)
-        pulls = x/y
+        pulls = x / y
         weights = mc["ow"] * mc["trueE"] ** -gamma
 
         med_pulls = []
@@ -185,7 +190,7 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.tick_params(axis='both', which='major', labelsize=10)
     path = basedir + "pulls_loge_true.pdf"
-    print "Saving to", path
+    print("Saving to", path)
     plt.savefig(path)
     plt.close()
 
@@ -214,7 +219,7 @@ if __name__ == "__main__":
                 over_mask = x[mask] > y[mask]
 
                 weights = cut_mc["ow"] * cut_mc["trueE"] ** -gamma
-                frac = np.sum(weights[over_mask]) / np.sum(weights)
+                frac = np.sum(weights[over_mask])/ np.sum(weights)
                 underestimates += [frac for _ in range(2)]
                 log_es += [lower, upper]
 
@@ -236,7 +241,7 @@ if __name__ == "__main__":
             sin_dec_bins = season["sinDec bins"]
 
             mc, x, y = get_data(season)
-            pulls = x/y
+            pulls = x, y
 
             med_pulls = []
             log_es = []
@@ -289,7 +294,7 @@ if __name__ == "__main__":
 
                 over_mask = x[mask] > y[mask]
 
-                frac = np.sum(weights[mask][over_mask]) / np.sum(weights[mask])
+                frac = np.sum(weights[mask][over_mask])/ np.sum(weights[mask])
                 underestimates += [frac for _ in range(2)]
                 log_es += [lower, upper]
 
@@ -312,7 +317,7 @@ if __name__ == "__main__":
         for season in data_samples:
 
             mc, x, y = get_data(season)
-            pulls = x/y
+            pulls = x / y
             weights = mc["ow"] * mc["trueE"] ** -gamma
 
             underestimates = []
@@ -340,7 +345,7 @@ if __name__ == "__main__":
         plt.savefig(basedir + "pulls_loge_" + str(gamma) + ".pdf")
         plt.close()
 
-    raw_input("prompt")
+    input("prompt")
 
         # print
 
@@ -367,12 +372,12 @@ if __name__ == "__main__":
 
         weights = mc["ow"] * mc["trueE"] ** -3.0
 
-        print "True", max(x), min(x), "Reco", max(y), min(y)
+        print("True", max(x), min(x), "Reco", max(y), min(y))
 
-        print "frac over",
+        print("frac over", end=' ')
 
         mask = x > y
-        print np.sum(weights[mask])/np.sum(weights)
+        print(np.sum(weights[mask]) / np.sum(weights))
 
         max_err = 1.0
         bins = np.linspace(0.0, max_err, 11)

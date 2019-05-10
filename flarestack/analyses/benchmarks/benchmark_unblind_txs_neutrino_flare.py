@@ -1,9 +1,9 @@
 """Script to replicate unblinding of the neutrino flare found for the source
-TXS 0506+56, as described in https://arxiv.org/abs/1807.08794.
+TXS 0506+056, as described in https://arxiv.org/abs/1807.08794.
 """
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.unblinding import create_unblinder
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_234_dict
@@ -12,22 +12,29 @@ from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
 from flarestack.analyses.txs_0506_056.make_txs_catalogue import txs_cat_path,\
     txs_catalogue
 from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.analyses.txs_0506_056.load_gao_spectral_models import \
+    spline_name
 
 # Initialise Injectors/LLHs
 
 # Shared
 
-llh_energy = {
-    "Name": "Power Law",
-}
-
 llh_time = {
     "Name": "FixedEndBox"
 }
 
+# llh_energy = {
+#     "Name": "Power Law",
+#     "Gamma": 2.18
+# }
+
+llh_energy = {
+        "Name": "Spline",
+        "Spline Path": spline_name(0)
+}
 
 unblind_llh = {
-    "name": "standard",
+    "name": "fixed_energy",
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
 }

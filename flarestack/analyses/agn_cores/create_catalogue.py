@@ -7,8 +7,13 @@ contained 70% of the signal weight. Another larger sample contained the
 remaining 30% weight distributed across many sources. As integer numbers of
 sources are used, the closest percentage to 70% is used for splitting.
 """
-from flarestack.analyses.agn_cores.shared_agncores import raw_cat_dir, agn_catalogue_name, agn_cores_output_dir
-from shared_agncores import create_random_src, plot_catalogue
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import zip
+from flarestack.analyses.agn_cores.shared_agncores import raw_cat_dir,\
+    agn_catalogue_name, agn_cores_output_dir
+from flarestack.analyses.agn_cores.shared_agncores import create_random_src, \
+    plot_catalogue
 from flarestack.utils.prepare_catalogue import cat_dtype
 import astropy.io.fits as pyfits
 from astropy.table import Table
@@ -26,7 +31,7 @@ def select_nrandom_sources(cat, n_random=100):
     df = cat.to_pandas()
     df_random = df.sample(n=n_random)
     cat_new = Table.from_pandas(df_random)
-    print cat_new
+    print(cat_new)
     return cat_new
 
 
@@ -87,7 +92,7 @@ new_cat["Name"] = src_name
 # save_path = agn_catalogue_name("random", "NorthSky_100brightest_srcs_dec0_weight1")
 save_path = agn_catalogue_name("random", "NorthSky_2close_srcs")
 
-print "Saving to", save_path
+print("Saving to", save_path)
 np.save(save_path, new_cat)
 #
 #

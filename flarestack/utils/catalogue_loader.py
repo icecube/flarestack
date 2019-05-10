@@ -1,5 +1,13 @@
+from __future__ import division
 import numpy as np
 from numpy.lib.recfunctions import append_fields, rename_fields
+
+
+def calculate_source_weight(sources):
+    """Calculate the sum of the weight for a given sources. If normalised by
+    the weight assigned to all sources, this gives the fraction of the
+    diffuse flux that is produced by one source."""
+    return np.sum(sources["base_weight"] * sources["distance_mpc"] ** -2)
 
 
 def load_catalogue(path):
@@ -53,8 +61,8 @@ def load_catalogue(path):
         raise Exception("Some sources in catalogue do not have unique "
                         "names. Please assign unique names to each source.")
 
-    # Normalise 'base_weight'
-    sources["base_weight"] / np.sum(sources["base_weight"])
+    # Rescale 'base_weight'
+    # sources["base_weight"] /= np.mean(sources["base_weight"])
 
     # Order sources
     sources = np.sort(sources, order="distance_mpc")

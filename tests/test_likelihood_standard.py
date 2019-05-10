@@ -1,6 +1,7 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+from __future__ import print_function
 import unittest
 import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
@@ -31,9 +32,9 @@ sindecs = np.linspace(0.5, -0.5, 3)
 # compared to these values.
 
 true_parameters = [
-    [2.7737611449101554, 4.0],
-    [0.0, 2.9850865457146476],
-    [2.5002777434622914, 2.7982700386928294]
+    [0.0, 2.00000008881752],
+    [0.0, 2.000000222043802],
+    [0.0, 2.0000000888175187]
 ]
 
 
@@ -44,15 +45,15 @@ class TestTimeIntegrated(unittest.TestCase):
 
     def test_declination_sensitivity(self):
 
-        print "\n"
-        print "\n"
-        print "Testing standard LLH class"
-        print "\n"
-        print "\n"
+        print("\n")
+        print("\n")
+        print("Testing standard LLH class")
+        print("\n")
+        print("\n")
 
         # Test three declinations
 
-        for i, sindec in enumerate(sindecs):
+        for j, sindec in enumerate(sindecs):
             subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
 
             unblind_dict = {
@@ -65,12 +66,12 @@ class TestTimeIntegrated(unittest.TestCase):
             }
 
             ub = create_unblinder(unblind_dict)
-            key = [x for x in ub.res_dict.iterkeys() if x != "TS"][0]
+            key = [x for x in ub.res_dict.keys() if x != "TS"][0]
             res = ub.res_dict[key]
-            self.assertEqual(list(res["x"]), true_parameters[i])
+            self.assertEqual(list(res["x"]), true_parameters[j])
 
-            print "Best fit values", list(res["x"])
-            print "Reference best fit", true_parameters[i]
+            print("Best fit values", list(res["x"]))
+            print("Reference best fit", true_parameters[j])
 
 
 if __name__ == '__main__':

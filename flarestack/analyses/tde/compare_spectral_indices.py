@@ -3,6 +3,7 @@ injected spectral index. Rather than the traditional flux at 1 GeV,
 Sensitivities are given as the total integrated fluence across all sources,
 and as the corresponding standard-candle-luminosity.
 """
+from builtins import str
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
@@ -14,6 +15,7 @@ from flarestack.cluster import run_desy_cluster as rd
 import math
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.catalogue_loader import load_catalogue
 
 analyses = dict()
 
@@ -51,8 +53,8 @@ fixed_weights_negative = {
     "Fit Weights?": False
 }
 
-gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
-# gammas = [1.8, 2.0]
+# gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
+gammas = [1.8, 2.0]
 
 
 power_law_start_energy = [100, 10000, 100000]
@@ -73,11 +75,11 @@ for e_min in power_law_start_energy:
         name = raw + cat + "/"
 
         cat_path = tde_catalogue_name(cat)
-        catalogue = np.load(cat_path)
+        catalogue = load_catalogue(cat_path)
 
         src_res = dict()
 
-        closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
+        closest_src = np.sort(catalogue, order="distance_mpc")[0]
 
         for i, llh_kwargs in enumerate([fixed_weights_negative,
                                         fixed_weights,
@@ -114,11 +116,12 @@ for e_min in power_law_start_energy:
                 }
 
                 scale = flux_to_k(reference_sensitivity(
-                    np.sin(closest_src["dec"]), gamma=gamma
+                    np.sin(closest_src["dec_rad"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * (e_min/100.)**0.2
 
                 mh_dict = {
                     "name": full_name,
+                    "mh_name": "standard",
                     "datasets": custom_dataset(txs_sample_v1, catalogue,
                                                llh_kwargs["LLH Time PDF"]),
                     "catalogue": cat_path,
@@ -150,11 +153,11 @@ for e_min in power_law_start_energy:
 
 # rd.wait_for_cluster()
 
-for (e_min, cat_res) in cutoff_dict.iteritems():
+for (e_min, cat_res) in cutoff_dict.items():
 
     raw = "analyses/tde/compare_spectral_indices/" + "Emin=" + str(e_min) + "/"
 
-    for b, (cat_name, src_res) in enumerate(cat_res.iteritems()):
+    for b, (cat_name, src_res) in enumerate(cat_res.items()):
 
         name = raw + cat_name + "/"
 
@@ -166,17 +169,13 @@ for (e_min, cat_res) in cutoff_dict.iteritems():
 
         labels = []
 
-        for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
+        for i, (f_type, res) in enumerate(sorted(src_res.items())):
 
             if f_type != "Fixed Weights (n_s > 0)":
 
-                for (gamma, rh_dict) in sorted(res.iteritems()):
+                for (gamma, rh_dict) in sorted(res.items()):
                     try:
-                        rh = ResultsHandler(rh_dict["name"],
-                                            rh_dict["llh kwargs"],
-                                            rh_dict["catalogue"],
-                                            show_inj=True
-                                            )
+                        rh = ResultsHandler(rh_dict)
 
                         inj_time = injection_length * 60 * 60 * 24
 

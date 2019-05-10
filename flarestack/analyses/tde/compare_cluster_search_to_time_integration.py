@@ -2,6 +2,8 @@
 with negative n_s, and also to the flare search method, which looks for
 temporal clustering. The script runs for all individual TDEs to be analysed.
 """
+from __future__ import division
+from builtins import str
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
@@ -165,7 +167,7 @@ for j, cat in enumerate(individual_tdes):
 
 rd.wait_for_cluster()
 
-for (cat, src_res) in cat_res.iteritems():
+for (cat, src_res) in cat_res.items():
 
     name = name_root + cat.replace(" ", "") + "/"
 
@@ -179,16 +181,15 @@ for (cat, src_res) in cat_res.iteritems():
 
     # Loop over likelihood methods
 
-    for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
+    for i, (f_type, res) in enumerate(sorted(src_res.items())):
 
         if f_type != "Time-Integrated (n_s > 0)":
 
-            for (length, rh_dict) in sorted(res.iteritems()):
+            for (length, rh_dict) in sorted(res.items()):
 
                 # Calculate the sensitivity based on TS distributions
 
-                rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                    rh_dict["catalogue"], show_inj=True)
+                rh = ResultsHandler(rh_dict)
 
                 # Length of injection in seconds
 

@@ -1,7 +1,10 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
 import numpy as np
 import os
 import scipy.interpolate
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.shared import gamma_precision, SoB_spline_path, \
     bkg_spline_path, dataset_plot_dir
 from flarestack.core.energy_PDFs import PowerLaw
@@ -146,7 +149,7 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, weight_function):
 
         mask = (bkg_row > 0.) & (sig_row > 0.)
         r = np.ones_like(bkg_row)
-        r[mask] = sig_row[mask] / bkg_row[mask] * np.sum(bkg_row)
+        r[mask] = sig_row[mask] / (bkg_row[mask] * np.sum(bkg_row))
 
         ratio.T[i] = r
 
@@ -262,10 +265,10 @@ def create_bkg_spatial_spline(exp, sin_dec_bins):
 
 def make_spline(seasons):
 
-    print "Splines will be made to calculate the Signal/Background ratio of " \
+    print("Splines will be made to calculate the Signal/Background ratio of " \
           "the MC to data. The MC will be weighted with a power law, for each" \
-          " gamma in:"
-    print list(gamma_support_points)
+          " gamma in:")
+    print(list(gamma_support_points))
 
     for season in seasons:
         SoB_path = SoB_spline_path(season)
@@ -275,7 +278,7 @@ def make_spline(seasons):
 
 def make_individual_spline_set(season, SoB_path):
     try:
-        print "Making splines for", season["Name"]
+        print("Making splines for", season["Name"])
         # path = SoB_spline_path(season)
 
         exp = data_loader(season["exp_path"])
@@ -285,7 +288,7 @@ def make_individual_spline_set(season, SoB_path):
 
         splines = create_2d_splines(exp, mc, sin_dec_bins)
 
-        print "Saving to", SoB_path
+        print("Saving to", SoB_path)
 
         try:
             os.makedirs(os.path.dirname(SoB_path))
@@ -384,7 +387,7 @@ def make_background_spline(season):
 
     bkg_spline = create_bkg_spatial_spline(exp, sin_dec_bins)
 
-    print "Saving to", bkg_path
+    print("Saving to", bkg_path)
 
     try:
         os.makedirs(os.path.dirname(bkg_path))
@@ -398,9 +401,9 @@ def make_background_spline(season):
 def load_spline(season):
     path = SoB_spline_path(season)
 
-    print "Loading from", path
+    print("Loading from", path)
 
-    with open(path) as f:
+    with open(path, "rb") as f:
         res = Pickle.load(f)
 
     return res
@@ -409,9 +412,9 @@ def load_spline(season):
 def load_bkg_spatial_spline(season):
     path = bkg_spline_path(season)
 
-    print "Loading from", path
+    print("Loading from", path)
 
-    with open(path) as f:
+    with open(path, "rb") as f:
         res = Pickle.load(f)
 
     return res

@@ -1,6 +1,7 @@
+from __future__ import division
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
@@ -92,8 +93,7 @@ sens = []
 disc_pots = []
 
 for i, rh_dict in enumerate(analyses):
-    rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                        rh_dict["catalogue"])
+    rh = ResultsHandler(rh_dict)
     sens.append(rh.sensitivity)
     disc_pots.append(rh.disc_potential)
 

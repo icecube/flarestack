@@ -1,6 +1,6 @@
 from flarestack.shared import catalogue_dir, limits_dir
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import numpy as np

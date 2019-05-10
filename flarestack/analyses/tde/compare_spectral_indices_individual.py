@@ -1,6 +1,8 @@
+from __future__ import print_function
+from builtins import str
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
@@ -168,7 +170,7 @@ for j, cat in enumerate(cats):
 
             inj["Injection Energy PDF"]["Gamma"] = gamma
 
-            if "E Min" in inj["Injection Energy PDF"].keys():
+            if "E Min" in list(inj["Injection Energy PDF"].keys()):
                 scale *= 10
 
             mh_dict = {
@@ -210,7 +212,7 @@ for j, cat in enumerate(cats):
 
 rd.wait_for_cluster()
 
-for (cat, src_res) in cat_res.iteritems():
+for (cat, src_res) in cat_res.items():
 
     name = name_root + cat.replace(" ", "") + "/"
 
@@ -222,12 +224,11 @@ for (cat, src_res) in cat_res.iteritems():
 
     labels = []
 
-    for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
+    for i, (f_type, res) in enumerate(sorted(src_res.items())):
 
-        for (gamma, rh_dict) in sorted(res.iteritems()):
+        for (gamma, rh_dict) in sorted(res.items()):
             try:
-                rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                    rh_dict["catalogue"])
+                rh = ResultsHandler(rh_dict)
 
                 inj = rh_dict["inj kwargs"]["Injection Time PDF"]
 
@@ -271,7 +272,7 @@ for (cat, src_res) in cat_res.iteritems():
         cols = ["r", "g", "b", "orange"]
         linestyle = ["-", "--"][j]
 
-        print fracs, fluence, labels, cols, energy
+        print(fracs, fluence, labels, cols, energy)
 
         for l, f in enumerate(fracs):
 

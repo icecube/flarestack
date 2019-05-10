@@ -1,3 +1,4 @@
+from builtins import str
 import unittest
 import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict

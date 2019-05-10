@@ -1,6 +1,7 @@
 """Test the flare search method using one fixed-seed background trial. The
 process is deterministic, so the same flare should be found each time.
 """
+from __future__ import print_function
 import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC79_dict, IC86_1_dict
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
@@ -67,17 +68,17 @@ class TestFlareSearch(unittest.TestCase):
         pass
 
     def test_flare(self):
-        print "\n"
-        print "\n"
-        print "Testing flare LLH class"
-        print "\n"
-        print "\n"
+        print("\n")
+        print("\n")
+        print("Testing flare LLH class")
+        print("\n")
+        print("\n")
         ub = create_unblinder(unblind_dict)
-        res = [x for x in ub.res_dict["Parameters"].itervalues()]
+        res = [x for x in ub.res_dict["Parameters"].values()]
         self.assertEqual(res, true_parameters)
 
-        print "Best fit values", list(res)
-        print "Reference best fit", true_parameters
+        print("Best fit values", list(res))
+        print("Reference best fit", true_parameters)
 
 
 if __name__ == '__main__':

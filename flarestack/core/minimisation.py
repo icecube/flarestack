@@ -1,10 +1,16 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import numpy as np
 import resource
 import random
 from sys import stdout
 import os, os.path
 import argparse
-import cPickle as Pickle
+import pickle as Pickle
 import scipy.optimize
 from scipy.stats import poisson, norm, chi2
 from flarestack.core.injector import Injector, LowMemoryInjector, \
@@ -41,14 +47,13 @@ def read_mh_dict(mh_dict):
 
     maps = [
         ("inj kwargs", "inj_dict"),
-        ("LLH Energy PDF", "llh_energy_pdf"),
-        ("LLH Time PDF", "llh_time_pdf"),
     ]
 
     for (old_key, new_key) in maps:
 
-        if old_key in mh_dict.keys():
+        if old_key in list(mh_dict.keys()):
             mh_dict[new_key] = mh_dict[old_key]
+
 
     pairs = [
         ("inj_dict", read_injector_dict),
@@ -56,13 +61,13 @@ def read_mh_dict(mh_dict):
     ]
 
     for (key, f) in pairs:
-        if key in mh_dict.keys():
+        if key in list(mh_dict.keys()):
             mh_dict[key] = f(mh_dict[key])
 
     return mh_dict
 
 
-class MinimisationHandler:
+class MinimisationHandler(object):
     """Generic Class to handle both dataset creation and llh minimisation from
     experimental data and Monte Carlo simulation. Initialised with a set of
     IceCube datasets, a list of sources, and independent sets of arguments for
@@ -111,7 +116,7 @@ class MinimisationHandler:
                              "selected MinimisationHandler".format(
                               self.llh_dict["llh_name"]))
         else:
-            print "Using", self.llh_dict["llh_name"], "LLH class"
+            print("Using", self.llh_dict["llh_name"], "LLH class")
 
         # Checks if negative n_s is specified for use, and whether this is
         # compatible with the chosen MinimisationHandler
@@ -290,7 +295,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         file_name = write_dir + str(seed) + ".pkl"
 
-        print "Saving to", file_name
+        print("Saving to", file_name)
 
         with open(file_name, "wb") as f:
             Pickle.dump(results, f)
@@ -388,13 +393,13 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         ts_vals = []
         flags = []
 
-        print "Generating", n_trials, "trials!"
+        print("Generating", n_trials, "trials!")
 
         for i in range(int(n_trials)):
 
             res_dict = self.run_trial(scale)
 
-            for (key, val) in res_dict["Parameters"].iteritems():
+            for (key, val) in res_dict["Parameters"].items():
                 param_vals[key].append(val)
 
             ts_vals.append(res_dict["TS"])
@@ -402,31 +407,31 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        print ""
-        print 'Memory usage max: %s (Gb)' % mem_use
+        print("")
+        print('Memory usage max: %s (Gb)' % mem_use)
 
         n_inj = 0
-        for inj in self.injectors.itervalues():
-            for val in inj.ref_fluxes[scale_shortener(scale)].itervalues():
+        for inj in self.injectors.values():
+            for val in inj.ref_fluxes[scale_shortener(scale)].values():
                 n_inj += val
-        print ""
-        print "Injected with an expectation of", n_inj, "events."
+        print("")
+        print("Injected with an expectation of", n_inj, "events.")
 
-        print ""
-        print "FIT RESULTS:"
-        print ""
+        print("")
+        print("FIT RESULTS:")
+        print("")
 
-        for (key, param) in sorted(param_vals.iteritems()):
+        for (key, param) in sorted(param_vals.items()):
             if len(param) > 0:
-                print "Parameter", key, ":", np.mean(param), \
-                    np.median(param), np.std(param)
-        print "Test Statistic:", np.mean(ts_vals), np.median(ts_vals), np.std(
-            ts_vals)
-        print ""
+                print("Parameter", key, ":", np.mean(param), \
+                    np.median(param), np.std(param))
+        print("Test Statistic:", np.mean(ts_vals), np.median(ts_vals), np.std(
+            ts_vals))
+        print("")
 
-        print "FLAG STATISTICS:"
+        print("FLAG STATISTICS:")
         for i in sorted(np.unique(flags)):
-            print "Flag", i, ":", flags.count(i)
+            print("Flag", i, ":", flags.count(i))
 
         results = {
             "TS": ts_vals,
@@ -583,35 +588,35 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             plt.xlabel(self.param_names[i])
             plt.ylabel(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$")
 
-            print "PARAM:", self.param_names[i]
+            print("PARAM:", self.param_names[i])
             min_y = np.min(y)
-            print "Minimum value of", min_y,
+            print("Minimum value of", min_y, end=' ')
 
             min_index = y.index(min_y)
             min_n = n_range[min_index]
-            print "at", min_n
+            print("at", min_n)
 
-            print "One Sigma interval between",
+            print("One Sigma interval between", end=' ')
 
             l_y = np.array(y[:min_index])
             try:
                 l_y = min(l_y[l_y > (min_y + 0.5)])
                 l_lim = n_range[y.index(l_y)]
-                print l_lim,
+                print(l_lim, end=' ')
             except ValueError:
                 l_lim = min(n_range)
-                print "<"+str(l_lim),
+                print("<"+str(l_lim), end=' ')
 
-            print "and"
+            print("and")
 
             u_y = np.array(y[min_index:])
             try:
                 u_y = min(u_y[u_y > (min_y + 0.5)])
                 u_lim = n_range[y.index(u_y)]
-                print u_lim
+                print(u_lim)
             except ValueError:
                 u_lim = max(n_range)
-                print ">" + str(u_lim)
+                print(">" + str(u_lim))
 
             ax.axvspan(l_lim, u_lim, facecolor="grey",
                         alpha=0.2)
@@ -633,7 +638,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         plt.savefig(path)
         plt.close()
 
-        print "Saved to", path
+        print("Saved to", path)
 
         # Scan 2D likelihood
 
@@ -715,7 +720,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 plt.savefig(path)
                 plt.close()
 
-                print "Saved to", path
+                print("Saved to", path)
 
         return res_dict
 
@@ -826,7 +831,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         for source in self.sources:
             name = source["source_name"]
 
-            for inj in self.injectors.itervalues():
+            for inj in self.injectors.values():
                 try:
                     n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
 
@@ -943,7 +948,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             name = source["source_name"]
             key = self.source_param_name(source)
             n_inj = 0
-            for inj in self.injectors.itervalues():
+            for inj in self.injectors.values():
                 try:
                     n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
 
@@ -1046,7 +1051,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     # Creates empty dictionary to save info
 
                     name = source["source_name"]
-                    if name not in datasets.keys():
+                    if name not in list(datasets.keys()):
                         datasets[name] = dict()
 
                     new_entry = dict(season)
@@ -1069,7 +1074,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
         # Minimisation of each source
 
-        for (source, source_dict) in datasets.iteritems():
+        for (source, source_dict) in datasets.items():
 
             src = self.sources[self.sources["source_name"] == source][0]
             p0, bounds, names = self.source_fit_parameter_info(self.mh_dict,
@@ -1079,7 +1084,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
             all_times = []
             n_tot = 0
-            for season_dict in source_dict.itervalues():
+            for season_dict in source_dict.values():
                 new_times = season_dict["Significant Times"]
                 all_times.extend(new_times)
                 n_tot += len(season_dict["Coincident Data"])
@@ -1095,12 +1100,12 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
             search_window = np.sum([
                 llh.time_pdf.effective_injection_time(src)
-                for llh in self.llhs.itervalues()]
+                for llh in self.llhs.values()]
             )
 
             # If a maximum flare length is specified, sets that here
 
-            if "max_flare" in self.llh_dict["llh_time_pdf"].keys():
+            if "max_flare" in list(self.llh_dict["llh_time_pdf"].keys()):
                 # Maximum flare given in days, here converted to seconds
                 max_flare = self.llh_dict["llh_time_pdf"]["max_flare"] * (
                         60 * 60 * 24
@@ -1124,7 +1129,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # If there is are no pairs meeting this criteria, skip
 
             if len(pairs) == 0:
-                print "Continuing because no pairs"
+                print("Continuing because no pairs")
                 continue
 
             all_res = []
@@ -1150,7 +1155,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                 flare_length = np.sum([
                     time_pdf.effective_injection_time(flare_time)
-                    for time_pdf in livetime_calcs.itervalues()]
+                    for time_pdf in livetime_calcs.values()]
                 )
 
                 # If the flare is between the minimum and maximum length
@@ -1183,13 +1188,13 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 n_all = np.sum([np.sum(~np.logical_or(
                     np.less(data[time_key], t_start),
                     np.greater(data[time_key], t_end)))
-                                for data in full_data.itervalues()])
+                                for data in full_data.values()])
 
                 llhs = dict()
 
                 # Loop over data seasons
 
-                for (name, season_dict) in sorted(source_dict.iteritems()):
+                for (name, season_dict) in sorted(source_dict.items()):
 
                     llh = self.llhs[season_dict["Name"]]
 
@@ -1245,7 +1250,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     ts = 2 * np.log(overall_marginalisation)
 
-                    for llh_dict in llhs.itervalues():
+                    for llh_dict in llhs.values():
                         ts += llh_dict["f"](params)
 
                     return -ts
@@ -1276,7 +1281,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
             best_length = np.sum([
                 time_pdf.effective_injection_time(best_time)
-                for time_pdf in livetime_calcs.itervalues()]
+                for time_pdf in livetime_calcs.values()]
             ) / (60 * 60 * 24)
 
             best = [x for x in all_res[index][0]] + [
@@ -1531,16 +1536,16 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             res = results[j]
             tot = total[j]
 
-            print season["Name"],"Significant events", np.mean(res), \
-                np.median(res), np.std(res)
-            print season["Name"], "All events", np.mean(tot), np.median(tot), \
-                np.std(tot)
+            print(season["Name"],"Significant events", np.mean(res), \
+                np.median(res), np.std(res))
+            print(season["Name"], "All events", np.mean(tot), np.median(tot), \
+                np.std(tot))
 
             llh = self.llhs[season["Name"]]
 
             for source in self.sources:
 
-                print "Livetime", llh.time_pdf.effective_injection_time(source)
+                print("Livetime", llh.time_pdf.effective_injection_time(source))
 
     @staticmethod
     def source_param_name(param, source):
@@ -1601,7 +1606,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             name = source["source_name"]
             key = self.source_param_name("n_s", source)
             n_inj = 0
-            for inj in self.injectors.itervalues():
+            for inj in self.injectors.values():
                 try:
                     n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
 
@@ -1612,9 +1617,9 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             inj_params[key] = n_inj
 
             ts = min([inj.time_pdf.sig_t0(source)
-                      for inj in self.injectors.itervalues()])
+                      for inj in self.injectors.values()])
             te = max([inj.time_pdf.sig_t1(source)
-                      for inj in self.injectors.itervalues()])
+                      for inj in self.injectors.values()])
 
             inj_params[self.source_param_name("length", source)] = te - ts
 
@@ -1626,7 +1631,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 inj_params[[self.source_param_name("t_end", source)]] = te
 
             for (key, val) in LLH.get_injected_parameters(
-                    self.mh_dict).iteritems():
+                    self.mh_dict).items():
                 inj_params[self.source_param_name(key, source)] = val
 
         return inj_params
@@ -1646,9 +1651,9 @@ if __name__ == '__main__':
 
     mh = MinimisationHandler.create(mh_dict)
 
-    if "fixed_scale" in mh_dict.keys():
+    if "fixed_scale" in list(mh_dict.keys()):
         fixed_scale = mh_dict["fixed_scale"]
-        print "Only scanning at scale", fixed_scale
+        print("Only scanning at scale", fixed_scale)
         mh.run(n_trials=mh_dict["n_trials"], scale=fixed_scale)
     else:
         mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],

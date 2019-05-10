@@ -1,6 +1,9 @@
+from builtins import zip
+from builtins import str
+from builtins import range
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
@@ -38,7 +41,7 @@ sindecs = np.linspace(0.5, -0.5, 3)
 # sindecs = [-0.5]
 
 energies = np.logspace(2, 7, 11)
-bins = zip(energies[:-1], energies[1:])
+bins = list(zip(energies[:-1], energies[1:]))
 # print bins
 # raw_input("prompt")
 
@@ -115,17 +118,16 @@ rd.wait_for_cluster()
 
 plt.figure()
 
-for (sindec, source_res) in analyses.iteritems():
+for (sindec, source_res) in analyses.items():
 
     x = []
 
     sens = []
     disc_pots = []
 
-    for i, (e_min, rh_dict) in enumerate(source_res.iteritems()):
+    for i, (e_min, rh_dict) in enumerate(source_res.items()):
         try:
-            rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                rh_dict["catalogue"])
+            rh = ResultsHandler(rh_dict)
             sens += [rh.sensitivity for _ in range(2)]
             x += [z for z in bins[i]]
             disc_pots.append(rh.disc_potential)

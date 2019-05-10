@@ -1,6 +1,8 @@
+from __future__ import print_function
+from builtins import range
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 import random
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict,\
@@ -101,7 +103,7 @@ mh_dict_tm = {
 
 ts_path = plot_output_dir(base_dir) + "model_TS.pkl"
 
-print "TS path", ts_path
+print("TS path", ts_path)
 
 try:
     os.makedirs(os.path.dirname(ts_path))
@@ -111,11 +113,11 @@ except OSError:
 
 if os.path.isfile(ts_path):
     with open(ts_path, "r") as f:
-        print "Loading ts_array"
+        print("Loading ts_array")
         ts_array = Pickle.load(f)
 
 else:
-    print "Empty TS array"
+    print("Empty TS array")
     ts_array = []
 
 # Creates a Minimisation Handler using the dictionary, and runs the trials
@@ -133,7 +135,7 @@ for i in range(n_trials):
     mh_tm.set_random_seed(seed)
     res_tm = mh_tm.run_trial(scale=1.)
     ts = res_tm["TS"] - res_pl["TS"]
-    print i, seed, res_tm, res_pl, ts
+    print(i, seed, res_tm, res_pl, ts)
     ts_array.append(ts)
 
 
@@ -143,7 +145,7 @@ with open(ts_path, "wb") as f:
 weights = np.ones_like(ts_array)
 weights /= np.sum(weights)
 
-print len(ts_array), "trials"
+print(len(ts_array), "trials")
 
 savepath = plot_output_dir(base_dir) + "TS.pdf"
 plt.figure()
@@ -163,7 +165,7 @@ try:
 except OSError:
     pass
 
-print "Saving to", savepath
+print("Saving to", savepath)
 plt.savefig(savepath)
 plt.close()
 
@@ -171,14 +173,14 @@ ts_array = np.array(ts_array)
 
 n_over = np.sum([ts_array > result_ts])
 if n_over == 0:
-    print "No trials above tested value. More statistics needed. We will " \
-          "assume that 1 was found, to give a conservative limit."
+    print("No trials above tested value. More statistics needed. We will " \
+          "assume that 1 was found, to give a conservative limit.")
     n_over = 1.
 pvalue = n_over/float(len(ts_array))
 
-print "P-value:", pvalue
+print("P-value:", pvalue)
 
-print "Sigma:", norm.ppf(1-pvalue)
+print("Sigma:", norm.ppf(1-pvalue))
 
 
 

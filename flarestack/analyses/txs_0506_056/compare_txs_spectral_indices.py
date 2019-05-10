@@ -1,6 +1,7 @@
+from builtins import str
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
@@ -131,7 +132,7 @@ for e_min in power_law_start_energy:
 
 # rd.wait_for_cluster()
 
-for (e_min, src_res) in cutoff_dict.iteritems():
+for (e_min, src_res) in cutoff_dict.items():
 
     name = "analyses/txs_0506_056/compare_spectral_indices/Emin=" + \
           str(e_min) + "/"
@@ -144,15 +145,14 @@ for (e_min, src_res) in cutoff_dict.iteritems():
 
     labels = []
 
-    for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
+    for i, (f_type, res) in enumerate(sorted(src_res.items())):
 
         # if f_type == "Fit Weights":
         if True:
 
-            for (gamma, rh_dict) in sorted(res.iteritems()):
+            for (gamma, rh_dict) in sorted(res.items()):
                 try:
-                    rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                        rh_dict["catalogue"], show_inj=True)
+                    rh = ResultsHandler(rh_dict)
 
                     inj_time = injection_length * 60 * 60 * 24
 

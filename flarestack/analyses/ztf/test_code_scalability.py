@@ -1,7 +1,11 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
 import numpy as np
 import datetime
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
@@ -71,7 +75,7 @@ llh_kwargs = {
 n_catalogue = np.logspace(0, 5, 6)
 n_catalogue = np.logspace(0, 4, 17)
 
-print "Entries in catalogue", n_catalogue
+print("Entries in catalogue", n_catalogue)
 
 times = []
 
@@ -134,7 +138,7 @@ for n in n_catalogue:
     mh.run(n_trials=n_trials, scale=0.0)
     mh.clear()
     end = datetime.datetime.now()
-    diff = (end-start).total_seconds()/n_trials
+    diff = (end-start).total_seconds() / n_trials
 
     times.append(diff)
 

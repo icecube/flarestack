@@ -1,10 +1,13 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import object
 import numexpr
 import os
 import flarestack.core.astro
 import numpy as np
 import scipy.interpolate
 from scipy import sparse
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.shared import acceptance_path, llh_energy_hash_pickles, \
     SoB_spline_path, bkg_spline_path
 from flarestack.core.time_PDFs import TimePDF, read_t_pdf_dict
@@ -16,7 +19,7 @@ from flarestack.utils.create_acceptance_functions import dec_range,\
 from flarestack.utils.dataset_loader import data_loader
 from flarestack.utils.make_SoB_splines import create_2d_ratio_spline, \
     create_2d_ratio_hist, energy_bins, make_2d_spline_from_hist, \
-    make_background_spline
+    make_background_spline, make_individual_spline_set
 
 def read_llh_dict(llh_dict):
     """Ensures that llh dictionaries remain backwards-compatible
@@ -34,7 +37,7 @@ def read_llh_dict(llh_dict):
 
     for (old_key, new_key) in maps:
 
-        if old_key in llh_dict.keys():
+        if old_key in list(llh_dict.keys()):
             llh_dict[new_key] = llh_dict[old_key]
 
     pairs = [
@@ -43,7 +46,7 @@ def read_llh_dict(llh_dict):
     ]
 
     for (key, f) in pairs:
-        if key in llh_dict.keys():
+        if key in list(llh_dict.keys()):
             llh_dict[key] = f(llh_dict[key])
         else:
             llh_dict[key] = {}
@@ -51,7 +54,7 @@ def read_llh_dict(llh_dict):
     return llh_dict
 
 
-class LLH:
+class LLH(object):
     """Base class LLH.
     """
     subclasses = {}
@@ -346,7 +349,7 @@ class SpatialLLH(LLH):
     def __init__(self, season, sources, llh_dict):
         LLH.__init__(self, season, sources, llh_dict)
 
-        if "llh_energy_pdf" in llh_dict.keys():
+        if "llh_energy_pdf" in list(llh_dict.keys()):
             raise Exception("Found 'llh_energy_pdf' entry in llh_dict, "
                             "but SpatialLLH does not use Energy PDFs. \n"
                             "Please remove this entry, and try again.")
@@ -397,7 +400,7 @@ class SpatialLLH(LLH):
 
                 bkg = np.array(self.background_pdf(source, coincident_data))
 
-                SoB_spacetime.append(sig/bkg)
+                SoB_spacetime.append(sig / bkg)
                 del sig
                 del bkg
 
@@ -431,8 +434,8 @@ class SpatialLLH(LLH):
         x = []
 
         for i, n_j in enumerate(all_n_j):
-            x.append(1 + ((n_j / kwargs["n_all"]) *
-                          (kwargs["SoB_spacetime"][i] - 1.)))
+            x.append(1 + (n_j / kwargs["n_all"]) *
+                          (kwargs["SoB_spacetime"][i] - 1.))
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
             llh_value = -50. + all_n_j
@@ -486,9 +489,9 @@ class FixedEnergyLLH(LLH):
         if not os.path.isfile(acc_path):
             self.create_acceptance_function(acc_path)
 
-        print "Loading from", acc_path
+        print("Loading from", acc_path)
 
-        with open(acc_path, "r") as f:
+        with open(acc_path, "rb") as f:
             [dec_vals, acc] = Pickle.load(f)
 
         acc_spline = scipy.interpolate.interp1d(dec_vals, acc, kind='linear')
@@ -502,9 +505,9 @@ class FixedEnergyLLH(LLH):
         if not os.path.isfile(SoB_path):
             self.create_energy_weighting_function(SoB_path)
 
-        print "Loading from", SoB_path
+        print("Loading from", SoB_path)
 
-        with open(SoB_path, "r") as f:
+        with open(SoB_path, "rb") as f:
             [dec_vals, ratio_hist] = Pickle.load(f)
 
         spline = make_2d_spline_from_hist(np.array(ratio_hist), dec_vals)
@@ -515,8 +518,8 @@ class FixedEnergyLLH(LLH):
         return acc_f, energy_weight_f
 
     def create_acceptance_function(self, acc_path):
-        print "Building acceptance functions in sin(dec) bins " \
-              "(with fixed energy weighting)"
+        print("Building acceptance functions in sin(dec) bins " \
+              "(with fixed energy weighting)")
 
         mc = data_loader(self.season["mc_path"])
 
@@ -547,7 +550,7 @@ class FixedEnergyLLH(LLH):
         except OSError:
             pass
 
-        print "Saving to", acc_path
+        print("Saving to", acc_path)
 
         with open(acc_path, "wb") as f:
             Pickle.dump([dec_range, acc], f)
@@ -555,8 +558,8 @@ class FixedEnergyLLH(LLH):
         return f
 
     def create_energy_weighting_function(self, SoB_path):
-        print "Building energy-weighting functions in sin(dec) vs log E bins " \
-              "(with fixed energy weighting)"
+        print("Building energy-weighting functions in sin(dec) vs log E bins " \
+              "(with fixed energy weighting)")
 
         # dec_range = self.season["sinDec bins"]
 
@@ -603,7 +606,7 @@ class FixedEnergyLLH(LLH):
 
                 SoB_energy_ratio = self.energy_weight_f(coincident_data)
 
-                SoB.append(SoB_energy_ratio * sig/bkg)
+                SoB.append(SoB_energy_ratio * sig / bkg)
 
         kwargs["n_coincident"] = np.sum(~assumed_bkg_mask)
 
@@ -628,8 +631,8 @@ class FixedEnergyLLH(LLH):
         x = []
 
         for i, n_j in enumerate(all_n_j):
-            x.append(1 + ((n_j / kwargs["n_all"]) *
-                          (kwargs["SoB"][i] - 1.)))
+            x.append(1 + (n_j /  kwargs["n_all"]) *
+                          (kwargs["SoB"][i] - 1.))
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
             llh_value = -50. + all_n_j
@@ -666,7 +669,7 @@ class StandardLLH(FixedEnergyLLH):
 
         self.SoB_spline_2Ds = load_spline(self.season)
 
-        print "Loaded", len(self.SoB_spline_2Ds), "Splines."
+        print("Loaded", len(self.SoB_spline_2Ds), "Splines.")
 
         # self.acceptance_f = self.create_acceptance_function()
 
@@ -699,9 +702,9 @@ class StandardLLH(FixedEnergyLLH):
         if not os.path.isfile(acc_path):
             make_acceptance_season(self.season, acc_path)
 
-        print "Loading from", acc_path
+        print("Loading from", acc_path)
 
-        with open(acc_path, "r") as f:
+        with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = Pickle.load(f)
 
         acc_spline = scipy.interpolate.interp2d(
@@ -713,17 +716,7 @@ class StandardLLH(FixedEnergyLLH):
         # Checks if energy weighting functions have been created
 
         if not os.path.isfile(SoB_path):
-            self.create_energy_weighting_function(SoB_path)
-
-        # print "Loading from", SoB_path
-        #
-        # with open(SoB_path, "r") as f:
-        #     [dec_vals, ratio_hist] = Pickle.load(f)
-        #
-        # spline = make_2d_spline_from_hist(np.array(ratio_hist), dec_vals)
-        #
-        # def energy_weight_f(event, params):
-        #     return np.exp(spline(event["logE"], event["sinDec"], grid=False))
+            make_individual_spline_set(self.season, SoB_path)
 
         return acc_f, None
 
@@ -881,8 +874,8 @@ class StandardLLH(FixedEnergyLLH):
                     gamma, SoB_spacetime)
 
                 if n_j < 0:
-                    x.append(1. + ((n_j / kwargs["n_all"]) * (
-                            SoB_spacetime - 1.)))
+                    x.append(1. + (n_j / kwargs["n_all"]) * (
+                            SoB_spacetime - 1.))
 
                 else:
 
@@ -891,8 +884,8 @@ class StandardLLH(FixedEnergyLLH):
 
                     # print ((SoB_spacetime * SoB_energy) - 1.)
 
-                    x.append((1. + ((n_j / kwargs["n_all"]) * (
-                            (SoB_energy * SoB_spacetime) - 1.))))
+                    x.append(1. + ((n_j /kwargs["n_all"]) * (
+                            (SoB_energy * SoB_spacetime) - 1.)))
 
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
@@ -930,7 +923,7 @@ class StandardLLH(FixedEnergyLLH):
 
         energy_SoB_cache = dict()
 
-        for gamma in self.SoB_spline_2Ds.keys():
+        for gamma in list(self.SoB_spline_2Ds.keys()):
             energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma].ev(
                 cut_data["logE"], cut_data["sinDec"])
 
@@ -946,7 +939,7 @@ class StandardLLH(FixedEnergyLLH):
         :param energy_SoB_cache: Weight cache
         :return: Estimated value for S(gamma)
         """
-        if gamma in energy_SoB_cache.keys():
+        if gamma in list(energy_SoB_cache.keys()):
             val = np.exp(energy_SoB_cache[gamma])
         else:
             g1 = self._around(gamma)
@@ -1039,10 +1032,10 @@ class StandardOverlappingLLH(StandardLLH):
 
         def joint_SoB(dataset, gamma):
             return np.sum([np.array(
-                season_weight(gamma)[i] * self.signal_pdf(source, dataset)/
+                season_weight(gamma)[i] * self.signal_pdf(source, dataset) /
                 self.background_pdf(source, dataset))
                 for i, source in enumerate(self.sources)], axis=0
-            )/np.sum(season_weight(gamma))
+            ) / np.sum(season_weight(gamma))
 
         SoB_spacetime = pull_corrector.create_spatial_cache(
             coincident_data, joint_SoB
@@ -1349,7 +1342,7 @@ if __name__ == "__main__":
 
     path = fs_scratch_dir + "tester_spline.npy"
 
-    print path
+    print(path)
 
     with open(path, "wb") as h:
         Pickle.dump(f, h)
@@ -1387,5 +1380,5 @@ if __name__ == "__main__":
     weights = np.array([1.])
 
     for i in np.linspace(0.0, 10.0, 21):
-        print i, f([i], weights)
+        print(i, f([i], weights))
 

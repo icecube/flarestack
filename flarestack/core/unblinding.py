@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import input
 import sys
 import os
 import numpy as np
@@ -8,23 +11,23 @@ from flarestack.core.results import ResultsHandler
 from flarestack.core.time_PDFs import TimePDF
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
     analysis_pickle_path, limit_output_path
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.ts_distributions import plot_background_ts_distribution
 import matplotlib.pyplot as plt
 
 
 def confirm():
-    print "Is this correct? (y/n)"
+    print("Is this correct? (y/n)")
 
     x = ""
 
     while x not in ["y", "n"]:
-        x = raw_input("")
+        x = input("")
 
     if x == "n":
-        print "\n"
-        print "Please check carefully before unblinding!"
-        print "\n"
+        print("\n")
+        print("Please check carefully before unblinding!")
+        print("\n")
         sys.exit()
 
 
@@ -46,7 +49,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
     """
 
     unblind_dict = read_mh_dict(unblind_dict)
-    print unblind_dict
+    print(unblind_dict)
 
     try:
         mh_name = unblind_dict["mh_name"]
@@ -98,16 +101,16 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             # Minimise likelihood and produce likelihood scans
             self.res_dict = self.run_trial(0)
 
-            print "\n"
-            print self.res_dict
-            print "\n"
+            print("\n")
+            print(self.res_dict)
+            print("\n")
 
             # Quantify the TS value significance
             # print type(np.array([self.res_dict["TS"]]))
             self.ts = np.array([self.res_dict["TS"]])[0]
             self.sigma = np.nan
 
-            print "Test Statistic of:", self.ts
+            print("Test Statistic of:", self.ts)
 
             try:
                 path = self.unblind_dict["background TS"]
@@ -115,8 +118,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 self.output_file = self.plot_dir + "TS.pdf"
                 self.compare_to_background_TS()
             except KeyError:
-                print "No Background TS Distribution specified.",
-                print "Cannot assess significance of TS value."
+                print("No Background TS Distribution specified.", end=' ')
+                print("Cannot assess significance of TS value.")
 
             if full_plots:
 
@@ -178,12 +181,15 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                         )
 
                         for src in self.sources:
-                            inj_time += t_pdf.raw_injection_time(src)/n_sources
+                            inj_time += t_pdf.raw_injection_time(src) / \
+                                        n_sources
 
                     astro_dict = rh.nu_astronomy(ul, e_pdf_dict)
 
                     fluence_uls.append(
-                        astro_dict["Total Fluence (GeV cm^{-2} s^{-1})"] * inj_time)
+                        astro_dict["Total Fluence (GeV cm^{-2} s^{-1})"]
+                        * inj_time
+                    )
 
                     e_per_source_uls.append(
                         astro_dict["Mean Luminosity (erg/s)"] * inj_time
@@ -222,7 +228,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     os.makedirs(os.path.dirname(self.limit_path))
                 except OSError:
                     pass
-                print "Saving limits to", self.limit_path
+                print("Saving limits to", self.limit_path)
 
                 res_dict = {
                     "x": x_axis,
@@ -235,10 +241,10 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     Pickle.dump(res_dict, f)
 
             except OSError:
-                print "Unable to set limits. No TS distributions found."
+                print("Unable to set limits. No TS distributions found.")
 
         def compare_to_background_TS(self):
-            print "Retrieving Background TS Distribution from", self.pickle_dir
+            print("Retrieving Background TS Distribution from", self.pickle_dir)
 
             try:
 
@@ -247,7 +253,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 for subdir in os.listdir(self.pickle_dir):
                     merged_pkl = self.pickle_dir + subdir + "/merged/0.pkl"
 
-                    print "Loading", merged_pkl
+                    print("Loading", merged_pkl)
 
                     with open(merged_pkl) as mp:
 
@@ -261,55 +267,55 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     ts_array, self.output_file, self.ts_type, self.ts)
 
             except (IOError, OSError):
-                print "No Background TS Distribution found"
+                print("No Background TS Distribution found")
                 pass
 
         def check_unblind(self):
-            print "\n"
-            print "You are proposing to unblind data."
-            print "\n"
+            print("\n")
+            print("You are proposing to unblind data.")
+            print("\n")
             confirm()
-            print "\n"
-            print "You are unblinding the following catalogue:"
-            print "\n"
-            print self.unblind_dict["catalogue"]
-            print "\n"
+            print("\n")
+            print("You are unblinding the following catalogue:")
+            print("\n")
+            print(self.unblind_dict["catalogue"])
+            print("\n")
             confirm()
-            print "\n"
-            print "The catalogue has the following entries:"
-            print "\n"
+            print("\n")
+            print("The catalogue has the following entries:")
+            print("\n")
 
             cat = np.load(self.unblind_dict["catalogue"])
 
-            print cat.dtype.names
-            print cat
-            print "\n"
+            print(cat.dtype.names)
+            print(cat)
+            print("\n")
             confirm()
-            print "\n"
-            print "The following datasets will be used:"
-            print "\n"
+            print("\n")
+            print("The following datasets will be used:")
+            print("\n")
             for x in self.unblind_dict["datasets"]:
-                print x["Data Sample"], x["Name"]
-                print "\n"
-                print x["exp_path"]
-                print x["mc_path"]
-                print x["grl_path"]
-                print "\n"
+                print(x["Data Sample"], x["Name"])
+                print("\n")
+                print(x["exp_path"])
+                print(x["mc_path"])
+                print(x["grl_path"])
+                print("\n")
             confirm()
-            print "\n"
-            print "The following LLH will be used:"
-            print "\n"
-            for (key, val) in self.unblind_dict["llh_dict"].iteritems():
-                print key, val
-            print "\n"
+            print("\n")
+            print("The following LLH will be used:")
+            print("\n")
+            for (key, val) in self.unblind_dict["llh_dict"].items():
+                print(key, val)
+            print("\n")
             confirm()
-            print "\n"
-            print "Are you really REALLY sure about this?"
-            print "You will unblind. This is your final warning."
-            print "\n"
+            print("\n")
+            print("Are you really REALLY sure about this?")
+            print("You will unblind. This is your final warning.")
+            print("\n")
             confirm()
-            print "\n"
-            print "OK, you asked for it..."
-            print "\n"
+            print("\n")
+            print("OK, you asked for it...")
+            print("\n")
 
     return Unblinder(unblind_dict)

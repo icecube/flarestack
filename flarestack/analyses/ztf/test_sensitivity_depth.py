@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 import numpy as np
 import os
 from flarestack.core.results import ResultsHandler
@@ -109,7 +111,7 @@ for sn in sn_types:
     # print [x for x in all_cat_names.itervalues()]
     # raw_input("prompt")
 
-    for (sky, cat_names) in all_cat_names.iteritems():
+    for (sky, cat_names) in all_cat_names.items():
 
         sky_dict = dict()
 
@@ -127,15 +129,15 @@ for sn in sn_types:
                 continue
 
             # Skips if already tested:
-            if n_cat in sky_dict.keys():
+            if n_cat in list(sky_dict.keys()):
                 continue
 
             cat = load_catalogue(cat_name)
 
             name = sky_name + os.path.basename(cat_name)[:-4] + "/"
 
-            cat_scale = np.sum(cat["distance_mpc"]**-2 /
-                               min(cat["distance_mpc"])**-2)
+            cat_scale = np.sum(old_div(cat["distance_mpc"]**-2,
+                               min(cat["distance_mpc"])**-2))
 
             # cat_scale = min(cat["distance_mpc"])**2/\
             #             np.sum(cat["distance_mpc"]**-2)
@@ -179,10 +181,10 @@ rd.wait_for_cluster()
 
 dem = DeusExMachina([IC86_1_dict], inj_kwargs)
 
-for (sn, sn_dict) in res_dict.iteritems():
+for (sn, sn_dict) in res_dict.items():
 
     savedir_sn = plot_output_dir(name_root) + sn + "/"
-    for (sky, sky_dict) in sn_dict.iteritems():
+    for (sky, sky_dict) in sn_dict.items():
 
         if sky == "Northern":
         # if True:
@@ -201,7 +203,7 @@ for (sn, sn_dict) in res_dict.iteritems():
 
             dist = []
 
-            for (n_cat, rh_dict) in sorted(sky_dict.iteritems())[1:9]:
+            for (n_cat, rh_dict) in sorted(sky_dict.items())[1:9]:
                 inj_time = post_window * 60 * 60 * 24
 
                 key = "Total Fluence (GeV cm^{-2} s^{-1})"
@@ -249,7 +251,7 @@ for (sn, sn_dict) in res_dict.iteritems():
                 dist.append(max(cat["distance_mpc"]))
                 n.append(float(len(cat)))
 
-                print n_cat
+                print(n_cat)
 
 
             try:

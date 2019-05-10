@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import input
+from builtins import str
 import numpy as np
 import scipy.interpolate
 import os
@@ -82,7 +86,7 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
     # Returns True if True in both Sig and Bkg, otherwise False
     mask = domain_bkg & domain_sig
     # Calculates the ratio sig/bkg for those entries True in Mask array
-    ratio[mask] = (sig_hist[mask] / bkg_hist[mask])
+    ratio[mask] = sig_hist[mask] / bkg_hist[mask]
 
     # Finds the maximum ratio
     max_ratio = np.amax(ratio)
@@ -140,11 +144,12 @@ def azimuth_proxy(data, season_dict):
 
         plt.savefig(plots_dir + "azimuth/hist.pdf")
         plt.close()
-        raw_input("prompt")
+        input("prompt")
 
     # return data["azimuth"]
 
     return az
+
 
 def plot_ratio(seasons):
 
@@ -158,12 +163,12 @@ def plot_ratio(seasons):
         exp_cut = exp[exp["logE"] > cut]
         mc_cut = mc[mc["logE"] > cut]
 
-        print len(exp), len(exp_cut)
-        print len(mc), len(mc_cut)
+        print(len(exp), len(exp_cut))
+        print(len(mc), len(mc_cut))
 
-        print "Min energy", np.exp(min(exp["logE"]))
+        print("Min energy", np.exp(min(exp["logE"])))
 
-        print exp.dtype.names
+        print(exp.dtype.names)
 
         data = [
             ("exp", exp["sinDec"], azimuth_proxy(exp, season_dict)),
@@ -199,8 +204,8 @@ def plot_ratio(seasons):
                 mem_use = str(
                     float(
                         resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-                print ""
-                print 'Memory usage max: %s (Gb)' % mem_use
+                print("")
+                print('Memory usage max: %s (Gb)' % mem_use)
 
                 if name == "mc":
 
@@ -330,7 +335,7 @@ def plot_ratio(seasons):
             ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1,
                                    sharex=ax1)
 
-            plt.plot(mids, n[1]/n[0], color="orange")
+            plt.plot(mids, n[1] / n[0], color="orange")
             plt.axhline(1., linestyle="--", color="k")
             plt.ylabel("Ratio (MC/Data)")
             plt.xlabel("Azimuth (rad)")

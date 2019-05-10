@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import input
+from builtins import object
 import numpy as np
 from scipy.interpolate import interp1d
 from flarestack.utils.dataset_loader import grl_loader
@@ -32,13 +36,13 @@ def read_t_pdf_dict(t_pdf_dict):
 
     for (old_key, new_key) in maps:
 
-        if old_key in t_pdf_dict.keys():
+        if old_key in list(t_pdf_dict.keys()):
             t_pdf_dict[new_key] = t_pdf_dict[old_key]
 
     return t_pdf_dict
 
 
-class TimePDF:
+class TimePDF(object):
     subclasses = {}
 
     def __init__(self, t_pdf_dict, season):
@@ -87,16 +91,16 @@ class TimePDF:
                 stitch_f.append(f[i])
 
         if stitch_t != sorted(stitch_t):
-            print "Error in ordering GoodRunList!"
-            print "Runs are out of order!"
+            print("Error in ordering GoodRunList!")
+            print("Runs are out of order!")
 
-            print self.grl[:5]
-            raw_input("prompt")
+            print(self.grl[:5])
+            input("prompt")
 
             for j, t in enumerate(stitch_t):
                 if t != sorted(stitch_t)[j]:
-                    print j, t, self.grl[j]
-            raw_input("prompt")
+                    print(j, t, self.grl[j])
+            input("prompt")
 
         mjd.append(1e5)
         livetime.append(total_t)
@@ -226,7 +230,7 @@ class Steady(TimePDF):
         :return: Value of normalised box function at t
         """
 
-        return self.mjd_to_livetime(t)/self.livetime
+        return self.mjd_to_livetime(t) / self.livetime
 
     def flare_time_mask(self, source):
         """In this case, the interesting period for Flare Searches is the
@@ -296,7 +300,7 @@ class Box(TimePDF):
         self.pre_window = self.t_dict["pre_window"]
         self.post_window = self.t_dict["post_window"]
 
-        if "offset" in t_pdf_dict.keys():
+        if "offset" in list(t_pdf_dict.keys()):
             self.offset = self.t_dict["offset"]
             self.pre_window -= self.offset
             self.post_window += self.offset

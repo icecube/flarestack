@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 
 from flarestack.shared import fs_dir, log_dir
@@ -37,19 +38,19 @@ def make_desy_submit_file():
            "sleep $(( ( RANDOM % 60 )  + 1 )) \n" \
            'exec > "$TMPDIR"/${JOB_ID}_stdout.txt ' \
            '2>"$TMPDIR"/${JOB_ID}_stderr.txt \n' \
-           'eval $(/cvmfs/icecube.opensciencegrid.org/py2-v3/setup.sh) \n' \
+           'eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4/setup.sh) \n' \
            'export PYTHONPATH=' + root_dir + "/ \n" \
            'python ' + fs_dir + 'core/minimisation.py -f $1 \n' \
            'cp $TMPDIR/${JOB_ID}_stdout.txt ' + log_dir + '\n'\
            'cp $TMPDIR/${JOB_ID}_stderr.txt ' + log_dir + '\n '
 
-    print "Creating file at", submit_file
+    print("Creating file at", submit_file)
 
     with open(submit_file, "w") as f:
         f.write(text)
 
-    print "Bash file created: \n"
-    print text
+    print("Bash file created: \n")
+    print(text)
 
 
 if __name__ == "__main__":

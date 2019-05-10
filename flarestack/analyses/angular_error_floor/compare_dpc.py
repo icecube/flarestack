@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.core.minimisation import MinimisationHandler
@@ -109,7 +112,7 @@ for gamma in [3.0]:
 
 rd.wait_for_cluster()
 
-for (gamma, res_dict) in all_res.iteritems():
+for (gamma, res_dict) in all_res.items():
 
     gamma_name = basename + str(gamma) + "/"
 
@@ -118,7 +121,7 @@ for (gamma, res_dict) in all_res.iteritems():
     mean_bias_dict = dict()
     disc_dict = dict()
 
-    for (config, mh_list) in res_dict.iteritems():
+    for (config, mh_list) in res_dict.items():
 
         sens = []
 
@@ -131,16 +134,16 @@ for (gamma, res_dict) in all_res.iteritems():
         for mh_dict in mh_list:
             rh = ResultsHandler(mh_dict)
 
-            max_scale = scale_shortener(max([float(x) for x in rh.results.keys()]))
+            max_scale = scale_shortener(max([float(x) for x in list(rh.results.keys())]))
             sens.append(rh.sensitivity)
             disc.append(rh.disc_potential)
 
             fit = rh.results[max_scale]["Parameters"]["n_s"]
             inj = rh.inj[max_scale]["n_s"]
-            med_bias = np.median(fit)/inj
+            med_bias = np.median(fit) / inj
 
             med_biases.append(med_bias)
-            mean_biases.append(np.mean(fit)/inj)
+            mean_biases.append(np.mean(fit) / inj)
 
         # ax1.plot(sin_decs, sens, label=config)
         sens_dict[config] = np.array(sens)
@@ -163,9 +166,9 @@ for (gamma, res_dict) in all_res.iteritems():
 
         ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
-        for (config, vals) in plot_dict.iteritems():
+        for (config, vals) in plot_dict.items():
             ax1.plot(sin_decs, vals, label=config)
-            ax2.plot(sin_decs, vals/plot_dict["Base Case (No floor)"])
+            ax2.plot(sin_decs, vals / plot_dict["Base Case (No floor)"])
 
         ax2.set_xlabel(r"sin($\delta$)")
         ax2.set_ylabel("Ratio")
@@ -181,7 +184,7 @@ for (gamma, res_dict) in all_res.iteritems():
 
         savepath = plot_output_dir(gamma_name) + "comparison " + name + ".pdf"
 
-        print "Saving to", savepath
+        print("Saving to", savepath)
         plt.savefig(savepath)
         plt.close()
 
@@ -189,7 +192,7 @@ for (gamma, res_dict) in all_res.iteritems():
         name = ["Median Bias", "Mean Bias"][i]
 
         plt.figure()
-        for (config, biases) in bias_dict.iteritems():
+        for (config, biases) in bias_dict.items():
             plt.plot(sin_decs, biases, label=config)
         plt.axhline(1.0, linestyle=":")
         plt.xlabel(r"sin($\delta$)")
@@ -197,6 +200,6 @@ for (gamma, res_dict) in all_res.iteritems():
         plt.legend()
         plt.title(name + r' with $E^{-'+ str(gamma) + "}$")
         savepath = plot_output_dir(gamma_name) + "comparison " + name + ".pdf"
-        print "Saving to", savepath
+        print("Saving to", savepath)
         plt.savefig(savepath)
         plt.close()

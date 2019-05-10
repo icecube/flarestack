@@ -5,10 +5,12 @@ https://wiki.icecube.wisc.edu/index.php/1ES_1959_Analysis.
 The script can be used to verify that the flare search method, as implemented
 here, is capable of matching previous flare search methods.
 """
-
+from __future__ import print_function
+from __future__ import division
+from builtins import str
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
@@ -143,7 +145,7 @@ for i, llh_kwargs in enumerate([
         }
 
         scale = flux_to_k(reference_sensitivity(np.sin(dec))
-                          * (50 * search_window / flare_length))
+                          * (old_div(50 * search_window, flare_length)))
 
         mh_dict = {
             "name": full_name,
@@ -192,8 +194,8 @@ disc_e = [[] for _ in src_res]
 
 labels = []
 
-for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
-    for (length, rh_dict) in sorted(res.iteritems()):
+for i, (f_type, res) in enumerate(sorted(src_res.items())):
+    for (length, rh_dict) in sorted(res.items()):
 
         rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
                             rh_dict["catalogue"])
@@ -227,7 +229,7 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
 
     for i, f in enumerate(fracs):
 
-        print fluence[i], labels[i]
+        print(fluence[i], labels[i])
 
         ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
                  color=cols[i])

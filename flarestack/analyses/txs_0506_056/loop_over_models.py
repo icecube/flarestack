@@ -1,6 +1,9 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict,\
     IC86_234_dict
@@ -18,7 +21,7 @@ base_dir = "analyses/txs_0506_056/loop_gao_models/"
 
 res_dict = dict()
 
-n_range = range(160)
+n_range = list(range(160))
 
 for i in n_range:
 
@@ -141,7 +144,7 @@ for i, vals in enumerate([sens, disc]):
     except OSError:
         pass
 
-    print "Saving to", savepath
+    print("Saving to", savepath)
     plt.savefig(savepath)
     plt.close()
 

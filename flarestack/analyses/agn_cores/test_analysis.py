@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
@@ -54,7 +55,7 @@ mh_dict = {
 
 cat_name = agn_catalogue_name("radioloud", "2rxs_100brightest_srcs")
 cat = np.load(cat_name)
-print("Cat is ", cat_name, " Its lenght is: ", len(cat))
+print(("Cat is ", cat_name, " Its lenght is: ", len(cat)))
 scale = flux_to_k(reference_sensitivity(0.5, gamma)) *20*10**-3   #0.5 is the usally the sin_dec of the closest source  -> [this produced 60000 neutrinos!!!
 
 

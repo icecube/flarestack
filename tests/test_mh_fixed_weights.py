@@ -1,6 +1,7 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+from __future__ import print_function
 import unittest
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.core.unblinding import create_unblinder
@@ -35,11 +36,11 @@ class TestTimeIntegrated(unittest.TestCase):
 
     def test_declination_sensitivity(self):
 
-        print "\n"
-        print "\n"
-        print "Testing fixed_weight MinimisationHandler class"
-        print "\n"
-        print "\n"
+        print("\n")
+        print("\n")
+        print("Testing fixed_weight MinimisationHandler class")
+        print("\n")
+        print("\n")
 
         # Test three declinations
 
@@ -54,12 +55,12 @@ class TestTimeIntegrated(unittest.TestCase):
         }
 
         ub = create_unblinder(unblind_dict)
-        key = [x for x in ub.res_dict.iterkeys() if x != "TS"][0]
+        key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
         self.assertEqual(list(res["x"]), true_parameters)
 
-        print "Best fit values", list(res["x"])
-        print "Reference best fit", true_parameters
+        print("Best fit values", list(res["x"]))
+        print("Reference best fit", true_parameters)
 
 
 

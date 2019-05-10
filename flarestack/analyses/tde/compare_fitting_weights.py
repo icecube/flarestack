@@ -4,6 +4,8 @@ n_s, stacking where an n_s for each source is fit individually (rather than a
 joint n_s split across sources assuming standard candles), and lastly an
 independent flare search for each source with TS values summed at the end.
 """
+from __future__ import division
+from builtins import str
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
@@ -120,9 +122,9 @@ for cat in tde_catalogues:
                 "Poisson Smear?": True,
             }
 
-            scale = 100 * math.sqrt(float(len(catalogue))) * flux_to_k(
+            scale = old_div(100 * math.sqrt(float(len(catalogue))) * flux_to_k(
                 reference_sensitivity(np.sin(closest_src["dec"]), gamma=2)
-            ) * max_window / flare_length
+            ) * max_window, flare_length)
 
             # print scale
 
@@ -150,7 +152,7 @@ for cat in tde_catalogues:
 
 # rd.wait_for_cluster()
 
-for (cat, src_res) in cat_res.iteritems():
+for (cat, src_res) in cat_res.items():
 
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
@@ -165,16 +167,15 @@ for (cat, src_res) in cat_res.iteritems():
     cat_path = tde_catalogue_name(cat) + "_catalogue.npy"
     catalogue = np.load(cat_path)
 
-    src_1_frac = min(catalogue["Distance (Mpc)"])**-2/np.sum(
+    src_1_frac = old_div(min(catalogue["Distance (Mpc)"])**-2,np.sum(
         catalogue["Distance (Mpc)"] ** -2
-    )
+    ))
 
-    for i, (f_type, res) in enumerate(sorted(src_res.iteritems())):
+    for i, (f_type, res) in enumerate(sorted(src_res.items())):
 
-        for (length, rh_dict) in sorted(res.iteritems()):
+        for (length, rh_dict) in sorted(res.items()):
             try:
-                rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                    rh_dict["catalogue"])
+                rh = ResultsHandler(rh_dict)
 
                 # Convert flux to fluence and source energy
 

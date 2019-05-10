@@ -1,6 +1,8 @@
+from __future__ import print_function
+from __future__ import division
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.shared import gamma_range, acceptance_path
 from flarestack.core.energy_PDFs import PowerLaw
 from flarestack.core.injector import Injector
@@ -55,7 +57,7 @@ def make_acceptance_season(season, acc_path):
     except OSError:
         pass
 
-    print "Saving", season["Name"], "acceptance values to:", acc_path
+    print("Saving", season["Name"], "acceptance values to:", acc_path)
 
     with open(acc_path, "wb") as f:
         Pickle.dump([dec_range, gamma_vals, acc], f)

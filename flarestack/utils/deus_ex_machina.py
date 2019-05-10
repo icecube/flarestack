@@ -4,8 +4,9 @@ single trial, and is good to within ~30-50%). Use with some caution to
 quickly guess appropriate flux scales, or understand trends, without full
 calculations.
 """
-
-
+from __future__ import print_function
+from __future__ import division
+from builtins import object
 import numpy as np
 from flarestack.core.llh import LLH
 from flarestack.core.injector import Injector
@@ -24,7 +25,7 @@ def estimate_discovery_potential(injectors, sources):
     :param sources: Sources to be evaluated
     :return: An estimate for the discovery potential
     """
-    print "Trying to guess scale!"
+    print("Trying to guess scale!")
 
     season_bkg = []
     season_sig = []
@@ -38,21 +39,21 @@ def estimate_discovery_potential(injectors, sources):
 
     livetime = 0.
 
-    for (season, inj) in injectors.iteritems():
+    for (season, inj) in injectors.items():
 
         llh_dict = {"llh_name": "fixed_energy"}
         llh_dict["llh_energy_pdf"] = inj.inj_kwargs["injection_energy_pdf"]
         llh_dict["llh_time_pdf"] = inj.inj_kwargs["injection_time_pdf"]
         llh = LLH.create(inj.season, sources, llh_dict)
 
-        print "Season", season
+        print("Season", season)
         data = inj._raw_data
         n_bkg_tot = len(inj._raw_data)
-        print "Number of events", n_bkg_tot
+        print("Number of events", n_bkg_tot)
         livetime += inj.time_pdf.livetime * 60 * 60 * 24
-        print "Livetime is {0} seconds ({1} days)".format(
+        print("Livetime is {0} seconds ({1} days)".format(
             livetime, inj.time_pdf.livetime
-        )
+        ))
 
         def signalness(sig_over_background):
             """Converts a signal over background ratio into a signal
@@ -91,13 +92,13 @@ def estimate_discovery_potential(injectors, sources):
 
             # Assume we only count within the 50% containment for the source
 
-            scale_factor = (source["base_weight"] / weight_scale) * \
-                    (source["distance_mpc"] ** -2.)/dist_scale
+            scale_factor = source["base_weight"] *  \
+                    (source["distance_mpc"] ** -2. / dist_scale)
 
             n_sig = 0.5 * np.sum(source_mc["ow"] * mc_weights) * scale_factor
 
             # sig_scale = weighted_quantile(mc_weights, 0.5, source_mc["ow"])
-            sig_scale = np.mean(mc_weights * source_mc["ow"])/\
+            sig_scale = np.mean(mc_weights * source_mc["ow"]) / \
                         np.mean(source_mc["ow"]) #* scale_factor
             # sig_scale = np.mean(source_mc["ow"])
 
@@ -158,11 +159,11 @@ def estimate_discovery_potential(injectors, sources):
 
     scale /= fudge_factor
 
-    print "Estimated Scale is:", scale, "GeV sr^-1 s^-1 cm^-2"
+    print("Estimated Scale is:", scale, "GeV sr^-1 s^-1 cm^-2")
     return scale
 
 
-class DeusExMachina():
+class DeusExMachina(object):
 
     def __init__(self, seasons, inj_dict):
 
@@ -175,7 +176,7 @@ class DeusExMachina():
     def guess_discovery_potential(self, source_path):
         sources = load_catalogue(source_path)
 
-        for inj in self.injectors.itervalues():
+        for inj in self.injectors.values():
             inj.update_sources(sources)
 
         return estimate_discovery_potential(self.injectors, sources)

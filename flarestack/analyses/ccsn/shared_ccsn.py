@@ -1,6 +1,7 @@
+from __future__ import print_function
 import os
 import numpy as np
-import cPickle as Pickle
+import pickle as Pickle
 from scipy.interpolate import interp1d
 from flarestack.shared import limit_output_path
 from astropy import units as u
@@ -59,7 +60,7 @@ def ccsn_limits(sn_type):
 
     savepath = limit_output_path(path)
 
-    print "Loading limits from", savepath
+    print("Loading limits from", savepath)
     with open(savepath, "r") as f:
         results = Pickle.load(f)
     return results

@@ -44,7 +44,7 @@ e_pdf_dict = {
 energy_PDF = EnergyPDF.create(e_pdf_dict)
 e_integral = energy_PDF.fluence_integral() * u.GeV**2
 
-for (sn, sn_dict) in limits.iteritems():
+for (sn, sn_dict) in limits.items():
     for llh_type in ["Fixed", "Fit"]:
         area = (ref_dist.to("cm"))**2
         energy = (sn_dict[llh_type] * 4 * np.pi * u.sr * limit_units *

@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import str
+from builtins import range
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -150,7 +153,7 @@ for gamma in [2.0, 3.5]:
 
                 [floor, floor2, ceiling] = weighted_quantile(
                     x, [0.1, 0.25, 0.9], weights[e_mask])
-                pull = x/y
+                pull = x / y
                 median_pull = weighted_quantile(
                     pull, 0.5, weights[e_mask])
 
@@ -205,7 +208,7 @@ for gamma in [2.0, 3.5]:
 
             [floor, ceiling] = weighted_quantile(
                 x, [0.1, 0.9], weights[e_mask])
-            pull = x/y
+            pull = x / y
             median_pull = weighted_quantile(
                 pull, 0.5, weights[e_mask])
 

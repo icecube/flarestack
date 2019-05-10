@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 from astropy import units as u
 import astropy
 from astropy.cosmology import Planck15 as cosmo
@@ -133,7 +135,7 @@ def define_cosmology_functions(rate, nu_e_flux_1GeV, gamma,
         :return: Transient rate in shell at that redshift
         """
         return rate(z) * cosmo.differential_comoving_volume(z) * \
-               nu_bright_fraction * (4 * np.pi * u.sr)/(1+z)
+               nu_bright_fraction * (4 * np.pi * u.sr) / (1+z)
 
     def nu_flux_per_source(z):
         """Calculate the time-integrated neutrino flux contribution on Earth
@@ -148,7 +150,7 @@ def define_cosmology_functions(rate, nu_e_flux_1GeV, gamma,
         :return: Neutrino flux from shell at Earth
         """
         return nu_e_flux_1GeV * (1 + z) ** (3 - gamma) / (
-                       4 * np.pi * Distance(z=z).to("cm")**2)
+                4 * np.pi * Distance(z=z).to("cm")**2)
 
     def nu_flux_per_z(z):
         """Calculate the neutrino flux contribution on Earth that each
@@ -186,24 +188,24 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
 
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
 
-    print "Using the", diffuse_fit, "best fit values of the diffuse flux."
+    print("Using the", diffuse_fit, "best fit values of the diffuse flux.")
     # print "Raw Diffuse Flux at 1 GeV:", diffuse_flux / (4 * np.pi * u.sr)
-    print "Diffuse Flux at 1 GeV:", diffuse_flux
-    print "Diffuse Spectral Index is", diffuse_gamma
+    print("Diffuse Flux at 1 GeV:", diffuse_flux)
+    print("Diffuse Spectral Index is", diffuse_gamma)
 
     if "Gamma" not in e_pdf_dict:
-        print "Assuming source has spectral index matching diffuse flux"
+        print("Assuming source has spectral index matching diffuse flux")
         e_pdf_dict["gamma"] = diffuse_gamma
 
     energy_pdf = EnergyPDF.create(e_pdf_dict)
     nu_e = e_pdf_dict["Source Energy (erg)"]
     gamma = e_pdf_dict["gamma"]
 
-    print "\n"
-    print name
-    print "\n"
-    print "Neutrino Energy is", nu_e
-    print "Rate is", rate(0.0)
+    print("\n")
+    print(name)
+    print("\n")
+    print("Neutrino Energy is", nu_e)
+    print("Rate is", rate(0.0))
 
     savedir = plots_dir + "cosmology/" + name + "/"
 
@@ -221,26 +223,26 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     rate_per_z, nu_flux_per_z, nu_flux_per_source, cumulative_nu_flux = \
         define_cosmology_functions(rate, nu_e, gamma, nu_bright_fraction)
 
-    print "Cumulative sources at z=8.0:",
-    print "{:.3E}".format(cumulative_z(rate_per_z, 8.0)[-1].value)
+    print("Cumulative sources at z=8.0:", end=' ')
+    print("{:.3E}".format(cumulative_z(rate_per_z, 8.0)[-1].value))
 
     nu_at_horizon = cumulative_nu_flux(8)[-1]
 
-    print "Cumulative flux at z=8.0 (1 GeV):", "{:.3E}".format(nu_at_horizon)
-    print "Cumulative annual flux at z=8.0 (1 GeV):", "{:.3E}".format((
-        nu_at_horizon * u.yr).to("GeV-1 cm-2 sr-1"))
+    print("Cumulative flux at z=8.0 (1 GeV):", "{:.3E}".format(nu_at_horizon))
+    print("Cumulative annual flux at z=8.0 (1 GeV):", "{:.3E}".format((
+        nu_at_horizon * u.yr).to("GeV-1 cm-2 sr-1")))
 
     ratio = nu_at_horizon.value / diffuse_flux.value
-    print "Fraction of diffuse flux", ratio
-    print "Cumulative neutrino flux", nu_at_horizon,
-    print "Diffuse neutrino flux", diffuse_flux
+    print("Fraction of diffuse flux", ratio)
+    print("Cumulative neutrino flux", nu_at_horizon, end=' ')
+    print("Diffuse neutrino flux", diffuse_flux)
 
     if diffuse_fraction is not None:
-        print "Scaling flux so that, at z=8, the contribution is equal to", \
-            diffuse_fraction
+        print("Scaling flux so that, at z=8, the contribution is equal to", \
+            diffuse_fraction)
         nu_e *= diffuse_fraction / ratio
-        print "Neutrino Energy rescaled to", \
-            (nu_e * fluence_conversion).to("erg")
+        print("Neutrino Energy rescaled to", \
+            (nu_e * fluence_conversion).to("erg"))
 
     plt.figure()
     plt.plot(zrange, rate(zrange))
@@ -252,7 +254,7 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     plt.close()
 
     plt.figure()
-    plt.plot(zrange, rate_per_z(zrange)/rate(zrange))
+    plt.plot(zrange, rate_per_z(zrange) / rate(zrange))
     plt.yscale("log")
     plt.xlabel("Redshift")
     plt.ylabel(r"Differential Comoving Volume [Mpc$^{3}$ dz]")
@@ -260,14 +262,14 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     plt.savefig(savedir + 'comoving_volume.pdf')
     plt.close()
 
-    print "Sanity Check:"
-    print "Integrated Source Counts \n"
+    print("Sanity Check:")
+    print("Integrated Source Counts \n")
 
     for z in [0.01, 0.08, 0.1, 0.2, 0.3, 0.7,  8]:
-        print z, Distance(z=z).to("Mpc"), cumulative_z(rate_per_z, z)[-1]
+        print(z, Distance(z=z).to("Mpc"), cumulative_z(rate_per_z, z)[-1])
 
-    print "Fraction from nearby sources", cumulative_nu_flux(0.3)[-1]/ \
-                                          nu_at_horizon
+    print("Fraction from nearby sources",
+          cumulative_nu_flux(0.3)[-1] / nu_at_horizon)
 
     plt.figure()
     plt.plot(zrange, rate_per_z(zrange))
@@ -337,11 +339,11 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
 def estimate_northern_neutrinos(diffuse_fit="joint"):
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
 
-    print "\n"
+    print("\n")
 
-    print "Let's assume that 50% of the diffuse flux is distributed on a \n" \
+    print("Let's assume that 50% of the diffuse flux is distributed on a \n" \
           "single source in the northern sky. That's unrealistic, but \n " \
-          "should give us an idea of expected neutrino numbers! \n"
+          "should give us an idea of expected neutrino numbers! \n")
 
     source = np.load(ps_catalogue_name(0.2))
 

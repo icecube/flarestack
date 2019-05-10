@@ -5,7 +5,8 @@ the code. Modification of variable n can produces a catalogue with an
 arbitrary number of sources.
 
 """
-
+from __future__ import print_function
+from builtins import str
 import numpy as np
 import time
 import os
@@ -41,7 +42,7 @@ def single_source(sindec):
     sources['distance_mpc'] = np.array([1.0])
     sources['ref_time_mjd'] = (np.array([ref_time]))
     sources['start_time_mjd'] = (np.array([ref_time - 50]))
-    sources['end_time_mjd)'] = (np.array([ref_time + 100]))
+    sources['end_time_mjd'] = (np.array([ref_time + 100]))
     sources['source_name'] = 'PS_dec=' + str(sindec)
 
     return sources
@@ -54,10 +55,10 @@ def ps_catalogue_name(sindec):
 
 def make_single_sources():
     """Makes single-source catalogues for a variety of sindec intervals."""
-    print "Making single-source catalogues for the following sin(declinations):"
+    print("Making single-source catalogues for the following sin(declinations):")
 
     sindecs = np.linspace(1.00, -1.00, 41)
-    print sindecs, "\n"
+    print(sindecs, "\n")
 
     try:
         os.makedirs(os.path.dirname(ps_catalogue_name(0.0)))
@@ -72,8 +73,8 @@ def make_single_sources():
         np.save(save_path, cat)
         time.sleep(0.1)
 
-    print "\n"
-    print "Single Source catalogues created!", "\n"
+    print("\n")
+    print("Single Source catalogues created!", "\n")
 
 
 def custom_sources(name, ra, dec, weight, distance, ref_time=np.nan,

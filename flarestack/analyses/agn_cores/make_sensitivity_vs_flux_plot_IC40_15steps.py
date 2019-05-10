@@ -3,6 +3,8 @@ injected spectral index. Rather than the traditional flux at 1 GeV,
 Sensitivities are given as the total integrated fluence across all sources,
 and as the corresponding standard-candle-luminosity.
 """
+from __future__ import print_function
+from __future__ import division
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
@@ -53,16 +55,16 @@ gamma_dict = dict()
 
 for gamma in gammas:
     raw = "analyses/agn_cores/compare_nr_of_sources_IC40_steps15_scale/" + str(gamma) + "/"
-    print "Raw name for gamma", gamma, "is", raw
+    print("Raw name for gamma", gamma, "is", raw)
     res = dict()
 
     for j, nr_srcs in enumerate(nr_brightest_sources):
         cat_path = agn_catalogue_name("radioloud", "radioselected_" + str(nr_srcs) + "brightest_srcs")
         catalogue = np.load(cat_path)
-        print "Loading catalogue", cat_path, " with ", len(catalogue), "sources"
+        print("Loading catalogue", cat_path, " with ", len(catalogue), "sources")
 
         full_name = raw + "NrSrcs=" + str(nr_srcs) + "/"
-        print "Full name for ", nr_srcs, " sources is", full_name
+        print("Full name for ", nr_srcs, " sources is", full_name)
 
         injection_time = llh_time
         injection_energy = dict(llh_energy)
@@ -102,9 +104,9 @@ for gamma in gammas:
 
 rd.wait_for_cluster()
 
-for (gamma, gamma_res) in (gamma_dict.iteritems()):
+for (gamma, gamma_res) in (iter(gamma_dict.items())):
 
-    print "gamma: ", gamma
+    print("gamma: ", gamma)
     sens_livetime = []
     fracs = []
     disc_pots_livetime = []
@@ -115,7 +117,7 @@ for (gamma, gamma_res) in (gamma_dict.iteritems()):
 
     name = "analyses/agn_cores/compare_nr_of_sources_IC40_steps15_scale/" + str(gamma) + "/"
 
-    for (cat_path, rh_dict) in (sorted(gamma_res.iteritems())):
+    for (cat_path, rh_dict) in (sorted(gamma_res.items())):
         # sens_livetime = [[] for _ in rh_dict]
         # fracs = [[] for _ in rh_dict]
         # disc_pots_livetime = [[] for _ in rh_dict]
@@ -125,14 +127,14 @@ for (gamma, gamma_res) in (gamma_dict.iteritems()):
         cat = np.load(cat_path)
         nr_srcs = len(cat)
 
-        print "nr_srcs in loop: ", nr_srcs
-        print "   "
-        print "   "
+        print("nr_srcs in loop: ", nr_srcs)
+        print("   ")
+        print("   ")
         name_steps = "analyses/agn_cores/compare_nr_of_sources_IC40_steps15_scale/" + str(gamma) + "/" + "NrSrcs=" + str(nr_srcs) + "/"
 
-        int_xray = np.sum(cat["base_weight"]/1e13*624.151)   # in GeV cm-2 s-1
+        int_xray = np.sum(old_div(cat["base_weight"],1e13*624.151))   # in GeV cm-2 s-1
         int_xray_flux.append(int_xray) # GeV cm-2 s-1
-        int_xray_flux_erg.append(np.sum(cat["base_weight"]/1e13)) # erg  cm-2 s-1
+        int_xray_flux_erg.append(np.sum(old_div(cat["base_weight"],1e13))) # erg  cm-2 s-1
 
         try:
             rh = ResultsHandler(rh_dict)
@@ -145,11 +147,12 @@ for (gamma, gamma_res) in (gamma_dict.iteritems()):
             sens_livetime.append(astro_sens[key])   # fluence=integrated over energy
             disc_pots_livetime.append(astro_disc[key])
 
-            ratio_sens.append(astro_sens[key]/int_xray)  # fluence normalized over tot xray flux
-            ratio_disc.append(astro_disc[key]/int_xray)
+            ratio_sens.append(astro_sens[key] / int_xray) # fluence
+            # normalized over tot xray flux
+            ratio_disc.append(astro_disc[key] / int_xray)
 
             fracs.append(nr_srcs)
-            print fracs
+            print(fracs)
 
         except OSError:
             pass
@@ -177,7 +180,7 @@ for (gamma, gamma_res) in (gamma_dict.iteritems()):
 
     labels = ['Sensitivity', 'Discovery Potential', 'sens', 'dp']
     for i, sens_dp in enumerate([sens_livetime, disc_pots_livetime]):
-        print i, sens_dp
+        print(i, sens_dp)
         # Plot 1: sensitivity/dp fluence vs number of sources (cuts)
         plt.rc('axes', axisbelow=True)
         plt.figure()
@@ -212,7 +215,7 @@ for (gamma, gamma_res) in (gamma_dict.iteritems()):
         plt.close()
 
     for i, sens_dp in enumerate([ratio_sens, ratio_disc]):
-        print i, sens_dp
+        print(i, sens_dp)
         # Plot 1: sensitivity/dp fluence vs number of sources (cuts)
         plt.rc('axes', axisbelow=True)
         plt.figure()

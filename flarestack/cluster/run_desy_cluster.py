@@ -19,6 +19,8 @@ Once all sub-tasks are completed, the script will proceed to call
 MergeFiles.run() for the given configuration, combining results.
 
 """
+from __future__ import print_function
+from builtins import str
 import subprocess
 import time
 import os
@@ -59,10 +61,10 @@ def wait_for_cluster():
             else:
                 n_running = 0
 
-            print time.asctime(time.localtime()), n_total, "entries in queue. ",
-            print "Of these,", n_running, "are running tasks, and",
-            print n_total-n_running, "are jobs still waiting to be executed."
-            print time.asctime(time.localtime()), "Waiting for Cluster"
+            print(time.asctime(time.localtime()), n_total, "entries in queue. ", end=' ')
+            print("Of these,", n_running, "are running tasks, and", end=' ')
+            print(n_total-n_running, "are jobs still waiting to be executed.")
+            print(time.asctime(time.localtime()), "Waiting for Cluster")
             i = 0
             j += 1
         # if j > 5:
@@ -88,5 +90,5 @@ def submit_to_cluster(path, n_jobs=10, bashname="SubmitDESY.sh"):
 
     # submit_cmd = bashfile + " " + path
 
-    print time.asctime(time.localtime()), submit_cmd, "\n"
+    print(time.asctime(time.localtime()), submit_cmd, "\n")
     os.system(submit_cmd)

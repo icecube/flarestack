@@ -1,5 +1,8 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
 import numpy as np
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.utils.dataset_loader import data_loader
 from flarestack.core.energy_PDFs import EnergyPDF
 import matplotlib.pyplot as plt
@@ -16,7 +19,7 @@ def get_pulls(mc):
     x = np.degrees(angular_distance(
         mc["ra"], mc["dec"], mc["trueRa"], mc["trueDec"]))
     y = np.degrees(mc["sigma"]) * 1.177
-    return x/y
+    return x / y
 
 
 n_step = 50
@@ -53,7 +56,7 @@ def create_quantile_floor_0d(floor_dict):
     with open(save_path, "wb") as f:
         Pickle.dump(quantile_floor, f)
 
-    print "Saved to", save_path
+    print("Saved to", save_path)
 
 
 def create_quantile_floor_0d_e(floor_dict):
@@ -85,7 +88,7 @@ def create_quantile_floor_0d_e(floor_dict):
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
 
-    print "Saved to", save_path
+    print("Saved to", save_path)
 
     plot_path = floor_pickle(floor_dict)[:-3] + "pdf"
 
@@ -125,7 +128,7 @@ def create_quantile_floor_1d(floor_dict):
 
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
-    print "Saved to", save_path
+    print("Saved to", save_path)
 
     plot_path = floor_pickle(floor_dict)[:-3] + "pdf"
 
@@ -184,7 +187,7 @@ def create_quantile_floor_1d_e(floor_dict):
 
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
-    print "Saved to", save_path
+    print("Saved to", save_path)
 
     from scipy.interpolate import RectBivariateSpline
 
@@ -253,7 +256,7 @@ def create_pull_0d_e(pull_dict):
     with open(save_path, "wb") as f:
         Pickle.dump(res_dict, f)
 
-    print "Saved to", save_path
+    print("Saved to", save_path)
 
 
 
@@ -288,7 +291,7 @@ def create_pull_1d(pull_dict):
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
 
-    print "Saved to", save_path
+    print("Saved to", save_path)
 
     plot_path = save_path[:-3] + "pdf"
 
@@ -358,7 +361,7 @@ def create_pull_1d_e(floor_dict):
 
     with open(save_path, "wb") as f:
         Pickle.dump(res_dict, f)
-    print "Saved to", save_path
+    print("Saved to", save_path)
 
     plot_path = save_path[:-3] + "pdf"
 
@@ -420,7 +423,7 @@ def create_pull_2d(pull_dict):
     with open(save_path, "wb") as f:
         Pickle.dump(res, f)
 
-    print "Saved to", save_path
+    print("Saved to", save_path)
 
     plot_path = save_path[:-3] + "pdf"
 
@@ -505,4 +508,4 @@ def create_pull_2d_e(pull_dict):
     with open(save_path, "wb") as f:
         Pickle.dump(res_dict, f)
 
-    print "Saved to", save_path
+    print("Saved to", save_path)

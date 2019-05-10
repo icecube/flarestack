@@ -1,6 +1,10 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
 import os
 import numpy as np
-import cPickle as Pickle
+import pickle as Pickle
 from astropy import units as u
 from astropy import constants as const
 from flarestack.shared import plot_output_dir, fs_scratch_dir
@@ -66,10 +70,10 @@ if __name__ == "__main__":
         frac = float(i)/float(n_path)
         ax1.plot(#np.log10(xvals), #/ convert_hz_ev),
                  xvals,
-                 (yvals * xvals**2)/convert_ergs_GeV,
+                 (yvals * xvals**2) / convert_ergs_GeV,
                  alpha=0.3, color=(1-frac, frac, 0))
         ax2.plot(xvals / convert_hz_ev,
-                 (yvals * xvals**2)/convert_ergs_GeV, alpha=0.)
+                 (yvals * xvals**2) / convert_ergs_GeV, alpha=0.)
         ax3.plot(xvals, (yvals * xvals**2), alpha=0.)
 
     ax1.set_ylim(10**-14, 10**-9)
@@ -86,6 +90,6 @@ if __name__ == "__main__":
     ax1.grid(True)
     # plt.suptitle("TXS 0506+056 Spectral Models")
     plt.tight_layout()
-    print "Saving to", savepath
+    print("Saving to", savepath)
     plt.savefig(savepath)
     plt.close()

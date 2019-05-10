@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import matplotlib.pyplot as plt
 from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
@@ -10,7 +11,7 @@ data_rate_dir = plots_dir + "data_rate/"
 for season in diffuse_8year:
     data = data_loader(season["exp_path"])[season["MJD Time Key"]]
 
-    print data_loader(season["exp_path"]).dtype.names
+    print(data_loader(season["exp_path"]).dtype.names)
 
     sample_dir = data_rate_dir + season["Data Sample"] + "/"
 
@@ -18,18 +19,18 @@ for season in diffuse_8year:
         os.makedirs(sample_dir)
 
     grl = grl_loader(season)
-    print grl.dtype.names
+    print(grl.dtype.names)
 
-    print min(grl["start"]), max(grl["stop"])
-    print min(grl["run"]), max(grl["run"])
+    print(min(grl["start"]), max(grl["stop"]))
+    print(min(grl["run"]), max(grl["run"]))
 
-    print grl[-10:]
+    print(grl[-10:])
 
     plt.figure()
     plt.hist(data, bins=50, histtype="stepfilled")
 
     savepath = sample_dir + season["Name"] + ".pdf"
-    print "Saving to", savepath
+    print("Saving to", savepath)
 
     plt.savefig(savepath)
     plt.close()

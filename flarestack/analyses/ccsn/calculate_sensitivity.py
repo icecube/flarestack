@@ -1,6 +1,7 @@
 """Script to calculate the sensitivity and discovery potential for different
 
 """
+from builtins import str
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
@@ -73,9 +74,9 @@ for cat in sn_cats:
 
                 length = float(time_key)
 
-                scale = flux_to_k(reference_sensitivity(
+                scale = (flux_to_k(reference_sensitivity(
                     np.sin(closest_src["dec"]), gamma=gamma
-                ) * 40 * math.sqrt(float(len(catalogue)))) * 200./length
+                ) * 40 * math.sqrt(float(len(catalogue)))) * 200.) / length
 
                 injection_energy = dict(llh_energy)
                 injection_energy["Gamma"] = gamma
@@ -117,11 +118,11 @@ for cat in sn_cats:
 
 rd.wait_for_cluster()
 
-for b, (cat_name, cat_res) in enumerate(full_res.iteritems()):
+for b, (cat_name, cat_res) in enumerate(full_res.items()):
 
-    for (time_key, time_res) in cat_res.iteritems():
+    for (time_key, time_res) in cat_res.items():
 
-        for (mh_name, src_res) in time_res.iteritems():
+        for (mh_name, src_res) in time_res.items():
 
             sens_livetime = []
             fracs = []
@@ -131,7 +132,7 @@ for b, (cat_name, cat_res) in enumerate(full_res.iteritems()):
 
             labels = []
 
-            for (gamma, rh_dict) in sorted(src_res.iteritems()):
+            for (gamma, rh_dict) in sorted(src_res.items()):
 
                 rh = ResultsHandler(rh_dict)
 

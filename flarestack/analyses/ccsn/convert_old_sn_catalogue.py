@@ -7,6 +7,7 @@ contained 70% of the signal weight. Another larger sample contained the
 remaining 30% weight distributed across many sources. As integer numbers of
 sources are used, the closest percentage to 70% is used for splitting.
 """
+from __future__ import print_function
 from flarestack.analyses.ccsn.shared_ccsn import raw_cat_dir, sn_catalogue_name
 from flarestack.utils.prepare_catalogue import cat_dtype
 import numpy as np
@@ -21,7 +22,7 @@ threshold = 0.7
 
 for sn_cat in raw_cats:
 
-    print "Converting", sn_cat
+    print("Converting", sn_cat)
 
     cat = np.load(raw_cat_dir + sn_cat)
 
@@ -64,6 +65,6 @@ for sn_cat in raw_cats:
 
         save_path = sn_catalogue_name(sn_type, nearby=[True, False][i])
 
-        print "Saving to", save_path
+        print("Saving to", save_path)
 
         np.save(save_path, new_cat)

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flarestack",
-    version="1.1.1",
+    version="2.0.0-beta",
     author="Robert Stein",
     author_email="robert.stein@desy.de",
     description="Package for unbinned likelihood analysis of physics data",
@@ -16,7 +16,7 @@ setuptools.setup(
     url="https://github.com/IceCubeOpenSource/flarestack",
     packages=setuptools.find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],

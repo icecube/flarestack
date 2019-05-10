@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 import numpy as np
 from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
@@ -36,8 +38,8 @@ def data_loader(data_path, floor=True):
         if "Run" in dataset.dtype.names:
             dataset = rename_fields(dataset, {"Run": "run"})
         else:
-            print "\n \n Warning, no run information found. Will not be able " \
-                  "to verify that runs are good! \n \n"
+            print("\n \n Warning, no run information found. Will not be able " \
+                  "to verify that runs are good! \n \n")
 
     # Check if 'sigma' or 'angErr' is Used
 
@@ -74,12 +76,12 @@ def grl_loader(season):
         if np.sum(~grl["good_i3"]) == 0:
             pass
         else:
-            print "Trying to load", season
-            print "The following runs are included:"
-            print grl[~grl["good_i3"]]
+            print("Trying to load", season)
+            print("The following runs are included:")
+            print(grl[~grl["good_i3"]])
             raise Exception("Runs marked as 'bad' are found in Good Run List")
     except ValueError:
-        print "No field called 'good_i3'. Cannot check GoodRunList."
+        print("No field called 'good_i3'. Cannot check GoodRunList.")
 
     if "length" not in grl.dtype.names:
 
@@ -115,12 +117,12 @@ def grl_loader(season):
 
 def verify_grl_with_data(datasets):
 
-    print "Verifying that, for each dataset, all events are in runs that \n" \
+    print("Verifying that, for each dataset, all events are in runs that \n" \
           "are on the GRL, and not outside the period marked as good in the " \
-          "GRL."
+          "GRL.")
 
     for season in datasets:
-        print season["Name"],
+        print(season["Name"], end=' ')
 
         exp_data = data_loader(season["exp_path"])
 
@@ -153,6 +155,6 @@ def verify_grl_with_data(datasets):
                             " affected: \n" + str(affected_runs))
 
         else:
-            print "Passed!"
+            print("Passed!")
 
         del exp_data

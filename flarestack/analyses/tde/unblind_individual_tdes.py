@@ -4,7 +4,7 @@ quantify the significance of the result. Produces relevant post-unblinding
 plots.
 """
 import numpy as np
-from flarestack.core.unblinding import Unblinder
+from flarestack.core.unblinding import create_unblinder
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 from flarestack.analyses.tde.shared_TDE import individual_tde_cat, \
@@ -62,4 +62,4 @@ for j, cat in enumerate(individual_tdes):
         "background TS": bkg_ts
     }
 
-    ub = Unblinder(unblind_dict, mock_unblind=False, full_plots=True)
+    ub = create_unblinder(unblind_dict, mock_unblind=False, full_plots=True)

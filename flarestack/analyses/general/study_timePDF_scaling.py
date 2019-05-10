@@ -1,6 +1,10 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import input
+from builtins import str
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
@@ -48,8 +52,8 @@ sindecs = np.linspace(0.5, -0.5, 3)
 
 lengths = np.logspace(-1, 1, 11) * window
 
-print lengths
-raw_input("prompt")
+print(lengths)
+input("prompt")
 
 for sindec in sindecs:
 
@@ -129,16 +133,15 @@ ax = plt.subplot(111)
 
 cols = ["r", "g", "b", "orange"]
 
-for i, (sindec_key, src_res) in enumerate(cat_res.iteritems()):
+for i, (sindec_key, src_res) in enumerate(cat_res.items()):
 
     name = name_root + sindec_key + "/"
 
     sens = []
     lengths = []
 
-    for (t, rh_dict) in sorted(src_res.iteritems()):
-        rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                            rh_dict["catalogue"])
+    for (t, rh_dict) in sorted(src_res.items()):
+        rh = ResultsHandler(rh_dict)
         sens.append(rh.sensitivity)
         lengths.append(t)
 

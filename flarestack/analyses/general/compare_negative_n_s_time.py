@@ -1,6 +1,8 @@
+from __future__ import division
+from builtins import str
 import numpy as np
 import os
-import cPickle as Pickle
+import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
@@ -124,7 +126,7 @@ for sindec in sindecs:
 
 rd.wait_for_cluster()
 
-for sindec, src_res in analyses.iteritems():
+for sindec, src_res in analyses.items():
 
     fig = plt.figure()
     ax1 = plt.subplot2grid((6, 1), (0, 0), colspan=3, rowspan=3)
@@ -138,7 +140,7 @@ for sindec, src_res in analyses.iteritems():
 
     frac_over = []
 
-    for i, (label, method_res) in enumerate(src_res.iteritems()):
+    for i, (label, method_res) in enumerate(src_res.items()):
 
         sens = []
         fracs = []
@@ -150,8 +152,7 @@ for sindec, src_res in analyses.iteritems():
             rh_dict = method_res[offset]
 
             try:
-                rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                                    rh_dict["catalogue"])
+                rh = ResultsHandler(rh_dict)
 
                 injection_time = rh_dict["inj kwargs"]["Injection Time PDF"]
 
@@ -171,7 +172,6 @@ for sindec, src_res in analyses.iteritems():
                 if label == "Zero-bound":
 
                     frac_over.append(rh.frac_over)
-
 
             except EOFError:
                 sens.append(np.nan)

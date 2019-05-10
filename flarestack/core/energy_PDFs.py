@@ -2,10 +2,12 @@
 events based on a given energy PDF.
 
 """
-
+from __future__ import print_function
+from __future__ import division
+from builtins import object
 import numexpr
 import numpy as np
-import cPickle as Pickle
+import pickle as Pickle
 
 gamma_range = [1., 4.]
 
@@ -30,7 +32,7 @@ def read_e_pdf_dict(e_pdf_dict):
 
     for (old_key, new_key) in maps:
 
-        if old_key in e_pdf_dict.keys():
+        if old_key in list(e_pdf_dict.keys()):
             e_pdf_dict[new_key] = e_pdf_dict[old_key]
 
     if e_pdf_dict["energy_pdf_name"] == "Power Law":
@@ -39,23 +41,23 @@ def read_e_pdf_dict(e_pdf_dict):
     return e_pdf_dict
 
 
-class EnergyPDF:
+class EnergyPDF(object):
     subclasses = {}
 
     def __init__(self, e_pdf_dict):
 
         # Set up minimum/maximum energy
 
-        if "e_min_gev" in e_pdf_dict.keys():
+        if "e_min_gev" in list(e_pdf_dict.keys()):
             self.e_min = e_pdf_dict["e_min_gev"]
-            print "Minimum Energy is", self.e_min, "GeV."
+            print("Minimum Energy is", self.e_min, "GeV.")
             self.integral_e_min = self.e_min
         else:
             self.integral_e_min = default_emin
 
-        if "e_max_gev" in e_pdf_dict.keys():
+        if "e_max_gev" in list(e_pdf_dict.keys()):
             self.e_max = e_pdf_dict["e_max_gev"]
-            print "Maximum Energy is", self.e_max, "GeV."
+            print("Maximum Energy is", self.e_max, "GeV.")
             self.integral_e_max = self.e_max
         else:
             self.integral_e_max = default_emax
@@ -138,7 +140,7 @@ class PowerLaw(EnergyPDF):
     for the init function, where gamma is the spectral index of the Power Law.
     """
 
-    def __init__(self, e_pdf_dict={}):
+    def __init__(self, e_pdf_dict=None):
         """Creates a PowerLaw object, which is an energy PDF based on a power
         law. The power law is generated from e_pdf_dict, which can specify a
         spectral index (Gamma), as well as an optional minimum energy (E Min)
@@ -146,9 +148,13 @@ class PowerLaw(EnergyPDF):
 
         :param e_pdf_dict: Dictionary containing parameters
         """
+
+        if e_pdf_dict is None:
+            e_pdf_dict = dict()
+
         EnergyPDF.__init__(self, e_pdf_dict)
 
-        if "gamma" in e_pdf_dict.keys():
+        if "gamma" in list(e_pdf_dict.keys()):
             self.gamma = float(e_pdf_dict["gamma"])
 
     def weight_mc(self, mc, gamma=None):
@@ -217,8 +223,8 @@ class PowerLaw(EnergyPDF):
         """
 
         if self.gamma == 2:
-            e_integral = np.log(self.integral_e_max /
-                                self.integral_e_min)
+            e_integral = np.log(old_div(self.integral_e_max,
+                                self.integral_e_min))
         else:
             power = 2 - self.gamma
 
