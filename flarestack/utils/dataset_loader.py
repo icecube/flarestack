@@ -103,6 +103,11 @@ def grl_loader(season):
                             "The following runs are affected: \n" +
                             str(bad_runs))
 
+    # Sometimes, inexplicable, the runs come in random orders rather than
+    # ascending order. This deals with that.
+
+    grl = np.sort(grl, order="run")
+
     del exp_data
 
     return grl

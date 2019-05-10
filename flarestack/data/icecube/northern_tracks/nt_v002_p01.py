@@ -70,7 +70,6 @@ Path to local copy of point source tracks, downloaded on 18/09/18 from
 
 from flarestack.shared import dataset_dir
 import numpy as np
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_data_dir
 
 nt_data_dir = dataset_dir + "northern_tracks/version-002-p01/"
 
@@ -88,7 +87,7 @@ diffuse_IC59 = {
     "Name": "IC59",
     "exp_path": nt_data_dir + "dataset_8yr_fit_IC59_exp_compressed.npy",
     "mc_path": nt_data_dir + "dataset_8yr_fit_IC59_MC_compressed.npy",
-    "grl_path": ps_data_dir + "IC59_GRL.npy"
+    "grl_path": nt_data_dir + "IC59_GRL.npy"
 }
 diffuse_IC59.update(diffuse_dict)
 

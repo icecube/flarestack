@@ -83,37 +83,55 @@ diffuse_dict = {
     "MJD Time Key": "time"
 }
 
-diffuse_IC59 = {
-    "Name": "IC59",
-    "exp_path": nt_data_dir + "dataset_8yr_fit_IC59_exp_compressed.npy",
-    "mc_path": nt_data_dir + "dataset_8yr_fit_IC59_MC_compressed.npy",
-    "grl_path": nt_data_dir + "GRL/GRL_IC59.npy"
-}
-diffuse_IC59.update(diffuse_dict)
+def generate_diffuse_season(season):
+    season_dict = {
+        "Name": season,
+        "exp_path":
+            nt_data_dir +
+            "dataset_8yr_fit_{0}_exp_compressed.npy".format(season),
+        "mc_path":
+            nt_data_dir +
+            "dataset_8yr_fit_{0}_MC_compressed.npy".format(season),
+        "grl_path":
+            nt_data_dir +
+            "GRL/dataset_8yr_fit_{0}_exp_compressed.npy".format(season)
+    }
+    season_dict.update(diffuse_dict)
+    return season_dict
 
-diffuse_IC79 = {
-    "Name": "IC79",
-    "exp_path": nt_data_dir + "dataset_8yr_fit_IC79_exp_compressed.npy",
-    "mc_path": nt_data_dir + "dataset_8yr_fit_IC79_MC_compressed.npy",
-    "grl_path": nt_data_dir + "GRL/GRL_IC79.npy"
-}
-diffuse_IC79.update(diffuse_dict)
+seasons = ["IC59", "IC79", "IC86_2011", "IC86_2012_16"]
 
-diffuse_IC86_1 = {
-    "Name": "IC86_1",
-    "exp_path": nt_data_dir + "dataset_8yr_fit_IC86_2011_exp_compressed.npy",
-    "mc_path": nt_data_dir + "dataset_8yr_fit_IC86_2011_MC_compressed.npy",
-    "grl_path": nt_data_dir + "GRL/GRL_IC86_2011.npy"
-}
-diffuse_IC86_1.update(diffuse_dict)
+# diffuse_IC59 = {
+#     "Name": "IC59",
+#     "exp_path": nt_data_dir + "dataset_8yr_fit_IC59_exp_compressed.npy",
+#     "mc_path": nt_data_dir + "dataset_8yr_fit_IC59_MC_compressed.npy",
+#     "grl_path": nt_data_dir + "GRL/GRL_IC59.npy"
+# }
+# diffuse_IC59.update(diffuse_dict)
+#
+# diffuse_IC79 = {
+#     "Name": "IC79",
+#     "exp_path": nt_data_dir + "dataset_8yr_fit_IC79_exp_compressed.npy",
+#     "mc_path": nt_data_dir + "dataset_8yr_fit_IC79_MC_compressed.npy",
+#     "grl_path": nt_data_dir + "GRL/GRL_IC79.npy"
+# }
+# diffuse_IC79.update(diffuse_dict)
+#
+# diffuse_IC86_1 = {
+#     "Name": "IC86_1",
+#     "exp_path": nt_data_dir + "dataset_8yr_fit_IC86_2011_exp_compressed.npy",
+#     "mc_path": nt_data_dir + "dataset_8yr_fit_IC86_2011_MC_compressed.npy",
+#     "grl_path": nt_data_dir + "GRL/GRL_IC86_2011.npy"
+# }
+# diffuse_IC86_1.update(diffuse_dict)
+#
+# diffuse_IC86_23456 = {
+#     "Name": "IC86_23456",
+#     "exp_path": nt_data_dir + "dataset_8yr_fit_IC86_2012_16_exp_compressed.npy",
+#     "mc_path": nt_data_dir + "dataset_8yr_fit_IC86_2012_16_MC_compressed.npy",
+#     "grl_path": nt_data_dir + "GRL/GRL_IC86_2012_16.npy"
+# }
 
-diffuse_IC86_23456 = {
-    "Name": "IC86_23456",
-    "exp_path": nt_data_dir + "dataset_8yr_fit_IC86_2012_16_exp_compressed.npy",
-    "mc_path": nt_data_dir + "dataset_8yr_fit_IC86_2012_16_MC_compressed.npy",
-    "grl_path": nt_data_dir + "GRL/GRL_IC86_2012_16.npy"
-}
+# diffuse_IC86_23456.update(diffuse_dict)
 
-diffuse_IC86_23456.update(diffuse_dict)
-
-diffuse_8year = [diffuse_IC59, diffuse_IC79, diffuse_IC86_1, diffuse_IC86_23456]
+diffuse_8year = [generate_diffuse_season(x) for x in seasons]
