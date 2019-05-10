@@ -49,7 +49,6 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
     """
 
     unblind_dict = read_mh_dict(unblind_dict)
-    print(unblind_dict)
 
     try:
         mh_name = unblind_dict["mh_name"]

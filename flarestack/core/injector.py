@@ -480,32 +480,31 @@ class LowMemoryInjector(Injector):
                 dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
                 band_mask = injection_band_mask.getrow(i).toarray()[0]
                 source_mc = np.copy(self._mc[band_mask])
-                
+
                 source_mc = self.calculate_fluence(source, scale, source_mc,
                                                    band_mask, omega)
 
-                if np.isnan(self.fixed_n):
+                # If a number of neutrinos to inject is specified, use that.
+                # Otherwise, inject based on the flux scale as normal.
 
+                if not np.isnan(self.fixed_n):
+                    n_inj = int(self.fixed_n)
+                else:
                     n_inj = np.sum(source_mc["ow"])
 
-                    n_tot_exp += n_inj
+                n_tot_exp += n_inj
 
-                    if source["source_name"] not in list(self.ref_fluxes[scale_key].keys()):
-                        self.ref_fluxes[scale_key][
-                            source["source_name"]] = n_inj
+                if source["source_name"] not in list(
+                        self.ref_fluxes[scale_key].keys()):
+                    self.ref_fluxes[scale_key][source["source_name"]] = n_inj
 
-                    # Simulates poisson noise around the expectation value n_inj.
-                    if self.poisson_smear:
-                        n_s = np.random.poisson(n_inj)
-                    # If there is no poisson noise, rounds n_s down to nearest integer
-                    else:
-                        n_s = int(n_inj)
+                # Simulates poisson noise around the expectation value n_inj.
+                if self.poisson_smear:
+                    n_s = np.random.poisson(n_inj)
 
+                # If there is no poisson noise, rounds n_s to nearest integer
                 else:
-                    n_s = int(self.fixed_n)
-
-                    if source["source_name"] not in list(self.ref_fluxes[scale_key].keys()):
-                        self.ref_fluxes[scale_key][source["source_name"]] = n_s
+                    n_s = int(n_inj)
 
                 #  If n_s = 0, skips simulation step.
                 if n_s < 1:
