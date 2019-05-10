@@ -149,9 +149,14 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, weight_function):
 
         mask = (bkg_row > 0.) & (sig_row > 0.)
         r = np.ones_like(bkg_row)
-        r[mask] = sig_row[mask] / (bkg_row[mask] * np.sum(bkg_row))
+        r[mask] = sig_row[mask] / (bkg_row[mask] / np.sum(bkg_row))
 
         ratio.T[i] = r
+    #     print(max(sig_row), np.median(bkg_row), np.sum(bkg_row))
+    #     print(r)
+    #     input("prompt")
+    #
+    # input("prompt")
 
     return ratio
 
