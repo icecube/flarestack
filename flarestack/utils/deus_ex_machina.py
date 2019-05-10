@@ -30,7 +30,13 @@ def estimate_discovery_potential(injectors, sources):
     season_sig = []
 
     def weight_f(metric):
-        return metric / np.mean(metric)
+        return metric / np.median(metric)#min(metric)/np.mean(
+        # metric)
+
+    dist_scale = np.sum(sources["distance_mpc"] ** -2.)
+    weight_scale = np.mean(sources["base_weight"])
+
+    livetime = 0.
 
     for (season, inj) in injectors.iteritems():
 
@@ -43,7 +49,7 @@ def estimate_discovery_potential(injectors, sources):
         data = inj._raw_data
         n_bkg_tot = len(inj._raw_data)
         print "Number of events", n_bkg_tot
-        livetime = inj.time_pdf.livetime * 60 * 60 * 24
+        livetime += inj.time_pdf.livetime * 60 * 60 * 24
         print "Livetime is {0} seconds ({1} days)".format(
             livetime, inj.time_pdf.livetime
         )
@@ -85,11 +91,16 @@ def estimate_discovery_potential(injectors, sources):
 
             # Assume we only count within the 50% containment for the source
 
-            n_sig = np.sum(source_mc["ow"] * mc_weights) * \
-                    source["base_weight"] * 0.5
+            scale_factor = (source["base_weight"] / weight_scale) * \
+                    (source["distance_mpc"] ** -2.)/dist_scale
 
-            sig_scale = weighted_quantile(mc_weights, 0.5, source_mc["ow"])
-            # sig_scale = 1.
+            n_sig = 0.5 * np.sum(source_mc["ow"] * mc_weights) * scale_factor
+
+            # sig_scale = weighted_quantile(mc_weights, 0.5, source_mc["ow"])
+            sig_scale = np.mean(mc_weights * source_mc["ow"])/\
+                        np.mean(source_mc["ow"]) #* scale_factor
+            # sig_scale = np.mean(source_mc["ow"])
+
             # sig_scale = np.median(data_weights)
 
             n_sigs.append(n_sig / sig_scale)
@@ -101,6 +112,10 @@ def estimate_discovery_potential(injectors, sources):
             median_sigma = weighted_quantile(
                         true_errors, 0.5, source_mc["ow"] * mc_weights)
 
+            # median_sigma =  weighted_quantile(
+            #             source_mc["sigma"], 0.5, source_mc["ow"]
+            #                                      * mc_weights) * 1.177
+
             area = np.pi * (median_sigma) ** 2 #- area
 
             local_rate = np.sum(data_weights) / omega
@@ -111,7 +126,9 @@ def estimate_discovery_potential(injectors, sources):
         n_sigs = np.array(n_sigs)
         n_bkgs = np.array(n_bkgs)
 
-        weights = weight_f(n_sigs)
+        # weights = weight_f(n_sigs)
+        weights = (n_sigs / np.mean(n_sigs)) #/ np.sqrt(float(len(sources))) #*
+        # np.median(n_bkgs)
 
         sum_n_sigs = np.sum(n_sigs * weights)
         sum_n_bkgs = np.sum(n_bkgs * weights)
@@ -124,6 +141,10 @@ def estimate_discovery_potential(injectors, sources):
 
     season_weights = weight_f(season_sig)
 
+    # print dist_scale
+    # dist_rescale = np.mean(sources["distance_mpc"]**-2.) / dist_scale
+    # raw_input("prompt")
+
     int_sig = np.sum(season_sig * season_weights)
     int_bkg = np.sum(season_bkg * season_weights)
 
@@ -133,7 +154,7 @@ def estimate_discovery_potential(injectors, sources):
     scale = disc_pot / int_sig
 
     # The approximate scaling for idealised + binned to unbinned
-    fudge_factor = 1.5
+    fudge_factor = 1.0
 
     scale /= fudge_factor
 
