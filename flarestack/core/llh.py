@@ -882,8 +882,6 @@ class StandardLLH(FixedEnergyLLH):
                     SoB_energy = self.estimate_energy_weights(
                             gamma, kwargs["SoB_energy_cache"][i])
 
-                    # print ((SoB_spacetime * SoB_energy) - 1.)
-
                     x.append(1. + ((n_j /kwargs["n_all"]) * (
                             (SoB_energy * SoB_spacetime) - 1.)))
 
