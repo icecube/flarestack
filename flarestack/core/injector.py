@@ -279,8 +279,6 @@ class Injector(object):
             sig_events = np.concatenate(
                 (sig_events, sim_ev[list(self._raw_data.dtype.names)]))
 
-        print("Injected", n_tot_exp, "events")
-
         return sig_events
 
     def create_dataset(self, scale, pull_corrector):
