@@ -11,8 +11,9 @@ import numpy as np
 from flarestack.core.llh import LLH
 from flarestack.core.injector import Injector
 from flarestack.core.astro import angular_distance
-from flarestack.shared import weighted_quantile, k_to_flux
-from flarestack.utils.catalogue_loader import load_catalogue
+from flarestack.shared import weighted_quantile, k_to_flux, flux_to_k
+from flarestack.utils.catalogue_loader import load_catalogue, \
+    calculate_source_weight
 from scipy.stats import norm
 
 
@@ -31,11 +32,9 @@ def estimate_discovery_potential(injectors, sources):
     season_sig = []
 
     def weight_f(metric):
-        return metric / np.median(metric)#min(metric)/np.mean(
-        # metric)
+        return 1.#metric #/ np.mean(metric)
 
-    dist_scale = np.sum(sources["distance_mpc"] ** -2.)
-    weight_scale = np.mean(sources["base_weight"])
+    weight_scale = calculate_source_weight(sources)
 
     livetime = 0.
 
@@ -46,14 +45,14 @@ def estimate_discovery_potential(injectors, sources):
         llh_dict["llh_time_pdf"] = inj.inj_kwargs["injection_time_pdf"]
         llh = LLH.create(inj.season, sources, llh_dict)
 
-        print("Season", season)
+        # print("Season", season)
         data = inj._raw_data
         n_bkg_tot = len(inj._raw_data)
-        print("Number of events", n_bkg_tot)
+        # print("Number of events", n_bkg_tot)
         livetime += inj.time_pdf.livetime * 60 * 60 * 24
-        print("Livetime is {0} seconds ({1} days)".format(
-            livetime, inj.time_pdf.livetime
-        ))
+        # print("Livetime is {0} seconds ({1} days)".format(
+        #     livetime, inj.time_pdf.livetime
+        # ))
 
         def signalness(sig_over_background):
             """Converts a signal over background ratio into a signal
@@ -70,7 +69,7 @@ def estimate_discovery_potential(injectors, sources):
         n_bkgs = []
 
         for source in sources:
-            source_mc = inj.calculate_single_source(source, scale=1.)
+            source_mc = inj.calculate_single_source(source, scale=1.0)
 
             # Sets half width of band
             dec_width = np.deg2rad(5.)
@@ -90,21 +89,16 @@ def estimate_discovery_potential(injectors, sources):
 
             mc_weights = signalness(llh.energy_weight_f(source_mc))
 
+            # The flux is split across sources. The source weight is equal to
+            # the base source weight / source distance ^2. It is equal to
+            # the fraction of total flux contributed by an individual source.
+
+            source_weight = calculate_source_weight(source) / weight_scale
+
             # Assume we only count within the 50% containment for the source
 
-            scale_factor = source["base_weight"] *  \
-                    (source["distance_mpc"] ** -2. / dist_scale)
-
-            n_sig = 0.5 * np.sum(source_mc["ow"] * mc_weights) * scale_factor
-
-            # sig_scale = weighted_quantile(mc_weights, 0.5, source_mc["ow"])
-            sig_scale = np.mean(mc_weights * source_mc["ow"]) / \
-                        np.mean(source_mc["ow"]) #* scale_factor
-            # sig_scale = np.mean(source_mc["ow"])
-
-            # sig_scale = np.median(data_weights)
-
-            n_sigs.append(n_sig / sig_scale)
+            n_sig = 0.5 * np.sum(
+                source_mc["ow"] * mc_weights)
 
             true_errors = angular_distance(
                 source_mc["ra"], source_mc["dec"],
@@ -113,22 +107,22 @@ def estimate_discovery_potential(injectors, sources):
             median_sigma = weighted_quantile(
                         true_errors, 0.5, source_mc["ow"] * mc_weights)
 
-            # median_sigma =  weighted_quantile(
-            #             source_mc["sigma"], 0.5, source_mc["ow"]
-            #                                      * mc_weights) * 1.177
-
             area = np.pi * (median_sigma) ** 2 #- area
 
             local_rate = np.sum(data_weights) / omega
 
-            n_bkg = local_rate * area
+            n_bkg = local_rate * area * source_weight
+
+            sig_scale = 1. / np.sqrt(n_bkg)# + n_sig)
+
+            n_sigs.append(n_sig / sig_scale)
             n_bkgs.append(n_bkg / sig_scale)
 
         n_sigs = np.array(n_sigs)
         n_bkgs = np.array(n_bkgs)
 
-        # weights = weight_f(n_sigs)
-        weights = (n_sigs / np.mean(n_sigs)) #/ np.sqrt(float(len(sources))) #*
+        weights = weight_f(n_sigs)
+        # weights = (n_sigs / np.mean(n_sigs)) #/ np.sqrt(float(len(sources))) #*
         # np.median(n_bkgs)
 
         sum_n_sigs = np.sum(n_sigs * weights)
@@ -140,11 +134,7 @@ def estimate_discovery_potential(injectors, sources):
     season_sig = np.array(season_sig)
     season_bkg = np.array(season_bkg)
 
-    season_weights = weight_f(season_sig)
-
-    # print dist_scale
-    # dist_rescale = np.mean(sources["distance_mpc"]**-2.) / dist_scale
-    # raw_input("prompt")
+    season_weights = 1.
 
     int_sig = np.sum(season_sig * season_weights)
     int_bkg = np.sum(season_bkg * season_weights)
@@ -152,10 +142,16 @@ def estimate_discovery_potential(injectors, sources):
     disc_count = norm.ppf(norm.cdf(5.0), loc=int_bkg, scale=np.sqrt(int_bkg))
 
     disc_pot = disc_count - int_bkg
+
     scale = disc_pot / int_sig
 
     # The approximate scaling for idealised + binned to unbinned
-    fudge_factor = 1.0
+    # Scales with high vs low statistics. In low statistics, you are
+    # effectively are background free, so don't take the 50% hit in only
+    # counting nearby neutrinos. In high-statics regime, previous study
+    # showed ~factor of 2 improvement for binned vs unbinned
+
+    fudge_factor = 1.25 + 0.75 * np.tanh(0.5 * np.log(disc_count))
 
     scale /= fudge_factor
 
@@ -163,8 +159,12 @@ def estimate_discovery_potential(injectors, sources):
 
     scale = k_to_flux(scale)
 
-    print("Estimated Discovery Potential is:", scale,
-          "x 10^-9 GeV sr^-1 s^-1 cm^-2")
+    print()
+    print(
+        "Estimated Discovery Potential is: {:.3g} GeV sr^-1 s^-1 cm^-2".format(
+            scale
+        ))
+    print()
     return scale
 
 

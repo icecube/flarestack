@@ -58,7 +58,7 @@ datasets = [
     ("PS Sample (7 year)", ps_7year, True),
     ("PS Sample (10 year)", ps_10year, True),
     ("GFU Sample (8 year)", gfu_v002_p04, True),
-    ("Diffuse Sample (8 year)", diffuse_8year, False)
+    # ("Diffuse Sample (8 year)", diffuse_8year, False)
 ]
 
 plt.figure()
@@ -104,7 +104,7 @@ for j, (sample_name, dataset, fullsky) in enumerate(datasets):
 
         disc_pots.append(dem.guess_discovery_potential(cat_path))
 
-    disc_pots = k_to_flux(np.array(disc_pots))
+    disc_pots = np.array(disc_pots)
 
     plot_range = np.linspace(-0.99, 0.99, 1000)
 
