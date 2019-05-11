@@ -6,10 +6,10 @@ from flarestack.cluster.make_local_bash_script import local_submit_file,\
     make_local_submit_file
 
 if host_server == "DESY":
-    submit = submit_to_cluster
+    submit_cluster = submit_to_cluster
 
 else:
-    def submit(path, **kwargs):
+    def submit_cluster(path, **kwargs):
         raise Exception("No cluster submission script recognised!")
 
 
@@ -25,3 +25,11 @@ def submit_local(path):
 
     print(time.asctime(time.localtime()), submit_cmd, "\n")
     os.system(submit_cmd)
+
+
+def submit(path, cluster=False, **kwargs):
+    if cluster:
+        submit_cluster(path, **kwargs)
+    else:
+        submit_local(path)
+
