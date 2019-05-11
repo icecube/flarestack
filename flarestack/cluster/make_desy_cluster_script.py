@@ -52,6 +52,12 @@ def make_desy_submit_file():
     print("Bash file created: \n")
     print(text)
 
+    cmd = "chmod +x " + submit_file
+
+    os.system(cmd)
+    
+    print("CMD:", cmd)
+
 
 if __name__ == "__main__":
     make_desy_submit_file()
