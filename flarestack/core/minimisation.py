@@ -162,6 +162,8 @@ class MinimisationHandler(object):
         self.bounds = bounds
         self.param_names = names
 
+        self.disc_guess = np.nan
+
     @classmethod
     def register_subclass(cls, mh_name):
         """Adds a new subclass of EnergyPDF, with class name equal to
@@ -197,10 +199,21 @@ class MinimisationHandler(object):
     def run_trial(self, scale):
         pass
 
-    def run(self, n_trials, scale=1.):
+    def run(self, n_trials, scale=1., seed=None):
         pass
 
-    def iterate_run(self, scale=1, n_steps=5, n_trials=50):
+
+    @staticmethod
+    def trial_seeds(scale=1., n_steps=5):
+        print("Running")
+
+        scale_range = np.array(
+            [0. for _ in range(10)] + list(np.linspace(0., scale, n_steps)[1:]))
+        seeds = [int(random.random() * 10 ** 8) for _ in scale_range]
+
+        return scale_range, seeds
+
+    def iterate_run(self, scale=1., n_steps=5, n_trials=50):
 
         scale_range = np.linspace(0., scale, n_steps)[1:]
 
@@ -237,7 +250,9 @@ class MinimisationHandler(object):
         return 1.5 * flux_to_k(self.guess_discovery_potential())
 
     def guess_discovery_potential(self):
-        return estimate_discovery_potential(self.injectors, self.sources)
+        self.disc_guess = estimate_discovery_potential(
+            self.injectors, self.sources)
+        return self.disc_guess
 
 
 @MinimisationHandler.register_subclass('fixed_weights')
@@ -381,9 +396,10 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return res_dict
 
-    def run(self, n_trials, scale=1.):
+    def run(self, n_trials, scale=1., seed=None):
 
-        seed = int(random.random() * 10 ** 8)
+        if seed is None:
+            seed = int(random.random() * 10 ** 8)
         np.random.seed(seed)
 
         # param_vals = [[] for x in self.p0]
@@ -1639,22 +1655,35 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
     def add_likelihood(self, season):
         return generate_dynamic_flare_class(season, self.sources, self.llh_dict)
 
+def g(x):
+    return x * x
+
 
 if __name__ == '__main__':
+    from multiprocessing import Pool
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="Path for analysis pkl_file")
+    parser.add_argument("-n", "--n_cpu", default=2)
     cfg = parser.parse_args()
 
-    with open(cfg.file) as f:
+    with open(cfg.file, "rb") as f:
         mh_dict = Pickle.load(f)
 
     mh = MinimisationHandler.create(mh_dict)
 
+    scales, seeds = mh.trial_seeds(mh_dict["scale"], n_steps=mh_dict["n_steps"])
+
     if "fixed_scale" in list(mh_dict.keys()):
-        fixed_scale = mh_dict["fixed_scale"]
-        print("Only scanning at scale", fixed_scale)
-        mh.run(n_trials=mh_dict["n_trials"], scale=fixed_scale)
+        scale = [mh_dict["fixed_scale"] for _ in seeds]
+        n_trials = int(float(mh_dict["n_trials"]) / float(cfg.n_cpu))
     else:
-        mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],
-                       n_trials=mh_dict["n_trials"])
+        n_trials = int(mh_dict["n_trials"])
+
+    trials = [mh_dict["n_trials"] for _ in seeds]
+    loop_args = zip(trials, scales, seeds)
+
+    print("N CPUs:", cfg.n_cpu)
+
+    with Pool(int(cfg.n_cpu)) as p:
+        p.starmap(mh.run, loop_args)

@@ -671,7 +671,8 @@ class StandardLLH(FixedEnergyLLH):
 
         print("Loaded", len(self.SoB_spline_2Ds), "Splines.")
 
-        # self.acceptance_f = self.create_acceptance_function()
+        self.acceptance_f = self.create_acceptance_function()
+        self.acceptance = self.new_acceptance
 
         # self.SoB_energy_cache = []
 
@@ -707,11 +708,13 @@ class StandardLLH(FixedEnergyLLH):
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = Pickle.load(f)
 
-        acc_spline = scipy.interpolate.interp2d(
-            dec_bins, gamma_bins, np.array(acc).T, kind='linear')
+        # acc_spline = scipy.interpolate.interp2d(
+        #     dec_bins, gamma_bins, np.array(acc).T, kind='linear')
+        #
+        # def acc_f(source, params):
+        #     return acc_spline(source["dec_rad"], params[-1])
 
-        def acc_f(source, params):
-            return acc_spline(source["dec_rad"], params[-1])
+        acc_f = None
 
         # Checks if energy weighting functions have been created
 
@@ -740,43 +743,40 @@ class StandardLLH(FixedEnergyLLH):
     #         dec_bins, gamma_bins, values.T, kind='linear')
     #     return f
 
-    # def create_acceptance_function(self):
-    #     """Creates a 2D linear interpolation of the acceptance of the detector
-    #     for the given season, as a function of declination and gamma. Returns
-    #     this interpolation function.
-    #
-    #     :return: 2D linear interpolation
-    #     """
-    #
-    #     acc_path = acceptance_path(self.season)
-    #
-    #     with open(acc_path) as f:
-    #         acc_dict = Pickle.load(f)
-    #
-    #     dec_bins = acc_dict["dec"]
-    #     gamma_bins = acc_dict["gamma"]
-    #     values = acc_dict["acceptance"]
-    #     f = scipy.interpolate.interp2d(
-    #         dec_bins, gamma_bins, values.T, kind='linear')
-    #     return f
+    def create_acceptance_function(self):
+        """Creates a 2D linear interpolation of the acceptance of the detector
+        for the given season, as a function of declination and gamma. Returns
+        this interpolation function.
 
-    # def acceptance(self, source, params=None):
-    #     """Calculates the detector acceptance for a given source, using the
-    #     2D interpolation of the acceptance as a function of declination and
-    #     gamma. If gamma IS NOT being fit, uses the default value of gamma for
-    #     weighting (determined in __init__). If gamma IS being fit, it will be
-    #     the last entry in the parameter array, and is the acceptance uses
-    #     this value.
-    #
-    #     :param source: Source to be considered
-    #     :param params: Parameter array
-    #     :return: Value for the acceptance of the detector, in the given
-    #     season, for the source
-    #     """
-    #     dec = source["dec_rad"]
-    #     gamma = params[-1]
-    #
-    #     return self.acceptance_f(dec, gamma)
+        :return: 2D linear interpolation
+        """
+
+        acc_path = acceptance_path(self.season)
+
+        with open(acc_path, "rb") as f:
+            [dec_bins, gamma_bins, acc] = Pickle.load(f)
+
+        f = scipy.interpolate.interp2d(
+            dec_bins, gamma_bins, acc.T, kind='linear')
+        return f
+
+    def new_acceptance(self, source, params=None):
+        """Calculates the detector acceptance for a given source, using the
+        2D interpolation of the acceptance as a function of declination and
+        gamma. If gamma IS NOT being fit, uses the default value of gamma for
+        weighting (determined in __init__). If gamma IS being fit, it will be
+        the last entry in the parameter array, and is the acceptance uses
+        this value.
+
+        :param source: Source to be considered
+        :param params: Parameter array
+        :return: Value for the acceptance of the detector, in the given
+        season, for the source
+        """
+        dec = source["dec_rad"]
+        gamma = params[-1]
+
+        return self.acceptance_f(dec, gamma)
 
     def create_kwargs(self, data, pull_corrector, weight_f=None):
 
