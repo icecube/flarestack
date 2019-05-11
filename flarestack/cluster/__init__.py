@@ -2,6 +2,8 @@ import time
 import os
 from flarestack.shared import host_server, fs_dir
 from flarestack.cluster.run_desy_cluster import submit_to_cluster
+from flarestack.cluster.make_local_bash_script import local_submit_file,\
+    make_local_submit_file
 
 if host_server == "DESY":
     submit = submit_to_cluster
@@ -11,9 +13,13 @@ else:
         raise Exception("No cluster submission script recognised!")
 
 
-def submit_local(path, bashname="SubmitDESY.sh"):
+if not os.path.isfile(local_submit_file):
+    make_local_submit_file()
 
-    bashfile = fs_dir + "cluster/" + bashname
+
+def submit_local(path):
+
+    bashfile = local_submit_file
 
     submit_cmd = bashfile + " " + path
 

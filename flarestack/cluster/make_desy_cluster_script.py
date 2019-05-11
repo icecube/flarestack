@@ -55,7 +55,7 @@ def make_desy_submit_file():
     cmd = "chmod +x " + submit_file
 
     os.system(cmd)
-    
+
     print("CMD:", cmd)
 
 

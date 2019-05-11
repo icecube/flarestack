@@ -15,4 +15,5 @@
 build*
 dist*
 flarestack/cluster/SubmitDESY.sh
+flarestack/cluster/SubmitLocal.sh
 flarestack.egg-info/*
