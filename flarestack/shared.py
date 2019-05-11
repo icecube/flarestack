@@ -7,7 +7,7 @@ import os
 import numpy as np
 from flarestack import config
 import socket
-import pickle as Pickle
+import pickle
 from flarestack.core.energy_PDFs import gamma_range, EnergyPDF
 import json
 import zlib
@@ -69,13 +69,16 @@ if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
     dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
     skylab_ref_dir = dataset_dir + "mirror-7year-PS-sens/"
     print("Loading datasets from", dataset_dir, "(DESY)")
+    host_server = "DESY"
 elif "icecube.wisc.edu" in host:
     dataset_dir = "/data/ana/analyses/"
     skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
     print("Loading datasets from", dataset_dir, "(WIPAC)")
+    host_server = "madison"
 else:
     dataset_dir = "a dataset directory, which can be set with " \
                   "flarestack.shared.set_dataset_directory"
+    host_server = None
 
 
 # Dataset directory can be changed if needed
@@ -297,7 +300,7 @@ def make_analysis_pickle(mh_dict):
     pkl_file = analysis_pickle_path(name)
 
     with open(pkl_file, "wb") as f:
-        Pickle.dump(mh_dict, f)
+        pickle.dump(mh_dict, f)
 
     return pkl_file
 
