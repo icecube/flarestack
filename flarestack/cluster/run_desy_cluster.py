@@ -76,7 +76,7 @@ def wait_for_cluster():
         tmp = str(process.stdout.read())
 
 
-def submit_to_cluster(path, n_jobs=10, bashname="SubmitDESY.sh"):
+def submit_to_cluster(path, n_cpu=2, n_jobs=10, bashname="SubmitDESY.sh"):
 
     bashfile = fs_dir + "cluster/" + bashname
 
@@ -86,9 +86,7 @@ def submit_to_cluster(path, n_jobs=10, bashname="SubmitDESY.sh"):
     # Submits job to the cluster, with a command in the form of:
     # qsub -t 1-50:1 SubmitOne.sh Full_with_DaiFang_TDE
     submit_cmd = "qsub -t 1-" + str(n_jobs) + ":1 " + \
-                 bashfile + " " + path
-
-    # submit_cmd = bashfile + " " + path
+                 bashfile + " " + path + " " + n_cpu
 
     print(time.asctime(time.localtime()), submit_cmd, "\n")
     os.system(submit_cmd)

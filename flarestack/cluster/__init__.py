@@ -1,6 +1,6 @@
 import time
 import os
-from flarestack.shared import host_server, fs_dir
+from flarestack.shared import host_server
 from flarestack.cluster.run_desy_cluster import submit_to_cluster
 from flarestack.cluster.make_local_bash_script import local_submit_file,\
     make_local_submit_file
@@ -17,19 +17,18 @@ if not os.path.isfile(local_submit_file):
     make_local_submit_file()
 
 
-def submit_local(path):
+def submit_local(path, n_cpu):
 
     bashfile = local_submit_file
 
-    submit_cmd = bashfile + " " + path
+    submit_cmd = bashfile + " " + path + " " + str(n_cpu)
 
-    print(time.asctime(time.localtime()), submit_cmd, "\n")
     os.system(submit_cmd)
 
 
-def submit(path, cluster=False, **kwargs):
+def submit(path, cluster=False, n_cpu=2, **kwargs):
     if cluster:
-        submit_cluster(path, **kwargs)
+        submit_cluster(path, n_cpu=n_cpu, **kwargs)
     else:
-        submit_local(path)
+        submit_local(path, n_cpu=n_cpu)
 
