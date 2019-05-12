@@ -8,6 +8,7 @@ from flarestack.shared import catalogue_dir
 from astropy.coordinates import Distance
 from flarestack.core.injector import Injector
 from flarestack.core.energy_PDFs import EnergyPDF
+from flarestack.utils.catalogue_loader import calculate_source_weight
 
 e_0 = 1 * u.GeV
 
@@ -70,15 +71,6 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     # Calculate fluence
 
-    base_scale = np.mean(catalogue["base_weight"])
-
-    if base_scale != 1.:
-        raise Exception("The mean base weight of the catalogue is not 1. Any "
-                        "catalogue loaded by the load_catalogue function in "
-                        "flarestack/utils/catalogue_loader.py should have a "
-                        "mean base weight of 1. Did you load the catalogue "
-                        "using that function?")
-
     tot_fluence = (flux * e_integral)
 
     astro_res["Total Fluence (GeV cm^{-2} s^{-1})"] = tot_fluence.value
@@ -87,16 +79,15 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
-    dist_weight = src_1["distance_mpc"]**-2 / \
-        np.sum(catalogue["distance_mpc"]**-2)
+    frac = calculate_source_weight(src_1)/calculate_source_weight(catalogue)
 
-    si = flux * dist_weight * src_1["base_weight"]
+    si = flux * frac
 
     astro_res["Flux from nearest source"] = si
 
     print("Total flux:", flux)
-    print("Fraction from nearest source:", dist_weight)
-    print("Flux from nearest source:", flux * dist_weight)
+    print("Fraction from nearest source:", frac)
+    print("Flux from nearest source:", flux * frac)
 
     lumdist = src_1["distance_mpc"] * u.Mpc
 
@@ -109,10 +100,9 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
     N = dNdA * area
 
     print("There would be", '{:.3g}'.format(N), "neutrinos emitted.")
-    print("The energy range was assumed to be between", \
-        energy_PDF.integral_e_min, end=' ')
-    print("and", energy_PDF.integral_e_max)
-
+    print("The energy range was assumed to be between {0} and {1}".format(
+        energy_PDF.integral_e_min, energy_PDF.integral_e_max
+    ))
     # Energy requires a 1/(1+z) factor
 
     zfactor = find_zfactor(lumdist)
@@ -199,13 +189,12 @@ def calculate_neutrinos(source, season, inj_kwargs):
         energy_pdf["Flux at 1GeV"] = \
             energy_pdf["Source Energy (erg)"] / energy_pdf.fluence_integral()
 
-    flux_1GeV = energy_pdf["Flux at 1GeV"] * \
-               inj.time_pdf.effective_injection_time(
-        source) * u.s
+    flux_1_gev = energy_pdf["Flux at 1GeV"] * \
+                inj.time_pdf.effective_injection_time(source) * u.s
 
     print(energy_pdf["Flux at 1GeV"])
 
-    print("Flux at 1GeV would be", flux_1GeV, "\n")
+    print("Flux at 1GeV would be", flux_1_gev, "\n")
     print(
         "Time is {0} years".format(
             inj.time_pdf.effective_injection_time(source) / (60*60*24*365))
@@ -218,13 +207,13 @@ def calculate_neutrinos(source, season, inj_kwargs):
 
     # print "OneWights:", np.sum(inj._mc["ow"])
     # print np.sum(inj._mc["ow"] * inj._mc["trueE"]**-energy_pdf["Gamma"])
-    # print np.sum(inj.mc_weights * flux_1GeV)
+    # print np.sum(inj.mc_weights * flux_1_gev)
     #
     # print "Now Ludwig-style:",
     #
-    # print np.sum(flux_1GeV * inj.mc_weights[northern_mask])
+    # print np.sum(flux_1_gev * inj.mc_weights[northern_mask])
 
-    source_mc["ow"] = flux_1GeV * inj.mc_weights[band_mask] / omega
+    source_mc["ow"] = flux_1_gev * inj.mc_weights[band_mask] / omega
     n_inj = np.sum(source_mc["ow"])
 
     print("")
