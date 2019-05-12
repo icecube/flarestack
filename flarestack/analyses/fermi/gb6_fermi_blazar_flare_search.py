@@ -24,7 +24,7 @@ from flarestack.cluster import run_desy_cluster as rd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from flarestack.core.time_PDFs import TimePDF
+from flarestack.core.time_pdf import TimePDF
 from astropy import units as u
 from astropy.coordinates import Distance
 

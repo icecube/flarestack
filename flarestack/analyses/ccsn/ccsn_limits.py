@@ -5,7 +5,7 @@ fixed-weight analysis.
 """
 from astropy import units as u
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
-from flarestack.core.energy_PDFs import EnergyPDF
+from flarestack.core.energy_pdf import EnergyPDF
 import numpy as np
 # Results
 

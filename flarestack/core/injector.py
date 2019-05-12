@@ -6,8 +6,8 @@ import os
 import numpy as np
 import healpy as hp
 from flarestack.shared import k_to_flux, scale_shortener, band_mask_cache_name
-from flarestack.core.energy_PDFs import EnergyPDF, read_e_pdf_dict
-from flarestack.core.time_PDFs import TimePDF, read_t_pdf_dict
+from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
+from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.utils.dataset_loader import data_loader
 from flarestack.utils.catalogue_loader import calculate_source_weight
 from scipy import sparse

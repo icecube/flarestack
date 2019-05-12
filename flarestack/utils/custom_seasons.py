@@ -1,5 +1,5 @@
 import numpy as np
-from flarestack.core.time_PDFs import TimePDF
+from flarestack.core.time_pdf import TimePDF
 
 
 def custom_dataset(dataset, sources, time_pdf):

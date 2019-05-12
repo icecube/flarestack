@@ -5,7 +5,7 @@ import numpy as np
 import math
 import os
 import zlib
-from flarestack.core.energy_PDFs import EnergyPDF
+from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.shared import min_angular_err, base_floor_quantile, \
     floor_pickle, pull_pickle, weighted_quantile
 from flarestack.utils.dynamic_pull_correction import \

@@ -11,7 +11,7 @@ from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
-from flarestack.core.time_PDFs import TimePDF
+from flarestack.core.time_pdf import TimePDF
 
 # Initialise Injectors/LLHs
 

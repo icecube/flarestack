@@ -11,7 +11,7 @@ from flarestack.utils.prepare_catalogue import cat_dtype
 from flarestack.utils.neutrino_cosmology import define_cosmology_functions, \
     integrate_over_z, cumulative_z
 from scipy.interpolate import interp1d
-from flarestack.core.time_PDFs import TimePDF
+from flarestack.core.time_pdf import TimePDF
 
 
 def simulate_transient_catalogue(mh_dict, rate, resimulate=False,

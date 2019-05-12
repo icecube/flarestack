@@ -7,7 +7,7 @@ import math
 from flarestack.shared import catalogue_dir
 from astropy.coordinates import Distance
 from flarestack.core.injector import Injector
-from flarestack.core.energy_PDFs import EnergyPDF
+from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.catalogue_loader import calculate_source_weight
 
 e_0 = 1 * u.GeV

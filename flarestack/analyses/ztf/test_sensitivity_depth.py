@@ -11,7 +11,7 @@ from flarestack.shared import plot_output_dir, flux_to_k, \
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
-from flarestack.core.energy_PDFs import EnergyPDF
+from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.simulate_catalogue import simulate_transient_catalogue
 from flarestack.analyses.ccsn.sn_cosmology import get_sn_type_rate
 from flarestack.utils.catalogue_loader import load_catalogue

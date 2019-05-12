@@ -107,13 +107,16 @@ def estimate_discovery_potential(injectors, sources):
             median_sigma = weighted_quantile(
                         true_errors, 0.5, source_mc["ow"] * mc_weights)
 
-            area = np.pi * (median_sigma) ** 2 #- area
+            area = np.pi * (median_sigma) ** 2 / np.cos(source["dec_rad"])
 
-            local_rate = np.sum(data_weights) / omega
+            local_rate = np.sum(data_weights)
 
             n_bkg = local_rate * area * source_weight
 
-            sig_scale = 1. / np.sqrt(n_bkg)# + n_sig)
+            sig_scale = np.sqrt(np.mean(data_weights) / n_bkg)#np.sum(source_mc[
+            # "ow"]) #/
+            # np.sqrt(
+            # n_bkg)# + n_sig)
 
             n_sigs.append(n_sig / sig_scale)
             n_bkgs.append(n_bkg / sig_scale)
@@ -146,12 +149,12 @@ def estimate_discovery_potential(injectors, sources):
     scale = disc_pot / int_sig
 
     # The approximate scaling for idealised + binned to unbinned
-    # Scales with high vs low statistics. In low statistics, you are
-    # effectively are background free, so don't take the 50% hit in only
+    # Scales with high vs low statistics. For low statistics, you are
+    # effectively are background free, so don't take the 50% hit for only
     # counting nearby neutrinos. In high-statics regime, previous study
     # showed ~factor of 2 improvement for binned vs unbinned
 
-    fudge_factor = 1.25 + 0.75 * np.tanh(0.5 * np.log(disc_count))
+    fudge_factor = 0.8 * (1.25 + 0.75 * np.tanh(np.log10(disc_count)))
 
     scale /= fudge_factor
 

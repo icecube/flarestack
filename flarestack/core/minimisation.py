@@ -21,9 +21,10 @@ from flarestack.shared import name_pickle_output_dir, fit_setup, \
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib as mpl
-from flarestack.core.time_PDFs import TimePDF, Box, Steady
+from flarestack.core.time_pdf import TimePDF, Box, Steady
 from flarestack.core.pull_corrector import BasePullCorrector
-from flarestack.utils.catalogue_loader import load_catalogue
+from flarestack.utils.catalogue_loader import load_catalogue, \
+    calculate_source_weight
 from flarestack.utils.deus_ex_machina import estimate_discovery_potential
 
 
@@ -462,25 +463,32 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     def make_season_weight(self, params, season):
 
         src = self.sources
-        dist_weight = src["distance_mpc"] ** -2
-        base_weight = src["base_weight"]
+
+        weight_scale = calculate_source_weight(src)
+
+        # dist_weight = src["distance_mpc"] ** -2
+        # base_weight = src["base_weight"]
 
         llh = self.llhs[season["Name"]]
         acc = []
 
         time_weights = []
+        source_weights = []
 
         for source in src:
             time_weights.append(llh.time_pdf.effective_injection_time(
                 source))
             acc.append(llh.acceptance(source, params))
+            source_weights.append(calculate_source_weight(source) /
+                                  weight_scale)
 
         time_weights = np.array(time_weights)
+        source_weights = np.array(source_weights)
 
         acc = np.array(acc).T[0]
 
-        w = acc * dist_weight * time_weights
-        w *= base_weight
+        w = acc * time_weights
+        w *= source_weights
 
         w = w[:, np.newaxis]
 

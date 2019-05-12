@@ -8,7 +8,7 @@ from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
 from flarestack.core.injector import MockUnblindedInjector, \
     TrueUnblindedInjector
 from flarestack.core.results import ResultsHandler
-from flarestack.core.time_PDFs import TimePDF
+from flarestack.core.time_pdf import TimePDF
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
     analysis_pickle_path, limit_output_path
 import pickle as Pickle

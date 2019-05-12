@@ -11,7 +11,7 @@ from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
-from flarestack.core.time_PDFs import TimePDF
+from flarestack.core.time_pdf import TimePDF
 from flarestack.utils.custom_seasons import custom_dataset
 
 analyses = dict()

@@ -10,10 +10,10 @@ from scipy import sparse
 import pickle as Pickle
 from flarestack.shared import acceptance_path, llh_energy_hash_pickles, \
     SoB_spline_path, bkg_spline_path
-from flarestack.core.time_PDFs import TimePDF, read_t_pdf_dict
+from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.utils.make_SoB_splines import load_spline, \
     load_bkg_spatial_spline
-from flarestack.core.energy_PDFs import EnergyPDF, read_e_pdf_dict
+from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.utils.create_acceptance_functions import dec_range,\
     make_acceptance_season
 from flarestack.utils.dataset_loader import data_loader

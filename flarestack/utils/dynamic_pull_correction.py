@@ -4,7 +4,7 @@ from builtins import str
 import numpy as np
 import pickle as Pickle
 from flarestack.utils.dataset_loader import data_loader
-from flarestack.core.energy_PDFs import EnergyPDF
+from flarestack.core.energy_pdf import EnergyPDF
 import matplotlib.pyplot as plt
 from flarestack.shared import weighted_quantile, floor_pickle, pull_pickle
 from flarestack.core.astro import angular_distance

@@ -3,7 +3,7 @@ from builtins import str
 from flarestack.utils.neutrino_cosmology import calculate_transient, \
     sfr_madau, sfr_clash_candels, get_diffuse_flux_at_1GeV
 from flarestack.analyses.ccsn.ccsn_limits import limits
-from flarestack.core.energy_PDFs import EnergyPDF
+from flarestack.core.energy_pdf import EnergyPDF
 from astropy import units as u
 from astropy.cosmology import Planck15 as cosmo
 import numpy as np

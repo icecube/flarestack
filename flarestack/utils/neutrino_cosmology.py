@@ -9,7 +9,7 @@ import numpy as np
 import os
 from flarestack.shared import plots_dir
 from flarestack.utils.neutrino_astronomy import calculate_neutrinos
-from flarestack.core.energy_PDFs import EnergyPDF
+from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_dict

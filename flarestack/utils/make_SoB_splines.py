@@ -7,7 +7,7 @@ import scipy.interpolate
 import pickle as Pickle
 from flarestack.shared import gamma_precision, SoB_spline_path, \
     bkg_spline_path, dataset_plot_dir
-from flarestack.core.energy_PDFs import PowerLaw
+from flarestack.core.energy_pdf import PowerLaw
 from flarestack.utils.dataset_loader import data_loader
 import matplotlib.pyplot as plt
 

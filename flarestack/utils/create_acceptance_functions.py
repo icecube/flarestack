@@ -4,7 +4,7 @@ import numpy as np
 import os
 import pickle as Pickle
 from flarestack.shared import gamma_range, acceptance_path
-from flarestack.core.energy_PDFs import PowerLaw
+from flarestack.core.energy_pdf import PowerLaw
 from flarestack.core.injector import Injector
 from flarestack.utils.dataset_loader import data_loader
 
