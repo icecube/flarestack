@@ -8,7 +8,7 @@ import numpy as np
 from flarestack import config
 import socket
 import pickle
-from flarestack.core.energy_PDFs import gamma_range, EnergyPDF
+from flarestack.core.energy_pdf import gamma_range, EnergyPDF
 import json
 import zlib
 
@@ -155,7 +155,7 @@ band_mask_chunk_size = 500
 
 
 def band_mask_hash_dir(catalogue):
-    return cat_cache_dir + str(hash(str(catalogue))) + "/"
+    return cat_cache_dir + str(zlib.adler32(catalogue)) + "/"
 
 
 def band_mask_cache_name(season_dict, catalogue):
