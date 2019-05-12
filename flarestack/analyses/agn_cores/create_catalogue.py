@@ -20,6 +20,7 @@ from astropy.table import Table
 import numpy as np
 import os
 
+
 def select_nrandom_sources(cat, n_random=100):
     # select n_random random sources
 
@@ -54,18 +55,9 @@ plot_catalogue(raw_cat["RA_DEG"], raw_cat["DEC_DEG"], src_weight= np.ones(len(ra
                filename = 'NorthSky_close_sources',
                plot_path = agn_cores_output_dir('catalogues'))
 
-
-# raw_weight = []
-# for w in raw_cat['2RXS_SRC_FLUX']:
-#     raw_weight.append(w)
-
 #####################################
 #      Create 100 random sources    #
 #####################################
-# random_ra, random_dec = create_random_src(min_distance=10, nr_sources=100) # in degree
-# plot_catalogue(random_ra, random_dec, src_weight= np.ones(len(raw_cat)),
-#                filename = 'randomSrc_100brightest_NorthSky_equatorial_weight1',
-#                plot_path = agn_cores_output_dir('catalogues'))
 #
 new_cat = np.empty(len(raw_cat), dtype=cat_dtype)
 new_cat["ra"] = np.deg2rad(raw_cat["RA_DEG"])  # NVSS RA in radians
@@ -88,89 +80,7 @@ for vv10, rxs in zip(raw_cat['NAME_vv10'], raw_cat['2RXS_ID']):
 
 new_cat["Name"] = src_name
 
-# save_path = agn_catalogue_name("radioloud", "2rxs_100brightest_srcs")
-# save_path = agn_catalogue_name("random", "NorthSky_100brightest_srcs_dec0_weight1")
 save_path = agn_catalogue_name("random", "NorthSky_2close_srcs")
 
 print("Saving to", save_path)
 np.save(save_path, new_cat)
-#
-#
-# # plot_catalogue(raw_cat["RA_DEG"], raw_cat["DEC_DEG"], src_weight= np.ones(len(raw_cat)),
-# #                filename = 'NorthSky_100brightest_skyplot_equatorial_weight1',
-# #                plot_path = agn_cores_output_dir('catalogues'))
-
-
-
-
-
-
-
-
-
-
-
-# plot_catalogue(src_ra, src_dec, src_weight, radians=False,
-#                filename = '2rxs_100brightest_skyplot_equatorial',plot_path = agn_cores_output_dir('catalogues'))
-
-
-
-
-# new_cat = np.empty(len(raw_cat), dtype=cat_dtype)
-# new_cat["ra"] = np.deg2rad(raw_cat["RA"])  # NVSS RA in radians
-# new_cat["dec"] = np.deg2rad(raw_cat["DEC"]) # NVSS DEC in radians
-# new_cat["Distance (Mpc)"] = np.ones(len(raw_cat))
-# new_cat["Ref Time (MJD)"] = np.ones(len(raw_cat))
-#
-# src_name = []
-# for vv10, rxs in zip(raw_cat['NAME_vv10'], raw_cat['2RXS_ID']):
-#     if (vv10!='N/A'):
-#         src_name.append(vv10)
-#     else:
-#         src_name.append(rxs)
-#
-# new_cat["Name"] = src_name
-# new_cat["Relative Injection Weight"] = raw_cat["2RXS_SRC_FLUX"]*1e13
-#
-# save_path = agn_catalogue_name("radioloud", "2rxs_100brightest_srcs")
-#
-# print "Saving to", save_path
-#
-# np.save(save_path, new_cat)
-#
-#
-# # Plot the catalogue
-# import astropy.coordinates as coord
-# import astropy.units as u
-# import matplotlib.pyplot as plt
-# from matplotlib.pyplot import cm
-# from matplotlib.colors import LogNorm
-#
-# ra = coord.Angle(np.rad2deg(new_cat['ra'])*u.degree)
-# ra = ra.wrap_at(180*u.degree)
-# dec = coord.Angle(np.rad2deg(new_cat['dec'])*u.degree)
-# weight = new_cat['Relative Injection Weight']
-#
-# # plot map
-# fig = plt.figure(figsize=(12.5, 7.5))
-# ax = fig.add_subplot(111, projection="mollweide")
-#
-# sc = ax.scatter(ra.radian, dec.radian,
-#                 c=weight, cmap ='magma_r',marker='.',
-#                 norm=LogNorm(vmin=weight.min(), vmax=weight.max()),
-#                 alpha=1, lw=0)
-# clbar = plt.colorbar(sc,orientation='vertical', fraction=0.025)
-# clbar.set_label(r'X-Ray flux [erg cm$^{-1}$ s$^{-1}$]', size = 20)
-#
-# ax.grid(1)
-# ax.axes.set_axisbelow(False)
-# ax.text(0.99, 0.01, 'Equatorial',
-#         verticalalignment='bottom', horizontalalignment='right',
-#         transform=ax.transAxes,
-#         color='black', fontsize=20)
-#
-# plot_path = agn_cores_output_dir('catalogues')
-# filename = '2rxs_100brightest_skyplot_equatorial'
-# fig.savefig(plot_path +filename + '.png', format='png',  bbox_inches="tight")
-# print "Saving to", plot_path
-# plt.close(fig)

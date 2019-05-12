@@ -41,26 +41,26 @@ llh_dict = {
 
 
 def base_name(cat_key, gamma):
-    return "analyses/agn_cores/compare_nr_of_sources_IC40_steps15_scale/{0}" \
-           "{0}/".format(cat_key, gamma)
+    return "analyses/agn_cores/test_completeness/{0}/" \
+           "{1}/".format(cat_key, gamma)
 
 
 def generate_name(cat_key, n_sources, gamma):
     return base_name(cat_key, gamma) + "NrSrcs={0}/".format(n_sources)
 
+
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 gammas = [2.0]
 
-# nr_brightest_sources = [10, 100,] #1000, ]#1500, 2000, 2500, 5000, 10000, 12000,
-                        #  13927]
-
-nr_brightest_sources = [int(x) for x in np.logspace(0, 4.0, 9)]
+nr_brightest_sources = [int(x) for x in np.logspace(0, 4.0, 9)][:-1]
 
 all_res = dict()
 
 for (cat_type, method) in complete_cats:
 
     unique_key = cat_type + "_" + method
+
+    print(unique_key)
 
     gamma_dict = dict()
 
@@ -97,8 +97,8 @@ for (cat_type, method) in complete_cats:
 
             mh = MinimisationHandler.create(mh_dict)
             mh_dict["scale"] = mh.guess_scale()
-            pkl_file = make_analysis_pickle(mh_dict)
-            analyse(pkl_file, cluster=False, n_cpu=32)
+            # pkl_file = make_analysis_pickle(mh_dict)
+            # analyse(pkl_file, cluster=False, n_cpu=32)
 
             res[nr_srcs] = mh_dict
         gamma_dict[gamma_index] = res
@@ -112,8 +112,6 @@ for (cat_key, gamma_dict) in all_res.items():
     full_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
 
     full_flux = np.sum(full_cat["base_weight"])
-
-
 
     for (gamma_index, gamma_res) in (iter(gamma_dict.items())):
 

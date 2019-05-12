@@ -1,11 +1,19 @@
 from __future__ import print_function
 from builtins import zip
 import os
-from flarestack.shared import limit_output_path, plot_output_dir
+import numpy as np
+from flarestack.shared import plot_output_dir, catalogue_dir
+from flarestack.utils.catalogue_loader import load_catalogue
 
 agncores_dir = os.path.abspath(os.path.dirname(__file__))
 agncores_cat_dir = agncores_dir + "/catalogues/"
 raw_cat_dir = agncores_cat_dir + "raw/"
+subset_agn_dir = catalogue_dir + "agn_cores/"
+
+try:
+    os.makedirs(subset_agn_dir)
+except OSError:
+    pass
 
 agn_cats = ["radioloud", "colorselected", "llang"]
 
@@ -14,18 +22,41 @@ def agn_cores_output_dir(name='foldername'):
     return plot_output_dir('analyses/agn_cores/'+name+'/')
 
 
-def agn_catalogue_name(agn_type, xraycat='2rxs'):
+def agn_catalogue_name(agn_type, xraycat='2rxs', base_dir=agncores_cat_dir):
     agn_name = agn_type + "_" + xraycat + ".npy"
 
-    return agncores_cat_dir + agn_name
+    return base_dir + agn_name
+
+
+def agn_subset_catalogue_name(agn_type, xray_cat, n_sources):
+    return agn_catalogue_name(
+        agn_type, xray_cat + "_" + str(n_sources) + "brightest_srcs",
+        base_dir=subset_agn_dir
+    )
+
+
+def agn_subset_catalogue(agn_type, xray_cat, n_sources):
+    subset_path = agn_subset_catalogue_name(agn_type, xray_cat, n_sources)
+    if not os.path.isfile(subset_path):
+        parent_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
+        parent_cat = np.sort(parent_cat, order="base_weight")[::-1]
+        new_cat = parent_cat[:n_sources]
+        print("Catalogue not found. Creating one at:", subset_path)
+        np.save(subset_path, new_cat)
+    return subset_path
+
+
+complete_cats = [
+    ("radioloud", "radioselected")
+]
 
 
 def create_random_src(min_distance=10, nr_sources=100):
-    '''
-    Create nr_sources random sources in RA and DEC (in degree)
-    min_distance  : create sources with distance > than min_distance among each other (in degree)
-    nr_sources    : number of random sources to create
-    '''
+    """Create nr_sources random sources in RA and DEC (in degree)
+    :param min_distance : create sources with distance > than min_distance
+    among each other (in degree)
+    :param nr_sources : number of random sources to create
+    """
 
     import astropy.coordinates as coord
     import astropy.units as u
