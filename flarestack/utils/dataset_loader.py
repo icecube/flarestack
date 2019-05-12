@@ -59,6 +59,12 @@ def data_loader(data_path, floor=True):
     if floor:
         dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
 
+    removed_fields = ["run", "Event"]
+
+    mask = [x for x in dataset.dtype.names if x not in removed_fields]
+
+    dataset = dataset[mask]
+
     return dataset
 
 
