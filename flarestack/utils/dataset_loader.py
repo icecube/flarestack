@@ -5,13 +5,14 @@ from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
 
 
-def data_loader(data_path, floor=True):
+def data_loader(data_path, floor=True, cut_fields=True):
     """Helper function to load data for a given season/set of season.
     Adds sinDec field if this is not available, and combines multiple years
     of data is appropriate (different sets of data from the same icecube
     configuration should be given as a list)
 
     :param data_path: Path to data or list of paths to data
+    :param cut_fields: Boolean to remove unused fields from datasets on loading
     :return: Loaded Dataset (experimental or MC)
     """
 
@@ -59,11 +60,13 @@ def data_loader(data_path, floor=True):
     if floor:
         dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
 
-    removed_fields = ["run", "Event"]
+    if cut_fields:
 
-    mask = [x for x in dataset.dtype.names if x not in removed_fields]
+        removed_fields = ["run", "Event"]
 
-    dataset = dataset[mask]
+        mask = [x for x in dataset.dtype.names if x not in removed_fields]
+
+        dataset = dataset[mask]
 
     return dataset
 
@@ -130,7 +133,7 @@ def verify_grl_with_data(datasets):
     for season in datasets:
         print(season["Name"], end=' ')
 
-        exp_data = data_loader(season["exp_path"])
+        exp_data = data_loader(season["exp_path"], cut_fields=False)
 
         grl = grl_loader(season)
 
