@@ -1,14 +1,11 @@
 from __future__ import print_function
-import numpy as np
-import os
-import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
+from flarestack.shared import make_analysis_pickle
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.core.minimisation import MinimisationHandler
-from flarestack.cluster import run_desy_cluster as rd
+from flarestack.cluster import analyse, wait_cluster
 import matplotlib.pyplot as plt
 from flarestack.analyses.txs_0506_056.make_txs_catalogue import \
     txs_catalogue, txs_cat_path
@@ -20,29 +17,24 @@ from flarestack.analyses.txs_0506_056.make_txs_catalogue import \
 # Use a source that is constant in time
 
 injection_time = {
-    "Name": "Steady",
+    "time_pdf_name": "Steady",
 }
 
-# Use a source with a spectral index of -2, with an energy range between
-# 100 GeV and 10 Pev (10**7 GeV).
-
-# injection_energy = {
-#     "Name": "Spline",
-#     "Spline Path": "/afs/ifh.de/user/s/steinrob/scratch/flarestack__data/tester_spline.npy"
-# }
+# Use a source following a power law with a spectral index of -2, using the
+# default energy range of 100 GeV to 10 Pev (10**7 GeV).
 
 injection_energy = {
-    "Name": "Power Law",
-    "Gamma": 2.0
+    "energy_pdf_name": "PowerLaw",
+    "gamma": 2.0
 }
 
 # Fix injection time/energy PDFs, and use "Poisson Smearing" to simulate
 # random variations in detected neutrino numbers
 
 inj_kwargs = {
-    "Injection Energy PDF": injection_energy,
-    "Injection Time PDF": injection_time,
-    "Poisson Smear?": True,
+    "injection_energy_pdf": injection_energy,
+    "injection_time_pdf": injection_time,
+    "poisson_smear_bool": True,
 }
 
 # Set up the "likelihood" arguments, which determine how the fake data is
@@ -51,28 +43,23 @@ inj_kwargs = {
 # Look for a source that is constant in time
 
 llh_time = {
-    "Name": "Steady",
+    "time_pdf_name": "Steady",
 }
 
 # Try to fit a power law to the data
 
 llh_energy = {
-    "Name": "Power Law",
+    "energy_pdf_name": "PowerLaw",
 }
 
 # Set up a likelihood that fits the number of signal events (n_s), and also
 # the spectral index (gamma) of the source
 
 llh_kwargs = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
+    "llh_name": "standard",
+    "llh_energy_pdf": llh_energy,
+    "llh_time_pdf": llh_time,
 }
-
-# Takes a guess at the correct flux scale, based on previous IceCube results
-
-scale = flux_to_k(reference_sensitivity(np.sin(txs_catalogue["dec"]),
-                  injection_energy["Gamma"])) * 70
 
 
 # Assign a unique name for each different minimisation handler dictionary
@@ -84,20 +71,28 @@ name = "analyses/txs_0506_056/INTRO1/"
 
 mh_dict = {
     "name": name,
+    "mh_name": "fixed_weights",
     "datasets": ps_7year[-2:-1],
     "catalogue": txs_cat_path,
-    "inj kwargs": inj_kwargs,
-    "llh kwargs": llh_kwargs,
-    "scale": scale,
+    "inj_dict": inj_kwargs,
+    "llh_dict": llh_kwargs,
     "n_trials": 100,
     "n_steps": 10
 }
 
+mh = MinimisationHandler.create(mh_dict)
+scale = mh.guess_scale()
+
+mh_dict["scale"] = scale
+
+path = make_analysis_pickle(mh_dict)
+
 # Creates a Minimisation Handler using the dictionary, and runs the trials
 
-mh = MinimisationHandler(mh_dict)
-mh.iterate_run(mh_dict["scale"], n_steps=mh_dict["n_steps"],
-               n_trials=mh_dict["n_trials"])
+# analyse(path, n_cpu=24, cluster=True)
+wait_cluster()
+# mh.iterate_run(scale, n_steps=mh_dict["n_steps"],
+#                n_trials=mh_dict["n_trials"])
 
 # Creates a Results Handler to analyse the results, and calculate the
 # sensitivity. This is the flux that needs to arrive at Earth, in order for
@@ -110,24 +105,28 @@ sens = rh.sensitivity
 # by scaling with distance and accounting for redshift
 
 astro_sens, astro_disc = rh.astro_values(
-    mh_dict["inj kwargs"]["Injection Energy PDF"])
+    mh_dict["inj_dict"]["injection_energy_pdf"])
 
 # Print output
 
 # Load the source
 print("\n \n \n")
 print("The source to be analysed is:")
-print(txs_catalogue["Name"][0])
+print(txs_catalogue["source_name"][0])
 
 for field in txs_catalogue.dtype.names:
-    print(field, ": \t", txs_catalogue[field][0])
+    print(field, ": \t \t \t", txs_catalogue[field][0])
 print("\n")
 
 print("FINAL RESULT", "\n")
 
 print("Sensitivity is", sens, "GeV/cm^2")
-
 print("This requires a neutrino luminosity of", end=' ')
 print(astro_sens["Mean Luminosity (erg/s)"], "erg/s")
+print()
+print("Discovery Potential is", rh.disc_potential, "GeV/cm^2")
+print("(The discovery potential probably does not have good statistics)")
+print()
+print("REMINDER: our quick discovery potential estimate was:", mh.disc_guess)
 
 print("\n \n \n")

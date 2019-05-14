@@ -2,7 +2,7 @@ from flarestack.utils.prepare_catalogue import custom_sources
 from astropy.coordinates import Distance
 import numpy as np
 import os
-txs_dir = os.path.abspath(os.path.dirname(__file__))
+from flarestack.shared import transients_dir
 
 # Start and end time of neutrino flare, taken from box fit in
 # https://arxiv.org/abs/1807.08794.
@@ -30,5 +30,5 @@ txs_catalogue = custom_sources(
     ref_time=t_start
 )
 
-txs_cat_path = txs_dir + "/TXS_0506+056.npy"
+txs_cat_path = transients_dir + "/TXS_0506+056.npy"
 np.save(txs_cat_path, txs_catalogue)
