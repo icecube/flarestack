@@ -83,10 +83,16 @@ def submit_to_cluster(path, n_cpu=2, n_jobs=10, bashname="SubmitDESY.sh"):
     for file in os.listdir(log_dir):
         os.remove(log_dir + file)
 
-    # Submits job to the cluster, with a command in the form of:
-    # qsub -t 1-50:1 SubmitOne.sh Full_with_DaiFang_TDE
-    submit_cmd = "qsub -t 1-" + str(n_jobs) + ":1 " + \
-                 bashfile + " " + path + " " + n_cpu
+    # Submits job to the cluster
+
+    submit_cmd = "qsub "
+
+    if n_cpu > 1:
+        submit_cmd += " -pe multicore {0} -R y ".format(n_cpu)
+
+    submit_cmd += "-t 1-{0}:1 {1} {2} {3}".format(
+        n_jobs, bashfile, path, n_cpu
+    )
 
     print(time.asctime(time.localtime()), submit_cmd, "\n")
     os.system(submit_cmd)
