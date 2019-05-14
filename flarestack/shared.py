@@ -295,7 +295,12 @@ def make_analysis_pickle(mh_dict):
 
     :param mh_dict: Minimisation Handler dictionary
     """
-    name = mh_dict["name"]
+    try:
+        name = mh_dict["name"]
+    except KeyError:
+        raise Exception("No field 'name' was specified in mh_dict object. "
+                        "Cannot save results without a unique directory"
+                        " name being specified.")
 
     pkl_file = analysis_pickle_path(name)
 
