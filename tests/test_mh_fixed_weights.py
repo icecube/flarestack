@@ -6,25 +6,25 @@ import unittest
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
+from flarestack.utils.catalogue_loader import load_catalogue
 from flarestack.utils.custom_seasons import custom_dataset
 import numpy as np
 
 # Initialise Injectors/LLHs
 
 llh_dict = {
-    "name": "standard",
-    "LLH Time PDF": {
-        "Name": "FixedEndBox"
+    "llh_name": "standard",
+    "llh_time_pdf": {
+        "time_pdf_name": "FixedEndBox"
     },
-    "LLH Energy PDF": {
-        "Name": "Power Law"
+    "llh_energy_pdf": {
+        "energy_pdf_name": "Power Law"
     }
-
 }
 
 name = "tests/test_mh_fixed_weights/"
 
-true_parameters = [2.5033823392158214, 2.19999999664695]
+true_parameters = [2.0887129951743497, 2.249998857459528]
 
 catalogue = tde_catalogue_name("jetted")
 
@@ -47,11 +47,10 @@ class TestTimeIntegrated(unittest.TestCase):
         unblind_dict = {
             "name": name,
             "mh_name": "fixed_weights",
-            "datasets": custom_dataset(ps_7year, np.load(catalogue),
-                                       llh_dict["LLH Time PDF"]),
+            "datasets": custom_dataset(ps_7year, load_catalogue(catalogue),
+                                       llh_dict["llh_time_pdf"]),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
-            "llh kwargs": llh_dict
         }
 
         ub = create_unblinder(unblind_dict)
@@ -61,9 +60,6 @@ class TestTimeIntegrated(unittest.TestCase):
 
         print("Best fit values", list(res["x"]))
         print("Reference best fit", true_parameters)
-
-
-
 
 
 if __name__ == '__main__':

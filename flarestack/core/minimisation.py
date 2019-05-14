@@ -945,7 +945,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
 
     @staticmethod
     def source_param_name(source):
-        return "n_s (" + source["source_name"] + ")"
+        return "n_s ({0})".format(source["source_name"])
 
     @staticmethod
     def return_parameter_info(mh_dict):
@@ -1017,8 +1017,6 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
     def run_trial(self, scale):
 
-        time_key = self.seasons[0]["time"]
-
         datasets = dict()
 
         full_data = dict()
@@ -1041,7 +1039,9 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # Generate a scrambled dataset, and save it to the datasets
             # dictionary. Loads the llh for the season.
 
-            data = self.injectors[season["Name"]].create_dataset(scale)
+            data = self.injectors[season["Name"]].create_dataset(
+                scale, self.pull_correctors[season["Name"]]
+            )
             llh = self.llhs[season["Name"]]
 
             livetime_calcs[season["Name"]] = TimePDF.create(time_dict, season)
@@ -1059,10 +1059,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                 t_mask = np.logical_and(
                     np.greater(
-                        spatial_coincident_data[time_key],
+                        spatial_coincident_data["time"],
                         llh.time_pdf.sig_t0(source)),
                     np.less(
-                        spatial_coincident_data[time_key],
+                        spatial_coincident_data["time"],
                         llh.time_pdf.sig_t1(source))
                 )
 
@@ -1088,7 +1088,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     significant = llh.find_significant_events(
                         coincident_data, source)
 
-                    new_entry["Significant Times"] = significant[time_key]
+                    new_entry["Significant Times"] = significant["time"]
 
                     new_entry["N_all"] = len(data)
 
@@ -1210,8 +1210,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 # ENTIRE SEARCH WINDOW)
 
                 n_all = np.sum([np.sum(~np.logical_or(
-                    np.less(data[time_key], t_start),
-                    np.greater(data[time_key], t_end)))
+                    np.less(data["time"], t_start),
+                    np.greater(data["time"], t_end)))
                                 for data in full_data.values()])
 
                 llhs = dict()
@@ -1237,14 +1237,14 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     data = full_data[name]
 
                     n_season = np.sum(~np.logical_or(
-                        np.less(data[time_key], t_start),
-                        np.greater(data[time_key], t_end)))
+                        np.less(data["time"], t_start),
+                        np.greater(data["time"], t_end)))
 
                     # Removes non-coincident data
 
                     flare_veto = np.logical_or(
-                        np.less(coincident_data[time_key], t_start),
-                        np.greater(coincident_data[time_key], t_end)
+                        np.less(coincident_data["time"], t_start),
+                        np.greater(coincident_data["time"], t_end)
                     )
 
                     # Checks to make sure that there are
@@ -1259,7 +1259,9 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     # Creates the likelihood function for the flare
 
                     flare_f = llh.create_flare_llh_function(
-                        coincident_data, flare_veto, n_all, src, n_season)
+                        coincident_data, flare_veto, n_all, src, n_season,
+                        self.pull_correctors[season_dict["Name"]]
+                    )
 
                     llhs[season_dict["Name"]] = {
                         "f": flare_f,

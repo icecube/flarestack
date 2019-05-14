@@ -602,7 +602,7 @@ class MockUnblindedInjector(Injector):
 
         :return: Scrambled data
         """
-        seed = int(223456)
+        seed = int(123456)
         np.random.seed(seed)
 
         simulated_data = self.scramble_data()

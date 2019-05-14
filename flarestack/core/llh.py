@@ -349,7 +349,7 @@ class SpatialLLH(LLH):
     def __init__(self, season, sources, llh_dict):
         LLH.__init__(self, season, sources, llh_dict)
 
-        if "llh_energy_pdf" in list(llh_dict.keys()):
+        if "energy_pdf_name" in list(llh_dict["llh_energy_pdf"]):
             raise Exception("Found 'llh_energy_pdf' entry in llh_dict, "
                             "but SpatialLLH does not use Energy PDFs. \n"
                             "Please remove this entry, and try again.")
@@ -1194,10 +1194,10 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
     class FlareLLH(ParentLLH):
 
         def create_flare_llh_function(self, data, flare_veto,
-                                      n_all, src, n_season):
+                                      n_all, src, n_season, pull_corrector):
 
             coincident_data = data[~flare_veto]
-            kwargs = self.create_kwargs(coincident_data)
+            kwargs = self.create_kwargs(coincident_data, pull_corrector)
             kwargs["n_all"] = n_all
             weights = np.array([1.])
 

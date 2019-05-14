@@ -245,7 +245,7 @@ class BasePullCorrector(object):
         return data
 
     def create_spatial_cache(self, cut_data, SoB_pdf):
-        if len(inspect.getargspec(SoB_pdf)[0]) == 2:
+        if len(inspect.getfullargspec(SoB_pdf)[0]) == 2:
             SoB = dict()
             for gamma in gamma_support_points:
                 SoB[gamma] = np.log(SoB_pdf(cut_data, gamma))

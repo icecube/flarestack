@@ -11,8 +11,8 @@ import unittest
 
 llh_dict = {
     "name": "spatial",
-    "LLH Time PDF": {
-        "Name": "Steady"
+    "llh_time_pdf": {
+        "time_pdf_name": "Steady"
     }
 }
 
@@ -28,7 +28,7 @@ unblind_dict = {
     "llh_dict": llh_dict
 }
 
-true_parameters = [2.065168475314225]
+true_parameters = [2.065170712604553]
 
 
 class TestSpatialLikelihood(unittest.TestCase):

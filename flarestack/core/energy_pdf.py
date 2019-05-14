@@ -35,8 +35,11 @@ def read_e_pdf_dict(e_pdf_dict):
         if old_key in list(e_pdf_dict.keys()):
             e_pdf_dict[new_key] = e_pdf_dict[old_key]
 
-    if e_pdf_dict["energy_pdf_name"] == "Power Law":
-        e_pdf_dict["energy_pdf_name"] = "PowerLaw"
+    try:
+        if e_pdf_dict["energy_pdf_name"] == "Power Law":
+            e_pdf_dict["energy_pdf_name"] = "PowerLaw"
+    except KeyError:
+        pass
 
     return e_pdf_dict
 

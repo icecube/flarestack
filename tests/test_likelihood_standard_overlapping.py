@@ -7,16 +7,17 @@ import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.unblinding import create_unblinder
+from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 
 # Initialise Injectors/LLHs
 
 llh_dict = {
     "name": "standard",
-    "LLH Time PDF": {
-        "Name": "Steady"
+    "llh_time_pdf": {
+        "time_pdf_name": "Steady"
     },
-    "LLH Energy PDF": {
-        "Name": "Power Law"
+    "llh_energy_pdf": {
+        "energy_pdf_name": "PowerLaw"
     }
 }
 
@@ -24,18 +25,14 @@ name = "tests/test_likelihood_spatial/"
 
 # Loop over sin(dec) values
 
-sindecs = np.linspace(0.5, -0.5, 3)
+catalogue = tde_catalogue_name("jetted")
 
 
 # These results arise from high-statistics sensitivity calculations,
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
 
-true_parameters = [
-    [2.7737611449101554, 4.0],
-    [0.0, 2.9850865457146476],
-    [2.5002777434622914, 2.7982700386928294]
-]
+true_parameters = [2.233476335619592, 1.7749999986308096]
 
 
 class TestTimeIntegrated(unittest.TestCase):
@@ -51,27 +48,23 @@ class TestTimeIntegrated(unittest.TestCase):
         print("\n")
         print("\n")
 
-        # Test three declinations
+        # Test stacking
 
-        for i, sindec in enumerate(sindecs):
-            subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
+        unblind_dict = {
+            "name": name,
+            "mh_name": "fixed_weights",
+            "datasets": [IC86_1_dict],
+            "catalogue": catalogue,
+            "llh_dict": llh_dict,
+        }
 
-            unblind_dict = {
-                "name": subname,
-                "mh_name": "fixed_weights",
-                "datasets": [IC86_1_dict],
-                "catalogue": ps_catalogue_name(sindec),
-                "llh_dict": llh_dict,
-                "llh kwargs": llh_dict
-            }
+        ub = create_unblinder(unblind_dict)
+        key = [x for x in ub.res_dict.keys() if x != "TS"][0]
+        res = ub.res_dict[key]
+        self.assertEqual(list(res["x"]), true_parameters)
 
-            ub = create_unblinder(unblind_dict)
-            key = [x for x in ub.res_dict.keys() if x != "TS"][0]
-            res = ub.res_dict[key]
-            self.assertEqual(list(res["x"]), true_parameters[i])
-
-            print("Best fit values", list(res["x"]))
-            print("Reference best fit", true_parameters[i])
+        print("Best fit values", list(res["x"]))
+        print("Reference best fit", true_parameters)
 
 
 if __name__ == '__main__':

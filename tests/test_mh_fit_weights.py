@@ -7,23 +7,26 @@ from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.catalogue_loader import load_catalogue
 import numpy as np
 
 # Initialise Injectors/LLHs
 
 llh_dict = {
-    "name": "standard",
-    "LLH Time PDF": {
-        "Name": "FixedEndBox"
+    "llh_name": "standard",
+    "llh_time_pdf": {
+        "time_pdf_name": "FixedEndBox"
     },
-    "LLH Energy PDF": {
-        "Name": "Power Law"
+    "llh_energy_pdf": {
+        "energy_pdf_name": "Power Law"
     }
 }
 
 name = "tests/test_mh_fit_weights/"
 
-true_parameters = [2.3834973689924817, 0.0, 0.0, 2.12991507453312]
+true_parameters = [
+    1.986753978240436, 0.0, 0.013401170109542065, 2.2120671305635056
+]
 
 catalogue = tde_catalogue_name("jetted")
 
@@ -48,11 +51,10 @@ class TestTimeIntegrated(unittest.TestCase):
         unblind_dict = {
             "name": name,
             "mh_name": mh_name,
-            "datasets": custom_dataset(ps_7year, np.load(catalogue),
-                                       llh_dict["LLH Time PDF"]),
+            "datasets": custom_dataset(ps_7year, load_catalogue(catalogue),
+                                       llh_dict["llh_time_pdf"]),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
-            "llh kwargs": llh_dict
         }
 
         ub = create_unblinder(unblind_dict)
