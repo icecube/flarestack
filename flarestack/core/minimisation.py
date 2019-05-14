@@ -55,6 +55,8 @@ def read_mh_dict(mh_dict):
         if old_key in list(mh_dict.keys()):
             mh_dict[new_key] = mh_dict[old_key]
 
+    if "name" not in mh_dict.keys():
+        mh_dict["name"] = ""
 
     pairs = [
         ("inj_dict", read_injector_dict),
@@ -85,6 +87,7 @@ class MinimisationHandler(object):
         sources = load_catalogue(mh_dict["catalogue"])
 
         self.name = mh_dict["name"]
+
         self.pickle_output_dir = name_pickle_output_dir(self.name)
         self.injectors = dict()
         self.llhs = dict()
@@ -301,6 +304,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         :param seed: Random seed used for running of trials
         """
 
+        if self.name == "":
+            raise Exception("No field 'name' was specified in mh_dict object. "
+                            "Cannot save results without a unique directory"
+                            " name being specified.")
+
         write_dir = self.pickle_output_dir + scale_shortener(scale) + "/"
 
         # Tries to create the parent directory, unless it already exists
@@ -317,6 +325,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             Pickle.dump(results, f)
 
     def dump_injection_values(self, scale):
+
+        if self.name == "":
+            raise Exception("No field 'name' was specified in mh_dict object. "
+                            "Cannot save results without a unique directory"
+                            " name being specified.")
 
         inj_dict = self.return_injected_parameters(scale)
 
