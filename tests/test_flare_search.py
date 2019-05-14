@@ -28,16 +28,11 @@ unblind_llh = {
     "llh_energy_pdf": llh_energy
 }
 
-name = "tests/test_flare_search/"
-
 
 cat_path = ps_catalogue_name(-0.1)
-# cat_path = catalogue = tde_catalogue_name("jetted")
-catalogue = np.load(cat_path)
 
 
 unblind_dict = {
-    "name": name,
     "mh_name": "flare",
     "datasets": [IC79_dict, IC86_1_dict],
     "catalogue": cat_path,
@@ -66,7 +61,7 @@ class TestFlareSearch(unittest.TestCase):
     def test_flare(self):
         print("\n")
         print("\n")
-        print("Testing flare LLH class")
+        print("Testing 'flare' LLH class")
         print("\n")
         print("\n")
         ub = create_unblinder(unblind_dict)

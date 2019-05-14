@@ -16,12 +16,9 @@ llh_dict = {
     }
 }
 
-name = "tests/test_likelihood_spatial/"
-
 source = ps_catalogue_name(0.0)
 
 unblind_dict = {
-    "name": name,
     "mh_name": "fixed_weights",
     "datasets": [IC86_1_dict],
     "catalogue": ps_catalogue_name(0.5),
@@ -39,7 +36,7 @@ class TestSpatialLikelihood(unittest.TestCase):
     def test_spatial(self):
         print("\n")
         print("\n")
-        print("Testing spatial LLH class")
+        print("Testing 'spatial' LLH class")
         print("\n")
         print("\n")
 

@@ -22,8 +22,6 @@ llh_dict = {
     }
 }
 
-name = "tests/test_mh_fixed_weights/"
-
 true_parameters = [2.0887129951743497, 2.249998857459528]
 
 catalogue = tde_catalogue_name("jetted")
@@ -38,14 +36,13 @@ class TestTimeIntegrated(unittest.TestCase):
 
         print("\n")
         print("\n")
-        print("Testing fixed_weight MinimisationHandler class")
+        print("Testing 'fixed_weight' MinimisationHandler class")
         print("\n")
         print("\n")
 
         # Test three declinations
 
         unblind_dict = {
-            "name": name,
             "mh_name": "fixed_weights",
             "datasets": custom_dataset(ps_7year, load_catalogue(catalogue),
                                        llh_dict["llh_time_pdf"]),

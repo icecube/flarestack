@@ -22,8 +22,6 @@ llh_dict = {
     }
 }
 
-name = "tests/test_mh_fit_weights/"
-
 true_parameters = [
     1.986753978240436, 0.0, 0.013401170109542065, 2.2120671305635056
 ]
@@ -40,7 +38,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         print("\n")
         print("\n")
-        print("Testing fit_weight MinimisationHandler class")
+        print("Testing 'fit_weight' MinimisationHandler class")
         print("\n")
         print("\n")
 
@@ -49,7 +47,6 @@ class TestTimeIntegrated(unittest.TestCase):
         # Test three declinations
 
         unblind_dict = {
-            "name": name,
             "mh_name": mh_name,
             "datasets": custom_dataset(ps_7year, load_catalogue(catalogue),
                                        llh_dict["llh_time_pdf"]),

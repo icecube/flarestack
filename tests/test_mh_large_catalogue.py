@@ -4,15 +4,16 @@ IceCube data (IC86_1).
 from __future__ import print_function
 import unittest
 import numpy as np
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC40_dict
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.unblinding import create_unblinder
-from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
+from flarestack.core.minimisation import MinimisationHandler
+from flarestack.analyses.agn_cores.shared_agncores import agn_subset_catalogue
 
 # Initialise Injectors/LLHs
 
 llh_dict = {
-    "name": "standard_overlapping",
+    "name": "standard_matrix",
     "llh_time_pdf": {
         "time_pdf_name": "Steady"
     },
@@ -21,16 +22,18 @@ llh_dict = {
     }
 }
 
-# Loop over sin(dec) values
+# Create a catalogue containing the 700 brightest sources in the radioloud
+# AGN core analysis. This will  be used with IC40 to stress-test the
+# 'large_catalogue method for many sources.
 
-catalogue = tde_catalogue_name("jetted")
+catalogue = agn_subset_catalogue("radioloud", "radioselected", 700)
 
 
 # These results arise from high-statistics sensitivity calculations,
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
 
-true_parameters = [2.206298482542531, 1.8025211383109203]
+true_parameters = [0.0, 2.9663310461927557]
 
 
 class TestTimeIntegrated(unittest.TestCase):
@@ -42,18 +45,21 @@ class TestTimeIntegrated(unittest.TestCase):
 
         print("\n")
         print("\n")
-        print("Testing 'standard_overlapping' LLH class")
+        print("Testing 'large_catalogue' MinimisationHandler class")
         print("\n")
         print("\n")
 
         # Test stacking
 
         unblind_dict = {
-            "mh_name": "fixed_weights",
-            "datasets": [IC86_1_dict],
+            "mh_name": "large_catalogue",
+            "datasets": [IC40_dict],
             "catalogue": catalogue,
             "llh_dict": llh_dict,
+            "inj_dict": {}
         }
+
+        MinimisationHandler.create(unblind_dict)
 
         ub = create_unblinder(unblind_dict)
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]

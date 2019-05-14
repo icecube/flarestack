@@ -21,8 +21,6 @@ llh_dict = {
     }
 }
 
-name = "tests/test_likelihood_spatial/"
-
 # Loop over sin(dec) values
 
 sindecs = np.linspace(0.5, -0.5, 3)
@@ -48,17 +46,15 @@ class TestTimeIntegrated(unittest.TestCase):
 
         print("\n")
         print("\n")
-        print("Testing fixed_energy class")
+        print("Testing 'fixed_energy' LLH class")
         print("\n")
         print("\n")
 
         # Test three declinations
 
         for j, sindec in enumerate(sindecs):
-            subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
 
             unblind_dict = {
-                "name": subname,
                 "mh_name": "fixed_weights",
                 "datasets": [IC86_1_dict],
                 "catalogue": ps_catalogue_name(sindec),
