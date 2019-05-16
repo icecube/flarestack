@@ -44,19 +44,19 @@ def wait_for_cluster():
     """
     time.sleep(10)
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-    tmp = str(process.stdout.read())
+    tmp = process.stdout.read().decode()
     i = 31
     j = 6
-    while tmp != "":
+    while tmp != '':
         if i > 3:
 
-            n_total = len(tmp.split('\n')) - 3
+            n_total = len(str(tmp).split('\n')) - 3
 
             running_process = subprocess.Popen(
                 cmd + " -s r", stdout=subprocess.PIPE, shell=True)
-            running_tmp = str(running_process.stdout.read())
+            running_tmp = running_process.stdout.read().decode()
 
-            if running_tmp != "":
+            if running_tmp != '':
                 n_running = len(running_tmp.split('\n')) - 3
             else:
                 n_running = 0
@@ -67,13 +67,11 @@ def wait_for_cluster():
             print(time.asctime(time.localtime()), "Waiting for Cluster")
             i = 0
             j += 1
-        # if j > 5:
-        #     print tmp
-        #     j = 0
+
         time.sleep(30)
         i += 1
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-        tmp = str(process.stdout.read())
+        tmp = process.stdout.read().decode()
 
 
 def submit_to_cluster(path, n_cpu=2, n_jobs=10, bashname="SubmitDESY.sh"):
