@@ -287,7 +287,10 @@ def make_individual_spline_set(season, SoB_path):
         # path = SoB_spline_path(season)
 
         exp = data_loader(season["exp_path"])
-        mc = data_loader(season["mc_path"])
+        try:
+            mc = data_loader(season["mc_path"])
+        except AttributeError:
+            mc = data_loader(season["pseudo_mc_path"])
 
         sin_dec_bins = season["sinDec bins"]
 
