@@ -11,7 +11,8 @@ cluster_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 submit_file = cluster_dir + "SubmitDESY.sh"
 
-def make_desy_submit_file():
+
+def make_desy_submit_file(ram_per_core="6.0G"):
 
     text = "#!/bin/zsh \n" \
            "## \n" \
@@ -20,7 +21,7 @@ def make_desy_submit_file():
            "## \n" \
            "##(the running time for this job) \n" \
            "#$ -l h_cpu=23:59:00 \n" \
-           "#$ -l h_rss=6.0G \n" \
+           "#$ -l h_rss=" + str(ram_per_core) + "\n" \
            "## \n" \
            "## \n" \
            "##(send mail on job's abort) \n" \
@@ -55,8 +56,6 @@ def make_desy_submit_file():
     cmd = "chmod +x " + submit_file
 
     os.system(cmd)
-
-    print("CMD:", cmd)
 
 
 if __name__ == "__main__":

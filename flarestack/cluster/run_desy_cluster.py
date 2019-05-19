@@ -27,6 +27,7 @@ import os
 import os.path
 import argparse
 from flarestack.shared import log_dir, fs_dir
+from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file
 
 username = os.path.basename(os.environ['HOME'])
 
@@ -88,9 +89,14 @@ def submit_to_cluster(path, n_cpu=2, n_jobs=10, bashname="SubmitDESY.sh"):
     if n_cpu > 1:
         submit_cmd += " -pe multicore {0} -R y ".format(n_cpu)
 
+    ram_per_core = "{0:.1f}G".format(6./float(n_cpu) + 2.)
+    print("Ram per core:", ram_per_core)
+
     submit_cmd += "-t 1-{0}:1 {1} {2} {3}".format(
         n_jobs, bashfile, path, n_cpu
     )
+
+    make_desy_submit_file(ram_per_core)
 
     print(time.asctime(time.localtime()), submit_cmd, "\n")
     os.system(submit_cmd)
