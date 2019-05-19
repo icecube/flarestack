@@ -47,7 +47,7 @@ def estimate_discovery_potential(injectors, sources):
 
         # print("Season", season)
         data = inj._raw_data
-        n_bkg_tot = len(inj._raw_data)
+        # n_bkg_tot += len(inj._raw_data)
         # print("Number of events", n_bkg_tot)
         livetime += inj.time_pdf.livetime * 60 * 60 * 24
         # print("Livetime is {0} seconds ({1} days)".format(
@@ -107,13 +107,14 @@ def estimate_discovery_potential(injectors, sources):
             median_sigma = weighted_quantile(
                         true_errors, 0.5, source_mc["ow"] * mc_weights)
 
-            area = np.pi * (median_sigma) ** 2 / np.cos(source["dec_rad"])
+            area = np.pi * median_sigma ** 2 / np.cos(source["dec_rad"])
 
             local_rate = np.sum(data_weights)
 
             n_bkg = local_rate * area * source_weight
 
-            sig_scale = np.sqrt(np.mean(data_weights) / n_bkg)#np.sum(source_mc[
+            # sig_scale = np.sqrt(np.mean(data_weights) / n_bkg)#np.sum(source_mc[
+            sig_scale = 1.
             # "ow"]) #/
             # np.sqrt(
             # n_bkg)# + n_sig)
@@ -142,7 +143,9 @@ def estimate_discovery_potential(injectors, sources):
     int_sig = np.sum(season_sig * season_weights)
     int_bkg = np.sum(season_bkg * season_weights)
 
-    disc_count = norm.ppf(norm.cdf(5.0), loc=int_bkg, scale=np.sqrt(int_bkg))
+    disc_count = norm.ppf(norm.cdf(5.0), loc=int_bkg,
+                          scale=np.sqrt(int_bkg))
+                          # scale=np.sqrt(n_bkg_tot))
 
     disc_pot = disc_count - int_bkg
 
@@ -154,7 +157,8 @@ def estimate_discovery_potential(injectors, sources):
     # counting nearby neutrinos. In high-statics regime, previous study
     # showed ~factor of 2 improvement for binned vs unbinned
 
-    fudge_factor = 0.8 * (1.25 + 0.75 * np.tanh(np.log10(disc_count)))
+    fudge_factor = (1.25 + 0.75 * np.tanh(np.log(int_bkg)))
+    fudge_factor *= 1.2
 
     scale /= fudge_factor
 
