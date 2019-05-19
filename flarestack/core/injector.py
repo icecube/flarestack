@@ -377,11 +377,12 @@ class Injector(object):
 
         return ev
 
+
 class LowMemoryInjector(Injector):
     """For large numbers of sources O(~100), saving MC masks becomes
     increasingly burdensome. As a solution, the LowMemoryInjector should be
-    used instead. It will be slower if you inject neutrinos multiple times,
-    but will have much more reasonable memory consumption.
+    used instead. It will be somewhat slower if you inject neutrinos multiple
+    times, but will have much more reasonable memory consumption.
     """
 
     def __init__(self, season, sources, **kwargs):
@@ -542,49 +543,6 @@ class LowMemoryInjector(Injector):
         # raw_input("prompt")
 
         return sig_events
-
-
-class SparseMatrixInjector(Injector):
-    """For large numbers of sources O(~100), saving MC masks becomes
-    increasingly burdensome. As a solution, the LowMemoryInjector should be
-    used instead. It will be slower if you inject neutrinos multiple times,
-    but will have much more reasonable memory consumption.
-    """
-
-    def select_mc_band(self, mc, source):
-        """For a given source, selects MC events within a declination band of
-        width +/- 5 degrees that contains the source. Then returns the MC data
-        subset containing only those MC events.
-
-        :param mc: Monte Carlo simulation
-        :param source: Source to be simulated
-        :return: mc (cut): Simulated events which lie within the band
-        :return: omega: Solid Angle of the chosen band
-        :return: band_mask: The mask which removes events outside band
-        """
-
-        from scipy import sparse
-
-        # Sets half width of band
-        dec_width = np.deg2rad(5.)
-
-        # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
-        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
-        # Gives the solid angle coverage of the sky for the band
-        omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
-
-        # Checks if the mask has already been evaluated for the source
-        # If not, creates the mask for this source, and saves it
-        if source["source_name"] in list(self.injection_band_mask.keys()):
-            # convert sparse matrix back to nparray
-            band_mask = self.injection_band_mask[source["source_name"]]
-        else:
-            band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
-                                       np.less(mc["trueDec"], max_dec))
-            self.injection_band_mask[source['source_name']] = band_mask
-
-        return mc[band_mask], omega, band_mask
 
 
 class MockUnblindedInjector(Injector):

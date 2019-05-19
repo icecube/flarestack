@@ -8,11 +8,10 @@ import numpy as np
 import resource
 import random
 from sys import stdout
-import os, os.path
+import os
 import argparse
 import pickle as Pickle
 import scipy.optimize
-from scipy.stats import poisson, norm, chi2
 from flarestack.core.injector import Injector, LowMemoryInjector, \
     read_injector_dict
 from flarestack.core.llh import LLH, generate_dynamic_flare_class, read_llh_dict
@@ -208,14 +207,22 @@ class MinimisationHandler(object):
 
 
     @staticmethod
-    def trial_seeds(scale=1., n_steps=5):
-        print("Running")
+    def trial_params(mh_dict):
 
-        scale_range = np.array(
-            [0. for _ in range(10)] + list(np.linspace(0., scale, n_steps)[1:]))
-        seeds = [int(random.random() * 10 ** 8) for _ in scale_range]
+        scale = mh_dict["scale"]
+        steps = mh_dict["n_steps"]
 
-        return scale_range, seeds
+        if "fixed_scale" in list(mh_dict.keys()):
+            scale_range = [mh_dict["fixed_scale"]]
+        else:
+            scale_range = np.array(
+                [0. for _ in range(10)] +
+                list(np.linspace(0., scale, steps)[1:])
+            )
+
+        n_trials = int(mh_dict["n_trials"])
+
+        return scale_range, n_trials
 
     def iterate_run(self, scale=1., n_steps=5, n_trials=50):
 
@@ -345,9 +352,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         with open(file_name, "wb") as f:
             Pickle.dump(inj_dict, f)
 
-    def run_trial(self, scale):
+    def run_trial(self, full_dataset):
 
-        raw_f = self.trial_function(scale)
+        raw_f = self.trial_function(full_dataset)
 
         def llh_f(scale):
             return -np.sum(raw_f(scale))
@@ -410,6 +417,36 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return res_dict
 
+    def run_single(self, full_dataset, scale, seed):
+
+        param_vals = {}
+        for key in self.param_names:
+            param_vals[key] = []
+        ts_vals = []
+        flags = []
+
+        res_dict = self.run_trial(full_dataset)
+
+        for (key, val) in res_dict["Parameters"].items():
+            param_vals[key].append(val)
+
+        ts_vals.append(res_dict["TS"])
+        flags.append(res_dict["Flag"])
+
+        mem_use = str(
+            float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
+        print("")
+        print('Memory usage max: %s (Gb)' % mem_use)
+
+        results = {
+            "TS": ts_vals,
+            "Parameters": param_vals,
+            "Flags": flags,
+        }
+
+        self.dump_results(results, scale, seed)
+        return results
+
     def run(self, n_trials, scale=1., seed=None):
 
         if seed is None:
@@ -426,19 +463,17 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         print("Generating", n_trials, "trials!")
 
         for i in range(int(n_trials)):
+            seed = np.random.randint(low=0, high=99999999)
+            np.random.seed(seed)
 
-            res_dict = self.run_trial(scale)
+            full_dataset = self.prepare_dataset(scale, seed)
+            res_dict = self.run_single(full_dataset, scale, seed)
 
             for (key, val) in res_dict["Parameters"].items():
                 param_vals[key].append(val)
 
             ts_vals.append(res_dict["TS"])
             flags.append(res_dict["Flag"])
-
-        mem_use = str(
-            float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        print("")
-        print('Memory usage max: %s (Gb)' % mem_use)
 
         n_inj = 0
         for inj in self.injectors.values():
@@ -525,14 +560,29 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return weights_matrix
 
-    def trial_function(self, scale=1.):
+    def prepare_dataset(self, scale=1., seed=None):
+
+        if seed is None:
+            seed = int(random.random() * 10 ** 8)
+        np.random.seed(seed)
+
+        full_dataset = dict()
+
+        for season in self.seasons:
+            full_dataset[season["Name"]] = self.injectors[
+                season["Name"]].create_dataset(
+                scale, self.pull_correctors[season["Name"]]
+            )
+
+        return full_dataset
+
+    def trial_function(self, full_dataset):
 
         llh_functions = dict()
         n_all = dict()
 
         for season in self.seasons:
-            dataset = self.injectors[season["Name"]].create_dataset(
-                scale, self.pull_correctors[season["Name"]])
+            dataset = full_dataset[season["Name"]]
             llh_f = self.llhs[season["Name"]].create_llh_function(
                 dataset, self.pull_correctors[season["Name"]],
                 self.make_season_weight
@@ -1678,6 +1728,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
     def add_likelihood(self, season):
         return generate_dynamic_flare_class(season, self.sources, self.llh_dict)
 
+
 def g(x):
     return x * x
 
@@ -1695,7 +1746,7 @@ if __name__ == '__main__':
 
     mh = MinimisationHandler.create(mh_dict)
 
-    scales, seeds = mh.trial_seeds(mh_dict["scale"], n_steps=mh_dict["n_steps"])
+    scales, seeds = mh.trial_params(mh_dict["scale"], n_steps=mh_dict["n_steps"])
 
     if "fixed_scale" in list(mh_dict.keys()):
         scale = [mh_dict["fixed_scale"] for _ in seeds]
