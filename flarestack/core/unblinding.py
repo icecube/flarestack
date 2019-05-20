@@ -98,7 +98,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             self.plot_dir = plot_output_dir(self.name)
 
             # Minimise likelihood and produce likelihood scans
-            self.res_dict = self.run_trial(0)
+            self.res_dict = self.simulate_and_run(0)
 
             print("\n")
             print(self.res_dict)

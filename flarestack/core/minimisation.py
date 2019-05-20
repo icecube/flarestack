@@ -445,7 +445,13 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         }
 
         self.dump_results(results, scale, seed)
-        return results
+        return res_dict
+
+    def simulate_and_run(self, scale):
+        seed = np.random.randint(low=0, high=99999999)
+        self.set_random_seed(seed)
+        full_dataset = self.prepare_dataset(scale, seed)
+        return self.run_single(full_dataset, scale, seed)
 
     def run(self, n_trials, scale=1., seed=None):
 
@@ -463,11 +469,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         print("Generating", n_trials, "trials!")
 
         for i in range(int(n_trials)):
-            seed = np.random.randint(low=0, high=99999999)
-            np.random.seed(seed)
 
-            full_dataset = self.prepare_dataset(scale, seed)
-            res_dict = self.run_single(full_dataset, scale, seed)
+            res_dict = self.simulate_and_run(scale)
 
             for (key, val) in res_dict["Parameters"].items():
                 param_vals[key].append(val)
@@ -479,6 +482,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         for inj in self.injectors.values():
             for val in inj.ref_fluxes[scale_shortener(scale)].values():
                 n_inj += val
+
         print("")
         print("Injected with an expectation of", n_inj, "events.")
 
@@ -488,10 +492,10 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         for (key, param) in sorted(param_vals.items()):
             if len(param) > 0:
-                print("Parameter", key, ":", np.mean(param), \
-                    np.median(param), np.std(param))
-        print("Test Statistic:", np.mean(ts_vals), np.median(ts_vals), np.std(
-            ts_vals))
+                print("Parameter", key, ":", np.mean(param),
+                      np.median(param), np.std(param))
+        print("Test Statistic:", np.mean(ts_vals),
+              np.median(ts_vals), np.std(ts_vals))
         print("")
 
         print("FLAG STATISTICS:")
