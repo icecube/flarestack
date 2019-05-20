@@ -10,13 +10,21 @@ from flarestack.shared import SoB_spline_path, dataset_plot_dir
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+import zipfile
 
 src_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
-data_dir = src_dir + "raw_data/"
+zip_file = src_dir + "raw_data/3year-data-release.zip"
+
 output_base_dir = public_dataset_dir + "all_sky_3_year/"
+extract_dir = output_base_dir + "extracted_data"
+data_dir = extract_dir + "/3year-data-release/"
 output_data_dir = output_base_dir + "events/"
 pseudo_mc_dir = output_data_dir + "pseudo_mc/"
+
+with zipfile.ZipFile(zip_file, "r") as zip_ref:
+    zip_ref.extractall(extract_dir)
+
 
 for path in [output_data_dir, pseudo_mc_dir]:
 
