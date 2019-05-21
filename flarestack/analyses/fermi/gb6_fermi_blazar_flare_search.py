@@ -11,7 +11,6 @@ from builtins import str
 import numpy as np
 import os
 import pickle as Pickle
-from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
@@ -20,7 +19,7 @@ from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
     transients_dir
 from flarestack.utils.prepare_catalogue import custom_sources
 from flarestack.utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import run_desy_cluster as rd
+from flarestack.cluster import analyse, wait_for_cluster
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -28,7 +27,7 @@ from flarestack.core.time_pdf import TimePDF
 from astropy import units as u
 from astropy.coordinates import Distance
 
-name = "benchmarks/Fermi_GB6_blazar_benchmark/"
+name = "analyses/fermi/GB6_blazar_flare_search/"
 
 analyses = dict()
 
@@ -37,8 +36,8 @@ analyses = dict()
 
 # Start and end time of flare in MJD
 t_start = 55753.00
-#t_end = 56000.00
-t_end = 56474.00 #true end hard flare
+t_end = 56000.00
+# t_end = 56474.00 #true end hard flare
 
 # Ra and dec of source
 ra = 160.134167
@@ -54,7 +53,7 @@ catalogue = custom_sources(
     ra=ra,
     dec=dec,
     weight=1.,
-    distance= lumdist,
+    distance=lumdist,
     start_time=t_start,
     end_time=t_end,
 )
@@ -68,47 +67,38 @@ max_window = 150.
 # Initialise Injectors/LLHs
 
 injection_energy = {
-    "Name": "Power Law",
-    "Gamma": 2.0,
+    "energy_pdf_name": "PowerLaw",
+    "gamma": 2.0,
 }
 
 llh_time = {
-    "Name": "FixedRefBox",
-    "Fixed Ref Time (MJD)": t_start,
-    "Pre-Window": 0.,
-    "Post-Window": search_window,
-    "Max Flare": max_window
+    "time_pdf_name": "FixedRefBox",
+    "fixed_ref_time_mjd": t_start,
+    "pre_window": 0.,
+    "post_window": search_window,
+    "max_flare": max_window
 }
 
 llh_energy = injection_energy
 
 no_flare = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": False,
-    "Fit Negative n_s?": False
+    "llh_name": "standard",
+    "llh_energy_pdf": llh_energy,
+    "llh_time_pdf": llh_time,
 }
 
 no_flare_negative = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": False,
-    "Fit Negative n_s?": True
+    "llh_name": "standard",
+    "llh_energy_pdf": llh_energy,
+    "llh_time_pdf": llh_time,
+    "negative_ns_bool": True
 }
 
-flare = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": True,
-    "Fit Negative n_s?": False
-}
+flare = no_flare
 
 src_res = dict()
 
-lengths = np.logspace(-2, 0, 5) * max_window
+lengths = np.logspace(-2, 0, 2) * max_window
 
 for i, llh_kwargs in enumerate([
                                 no_flare,
@@ -119,6 +109,7 @@ for i, llh_kwargs in enumerate([
     label = ["Time-Independent", "Time-Independent (negative n_s)",
              "Time-Clustering"][i]
     f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
+    mh_name = ["fixed_weights", "fixed_weights", "flare"][i]
 
     flare_name = name + f_name + "/"
 
@@ -129,54 +120,39 @@ for i, llh_kwargs in enumerate([
         full_name = flare_name + str(flare_length) + "/"
 
         injection_time = {
-            "Name": "FixedRefBox",
-            "Fixed Ref Time (MJD)": t_start,
-            "Pre-Window": 0,
-            "Post-Window": flare_length,
-            "Time Smear?": True,
-            "Min Offset": 0.,
-            "Max Offset": search_window - flare_length
+            "time_pdf_name": "FixedRefBox",
+            "fixed_ref_time_mjd": t_start,
+            "pre_window": 0,
+            "post_window": flare_length,
+            "time_smear_bool": True,
+            "min_offset": 0.,
+            "max_offset": search_window - flare_length
         }
 
         inj_kwargs = {
-            "Injection Energy PDF": injection_energy,
-            "Injection Time PDF": injection_time,
-            "Poisson Smear?": True,
+            "injection_energy_pdf": injection_energy,
+            "injection_time_pdf": injection_time,
         }
 
         scale = flux_to_k(reference_sensitivity(np.sin(dec))
-                          * (old_div(50 * search_window, flare_length)))
+                          * (50 * search_window/ flare_length))
 
         mh_dict = {
             "name": full_name,
-            "datasets": custom_dataset(txs_sample_v1,catalogue,llh_kwargs["LLH Time PDF"]),
+            "mh_name": mh_name,
+            "datasets": custom_dataset(txs_sample_v1, catalogue,
+                                       llh_kwargs["llh_time_pdf"]),
             "catalogue": cat_path,
-            "inj kwargs": inj_kwargs,
-            "llh kwargs": llh_kwargs,
+            "inj_dict": inj_kwargs,
+            "llh_dict": llh_kwargs,
             "scale": scale,
-            "n_trials": 1,
+            "n_trials": 10,
             "n_steps": 15 #number of flux values
         }
 
-        analysis_path = analysis_dir + full_name
-
-        try:
-            os.makedirs(analysis_path)
-        except OSError:
-            pass
-
-        pkl_file = analysis_path + "dict.pkl"
-
-        with open(pkl_file, "wb") as f:
-            Pickle.dump(mh_dict, f)
+        if mh_name == "flare":
             
-        
-        rd.submit_to_cluster(pkl_file, n_jobs=1000) #for cluster
-        # local
-        #mh = MinimisationHandler(mh_dict)
-        #mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=30)
-        #mh.clear()
-        ####
+            analyse(mh_dict, n_cpu=24, cluster=False)
 
         # raw_input("prompt")
 
@@ -184,7 +160,7 @@ for i, llh_kwargs in enumerate([
 
     src_res[label] = res
 
-rd.wait_for_cluster() #for cluster
+wait_for_cluster() #for cluster
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]
@@ -197,13 +173,12 @@ labels = []
 for i, (f_type, res) in enumerate(sorted(src_res.items())):
     for (length, rh_dict) in sorted(res.items()):
 
-        rh = ResultsHandler(rh_dict["name"], rh_dict["llh kwargs"],
-                            rh_dict["catalogue"])
+        rh = ResultsHandler(rh_dict)
 
         inj_time = length * (60 * 60 * 24)
 
         astro_sens, astro_disc = rh.astro_values(
-            rh_dict["inj kwargs"]["Injection Energy PDF"])
+            rh_dict["inj_dict"]["injection_energy_pdf"])
 
         e_key = "Mean Luminosity (erg/s)"
 
@@ -255,5 +230,7 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
     ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
     plt.tight_layout()
     plt.savefig(plot_output_dir(name) + "/flare_vs_box_" +
-                catalogue["Name"][0] + "_" + ["sens", "disc"][j] + ".pdf")
+                catalogue["source_name"][0].decode() + "_" + ["sens", "disc"][
+                    j] +
+                ".pdf")
     plt.close()
