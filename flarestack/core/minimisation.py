@@ -1082,11 +1082,9 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                                  "time PDFs that are uniform over "
                                  "fixed periods.")
 
-    def run_trial(self, scale):
+    def run_trial(self, full_dataset):
 
         datasets = dict()
-
-        full_data = dict()
 
         livetime_calcs = dict()
 
@@ -1106,14 +1104,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # Generate a scrambled dataset, and save it to the datasets
             # dictionary. Loads the llh for the season.
 
-            data = self.injectors[season["Name"]].create_dataset(
-                scale, self.pull_correctors[season["Name"]]
-            )
+            data = full_dataset[season["Name"]]
             llh = self.llhs[season["Name"]]
 
             livetime_calcs[season["Name"]] = TimePDF.create(time_dict, season)
-
-            full_data[season["Name"]] = data
 
             # Loops over each source in catalogue
 
@@ -1258,8 +1252,6 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     # print "Continuing because flare too long"
                     continue
 
-                stdout.write("\r" + str(i) + " of " + str(len(pairs)))
-                stdout.flush()
 
                 # Marginalisation term is length of flare in livetime
                 # divided by max flare length in livetime. Accounts
@@ -1279,7 +1271,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 n_all = np.sum([np.sum(~np.logical_or(
                     np.less(data["time"], t_start),
                     np.greater(data["time"], t_end)))
-                                for data in full_data.values()])
+                                for data in full_dataset.values()])
 
                 llhs = dict()
 
@@ -1301,7 +1293,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     coincident_data = season_dict["Coincident Data"]
 
-                    data = full_data[name]
+                    data = full_dataset[name]
 
                     n_season = np.sum(~np.logical_or(
                         np.less(data["time"], t_start),
@@ -1396,7 +1388,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
         results["TS"] = stacked_ts
 
-        del datasets, full_data, livetime_calcs
+        del datasets, full_dataset, livetime_calcs
 
         return results
 
