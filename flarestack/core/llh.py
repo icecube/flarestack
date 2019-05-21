@@ -508,7 +508,8 @@ class FixedEnergyLLH(LLH):
         with open(SoB_path, "rb") as f:
             [dec_vals, ratio_hist] = Pickle.load(f)
 
-        spline = make_2d_spline_from_hist(np.array(ratio_hist), dec_vals)
+        spline = make_2d_spline_from_hist(np.array(ratio_hist), dec_vals,
+                                          self.season.log_e_bins)
 
         def energy_weight_f(event, params=None):
             return np.exp(spline(event["logE"], event["sinDec"], grid=False))
@@ -565,6 +566,7 @@ class FixedEnergyLLH(LLH):
             exp=self.season.get_background_model(),
             mc=self.season.get_pseudo_mc(),
             sin_dec_bins=dec_range,
+            log_e_bins=self.season.log_e_bins,
             weight_function=self.energy_pdf.weight_mc
         )
 
