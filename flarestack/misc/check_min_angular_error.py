@@ -3,7 +3,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.utils.dataset_loader import data_loader
+from flarestack.icecube_utils.dataset_loader import data_loader
 from flarestack.shared import plots_dir, min_angular_err
 
 ang_err_dir = plots_dir + "angular_error/"

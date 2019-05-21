@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
 from flarestack.shared import plots_dir
-from flarestack.utils.dataset_loader import data_loader, grl_loader
+from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader
 
 data_rate_dir = plots_dir + "data_rate/"
 

@@ -151,10 +151,10 @@ class MinimisationHandler(object):
         # For each season, we create an independent injector and llh using the
         # source list along with the respective sets of energy/time PDFs
         # provided.
-        for season in self.seasons:
-            self.llhs[season["Name"]] = self.add_likelihood(season)
-            self.injectors[season["Name"]] = self.add_injector(season, sources)
-            self.pull_correctors[season["Name"]] = BasePullCorrector.create(
+        for (name, season) in self.seasons.items():
+            self.llhs[name] = self.add_likelihood(season)
+            self.injectors[name] = self.add_injector(season, sources)
+            self.pull_correctors[name] = BasePullCorrector.create(
                 season, self.llh_dict["llh_energy_pdf"], self.floor_name,
                 self.pull_name
             )
@@ -521,7 +521,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         # dist_weight = src["distance_mpc"] ** -2
         # base_weight = src["base_weight"]
 
-        llh = self.llhs[season["Name"]]
+        llh = self.llhs[season.season_name]
         acc = []
 
         time_weights = []
@@ -556,7 +556,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         weights_matrix = np.ones([len(self.seasons), len(self.sources)])
 
-        for i, season in enumerate(self.seasons):
+        for i, season in enumerate(self.seasons.values()):
             w = self.make_season_weight(params, season)
 
             for j, ind_w in enumerate(w):
@@ -572,10 +572,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         full_dataset = dict()
 
-        for season in self.seasons:
-            full_dataset[season["Name"]] = self.injectors[
-                season["Name"]].create_dataset(
-                scale, self.pull_correctors[season["Name"]]
+        for name in self.seasons.keys():
+            full_dataset[name] = self.injectors[name].create_dataset(
+                scale, self.pull_correctors[name]
             )
 
         return full_dataset
@@ -585,14 +584,14 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         llh_functions = dict()
         n_all = dict()
 
-        for season in self.seasons:
-            dataset = full_dataset[season["Name"]]
-            llh_f = self.llhs[season["Name"]].create_llh_function(
-                dataset, self.pull_correctors[season["Name"]],
+        for name in self.seasons:
+            dataset = full_dataset[name]
+            llh_f = self.llhs[name].create_llh_function(
+                dataset, self.pull_correctors[name],
                 self.make_season_weight
             )
-            llh_functions[season["Name"]] = llh_f
-            n_all[season["Name"]] = len(dataset)
+            llh_functions[name] = llh_f
+            n_all[name] = len(dataset)
 
         def f_final(raw_params):
 
@@ -614,9 +613,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             # data and evaluates the TS function for that season
 
             ts_val = 0
-            for i, season in enumerate(self.seasons):
+            for i, name in enumerate(self.seasons):
                 w = weights_matrix[i][:, np.newaxis]
-                ts_val += np.sum(llh_functions[season["Name"]](params, w))
+                ts_val += np.sum(llh_functions[name](params, w))
 
             return ts_val
 
@@ -972,17 +971,19 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             raise ValueError(
                 "Attempted to mix fitting weights with negative n_s.")
 
-    def trial_function(self, scale=1.):
+    def trial_function(self, full_dataset):
+
         llh_functions = dict()
         n_all = dict()
 
-        for season in self.seasons:
-            dataset = self.injectors[season["Name"]].create_dataset(
-                scale, self.pull_correctors[season["Name"]])
-            llh_f = self.llhs[season["Name"]].create_llh_function(
-                dataset, self.pull_correctors[season["Name"]])
-            llh_functions[season["Name"]] = llh_f
-            n_all[season["Name"]] = len(dataset)
+        for name in self.seasons:
+            dataset = full_dataset[name]
+            llh_f = self.llhs[name].create_llh_function(
+                dataset, self.pull_correctors[name],
+                self.make_season_weight
+            )
+            llh_functions[name] = llh_f
+            n_all[name] = len(dataset)
 
         def f_final(params):
 
@@ -1002,9 +1003,9 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             # data and evaluates the TS function for that season
 
             ts_val = 0
-            for i, season in enumerate(self.seasons):
+            for i, name in enumerate(self.seasons):
                 w = weights_matrix[i][:, np.newaxis]
-                ts_val += llh_functions[season["Name"]](params, w)
+                ts_val += llh_functions[name](params, w)
 
             return ts_val
 
@@ -1065,9 +1066,9 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
         # For each season, we create an independent likelihood, using the
         # source list along with the sets of energy/time
         # PDFs provided in llh_kwargs.
-        for season in self.seasons:
+        for name in self.seasons:
 
-            tpdf = self.llhs[season["Name"]].time_pdf
+            tpdf = self.llhs[name].time_pdf
 
             # Check to ensure that no weird new untested time PDF is used
             # with the flare search method, since uniform time PDFs over the
@@ -1099,15 +1100,15 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
         # Loop over each data season
 
-        for season in self.seasons:
+        for (name, season) in self.seasons.items():
 
             # Generate a scrambled dataset, and save it to the datasets
             # dictionary. Loads the llh for the season.
 
-            data = full_dataset[season["Name"]]
-            llh = self.llhs[season["Name"]]
+            data = full_dataset[name]
+            llh = self.llhs[name]
 
-            livetime_calcs[season["Name"]] = TimePDF.create(time_dict, season)
+            livetime_calcs[name] = TimePDF.create(time_dict, season)
 
             # Loops over each source in catalogue
 
@@ -1135,11 +1136,13 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     # Creates empty dictionary to save info
 
-                    name = source["source_name"]
-                    if name not in list(datasets.keys()):
-                        datasets[name] = dict()
+                    source_name = source["source_name"]
+                    if source_name not in list(datasets.keys()):
+                        datasets[source_name] = dict()
 
-                    new_entry = dict(season)
+                    new_entry = {
+                        "season_name": season.season_name
+                    }
                     new_entry["Coincident Data"] = coincident_data
                     new_entry["Start (MJD)"] = llh.time_pdf.t0
                     new_entry["End (MJD)"] = llh.time_pdf.t1
@@ -1153,7 +1156,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     new_entry["N_all"] = len(data)
 
-                    datasets[name][season["Name"]] = new_entry
+                    datasets[source_name][name] = new_entry
 
         stacked_ts = 0.0
 
@@ -1279,7 +1282,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                 for (name, season_dict) in sorted(source_dict.items()):
 
-                    llh = self.llhs[season_dict["Name"]]
+                    llh = self.llhs[season_dict["season_name"]]
 
                     # Check that flare overlaps with season
 
@@ -1319,10 +1322,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     flare_f = llh.create_flare_llh_function(
                         coincident_data, flare_veto, n_all, src, n_season,
-                        self.pull_correctors[season_dict["Name"]]
+                        self.pull_correctors[season_dict["season_name"]]
                     )
 
-                    llhs[season_dict["Name"]] = {
+                    llhs[season_dict["season_name"]] = {
                         "f": flare_f,
                         "flare length": flare_length
                     }

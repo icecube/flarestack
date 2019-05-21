@@ -36,8 +36,8 @@ class TestSetup(unittest.TestCase):
 
         set_scratch_directory(temp_scratch_dir)
 
-        from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC40_dict
-        run_precompute([IC40_dict], ask=False)
+        from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+        run_precompute(ps_7year.get_seasons("IC40"), ask=False)
 
         keys = list(sys.modules.keys())
         for key in keys:

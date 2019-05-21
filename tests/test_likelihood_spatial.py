@@ -1,5 +1,5 @@
 from __future__ import print_function
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.shared import flux_to_k
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.utils.reference_sensitivity import reference_sensitivity
@@ -20,7 +20,7 @@ source = ps_catalogue_name(0.0)
 
 unblind_dict = {
     "mh_name": "fixed_weights",
-    "datasets": [IC86_1_dict],
+    "datasets": ps_7year.get_seasons("IC86_1"),
     "catalogue": ps_catalogue_name(0.5),
     "llh_dict": llh_dict
 }

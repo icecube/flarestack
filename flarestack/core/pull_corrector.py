@@ -2,9 +2,7 @@ from __future__ import print_function
 from __future__ import division
 from builtins import object
 import numpy as np
-import math
 import os
-import zlib
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.shared import min_angular_err, base_floor_quantile, \
     floor_pickle, pull_pickle, weighted_quantile
@@ -12,8 +10,6 @@ from flarestack.utils.dynamic_pull_correction import \
     create_quantile_floor_0d, create_quantile_floor_0d_e, \
     create_quantile_floor_1d, create_quantile_floor_1d_e, create_pull_0d_e, \
     create_pull_1d, create_pull_1d_e, create_pull_2d, create_pull_2d_e
-from flarestack.utils.dataset_loader import data_loader
-import json
 import pickle as Pickle
 from scipy.interpolate import interp1d, RectBivariateSpline
 from flarestack.utils.make_SoB_splines import gamma_support_points, \

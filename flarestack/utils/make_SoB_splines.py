@@ -8,19 +8,8 @@ import pickle as Pickle
 from flarestack.shared import gamma_precision, SoB_spline_path, \
     bkg_spline_path, dataset_plot_dir
 from flarestack.core.energy_pdf import PowerLaw
-from flarestack.utils.dataset_loader import data_loader
+from flarestack.icecube_utils.dataset_loader import data_loader
 import matplotlib.pyplot as plt
-
-
-# sin_dec_bins = np.unique(np.concatenate([
-#             np.linspace(-1., -0.9, 2 + 1),
-#             np.linspace(-0.9, -0.2, 8 + 1),
-#             np.linspace(-0.2, 0.2, 15 + 1),
-#             np.linspace(0.2, 0.9, 12 + 1),
-#             np.linspace(0.9, 1., 2 + 1),
-#         ]))
-
-energy_bins = np.linspace(1., 10., 25 + 1)
 
 energy_pdf = PowerLaw()
 
@@ -39,7 +28,7 @@ gamma_points = np.arange(0.7, 4.3, gamma_precision)
 gamma_support_points = set([_around(i) for i in gamma_points])
 
 
-def create_2d_hist(sin_dec, log_e, sin_dec_bins, weights):
+def create_2d_hist(sin_dec, log_e, sin_dec_bins, log_e_bins, weights):
     """Creates a 2D histogram for a set of data (Experimental or Monte
     Carlo), in which the dataset is binned by sin(Declination) and
     Log(Energy). Weights the histogram by the values in the weights array.
@@ -54,7 +43,7 @@ def create_2d_hist(sin_dec, log_e, sin_dec_bins, weights):
     """
     # Produces the histogram
     hist_2d, binedges = np.histogramdd(
-        (log_e, sin_dec), bins=(energy_bins, sin_dec_bins), weights=weights)
+        (log_e, sin_dec), bins=(log_e_bins, sin_dec_bins), weights=weights)
     # n_dimensions = hist_2d.ndim
 
     # # Normalises histogram
@@ -90,18 +79,18 @@ def create_2d_hist(sin_dec, log_e, sin_dec_bins, weights):
 #     return hist_2d
 
 
-def create_bkg_2d_hist(exp, sin_dec_bins):
+def create_bkg_2d_hist(exp, sin_dec_bins, log_e_bins):
     """Creates a background 2D logE/sinDec histogram.
 
     :param exp: Experimental data
     :param sin_dec_bins: Bins of Sin(Declination to be used)
     :return: 2D histogram
     """
-    return create_2d_hist(exp["sinDec"], exp["logE"], sin_dec_bins,
+    return create_2d_hist(exp["sinDec"], exp["logE"], sin_dec_bins, log_e_bins,
                           weights=np.ones_like(exp["logE"]))
 
 
-def create_sig_2d_hist(mc, sin_dec_bins, weight_function):
+def create_sig_2d_hist(mc, sin_dec_bins, log_e_bins, weight_function):
     """Creates a signal 2D logE/sinDec histogram.
 
     :param mc: MC Simulations
@@ -110,11 +99,11 @@ def create_sig_2d_hist(mc, sin_dec_bins, weight_function):
     :return: 2D histogram
     """
 
-    return create_2d_hist(mc["sinDec"], mc["logE"], sin_dec_bins,
+    return create_2d_hist(mc["sinDec"], mc["logE"], sin_dec_bins, log_e_bins,
                           weights=weight_function(mc))
 
 
-def create_2d_ratio_hist(exp, mc, sin_dec_bins, weight_function):
+def create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     """Creates a 2D histogram for both data and MC, in which the seasons
     are binned by Sin(Declination) and Log(Energy/GeV). Each histogram is
     normalised in Sin(Declination) bands. Then creates a histogram of the
@@ -131,8 +120,8 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, weight_function):
     :return: ratio histogram
     """
 
-    bkg_hist = create_bkg_2d_hist(exp, sin_dec_bins)
-    sig_hist = create_sig_2d_hist(mc, sin_dec_bins, weight_function)
+    bkg_hist = create_bkg_2d_hist(exp, sin_dec_bins, log_e_bins)
+    sig_hist = create_sig_2d_hist(mc, sin_dec_bins, log_e_bins, weight_function)
     n_dimensions = sig_hist.ndim
     norms = np.sum(sig_hist, axis=n_dimensions - 2)
     norms[norms == 0.] = 1.
@@ -161,7 +150,7 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, weight_function):
     return ratio
 
 
-def create_2d_ratio_spline(exp, mc, sin_dec_bins, weight_function):
+def create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     """Creates 2D histograms for both data and MC, in which the seasons
     are binned by Sin(Declination) and Log(Energy/GeV). Each histogram is
     normalised in Sin(Declination) bands. Then creates a histogram of the
@@ -182,17 +171,18 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, weight_function):
     :return: 2D spline function
     """
 
-    ratio = create_2d_ratio_hist(exp, mc, sin_dec_bins, weight_function)
+    ratio = create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins,
+                                 weight_function)
 
-    spline = make_2d_spline_from_hist(ratio, sin_dec_bins)
+    spline = make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins)
 
     return spline
 
 
-def make_2d_spline_from_hist(ratio, sin_dec_bins):
+def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins):
     # Sets bin centers, and order of spline (for x and y)
     sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
-    log_e_bin_center = (energy_bins[:-1] + energy_bins[1:]) / 2.
+    log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.
     order = 2
 
     # Fits a 2D spline function to the log of ratio array
@@ -203,7 +193,7 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins):
     return spline
 
 
-def create_gamma_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
+def create_gamma_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, gamma):
     """Creates a 2D gamma ratio spline by creating a function that weights MC
     assuming a power law of spectral index gamma.
 
@@ -217,10 +207,11 @@ def create_gamma_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
     def weight_function(sig_mc):
         return energy_pdf.weight_mc(sig_mc, gamma)
 
-    return create_2d_ratio_spline(exp, mc, sin_dec_bins, weight_function)
+    return create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins,
+                                  weight_function)
 
 
-def create_2d_splines(exp, mc, sin_dec_bins):
+def create_2d_splines(exp, mc, sin_dec_bins, log_e_bins):
     """If gamma will not be fit, then calculates the Log(Signal/Background)
     2D PDF for the fixed value self.default_gamma. Fits a spline to each
     histogram, and saves the spline in a dictionary.
@@ -240,7 +231,7 @@ def create_2d_splines(exp, mc, sin_dec_bins):
 
     for gamma in gamma_support_points:
         splines[gamma] = create_gamma_2d_ratio_spline(
-            exp, mc, sin_dec_bins, gamma)
+            exp, mc, sin_dec_bins, log_e_bins, gamma)
 
     return splines
 
@@ -275,7 +266,7 @@ def make_spline(seasons):
           " gamma in:")
     print(list(gamma_support_points))
 
-    for season in seasons:
+    for season in seasons.values():
         SoB_path = SoB_spline_path(season)
         make_individual_spline_set(season, SoB_path)
         make_background_spline(season)
@@ -283,18 +274,16 @@ def make_spline(seasons):
 
 def make_individual_spline_set(season, SoB_path):
     try:
-        print("Making splines for", season["Name"])
+        print("Making splines for", season.season_name)
         # path = SoB_spline_path(season)
 
-        exp = data_loader(season["exp_path"])
-        try:
-            mc = data_loader(season["mc_path"])
-        except AttributeError:
-            mc = data_loader(season["pseudo_mc_path"])
+        exp = season.get_exp_data()
+        mc = season.get_pseudo_mc()
 
-        sin_dec_bins = season["sinDec bins"]
+        sin_dec_bins = season.sin_dec_bins
+        log_e_bins = season.log_e_bins
 
-        splines = create_2d_splines(exp, mc, sin_dec_bins)
+        splines = create_2d_splines(exp, mc, sin_dec_bins, log_e_bins)
 
         print("Saving to", SoB_path)
 
@@ -307,7 +296,7 @@ def make_individual_spline_set(season, SoB_path):
             Pickle.dump(splines, f)
 
         base_plot_path = dataset_plot_dir + "Signal_over_background/" + \
-                         season["Data Sample"] + "/" + season["Name"] + "/"
+                         season.sample_name + "/" + season.season_name + "/"
 
         def make_plot(hist, savepath, normed=True):
             if normed:
@@ -318,7 +307,7 @@ def make_individual_spline_set(season, SoB_path):
                 hist = np.log(np.array(hist))
             plt.figure()
             ax = plt.subplot(111)
-            X, Y = np.meshgrid(sin_dec_bins, energy_bins)
+            X, Y = np.meshgrid(sin_dec_bins, log_e_bins)
             if not normed:
                 max_col = min(abs(min([min(row) for row in hist.T])),
                               max([max(row) for row in hist.T]))
@@ -334,7 +323,7 @@ def make_individual_spline_set(season, SoB_path):
             plt.savefig(savepath)
             plt.close()
 
-        exp_hist = create_bkg_2d_hist(exp, sin_dec_bins)
+        exp_hist = create_bkg_2d_hist(exp, sin_dec_bins, log_e_bins)
 
         # Generate plots
         for gamma in np.linspace(1.0, 4.0, 7):
@@ -349,17 +338,18 @@ def make_individual_spline_set(season, SoB_path):
             def weight_function(sig_mc):
                 return energy_pdf.weight_mc(sig_mc, gamma)
 
-            mc_hist = create_sig_2d_hist(mc, sin_dec_bins, weight_function)
+            mc_hist = create_sig_2d_hist(mc, sin_dec_bins, log_e_bins,
+                                         weight_function)
 
             make_plot(mc_hist, savepath=plot_path + "sig.pdf")
-            make_plot(create_2d_ratio_hist(exp, mc, sin_dec_bins,
+            make_plot(create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins,
                                            weight_function),
                       savepath=plot_path + "SoB.pdf", normed=False)
 
             Z = []
             for s in sin_dec_bins:
                 z_line = []
-                for e in energy_bins:
+                for e in log_e_bins:
                     z_line.append(splines[gamma](e, s)[0][0])
                 Z.append(z_line)
 
@@ -370,7 +360,7 @@ def make_individual_spline_set(season, SoB_path):
 
             plt.figure()
             ax = plt.subplot(111)
-            X, Y = np.meshgrid(sin_dec_bins, energy_bins)
+            X, Y = np.meshgrid(sin_dec_bins, log_e_bins)
             cbar = ax.pcolormesh(X, Y, Z, cmap="seismic",
                                  vmin=-max_col, vmax=max_col)
             plt.colorbar(cbar, label="Log(Signal/Background)")
@@ -390,10 +380,10 @@ def make_individual_spline_set(season, SoB_path):
 
 def make_background_spline(season):
     bkg_path = bkg_spline_path(season)
-    exp = data_loader(season["exp_path"])
-    sin_dec_bins = season["sinDec bins"]
+    bkg = season.get_background_model()
+    sin_dec_bins = season.sin_dec_bins
 
-    bkg_spline = create_bkg_spatial_spline(exp, sin_dec_bins)
+    bkg_spline = create_bkg_spatial_spline(bkg, sin_dec_bins)
 
     print("Saving to", bkg_path)
 

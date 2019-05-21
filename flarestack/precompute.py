@@ -39,7 +39,7 @@ def run_precompute(all_data, ask=True):
     from flarestack.utils.prepare_catalogue import make_single_sources
     from flarestack.utils.create_acceptance_functions import make_acceptance_f
     from flarestack.utils.make_SoB_splines import make_spline
-    from flarestack.utils.dataset_loader import verify_grl_with_data
+    from flarestack.icecube_utils.dataset_loader import verify_grl_with_data
     import socket
     from flarestack.cluster.make_desy_cluster_script import \
         make_desy_submit_file
@@ -108,34 +108,14 @@ def run_precompute(all_data, ask=True):
     print("\n")
     make_single_sources()
 
-    # Check to ensure there is at least one IceCube dataset present
-
-    x = np.sum([os.path.isdir(os.path.dirname(y["mc_path"])) for y in all_data])
-
     print("********************************************************************")
     print("*                                                                  *")
     print("*                     Checking data directories                    *")
     print("*                                                                  *")
     print("********************************************************************")
 
-    roots = list(set([os.path.dirname(y["mc_path"]) for y in all_data]))
-
-    if x == 0:
-        print("No IceCube data files found. Tried searching for: \n")
-        for y in roots:
-            print("\t", y)
-
-        print("")
-        print("Download these data files yourself, and save them to: \n")
-        print("\t", dataset_dir)
-        print("\n")
-        sys.exit()
-
-    else:
-        print("Searched for the following directories: \n")
-        for y in roots:
-            print("\t", y, end=' ')
-            print("Found?", os.path.isdir(y))
+    for y in all_data.values():
+        y.check_files_exist()
 
     print("\n")
     print("********************************************************************")

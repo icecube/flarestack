@@ -1,12 +1,10 @@
 from __future__ import print_function
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
 from flarestack.shared import make_analysis_pickle
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.utils.reference_sensitivity import reference_sensitivity
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.cluster import analyse, wait_cluster
-import matplotlib.pyplot as plt
 from flarestack.analyses.txs_0506_056.make_txs_catalogue import \
     txs_catalogue, txs_cat_path
 
@@ -72,11 +70,11 @@ name = "analyses/txs_0506_056/INTRO1/"
 mh_dict = {
     "name": name,
     "mh_name": "fixed_weights",
-    "datasets": ps_7year[-2:-1],
+    "datasets": ps_7year.get_seasons("IC86_1"),
     "catalogue": txs_cat_path,
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
-    "n_trials": 100,
+    "n_trials": 10,
     "n_steps": 10
 }
 
@@ -85,12 +83,11 @@ scale = mh.guess_scale()
 
 mh_dict["scale"] = scale
 
-path = make_analysis_pickle(mh_dict)
-
 # Creates a Minimisation Handler using the dictionary, and runs the trials
 
-# analyse(path, n_cpu=24, cluster=True)
-wait_cluster()
+analyse(mh_dict,  n_cpu=2, n_jobs=1, cluster=False)
+# wait_cluster()
+
 # mh.iterate_run(scale, n_steps=mh_dict["n_steps"],
 #                n_trials=mh_dict["n_trials"])
 
@@ -127,6 +124,7 @@ print()
 print("Discovery Potential is", rh.disc_potential, "GeV/cm^2")
 print("(The discovery potential probably does not have good statistics)")
 print()
-print("REMINDER: our quick discovery potential estimate was:", mh.disc_guess)
+print("REMINDER: our quick discovery potential estimate was:", mh.disc_guess,
+      "GeV/cm^2")
 
 print("\n \n \n")

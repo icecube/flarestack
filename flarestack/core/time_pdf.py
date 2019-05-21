@@ -1,10 +1,9 @@
 from __future__ import print_function
 from __future__ import division
-from builtins import input
 from builtins import object
 import numpy as np
 from scipy.interpolate import interp1d
-from flarestack.utils.dataset_loader import grl_loader, data_loader
+from flarestack.icecube_utils.dataset_loader import data_loader
 
 
 def box_func(t, t0, t1):
@@ -48,78 +47,8 @@ class TimePDF(object):
     def __init__(self, t_pdf_dict, season):
         self.t_dict = t_pdf_dict
         self.season = season
-
-        if season["grl_path"] is not None:
-
-            self.grl = grl_loader(season)
-
-            self.t0 = min(self.grl["start"])
-            self.t1 = max(self.grl["stop"])
-
-            self.livetime = np.sum(self.grl["length"])
-
-            step = 1e-10
-
-            t_range = [self.t0 - step]
-            f = [0.]
-
-            mjd = [0.]
-            livetime = [0.]
-            total_t = 0.
-
-            for i, run in enumerate(self.grl):
-
-                mjd.append(run["start"])
-                livetime.append(total_t)
-                total_t += run["length"]
-                mjd.append(run["stop"])
-                livetime.append(total_t)
-
-                t_range.extend([
-                    run["start"] - step, run["start"], run["stop"],
-                    run["stop"] + step
-                ])
-                f.extend([0., 1., 1., 0.])
-
-            stitch_t = [t_range[0]]
-            stitch_f = [1.]
-            for i, t in enumerate(t_range[1:]):
-                gap = t - t_range[i - 1]
-
-                if gap < 1e-5 and f[i] == 0:
-                    pass
-                else:
-                    stitch_t.append(t)
-                    stitch_f.append(f[i])
-
-            if stitch_t != sorted(stitch_t):
-                print("Error in ordering GoodRunList!")
-                print("Runs are out of order!")
-
-                print(self.grl[:5])
-                input("prompt")
-
-                for j, t in enumerate(stitch_t):
-                    if t != sorted(stitch_t)[j]:
-                        print(j, t, self.grl[j])
-                input("prompt")
-
-            mjd.append(1e5)
-            livetime.append(total_t)
-
-            self.season_f = interp1d(stitch_t, stitch_f, kind="linear")
-
-            self.mjd_to_livetime = interp1d(mjd, livetime, kind="linear")
-            self.livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
-
-        else:
-            exp = data_loader(season["exp_path"])
-            self.t0 = min(exp["time"])
-            self.t1 = max(exp["time"])
-            self.livetime = self.t1 - self.t0
-            self.season_f = lambda x: 1.
-            self.mjd_to_livetime = lambda x: x - self.t0
-            self.livetime_to_mjd = lambda x: x + self.t0
+        self.t0, self.t1, self.livetime, self.season_f, \
+        self.mjd_to_livetime, self.livetime_to_mjd = season.get_livetime_data()
 
     @classmethod
     def register_subclass(cls, time_pdf_name):

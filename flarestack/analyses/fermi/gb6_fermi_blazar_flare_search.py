@@ -146,13 +146,13 @@ for i, llh_kwargs in enumerate([
             "inj_dict": inj_kwargs,
             "llh_dict": llh_kwargs,
             "scale": scale,
-            "n_trials": 10,
+            "n_trials": 100,
             "n_steps": 15 #number of flux values
         }
 
-        if mh_name == "flare":
+        # if mh_name == "flare":
             
-            analyse(mh_dict, n_cpu=24, cluster=False)
+        analyse(mh_dict, n_cpu=24, cluster=False)
 
         # raw_input("prompt")
 

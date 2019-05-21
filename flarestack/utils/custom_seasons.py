@@ -14,14 +14,14 @@ def custom_dataset(dataset, sources, time_pdf):
     :return: Custom dataset with only relevant seasons
     """
 
-    relevant_seasons = []
+    relevant_seasons = dict()
 
-    for season in dataset:
+    for (name, season) in dataset.seasons.items():
         time = TimePDF.create(time_pdf, season)
 
         overlap = np.sum([time.effective_injection_time(src) for src in sources])
 
         if overlap > 0:
-            relevant_seasons.append(season)
+            relevant_seasons[name] = season
 
     return relevant_seasons

@@ -47,8 +47,8 @@ llh_kwargs = {
     "LLH Time PDF": llh_time,
 }
 
-sindecs = np.linspace(0.90, -0.90, 37)
-# sindecs = np.linspace(0.75, -0.75, 7)
+# sindecs = np.linspace(0.90, -0.90, 37)
+sindecs = np.linspace(0.75, -0.75, 7)
 # sindecs = np.linspace(0.5, -0.5, 3)
 
 # cat_path = agn_catalogue_name("radioloud", "2rxs_100brightest_srcs")

@@ -3,10 +3,9 @@ from __future__ import division
 import numpy as np
 import os
 import pickle as Pickle
-from flarestack.shared import gamma_range, acceptance_path
+from flarestack.shared import acceptance_path
 from flarestack.core.energy_pdf import PowerLaw
-from flarestack.core.injector import Injector
-from flarestack.utils.dataset_loader import data_loader
+from flarestack.icecube_utils.dataset_loader import data_loader
 
 
 sin_dec_range = np.linspace(-1, 1, 101)
@@ -20,7 +19,7 @@ gamma_vals = np.linspace(0.5, 5.5, 201)
 
 def make_acceptance_f(all_data):
 
-    for season in all_data:
+    for season in all_data.values():
         acc_path = acceptance_path(season)
         make_acceptance_season(season, acc_path)
 
@@ -28,7 +27,7 @@ def make_acceptance_f(all_data):
 def make_acceptance_season(season, acc_path):
     e_pdf = PowerLaw()
 
-    mc = data_loader(season["mc_path"])
+    mc = season.get_pseudo_mc()
 
     acc = np.ones((len(dec_range), len(gamma_vals)), dtype=np.float)
 
@@ -57,7 +56,7 @@ def make_acceptance_season(season, acc_path):
     except OSError:
         pass
 
-    print("Saving", season["Name"], "acceptance values to:", acc_path)
+    print("Saving", season.season_name, "acceptance values to:", acc_path)
 
     with open(acc_path, "wb") as f:
         Pickle.dump([dec_range, gamma_vals, acc], f)

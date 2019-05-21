@@ -3,7 +3,7 @@ process is deterministic, so the same flare should be found each time.
 """
 from __future__ import print_function
 import numpy as np
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC79_dict, IC86_1_dict
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 import unittest
@@ -31,10 +31,9 @@ unblind_llh = {
 
 cat_path = ps_catalogue_name(-0.1)
 
-
 unblind_dict = {
     "mh_name": "flare",
-    "datasets": [IC79_dict, IC86_1_dict],
+    "datasets": ps_7year.get_seasons("IC79", "IC86_1"),
     "catalogue": cat_path,
     "llh_dict": unblind_llh
 }

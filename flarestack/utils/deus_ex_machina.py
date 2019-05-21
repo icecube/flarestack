@@ -31,8 +31,9 @@ def estimate_discovery_potential(injectors, sources):
     season_bkg = []
     season_sig = []
 
-    def weight_f(metric):
-        return 1.#metric #/ np.mean(metric)
+    def weight_f(n_s, n_bkg):
+        metric = np.array(n_s)/np.sqrt(np.array(n_bkg))
+        return metric / np.mean(metric)
 
     weight_scale = calculate_source_weight(sources)
 
@@ -111,10 +112,12 @@ def estimate_discovery_potential(injectors, sources):
 
             local_rate = np.sum(data_weights)
 
-            n_bkg = local_rate * area * source_weight
+            n_bkg = local_rate * area #* source_weight
 
-            # sig_scale = np.sqrt(np.mean(data_weights) / n_bkg)#np.sum(source_mc[
             sig_scale = 1.
+            sig_scale = np.sqrt(np.mean(data_weights))
+            # sig_scale = np.sqrt(n_bkg)
+            # sig_scale = n_bkg/np.mean(data_weights)
             # "ow"]) #/
             # np.sqrt(
             # n_bkg)# + n_sig)
@@ -125,7 +128,7 @@ def estimate_discovery_potential(injectors, sources):
         n_sigs = np.array(n_sigs)
         n_bkgs = np.array(n_bkgs)
 
-        weights = weight_f(n_sigs)
+        weights = weight_f(n_sigs, n_bkgs)
         # weights = (n_sigs / np.mean(n_sigs)) #/ np.sqrt(float(len(sources))) #*
         # np.median(n_bkgs)
 
@@ -143,9 +146,7 @@ def estimate_discovery_potential(injectors, sources):
     int_sig = np.sum(season_sig * season_weights)
     int_bkg = np.sum(season_bkg * season_weights)
 
-    disc_count = norm.ppf(norm.cdf(5.0), loc=int_bkg,
-                          scale=np.sqrt(int_bkg))
-                          # scale=np.sqrt(n_bkg_tot))
+    disc_count = norm.ppf(norm.cdf(5.0), loc=int_bkg, scale=np.sqrt(int_bkg))
 
     disc_pot = disc_count - int_bkg
 
@@ -157,7 +158,9 @@ def estimate_discovery_potential(injectors, sources):
     # counting nearby neutrinos. In high-statics regime, previous study
     # showed ~factor of 2 improvement for binned vs unbinned
 
-    fudge_factor = (1.25 + 0.75 * np.tanh(np.log(int_bkg)))
+    # fudge_factor = (1.25 + 0.75 * np.tanh(np.log(int_bkg)))
+    # fudge_factor = (1.25 + 0.75 * np.tanh(np.log(disc_count)))
+    fudge_factor = 2.0
     fudge_factor *= 1.2
 
     scale /= fudge_factor

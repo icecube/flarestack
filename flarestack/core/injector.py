@@ -8,7 +8,7 @@ import healpy as hp
 from flarestack.shared import k_to_flux, scale_shortener, band_mask_cache_name
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
-from flarestack.utils.dataset_loader import data_loader
+from flarestack.icecube_utils.dataset_loader import data_loader
 from flarestack.utils.catalogue_loader import calculate_source_weight
 from scipy import sparse
 
@@ -53,13 +53,13 @@ class Injector(object):
         kwargs = read_injector_dict(kwargs)
         self.inj_kwargs = kwargs
 
-        print("Initialising Injector for", season["Name"])
+        print("Initialising Injector for", season.season_name)
         self.injection_band_mask = dict()
         self.season = season
 
-        self._raw_data = data_loader(season["exp_path"])
+        self._raw_data = season.get_exp_data()
 
-        self._mc = data_loader(season["mc_path"])
+        self._mc = season.get_mc()
 
         self.sources = sources
 
@@ -545,6 +545,16 @@ class LowMemoryInjector(Injector):
         return sig_events
 
 
+class EffectiveAreaInjector(Injector):
+    """Class for injecting signal events by relying on effective areas rather
+    than pre-existing Monte Carlo simulation. This Injector should be used
+    for analysing public data, as no MC is provided.
+    """
+
+    def __init__(self, season, sources, **kwargs):
+        Injector.__init__(self, season, sources, **kwargs)
+
+
 class MockUnblindedInjector(Injector):
     """If the data is not really to be unblinded, then MockUnblindedInjector
     should be called. In this case, the create_dataset function simply returns
@@ -553,7 +563,7 @@ class MockUnblindedInjector(Injector):
 
     def __init__(self, season, sources=np.nan, **kwargs):
         self.season = season
-        self._raw_data = data_loader(season["exp_path"])
+        self._raw_data = season.get_exp_data()
 
     def create_dataset(self, scale, pull_corrector):
         """Returns a background scramble
@@ -575,7 +585,7 @@ class TrueUnblindedInjector(Injector):
     """
     def __init__(self, season, sources, **kwargs):
         self.season = season
-        self._raw_data = data_loader(season["exp_path"])
+        self._raw_data = season.get_exp_data()
 
     def create_dataset(self, scale, pull_corrector):
         return pull_corrector.pull_correct_static(self._raw_data)

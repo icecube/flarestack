@@ -4,7 +4,7 @@ IceCube data (IC86_1).
 from __future__ import print_function
 import unittest
 import numpy as np
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC40_dict
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.unblinding import create_unblinder
 from flarestack.core.minimisation import MinimisationHandler
@@ -53,7 +53,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         unblind_dict = {
             "mh_name": "large_catalogue",
-            "datasets": [IC40_dict],
+            "datasets": ps_7year.get_seasons("IC40"),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
             "inj_dict": {}

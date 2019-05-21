@@ -58,74 +58,98 @@ Path to local copy of point source tracks, downloaded on 24/04/18 from
 
 """
 from flarestack.shared import dataset_dir
+from flarestack.data.icecube.ps_tracks import IceCubeDataset, PSTracksSeason, \
+    ps_binning
 import numpy as np
 
 ps_data_dir = dataset_dir + "ps_tracks/version-002-p01/"
 
-ps_dict = {
-    "Data Sample": "ps_tracks_v002_p01",
-    "sinDec bins": np.unique(np.concatenate([
-            np.linspace(-1., -0.9, 2 + 1),
-            np.linspace(-0.9, -0.2, 8 + 1),
-            np.linspace(-0.2, 0.2, 15 + 1),
-            np.linspace(0.2, 0.9, 12 + 1),
-            np.linspace(0.9, 1., 2 + 1),
-        ])),
-    "MJD Time Key": "time"
-}
+ps_7year = IceCubeDataset()
 
-IC40_dict = {
-    "Name": "IC40",
-    "exp_path": ps_data_dir + "IC40_exp.npy",
-    "mc_path": ps_data_dir + "IC40_corrected_MC.npy",
-    "grl_path": ps_data_dir + "IC40_GRL.npy"
-}
-IC40_dict.update(ps_dict)
+sample_name = "ps_tracks_v002_p01"
 
-IC59_dict = {
-    "Name": "IC59",
-    "exp_path": ps_data_dir + "IC59_exp.npy",
-    "mc_path": ps_data_dir + "IC59_corrected_MC.npy",
-    "grl_path": ps_data_dir + "IC59_GRL.npy"
-}
-IC59_dict.update(ps_dict)
+ic40 = PSTracksSeason(
+    season_name="IC40",
+    sample_name=sample_name,
+    exp_path=ps_data_dir + "IC40_exp.npy",
+    mc_path=ps_data_dir + "IC40_corrected_MC.npy",
+    grl_path=ps_data_dir + "IC40_GRL.npy",
+    sin_dec_bins=ps_binning["IC40"][0],
+    log_e_bins=ps_binning["IC40"][1]
+)
+
+ps_7year.add_season(ic40)
 
 
-IC79_dict = {
-    "Name": "IC79",
-    "exp_path": ps_data_dir + "IC79b_exp.npy",
-    "mc_path": ps_data_dir + "IC79b_corrected_MC.npy",
-    "grl_path": ps_data_dir + "IC79b_GRL.npy"
-}
-IC79_dict.update(ps_dict)
+ic59 = PSTracksSeason(
+    season_name="IC59",
+    sample_name=sample_name,
+    exp_path=ps_data_dir + "IC59_exp.npy",
+    mc_path=ps_data_dir + "IC59_corrected_MC.npy",
+    grl_path=ps_data_dir + "IC59_GRL.npy",
+    sin_dec_bins=ps_binning["IC59"][0],
+    log_e_bins=ps_binning["IC59"][1]
+)
 
+ps_7year.add_season(ic59)
 
-IC86_1_dict = {
-    "Name": "IC86_1",
-    "exp_path": ps_data_dir + "IC86_exp.npy",
-    "mc_path": ps_data_dir + "IC86_corrected_MC.npy",
-    "grl_path": ps_data_dir + "IC86_GRL.npy"
-}
-IC86_1_dict.update(ps_dict)
+ic79 = PSTracksSeason(
+    season_name="IC79",
+    sample_name=sample_name,
+    exp_path=ps_data_dir + "IC79b_exp.npy",
+    mc_path=ps_data_dir + "IC79b_corrected_MC.npy",
+    grl_path=ps_data_dir + "IC79b_GRL.npy",
+    sin_dec_bins=ps_binning["IC79"][0],
+    log_e_bins=ps_binning["IC79"][1]
+)
+ps_7year.add_season(ic79)
 
+boundary = np.sin(np.radians(-5.))  # North/South transition boundary
 
-IC86_234_dict = {
-    "Name": "IC86_234",
-    "exp_path": [
+ic86_1 = PSTracksSeason(
+    season_name="IC86_1",
+    sample_name=sample_name,
+    exp_path=ps_data_dir + "IC86_exp.npy",
+    mc_path=ps_data_dir + "IC86_corrected_MC.npy",
+    grl_path=ps_data_dir + "IC86_GRL.npy",
+    sin_dec_bins=ps_binning["IC86"][0],
+    log_e_bins=ps_binning["IC86"][1]
+)
+
+ps_7year.add_season(ic86_1)
+
+# Add optional subseasons for IC86 2, 3, and 4, that can be called instead of
+# the combined season
+
+for i in range(3):
+    ic86_i = PSTracksSeason(
+        season_name="IC86_{0}".format(i),
+        sample_name=sample_name,
+        exp_path=ps_data_dir + "IC86-201{0}_exp_v2.npy".format(i),
+        mc_path=ps_data_dir + "IC86-2012_corrected_MC_v2.npy",
+        grl_path=ps_data_dir + "IC86-201{0}_GRL.npy".format(i),
+        sin_dec_bins=ps_binning["IC86"][0],
+        log_e_bins=ps_binning["IC86"][1]
+    )
+    ps_7year.add_subseason(ic86_i)
+
+ic86_234 = PSTracksSeason(
+    season_name="IC86_234",
+    sample_name=sample_name,
+    exp_path=[
         ps_data_dir + "IC86-2012_exp_v2.npy",
         ps_data_dir + "IC86-2013_exp_v2.npy",
         ps_data_dir + "IC86-2014_exp_v2.npy"
-        ],
-    "mc_path": ps_data_dir + "IC86-2012_corrected_MC_v2.npy",
-    "grl_path": [
+    ],
+    mc_path=ps_data_dir + "IC86-2012_corrected_MC_v2.npy",
+    grl_path=[
         ps_data_dir + "IC86-2012_GRL.npy",
         ps_data_dir + "IC86-2013_GRL.npy",
         ps_data_dir + "IC86-2014_GRL.npy"
-    ]
-}
+    ],
+    sin_dec_bins=ps_binning["IC86"][0],
+    log_e_bins=ps_binning["IC86"][1]
+)
 
-IC86_234_dict.update(ps_dict)
+ps_7year.add_season(ic86_234)
 
-ps_7year = [
-    IC40_dict, IC59_dict, IC79_dict, IC86_1_dict, IC86_234_dict,
-]

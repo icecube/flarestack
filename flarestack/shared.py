@@ -124,30 +124,30 @@ base_floor_quantile = 0.25
 
 def floor_pickle(floor_dict):
     hash_dict = dict(floor_dict)
-    hash_dict["season"] = dict(floor_dict["season"])
+    season = hash_dict["season"]
+    hash_dict["season"] = season.sample_name + "/" + season.season_name
     try:
         del hash_dict["pull_name"]
     except KeyError:
         pass
-    hash_dict["season"]["sinDec bins"] = list(hash_dict["season"]["sinDec bins"])
     unique_key = deterministic_hash(hash_dict)
     return floor_dir + str(unique_key) + ".pkl"
 
 
 def pull_pickle(pull_dict):
     hash_dict = dict(pull_dict)
-    hash_dict["season"] = dict(pull_dict["season"])
-    hash_dict["season"]["sinDec bins"] = list(hash_dict["season"]["sinDec bins"])
+    season = hash_dict["season"]
+    hash_dict["season"] = season.sample_name + "/" + season.season_name
     unique_key = deterministic_hash(hash_dict)
     return pull_dir + str(unique_key) + ".pkl"
 
 
-def llh_energy_hash_pickles(llh_dict, season_dict):
+def llh_energy_hash_pickles(llh_dict, season):
     hash_dict = dict(llh_dict["llh_energy_pdf"])
     hash_dict["llh_name"] = llh_dict["llh_name"]
     key = deterministic_hash(hash_dict)
-    season_path = str(key) + "/" + season_dict["Name"] + "/" + \
-                  season_dict["Data Sample"] + ".pkl"
+    season_path = str(key) + "/" + season.sample_name + "/" + \
+           season.season_name + ".pkl"
     SoB_path = SoB_spline_dir + season_path
     acc_path = acc_f_dir + season_path
     return SoB_path, acc_path
@@ -160,7 +160,7 @@ def band_mask_hash_dir(catalogue):
     return cat_cache_dir + str(zlib.adler32(catalogue)) + "/"
 
 
-def band_mask_cache_name(season_dict, catalogue):
+def band_mask_cache_name(season, catalogue):
     n_chunks = int((len(catalogue) + band_mask_chunk_size - 1) \
                / band_mask_chunk_size)
     print("Breaking catalogue into", n_chunks, "chunks of", band_mask_chunk_size)
@@ -171,8 +171,8 @@ def band_mask_cache_name(season_dict, catalogue):
         cat = catalogue[(i*band_mask_chunk_size):((i+1) * band_mask_chunk_size)]
         cats.append(cat)
 
-    paths = [band_mask_hash_dir(cat) + season_dict["Data Sample"] + "/" +
-             season_dict["Name"] + ".npz" for cat in cats]
+    paths = [band_mask_hash_dir(cat) + season.sample_name + "/" +
+             season.season_name + ".npz" for cat in cats]
 
     return cats, paths
 
@@ -194,18 +194,18 @@ def limit_output_path(name):
 
 
 def acceptance_path(season):
-    return acc_f_dir + season["Data Sample"] + "/" + \
-           season["Name"] + '.pkl'
+    return acc_f_dir + season.sample_name + "/" + \
+           season.season_name + '.pkl'
 
 
 def SoB_spline_path(season):
-    return SoB_spline_dir + season["Data Sample"] + "/" + \
-           season["Name"] + '.pkl'
+    return SoB_spline_dir + season.sample_name + "/" + \
+           season.season_name + '.pkl'
 
 
 def bkg_spline_path(season):
-    return bkg_spline_dir + season["Data Sample"] + "/" + \
-           season["Name"] + '.pkl'
+    return bkg_spline_dir + season.sample_name + "/" + \
+           season.season_name + '.pkl'
 
 
 def fit_setup(llh_kwargs, sources, fit_energy, flare=False):

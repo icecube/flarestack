@@ -9,10 +9,8 @@ import scipy
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import dataset_plot_dir
-from flarestack.utils.dataset_loader import data_loader
-from flarestack.core.astro import angular_distance
+from flarestack.icecube_utils.dataset_loader import data_loader
 from numpy.lib.recfunctions import append_fields
 
 season = IC86_1_dict

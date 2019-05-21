@@ -3,6 +3,7 @@ from builtins import str
 import numpy as np
 from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
+from scipy.interpolate import interp1d
 
 
 def data_loader(data_path, floor=True, cut_fields=True):
@@ -73,12 +74,12 @@ def data_loader(data_path, floor=True, cut_fields=True):
 
 def grl_loader(season):
 
-    if isinstance(season["grl_path"], list):
+    if isinstance(season.grl_path, list):
         grl = np.sort(np.array(np.concatenate(
-            [np.load(x) for x in season["grl_path"]])),
+            [np.load(x) for x in season.grl_path])),
             order="run")
     else:
-        grl = np.load(season["grl_path"])
+        grl = np.load(season.grl_path)
         
     # Check if bad runs are found in GRL
     try:
@@ -103,7 +104,7 @@ def grl_loader(season):
 
     # Check if there are events in runs not found in GRL
 
-    exp_data = data_loader(season["exp_path"])
+    exp_data = season.get_exp_data()
     if "run" in exp_data.dtype.names:
         bad_runs = [x for x in set(exp_data["run"]) if x not in grl["run"]]
         if len(bad_runs) > 0:
@@ -124,18 +125,81 @@ def grl_loader(season):
     return grl
 
 
-def verify_grl_with_data(datasets):
+def convert_grl(season):
+    grl = season.get_grl()
+
+    t0 = min(grl["start"])
+    t1 = max(grl["stop"])
+
+    full_livetime = np.sum(grl["length"])
+
+    step = 1e-10
+
+    t_range = [t0 - step]
+    f = [0.]
+
+    mjd = [0.]
+    livetime = [0.]
+    total_t = 0.
+
+    for i, run in enumerate(grl):
+        mjd.append(run["start"])
+        livetime.append(total_t)
+        total_t += run["length"]
+        mjd.append(run["stop"])
+        livetime.append(total_t)
+
+        t_range.extend([
+            run["start"] - step, run["start"], run["stop"],
+            run["stop"] + step
+        ])
+        f.extend([0., 1., 1., 0.])
+
+    stitch_t = [t_range[0]]
+    stitch_f = [1.]
+    for i, t in enumerate(t_range[1:]):
+        gap = t - t_range[i - 1]
+
+        if gap < 1e-5 and f[i] == 0:
+            pass
+        else:
+            stitch_t.append(t)
+            stitch_f.append(f[i])
+
+    if stitch_t != sorted(stitch_t):
+        print("Error in ordering GoodRunList!")
+        print("Runs are out of order!")
+
+        print(grl[:5])
+        input("prompt")
+
+        for j, t in enumerate(stitch_t):
+            if t != sorted(stitch_t)[j]:
+                print(j, t, grl[j])
+        input("prompt")
+
+    mjd.append(1e5)
+    livetime.append(total_t)
+
+    season_f = interp1d(stitch_t, stitch_f, kind="linear")
+    mjd_to_livetime = interp1d(mjd, livetime, kind="linear")
+    livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
+
+    return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
+
+
+def verify_grl_with_data(seasons):
 
     print("Verifying that, for each dataset, all events are in runs that \n" \
           "are on the GRL, and not outside the period marked as good in the " \
           "GRL.")
 
-    for season in datasets:
-        print(season["Name"], end=' ')
+    for name, season in seasons.items():
+        print(name)
 
-        exp_data = data_loader(season["exp_path"], cut_fields=False)
+        exp_data = season.get_exp_data(cut_fields=False)
 
-        grl = grl_loader(season)
+        grl = season.get_grl()
 
         # Check if there are events in runs that are on the GRL, but outside the
         # period marked as good in the GRL

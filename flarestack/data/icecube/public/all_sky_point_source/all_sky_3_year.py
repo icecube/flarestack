@@ -3,11 +3,8 @@ import numpy as np
 import csv
 import pickle
 from flarestack.shared import public_dataset_dir
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-from flarestack.utils.dataset_loader import data_loader
 from flarestack.utils.make_SoB_splines import make_individual_spline_set
 from flarestack.shared import SoB_spline_path, dataset_plot_dir
-from scipy.stats import norm
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import zipfile
@@ -22,8 +19,12 @@ data_dir = extract_dir + "/3year-data-release/"
 output_data_dir = output_base_dir + "events/"
 pseudo_mc_dir = output_data_dir + "pseudo_mc/"
 
-with zipfile.ZipFile(zip_file, "r") as zip_ref:
-    zip_ref.extractall(extract_dir)
+# If data has not been extracted, then extract from zip file
+
+if not os.path.isdir(data_dir):
+
+    with zipfile.ZipFile(zip_file, "r") as zip_ref:
+        zip_ref.extractall(extract_dir)
 
 
 for path in [output_data_dir, pseudo_mc_dir]:
@@ -124,6 +125,7 @@ def parse_effective_areas():
         ('logE', np.float),
         ('trueE', np.float),
         ('sinDec', np.float),
+        ('trueDec', np.float),
         ('ow', np.float),
         ("sigma", np.float)
     ])
@@ -157,6 +159,7 @@ def parse_effective_areas():
                     true_e = 0.5*(row[0] + row[1])
                     log_e = np.log10(true_e)
                     sin_dec = -0.5*(row[2] + row[3])
+                    true_dec = np.arcsin(sin_dec)
                     a_eff = row[4]
 
                     randoms = [log_e]
@@ -170,7 +173,8 @@ def parse_effective_areas():
                         factor = 1.
 
                         entry = tuple([
-                            log_e, true_e, sin_dec, a_eff*factor, np.nan
+                            log_e, true_e, sin_dec, true_dec,
+                            a_eff*factor, np.nan
                         ])
 
                         pseudo_mc.append(entry)
@@ -190,12 +194,22 @@ def parse_effective_areas():
             weights=pseudo_mc["ow"] * pseudo_mc["trueE"]**-3.7,
             density=True, bins=exp_bins)
         mc_vals = res[0]
+
         ax2.set_yscale("log")
 
         # Maps ratio of expected neutrino energies to energy proxy values
         # This can tell us about how true energy maps to energy proxy
 
         centers = 0.5 * (exp_bins[:-1] + exp_bins[1:])
+
+        # Fill in empty bins
+
+        mc_vals = np.array(mc_vals)
+
+        print(mc_vals)
+
+        mc_vals += min(pseudo_mc["ow"][pseudo_mc["ow"] > 0.]) * centers ** -3.7
+        print(mc_vals)
 
         x = [-5.0] + list(centers) + [15.0]
         y = exp_vals / mc_vals
@@ -229,19 +243,19 @@ def parse_effective_areas():
             pickle.dump(pseudo_mc, f)
 
 
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.utils.dataset_loader import data_loader
+if __name__ == "__main__":
+    from flarestack.icecube_utils.dataset_loader import data_loader
 
-# mc = data_loader(ps_7year[0]["mc_path"])
-# print(mc.dtype.names)
-# for x in mc:
-#     true_e = x["trueE"]
-#     print(true_e, np.log10(true_e), x["logE"])
-#     input("prompt")
+    # mc = data_loader(ps_7year[0]["mc_path"])
+    # print(mc.dtype.names)
+    # for x in mc:
+    #     true_e = x["trueE"]
+    #     print(true_e, np.log10(true_e), x["logE"])
+    #     input("prompt")
 
-parse_effective_areas()
+    parse_effective_areas()
 
-for season in ps_3_year:
-    # exp = data_loader(season["exp_path"])
-    # mc = data_loader(season["pseudo_mc"])
-    make_individual_spline_set(season, SoB_spline_path(season))
+    for season in ps_3_year:
+        # exp = data_loader(season["exp_path"])
+        # mc = data_loader(season["pseudo_mc"])
+        make_individual_spline_set(season, SoB_spline_path(season))

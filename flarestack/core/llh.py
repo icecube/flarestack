@@ -16,9 +16,9 @@ from flarestack.utils.make_SoB_splines import load_spline, \
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.utils.create_acceptance_functions import dec_range,\
     make_acceptance_season
-from flarestack.utils.dataset_loader import data_loader
-from flarestack.utils.make_SoB_splines import create_2d_ratio_spline, \
-    create_2d_ratio_hist, energy_bins, make_2d_spline_from_hist, \
+from flarestack.icecube_utils.dataset_loader import data_loader
+from flarestack.utils.make_SoB_splines import create_2d_ratio_hist, \
+    make_2d_spline_from_hist, \
     make_background_spline, make_individual_spline_set
 
 def read_llh_dict(llh_dict):
@@ -134,8 +134,7 @@ class LLH(object):
         space_term = self.signal_spatial(source, cut_data)
 
         if hasattr(self, "time_pdf"):
-            time_term = self.time_pdf.signal_f(
-                cut_data[self.season["MJD Time Key"]], source)
+            time_term = self.time_pdf.signal_f(cut_data["time"], source)
 
             sig_pdf = space_term * time_term
 
@@ -187,8 +186,7 @@ class LLH(object):
         space_term = self.background_spatial(cut_data)
 
         if hasattr(self, "time_pdf"):
-            time_term = self.time_pdf.background_f(
-                cut_data[self.season["MJD Time Key"]], source)
+            time_term = self.time_pdf.background_f(cut_data["time"], source)
 
             sig_pdf = space_term * time_term
         else:
@@ -219,7 +217,7 @@ class LLH(object):
         # Checks if background spatial spline has been created
 
         if not os.path.isfile(bkg_spline_path(self.season)):
-            make_background_spline(self.season)
+            self.season.make_background_spline()
 
         return load_bkg_spatial_spline(self.season)
 
@@ -521,7 +519,7 @@ class FixedEnergyLLH(LLH):
         print("Building acceptance functions in sin(dec) bins " \
               "(with fixed energy weighting)")
 
-        mc = data_loader(self.season["mc_path"])
+        mc = self.season.get_pseudo_mc()
 
         acc = np.ones_like(dec_range, dtype=np.float)
 
@@ -564,8 +562,8 @@ class FixedEnergyLLH(LLH):
         # dec_range = self.season["sinDec bins"]
 
         ratio_hist = create_2d_ratio_hist(
-            exp=data_loader(self.season["exp_path"]),
-            mc=data_loader(self.season["mc_path"]),
+            exp=self.season.get_background_model(),
+            mc=self.season.get_pseudo_mc(),
             sin_dec_bins=dec_range,
             weight_function=self.energy_pdf.weight_mc
         )
@@ -1352,7 +1350,7 @@ if __name__ == "__main__":
 
     from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
     from flarestack.utils.prepare_catalogue import ps_catalogue_name
-    from flarestack.core.injector import MockUnblindedInjector, Injector
+    from flarestack.core.injector import Injector
 
     llh_dict = {
         "llh_name": "FixedEnergy",
