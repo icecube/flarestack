@@ -25,7 +25,7 @@ unblind_dict = {
     "llh_dict": llh_dict
 }
 
-true_parameters = [2.065170712604553]
+true_parameters = [2.1292853672011502]
 
 
 class TestSpatialLikelihood(unittest.TestCase):

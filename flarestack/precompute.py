@@ -162,6 +162,6 @@ if __name__ == "__main__":
         del scratch_path
         set_scratch_directory(cfg.scratch_path)
 
-    from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
+    from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 
-    run_precompute(ps_10year)
+    run_precompute(ps_7year.get_seasons())

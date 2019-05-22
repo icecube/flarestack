@@ -33,7 +33,7 @@ catalogue = agn_subset_catalogue("radioloud", "radioselected", 700)
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
 
-true_parameters = [0.0, 2.9663310461927557]
+true_parameters = [0.0, 2.9389304684172046]
 
 
 class TestTimeIntegrated(unittest.TestCase):

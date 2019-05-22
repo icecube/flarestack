@@ -180,6 +180,7 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, weight_function):
 
 
 def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins):
+
     # Sets bin centers, and order of spline (for x and y)
     sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
     log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.

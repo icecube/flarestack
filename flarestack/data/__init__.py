@@ -43,11 +43,11 @@ class Season:
         self.pseudo_mc_path = None
         self.all_paths = [self.exp_path]
 
-    def get_background_model(self):
+    def get_background_model(self, **kwargs):
         """Generic Function to return background model. This could be
         the experimental data (if the signal contamination is small),
         or a weighted MC dataset."""
-        pass
+        return self.get_exp_data(**kwargs)
 
     def get_exp_data(self, **kwargs):
         return self.load_data(self.exp_path, **kwargs)
