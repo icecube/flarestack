@@ -58,8 +58,8 @@ Path to local copy of point source tracks, downloaded on 24/04/18 from
 
 """
 from flarestack.shared import dataset_dir
-from flarestack.data.icecube.ps_tracks import IceCubeDataset, PSTracksSeason, \
-    ps_binning
+from flarestack.data.icecube import IceCubeDataset, IceCubeSeason
+from flarestack.data.icecube.ps_tracks import ps_binning
 import numpy as np
 
 ps_data_dir = dataset_dir + "ps_tracks/version-002-p01/"
@@ -68,7 +68,7 @@ ps_7year = IceCubeDataset()
 
 sample_name = "ps_tracks_v002_p01"
 
-ic40 = PSTracksSeason(
+ic40 = IceCubeSeason(
     season_name="IC40",
     sample_name=sample_name,
     exp_path=ps_data_dir + "IC40_exp.npy",
@@ -81,7 +81,7 @@ ic40 = PSTracksSeason(
 ps_7year.add_season(ic40)
 
 
-ic59 = PSTracksSeason(
+ic59 = IceCubeSeason(
     season_name="IC59",
     sample_name=sample_name,
     exp_path=ps_data_dir + "IC59_exp.npy",
@@ -93,7 +93,7 @@ ic59 = PSTracksSeason(
 
 ps_7year.add_season(ic59)
 
-ic79 = PSTracksSeason(
+ic79 = IceCubeSeason(
     season_name="IC79",
     sample_name=sample_name,
     exp_path=ps_data_dir + "IC79b_exp.npy",
@@ -106,7 +106,7 @@ ps_7year.add_season(ic79)
 
 boundary = np.sin(np.radians(-5.))  # North/South transition boundary
 
-ic86_1 = PSTracksSeason(
+ic86_1 = IceCubeSeason(
     season_name="IC86_1",
     sample_name=sample_name,
     exp_path=ps_data_dir + "IC86_exp.npy",
@@ -122,7 +122,7 @@ ps_7year.add_season(ic86_1)
 # the combined season
 
 for i in range(3):
-    ic86_i = PSTracksSeason(
+    ic86_i = IceCubeSeason(
         season_name="IC86_{0}".format(i),
         sample_name=sample_name,
         exp_path=ps_data_dir + "IC86-201{0}_exp_v2.npy".format(i),
@@ -133,7 +133,7 @@ for i in range(3):
     )
     ps_7year.add_subseason(ic86_i)
 
-ic86_234 = PSTracksSeason(
+ic86_234 = IceCubeSeason(
     season_name="IC86_234",
     sample_name=sample_name,
     exp_path=[

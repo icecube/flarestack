@@ -36,9 +36,3 @@ ps_binning = {
         np.arange(1., 10. + 0.01, 0.125)
     )
 }
-
-
-class PSTracksSeason(IceCubeSeason):
-
-    def get_background_model(self):
-        return self.load_data(self.exp_path)
