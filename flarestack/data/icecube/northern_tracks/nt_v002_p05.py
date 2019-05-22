@@ -67,71 +67,36 @@ Path to local copy of point source tracks, downloaded on 18/09/18 from
 
 
 """
-
 from flarestack.shared import dataset_dir
-import numpy as np
+from flarestack.data.icecube import IceCubeDataset
+from flarestack.data.icecube.northern_tracks import NTSeason, \
+    get_diffuse_binning
+
 
 nt_data_dir = dataset_dir + "northern_tracks/version-002-p05/"
 
-diffuse_dict = {
-    "Data Sample": "diffuse_8_year",
-    "sinDec bins": np.unique(np.concatenate([
-        np.linspace(-0.05, 0.2, 8 + 1),
-        np.linspace(0.2, 0.9, 12 + 1),
-        np.linspace(0.9, 1., 2 + 1),
-    ])),
-    "MJD Time Key": "time"
-}
+diffuse_8year = IceCubeDataset()
 
-def generate_diffuse_season(season):
-    season_dict = {
-        "Name": season,
-        "exp_path":
-            nt_data_dir +
-            "dataset_8yr_fit_{0}_exp_compressed.npy".format(season),
-        "mc_path":
-            nt_data_dir +
-            "dataset_8yr_fit_{0}_MC_compressed.npy".format(season),
-        "grl_path":
-            nt_data_dir +
-            "GRL/dataset_8yr_fit_{0}_exp_compressed.npy".format(season)
-    }
-    season_dict.update(diffuse_dict)
-    return season_dict
+sample_name = "northern_tracks_v002_p05"
+
+
+def generate_diffuse_season(name):
+    season = NTSeason(
+        season_name=name,
+        sample_name=sample_name,
+        exp_path=nt_data_dir +
+                 "dataset_8yr_fit_{0}_exp_compressed.npy".format(name),
+        mc_path=nt_data_dir +
+                "dataset_8yr_fit_{0}_MC_compressed.npy".format(name),
+        grl_path=nt_data_dir +
+                 "GRL/dataset_8yr_fit_{0}_exp_compressed.npy".format(name),
+        sin_dec_bins=get_diffuse_binning(name)[0],
+        log_e_bins=get_diffuse_binning(name)[1]
+    )
+    diffuse_8year.add_season(season)
+
 
 seasons = ["IC59", "IC79", "IC86_2011", "IC86_2012_16"]
 
-# diffuse_IC59 = {
-#     "Name": "IC59",
-#     "exp_path": nt_data_dir + "dataset_8yr_fit_IC59_exp_compressed.npy",
-#     "mc_path": nt_data_dir + "dataset_8yr_fit_IC59_MC_compressed.npy",
-#     "grl_path": nt_data_dir + "GRL/GRL_IC59.npy"
-# }
-# diffuse_IC59.update(diffuse_dict)
-#
-# diffuse_IC79 = {
-#     "Name": "IC79",
-#     "exp_path": nt_data_dir + "dataset_8yr_fit_IC79_exp_compressed.npy",
-#     "mc_path": nt_data_dir + "dataset_8yr_fit_IC79_MC_compressed.npy",
-#     "grl_path": nt_data_dir + "GRL/GRL_IC79.npy"
-# }
-# diffuse_IC79.update(diffuse_dict)
-#
-# diffuse_IC86_1 = {
-#     "Name": "IC86_1",
-#     "exp_path": nt_data_dir + "dataset_8yr_fit_IC86_2011_exp_compressed.npy",
-#     "mc_path": nt_data_dir + "dataset_8yr_fit_IC86_2011_MC_compressed.npy",
-#     "grl_path": nt_data_dir + "GRL/GRL_IC86_2011.npy"
-# }
-# diffuse_IC86_1.update(diffuse_dict)
-#
-# diffuse_IC86_23456 = {
-#     "Name": "IC86_23456",
-#     "exp_path": nt_data_dir + "dataset_8yr_fit_IC86_2012_16_exp_compressed.npy",
-#     "mc_path": nt_data_dir + "dataset_8yr_fit_IC86_2012_16_MC_compressed.npy",
-#     "grl_path": nt_data_dir + "GRL/GRL_IC86_2012_16.npy"
-# }
-
-# diffuse_IC86_23456.update(diffuse_dict)
-
-diffuse_8year = [generate_diffuse_season(x) for x in seasons]
+for season in seasons:
+    generate_diffuse_season(season)

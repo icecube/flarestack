@@ -43,7 +43,8 @@ def create_2d_hist(sin_dec, log_e, sin_dec_bins, log_e_bins, weights):
     """
     # Produces the histogram
     hist_2d, binedges = np.histogramdd(
-        (log_e, sin_dec), bins=(log_e_bins, sin_dec_bins), weights=weights)
+        (log_e, sin_dec), bins=(log_e_bins, sin_dec_bins), weights=weights)\
+
     # n_dimensions = hist_2d.ndim
 
     # # Normalises histogram
@@ -87,7 +88,7 @@ def create_bkg_2d_hist(exp, sin_dec_bins, log_e_bins):
     :return: 2D histogram
     """
     return create_2d_hist(exp["sinDec"], exp["logE"], sin_dec_bins, log_e_bins,
-                          weights=np.ones_like(exp["logE"]))
+                          weights=exp["weight"])
 
 
 def create_sig_2d_hist(mc, sin_dec_bins, log_e_bins, weight_function):
@@ -249,7 +250,9 @@ def create_bkg_spatial_spline(exp, sin_dec_bins):
     """
     sin_dec_range = (np.min(sin_dec_bins), np.max(sin_dec_bins))
     hist, bins = np.histogram(
-        exp['sinDec'], density=True, bins=sin_dec_bins, range=sin_dec_range)
+        exp['sinDec'], density=True, bins=sin_dec_bins, range=sin_dec_range,
+        weights=exp["weight"]
+    )
 
     bins = np.concatenate([bins[:1], bins, bins[-1:]])
     hist = np.concatenate([hist[:1], hist, hist[-1:]])
@@ -278,7 +281,7 @@ def make_individual_spline_set(season, SoB_path):
         print("Making splines for", season.season_name)
         # path = SoB_spline_path(season)
 
-        exp = season.get_exp_data()
+        exp = season.get_background_model()
         mc = season.get_pseudo_mc()
 
         sin_dec_bins = season.sin_dec_bins

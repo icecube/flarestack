@@ -1,9 +1,12 @@
 """Generic classes for a Dataset, and for a Season.
 """
+import os
+import numpy as np
+from numpy.lib.recfunctions import append_fields
 from flarestack.core.injector import Injector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
-import os
+
 
 
 class Dataset:
@@ -47,7 +50,12 @@ class Season:
         """Generic Function to return background model. This could be
         the experimental data (if the signal contamination is small),
         or a weighted MC dataset."""
-        return self.get_exp_data(**kwargs)
+        exp = self.get_exp_data(**kwargs)
+        weight = np.ones(len(exp))
+        exp = append_fields(
+            exp, 'weight', weight, usemask=False, dtypes=[np.float]
+        )
+        return exp
 
     def get_exp_data(self, **kwargs):
         return self.load_data(self.exp_path, **kwargs)

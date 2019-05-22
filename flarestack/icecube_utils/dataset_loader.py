@@ -63,9 +63,10 @@ def data_loader(data_path, floor=True, cut_fields=True):
 
     if cut_fields:
 
-        removed_fields = ["run", "Event"]
+        allowed_fields = ['time', 'ra', 'dec', 'sigma', 'logE', 'trueE',
+                          'trueRa', 'trueDec', 'ow', 'sinDec', 'raw_sigma']
 
-        mask = [x for x in dataset.dtype.names if x not in removed_fields]
+        mask = [x for x in dataset.dtype.names if x in allowed_fields]
 
         dataset = dataset[mask]
 
