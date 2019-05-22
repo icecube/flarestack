@@ -86,7 +86,6 @@ class ResultsHandler(object):
         self.disc_potential_25 = np.nan
         self.extrapolated_sens = False
         self.extrapolated_disc = False
-        # self.show_inj = show_inj
 
         # if self.show_inj:
         self.inj = self.load_injection_values()
@@ -95,7 +94,10 @@ class ResultsHandler(object):
 
         self.merge_pickle_data()
 
-        self.find_sensitivity()
+        try:
+            self.find_sensitivity()
+        except ValueError:
+            pass
 
         try:
             self.find_disc_potential()
