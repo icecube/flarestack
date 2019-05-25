@@ -39,9 +39,6 @@ def data_loader(data_path, floor=True, cut_fields=True):
 
         if "Run" in dataset.dtype.names:
             dataset = rename_fields(dataset, {"Run": "run"})
-        else:
-            print("\n \n Warning, no run information found. Will not be able " \
-                  "to verify that runs are good! \n \n")
 
     # Check if 'sigma' or 'angErr' is Used
 

@@ -93,7 +93,7 @@ class EnergyPDF(object):
     def f(energy):
         pass
 
-    def integrate_over_E(self, f):
+    def integrate_over_E(self, f, lower=None, upper=None):
         """Uses Newton's method to integrate function f over the energy
         range. By default, uses 100GeV to 10PeV, unless otherwise specified.
         Uses 1000 logarithmically-spaced bins to calculate integral.
@@ -102,11 +102,15 @@ class EnergyPDF(object):
         :return: Integral of function
         """
 
-        nsteps = 1e3
+        if lower is None:
+            lower = self.integral_e_min
 
-        e_range = np.linspace(np.log(self.integral_e_min),
-                              np.log(self.integral_e_max),
-                              nsteps + 1)
+        if upper is None:
+            upper = self.integral_e_max
+
+        nsteps = 1.e3
+
+        e_range = np.linspace(np.log(lower), np.log(upper), nsteps + 1)
         int_sum = 0.0
 
         for i, log_e in enumerate(e_range[:-1]):
@@ -318,7 +322,7 @@ class Spline(EnergyPDF):
 #     print path
 #
 #     with open(path, "wb") as h:
-#         Pickle.dump(f, h)
+#         pickle.dump(f, h)
 #
 #     e_pdf_dict = {
 #         "Name": "Spline",

@@ -14,6 +14,7 @@ from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
 import pickle as Pickle
 from flarestack.core.ts_distributions import plot_background_ts_distribution
 import matplotlib.pyplot as plt
+from flarestack.utils.catalogue_loader import load_catalogue
 
 
 def confirm():
@@ -66,7 +67,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
     class Unblinder(ParentMiminisationHandler):
 
-        def __init__(self, unblind_dict):
+        def __init__(self, unblind_dict, seed=None):
             self.unblind_dict = unblind_dict
             unblind_dict["unblind_bool"] = True
             unblind_dict["mock_unblind_bool"] = mock_unblind
@@ -98,7 +99,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             self.plot_dir = plot_output_dir(self.name)
 
             # Minimise likelihood and produce likelihood scans
-            self.res_dict = self.simulate_and_run(0)
+            self.res_dict = self.simulate_and_run(0, seed)
 
             print("\n")
             print(self.res_dict)
@@ -284,7 +285,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             print("The catalogue has the following entries:")
             print("\n")
 
-            cat = np.load(self.unblind_dict["catalogue"])
+            cat = load_catalogue(self.unblind_dict["catalogue"])
 
             print(cat.dtype.names)
             print(cat)
@@ -293,12 +294,11 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             print("\n")
             print("The following datasets will be used:")
             print("\n")
-            for x in self.unblind_dict["datasets"]:
-                print(x["Data Sample"], x["Name"])
+            for x in self.unblind_dict["datasets"].values():
+                print(x.sample_name, x.season_name)
                 print("\n")
-                print(x["exp_path"])
-                print(x["mc_path"])
-                print(x["grl_path"])
+                print(x.exp_path)
+                print(x.pseudo_mc_path)
                 print("\n")
             confirm()
             print("\n")

@@ -43,12 +43,16 @@ inj_param_dir = pickle_dir + "injection_values/"
 plots_dir = output_dir + "plots/"
 limits_dir = output_dir + "limits/"
 dataset_plot_dir = output_dir + "dataset_plots/"
+eff_a_plot_dir = dataset_plot_dir + "effective_area_plots/"
+ang_res_plot_dir = dataset_plot_dir + "angular_resolution_plots/"
 
 illustration_dir = plots_dir + "illustrations/"
 
 acc_f_dir = input_dir + "acceptance_functions/"
 SoB_spline_dir = input_dir + "SoB_splines/"
 bkg_spline_dir = input_dir + "bkg_splines/"
+energy_proxy_dir = input_dir + "energy_proxy_weighting/"
+med_ang_res_dir = input_dir + "median_angular_resolution/"
 pc_dir = input_dir + "pull_corrections/"
 pull_dir = pc_dir + "pulls/"
 floor_dir = pc_dir + "floors/"
@@ -58,7 +62,8 @@ all_dirs = [
     log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir,
     SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
     bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir,
-    cache_dir, cat_cache_dir, public_dataset_dir
+    cache_dir, cat_cache_dir, public_dataset_dir, energy_proxy_dir,
+    eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir
 ]
 
 # ==============================================================================
@@ -76,10 +81,9 @@ elif "icecube.wisc.edu" in host:
     dataset_dir = "/data/ana/analyses/"
     skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
     print("Loading datasets from", dataset_dir, "(WIPAC)")
-    host_server = "madison"
+    host_server = "WIPAC"
 else:
-    dataset_dir = "a dataset directory, which can be set with " \
-                  "flarestack.shared.set_dataset_directory"
+    dataset_dir = None
     host_server = None
 
 
@@ -147,7 +151,7 @@ def llh_energy_hash_pickles(llh_dict, season):
     hash_dict["llh_name"] = llh_dict["llh_name"]
     key = deterministic_hash(hash_dict)
     season_path = str(key) + "/" + season.sample_name + "/" + \
-           season.season_name + ".pkl"
+                  season.season_name + ".pkl"
     SoB_path = SoB_spline_dir + season_path
     acc_path = acc_f_dir + season_path
     return SoB_path, acc_path
@@ -175,6 +179,7 @@ def band_mask_cache_name(season, catalogue):
              season.season_name + ".npz" for cat in cats]
 
     return cats, paths
+
 
 def name_pickle_output_dir(name):
     return pickle_dir + name
@@ -208,36 +213,56 @@ def bkg_spline_path(season):
            season.season_name + '.pkl'
 
 
-def fit_setup(llh_kwargs, sources, fit_energy, flare=False):
-    # The default value for n_s is 1. It can be between 0 and 10000.
-    p0 = [1.]
+def energy_proxy_path(season):
+    return energy_proxy_dir + season.sample_name + "/" + \
+           season.season_name + ".pkl"
 
-    bounds = [(0.0, 1000.)]
-    names = ["n_s"]
 
-    # if "Fit Negative n_s?" in llh_kwargs.keys():
-    #     if llh_kwargs["Fit Negative n_s?"]:
-    #         bounds = [(-100., 1000.)]
+def med_ang_res_path(season):
+    return med_ang_res_dir + season.sample_name + "/" + \
+           season.season_name + ".pkl"
 
-    # If weights are to be fitted, then each source has an independent
-    # n_s in the same 0-1000 range.
-    if "Fit Weights?" in list(llh_kwargs.keys()):
-        if llh_kwargs["Fit Weights?"]:
-            p0 = [1. for x in sources]
-            bounds = [bounds[0] for x in sources]
-            names = ["n_s (" + x["Name"] + ")" for x in sources]
 
-    if fit_energy:
-        e_pdf = EnergyPDF.create(llh_kwargs["LLH Energy PDF"])
-        e_seed, e_bounds, e_names = e_pdf.return_energy_parameters()
-        p0 += e_seed
-        bounds += e_bounds
-        names += e_names
+def ang_res_plot_path(season):
+    return ang_res_plot_dir + season.sample_name + "/" + \
+           season.season_name + ".pdf"
 
-    if flare:
-        names += ["Flare Start", "Flare End", "Flare Length"]
 
-    return p0, bounds, names
+def effective_area_plot_path(season):
+    return eff_a_plot_dir + season.sample_name + "/" + \
+           season.season_name + ".pdf"
+
+
+# def fit_setup(llh_kwargs, sources, fit_energy, flare=False):
+#     # The default value for n_s is 1. It can be between 0 and 10000.
+#     p0 = [1.]
+#
+#     bounds = [(0.0, 1000.)]
+#     names = ["n_s"]
+#
+#     # if "Fit Negative n_s?" in llh_kwargs.keys():
+#     #     if llh_kwargs["Fit Negative n_s?"]:
+#     #         bounds = [(-100., 1000.)]
+#
+#     # If weights are to be fitted, then each source has an independent
+#     # n_s in the same 0-1000 range.
+#     if "Fit Weights?" in list(llh_kwargs.keys()):
+#         if llh_kwargs["Fit Weights?"]:
+#             p0 = [1. for x in sources]
+#             bounds = [bounds[0] for x in sources]
+#             names = ["n_s (" + x["Name"] + ")" for x in sources]
+#
+#     if fit_energy:
+#         e_pdf = EnergyPDF.create(llh_kwargs["LLH Energy PDF"])
+#         e_seed, e_bounds, e_names = e_pdf.return_energy_parameters()
+#         p0 += e_seed
+#         bounds += e_bounds
+#         names += e_names
+#
+#     if flare:
+#         names += ["Flare Start", "Flare End", "Flare Length"]
+#
+#     return p0, bounds, names
 
 
 k_flux_factor = 10 ** -9

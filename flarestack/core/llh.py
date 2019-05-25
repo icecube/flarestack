@@ -7,19 +7,21 @@ import flarestack.core.astro
 import numpy as np
 import scipy.interpolate
 from scipy import sparse
-import pickle as Pickle
+import pickle
 from flarestack.shared import acceptance_path, llh_energy_hash_pickles, \
     SoB_spline_path, bkg_spline_path
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.utils.make_SoB_splines import load_spline, \
     load_bkg_spatial_spline
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
+from flarestack.core.spatial_pdf import SpatialPDF
 from flarestack.utils.create_acceptance_functions import dec_range,\
     make_acceptance_season
 from flarestack.icecube_utils.dataset_loader import data_loader
 from flarestack.utils.make_SoB_splines import create_2d_ratio_hist, \
     make_2d_spline_from_hist, \
     make_background_spline, make_individual_spline_set
+
 
 def read_llh_dict(llh_dict):
     """Ensures that llh dictionaries remain backwards-compatible
@@ -51,6 +53,9 @@ def read_llh_dict(llh_dict):
         else:
             llh_dict[key] = {}
 
+    if "llh_spatial_pdf" not in llh_dict.keys():
+        llh_dict["llh_spatial_pdf"] = {}
+
     return llh_dict
 
 
@@ -63,6 +68,7 @@ class LLH(object):
         self.season = season
         self.sources = sources
         self.llh_dict = llh_dict
+        self.spatial_pdf = SpatialPDF.create(llh_dict["llh_spatial_pdf"])
 
         try:
             time_dict = llh_dict["llh_time_pdf"]
@@ -131,7 +137,7 @@ class LLH(object):
         :param cut_data: Subset of Dataset with coincident events
         :return: Array of Signal Spacetime PDF values
         """
-        space_term = self.signal_spatial(source, cut_data)
+        space_term = self.spatial_pdf.signal_spatial(source, cut_data)
 
         if hasattr(self, "time_pdf"):
             time_term = self.time_pdf.signal_f(cut_data["time"], source)
@@ -143,24 +149,24 @@ class LLH(object):
 
         return sig_pdf
 
-    @staticmethod
-    def signal_spatial(source, cut_data):
-        """Calculates the angular distance between the source and the
-        coincident dataset. Uses a Gaussian PDF function, centered on the
-        source. Returns the value of the Gaussian at the given distances.
-
-        :param source: Single Source
-        :param cut_data: Subset of Dataset with coincident events
-        :return: Array of Spatial PDF values
-        """
-        distance = flarestack.core.astro.angular_distance(
-            cut_data['ra'], cut_data['dec'],
-            source['ra_rad'], source['dec_rad']
-        )
-        space_term = (1. / (2. * np.pi * cut_data['sigma'] ** 2.) *
-                      np.exp(-0.5 * (distance / cut_data['sigma']) ** 2.))
-
-        return space_term
+    # @staticmethod
+    # def signal_spatial(source, cut_data):
+    #     """Calculates the angular distance between the source and the
+    #     coincident dataset. Uses a Gaussian PDF function, centered on the
+    #     source. Returns the value of the Gaussian at the given distances.
+    #
+    #     :param source: Single Source
+    #     :param cut_data: Subset of Dataset with coincident events
+    #     :return: Array of Spatial PDF values
+    #     """
+    #     distance = flarestack.core.astro.angular_distance(
+    #         cut_data['ra'], cut_data['dec'],
+    #         source['ra_rad'], source['dec_rad']
+    #     )
+    #     space_term = (1. / (2. * np.pi * cut_data['sigma'] ** 2.) *
+    #                   np.exp(-0.5 * (distance / cut_data['sigma']) ** 2.))
+    #
+    #     return space_term
 
     # ==========================================================================
     # Background PDF
@@ -490,7 +496,7 @@ class FixedEnergyLLH(LLH):
         print("Loading from", acc_path)
 
         with open(acc_path, "rb") as f:
-            [dec_vals, acc] = Pickle.load(f)
+            [dec_vals, acc] = pickle.load(f)
 
         acc_spline = scipy.interpolate.interp1d(dec_vals, acc, kind='linear')
 
@@ -506,7 +512,7 @@ class FixedEnergyLLH(LLH):
         print("Loading from", SoB_path)
 
         with open(SoB_path, "rb") as f:
-            [dec_vals, ratio_hist] = Pickle.load(f)
+            [dec_vals, ratio_hist] = pickle.load(f)
 
         spline = make_2d_spline_from_hist(np.array(ratio_hist), dec_vals,
                                           self.season.log_e_bins)
@@ -552,7 +558,7 @@ class FixedEnergyLLH(LLH):
         print("Saving to", acc_path)
 
         with open(acc_path, "wb") as f:
-            Pickle.dump([dec_range, acc], f)
+            pickle.dump([dec_range, acc], f)
 
         return f
 
@@ -576,7 +582,7 @@ class FixedEnergyLLH(LLH):
             pass
 
         with open(SoB_path, "wb") as f:
-            Pickle.dump([dec_range, ratio_hist], f)
+            pickle.dump([dec_range, ratio_hist], f)
 
         return f
 
@@ -706,7 +712,7 @@ class StandardLLH(FixedEnergyLLH):
         print("Loading from", acc_path)
 
         with open(acc_path, "rb") as f:
-            [dec_bins, gamma_bins, acc] = Pickle.load(f)
+            [dec_bins, gamma_bins, acc] = pickle.load(f)
 
         # acc_spline = scipy.interpolate.interp2d(
         #     dec_bins, gamma_bins, np.array(acc).T, kind='linear')
@@ -734,7 +740,7 @@ class StandardLLH(FixedEnergyLLH):
     #     # acc_path = acceptance_path(self.season)
     #
     #     with open(acc_path) as f:
-    #         acc_dict = Pickle.load(f)
+    #         acc_dict = pickle.load(f)
     #
     #     dec_bins = acc_dict["dec"]
     #     gamma_bins = acc_dict["gamma"]
@@ -754,7 +760,7 @@ class StandardLLH(FixedEnergyLLH):
         acc_path = acceptance_path(self.season)
 
         with open(acc_path, "rb") as f:
-            [dec_bins, gamma_bins, acc] = Pickle.load(f)
+            [dec_bins, gamma_bins, acc] = pickle.load(f)
 
         f = scipy.interpolate.interp2d(
             dec_bins, gamma_bins, acc.T, kind='linear')
@@ -792,7 +798,7 @@ class StandardLLH(FixedEnergyLLH):
 
             s_mask = self.select_spatially_coincident_data(data, [source])
 
-            coincident_data = data[s_mask]
+            coincident_data = data[s_mask].copy()
 
             if len(coincident_data) > 0:
                 # Only bother accepting neutrinos where the spatial
@@ -803,6 +809,7 @@ class StandardLLH(FixedEnergyLLH):
 
                 sig = self.signal_pdf(source, coincident_data)
                 nonzero_mask = (sig > 1e-21)
+
                 s_mask[s_mask] *= nonzero_mask
 
                 assumed_background_mask *= ~s_mask
@@ -884,7 +891,6 @@ class StandardLLH(FixedEnergyLLH):
 
                     x.append(1. + ((n_j /kwargs["n_all"]) * (
                             (SoB_energy * SoB_spacetime) - 1.)))
-
 
         if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
             llh_value = -50. + all_n_j
@@ -1343,7 +1349,7 @@ if __name__ == "__main__":
     print(path)
 
     with open(path, "wb") as h:
-        Pickle.dump(f, h)
+        pickle.dump(f, h)
 
     e_pdf = {
         "energy_pdf_name": "Spline",

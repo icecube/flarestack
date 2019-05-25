@@ -12,10 +12,9 @@ import os
 import argparse
 import pickle as Pickle
 import scipy.optimize
-from flarestack.core.injector import Injector, LowMemoryInjector, \
-    read_injector_dict
+from flarestack.core.injector import read_injector_dict
 from flarestack.core.llh import LLH, generate_dynamic_flare_class, read_llh_dict
-from flarestack.shared import name_pickle_output_dir, fit_setup, \
+from flarestack.shared import name_pickle_output_dir, \
     inj_dir_name, plot_output_dir, scale_shortener, flux_to_k
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -95,20 +94,23 @@ class MinimisationHandler(object):
         self.mh_dict = mh_dict
         self.pull_correctors = dict()
 
-        # Checks whether signal injection should be done with a sliding PDF
-        # within a larger window, or remain fixed at the specified time
+        if "inj_dict" in mh_dict.keys():
 
-        inj = dict(mh_dict["inj_dict"])
+            # Checks whether signal injection should be done with a sliding PDF
+            # within a larger window, or remain fixed at the specified time
 
-        try:
-            self.time_smear = inj["injection_time_pdf"]["time_smear_bool"]
-        except KeyError:
-            self.time_smear = False
+            inj = dict(mh_dict["inj_dict"])
 
-        if self.time_smear:
-            inj["injection_time_pdf"] = time_smear(inj)
+            try:
+                self.time_smear = inj["injection_time_pdf"]["time_smear_bool"]
+            except KeyError:
+                self.time_smear = False
 
-        self.inj_kwargs = inj
+            if self.time_smear:
+                inj["injection_time_pdf"] = time_smear(inj)
+
+            self.inj_kwargs = inj
+
         self.llh_dict = mh_dict["llh_dict"]
 
         # Check if the specified MinimisationHandler is compatible with the
@@ -248,7 +250,7 @@ class MinimisationHandler(object):
         return LLH.create(season, self.sources, self.llh_dict)
 
     def add_injector(self, season, sources):
-        return Injector(season, sources, **self.inj_kwargs)
+        return season.make_injector(sources, **self.inj_kwargs)
 
     @staticmethod
     def set_random_seed(seed):
@@ -447,8 +449,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         self.dump_results(results, scale, seed)
         return res_dict
 
-    def simulate_and_run(self, scale):
-        seed = np.random.randint(low=0, high=99999999)
+    def simulate_and_run(self, scale, seed=None):
+        if seed is None:
+            seed = np.random.randint(low=0, high=99999999)
         self.set_random_seed(seed)
         full_dataset = self.prepare_dataset(scale, seed)
         return self.run_single(full_dataset, scale, seed)
@@ -956,7 +959,15 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
                             "was expected".format(self.param_names))
 
     def add_injector(self, season, sources):
-        return LowMemoryInjector(season, sources, **self.inj_kwargs)
+
+        if "inj_name" in self.inj_kwargs.keys():
+            if self.inj_kwargs["injection_name"] != "large_memory_injector":
+                raise Exception("{0} was provided as injection_name. Please "
+                                "use 'large_memory_injector'.")
+        else:
+            self.inj_kwargs["injector_name"] = "large_memory_injector"
+
+        return season.make_injector(sources, **self.inj_kwargs)
 
 
 @MinimisationHandler.register_subclass('fit_weights')

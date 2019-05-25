@@ -2,9 +2,13 @@ import os
 import numpy as np
 import csv
 import pickle
-from flarestack.shared import public_dataset_dir
+from flarestack.shared import public_dataset_dir, \
+    energy_proxy_path, med_ang_res_path, effective_area_plot_path,\
+    ang_res_plot_path
 from flarestack.utils.make_SoB_splines import make_individual_spline_set
 from flarestack.shared import SoB_spline_path, dataset_plot_dir
+from flarestack.data import Dataset
+from flarestack.data.icecube.public import PublicICSeason
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import zipfile
@@ -41,6 +45,9 @@ def data_path(season):
 
 def pseudo_mc_path(season):
     return pseudo_mc_dir + season + ".npy"
+
+def pseudo_mc_binning(season):
+    return pseudo_mc_dir + season + "_binning.npy"
 
 
 data_dtype = np.dtype([
@@ -91,31 +98,118 @@ def parse_numpy_dataset():
             pickle.dump(data, f)
 
 
+sample_name = "all_sky_3_year"
+
+ps_3_year = Dataset()
+
+
 def make_season(season_name):
-    season_dict = {
-        "Data Sample": "all_sky_3_year",
-        "sinDec bins": np.unique(np.concatenate([
-            np.linspace(-1., -0.9, 1 + 1),
-            np.linspace(-0.9, -0.2, 4 + 1),
-            np.linspace(-0.2, 0.2, 7 + 1),
-            np.linspace(0.2, 0.9, 6 + 1),
-            np.linspace(0.9, 1., 1 + 1),
-        ])),
-        "MJD Time Key": "time",
-        "Name": season_name,
-        "exp_path": data_path(season_name),
-        "mc_path": None,
-        "grl_path": None,
-        "pseudo_mc_path": pseudo_mc_path(season_name)
-    }
-    return season_dict
+    season = PublicICSeason(
+        season_name=season_name,
+        sample_name=sample_name,
+        exp_path=data_path(season_name),
+        pseudo_mc_path=pseudo_mc_path(season_name),
+        sin_dec_bins=np.linspace(-1., 1., 50),
+        log_e_bins=np.arange(2., 9. + 0.01, 0.25)
+    )
+    ps_3_year.add_season(season)
 
 
-ps_3_year = [make_season(x) for x in datasets]
+for season_name in datasets:
+    make_season(season_name)
 
 
 # if __name__=="__main__":
 #     parse_numpy_dataset()
+
+def parse_angular_resolution():
+    """Function to parse angular resolution."""
+    for dataset in datasets:
+
+        path = data_dir + dataset + "-AngRes.txt"
+
+        x = []
+        y = []
+
+        with open(path, "r") as f:
+
+            csv_reader = csv.reader(f, delimiter=" ")
+
+            for i, row in enumerate(csv_reader):
+
+                if i > 0:
+                    row = [float(x) for x in row if x != ""]
+
+                    true_e = 0.5*(row[0] + row[1])
+                    log_e = np.log10(true_e)
+                    med_ang_err = np.deg2rad(row[2])
+                    x.append(log_e)
+                    y.append(med_ang_err)
+
+        x = np.array(x)
+        y = np.array(y)
+
+        # Kinematic angle accounts for ~ 1 degree / sqrt(E/TeV)
+        # This is the angle between the neutrino and the reconstructed muon
+        # This serves as a lower limit on neutrino angular resolution
+
+        def kinematic_angle(log_e):
+            e = 10**log_e
+            return 1.0 * np.sqrt(10**3/e)
+
+        z = np.linspace(1, 6, 100)
+
+        plt.figure()
+        plt.scatter(x, np.degrees(y), label="Published Median (Energy Proxy)",
+                    color="orange")
+
+        plt.plot(z, kinematic_angle(z),
+                 label=r"$\nu-\mu$ Kinematic Angle (True Energy)")
+
+        new_x = np.linspace(1, 3, 7)
+        plt.scatter(new_x, kinematic_angle(new_x), color="purple",
+                    label="Flarestack K.A. anchor values")
+
+        # Remove Kinematic Angle region and recalculate angular resolution
+        # using finer step size
+
+        mask = x > 3.
+
+        x = x[mask]
+        y = y[mask]
+
+        full_x = list(new_x) + list(x)
+        full_y = list(np.deg2rad(kinematic_angle(new_x))) + list(y)
+
+        plt.plot(full_x, np.degrees(full_y), color="red",
+                 linestyle=":", label="Flarestack interpolation")
+
+        plt.xlabel(r"$log_{10}(Energy)$")
+        plt.ylabel("Median Angular Resolution (degrees)")
+        plt.ylim(ymin=0)
+        plt.legend()
+
+        save_path = ang_res_plot_path(ps_3_year.seasons[dataset])
+
+        try:
+            os.makedirs(os.path.dirname(save_path))
+        except OSError:
+            pass
+
+        plt.savefig(save_path)
+        plt.close()
+
+        ar_path = med_ang_res_path(ps_3_year.seasons[dataset])
+
+        try:
+            os.makedirs(os.path.dirname(ar_path))
+        except OSError:
+            pass
+
+        with open(ar_path, "wb") as f:
+            print("Saving converted numpy array to", ar_path)
+            pickle.dump([full_x, full_y], f)
+
 
 def parse_effective_areas():
     """Function to parse effective areas .txt into a format that flarestack
@@ -127,6 +221,7 @@ def parse_effective_areas():
         ('sinDec', np.float),
         ('trueDec', np.float),
         ('ow', np.float),
+        ('a_eff', np.float),
         ("sigma", np.float)
     ])
 
@@ -174,7 +269,7 @@ def parse_effective_areas():
 
                         entry = tuple([
                             log_e, true_e, sin_dec, true_dec,
-                            a_eff*factor, np.nan
+                            a_eff, a_eff, np.nan
                         ])
 
                         pseudo_mc.append(entry)
@@ -206,10 +301,10 @@ def parse_effective_areas():
 
         mc_vals = np.array(mc_vals)
 
-        print(mc_vals)
+        # print(mc_vals)
 
         mc_vals += min(pseudo_mc["ow"][pseudo_mc["ow"] > 0.]) * centers ** -3.7
-        print(mc_vals)
+        # print(mc_vals)
 
         x = [-5.0] + list(centers) + [15.0]
         y = exp_vals / mc_vals
@@ -223,8 +318,7 @@ def parse_effective_areas():
                  linestyle=":")
         ax3.set_yscale("log")
 
-        save_path = dataset_plot_dir + "/energy_proxy/all_sky_3_year/" \
-                                       "{0}.pdf".format(dataset)
+        save_path = effective_area_plot_path(ps_3_year.seasons[dataset])
 
         try:
             os.makedirs(os.path.dirname(save_path))
@@ -242,6 +336,17 @@ def parse_effective_areas():
             print("Saving converted numpy array to", mc_path)
             pickle.dump(pseudo_mc, f)
 
+        ep_path = energy_proxy_path(ps_3_year.seasons[dataset])
+
+        try:
+            os.makedirs(os.path.dirname(ep_path))
+        except OSError:
+            pass
+
+        with open(ep_path, "wb") as f:
+            print("Saving converted numpy array to", ep_path)
+            pickle.dump([x, np.log(y)], f)
+
 
 if __name__ == "__main__":
     from flarestack.icecube_utils.dataset_loader import data_loader
@@ -252,10 +357,11 @@ if __name__ == "__main__":
     #     true_e = x["trueE"]
     #     print(true_e, np.log10(true_e), x["logE"])
     #     input("prompt")
-
+    parse_angular_resolution()
     parse_effective_areas()
 
-    for season in ps_3_year:
+    for season in ps_3_year.get_seasons().values():
         # exp = data_loader(season["exp_path"])
         # mc = data_loader(season["pseudo_mc"])
-        make_individual_spline_set(season, SoB_spline_path(season))
+        # make_individual_spline_set(season, SoB_spline_path(season))
+        season.plot_effective_area()

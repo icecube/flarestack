@@ -6,7 +6,6 @@ import numpy as np
 import math
 from flarestack.shared import catalogue_dir
 from astropy.coordinates import Distance
-from flarestack.core.injector import Injector
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.catalogue_loader import calculate_source_weight
 
@@ -177,7 +176,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 def calculate_neutrinos(source, season, inj_kwargs):
 
     print(source)
-    inj = Injector(season, [source], **inj_kwargs)
+    inj = season.make_injector([source], **inj_kwargs)
     energy_pdf = inj_kwargs["Injection Energy PDF"]
 
     print("\n")
