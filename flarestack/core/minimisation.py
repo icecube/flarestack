@@ -961,11 +961,11 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
     def add_injector(self, season, sources):
 
         if "inj_name" in self.inj_kwargs.keys():
-            if self.inj_kwargs["injection_name"] != "large_memory_injector":
+            if self.inj_kwargs["injection_name"] != "low_memory_injector":
                 raise Exception("{0} was provided as injection_name. Please "
                                 "use 'large_memory_injector'.")
         else:
-            self.inj_kwargs["injector_name"] = "large_memory_injector"
+            self.inj_kwargs["injector_name"] = "low_memory_injector"
 
         return season.make_injector(sources, **self.inj_kwargs)
 

@@ -77,8 +77,10 @@ class BaseInjector:
             self.spatial_pdf = SpatialPDF.create(
                 kwargs["injection_spatial_pdf"])
         except KeyError:
-            print("No Injection Arguments. Are you unblinding?")
-            pass
+            raise Exception("Injection Arguments missing. \n "
+                            "'injection_energy_pdf', 'injection_time_pdf',"
+                            "and 'injection_spatial_pdf' are required. \n"
+                            "Found: \n {0}".format(kwargs))
 
         if "poisson_smear_bool" in list(kwargs.keys()):
             self.poisson_smear = kwargs["poisson_smear_bool"]
@@ -162,7 +164,7 @@ class BaseInjector:
         if inj_name not in cls.subclasses:
             raise ValueError('Bad Injector name {}'.format(inj_name))
         else:
-            return cls.subclasses[inj_name](season, sources, inj_dict)
+            return cls.subclasses[inj_name](season, sources, **inj_dict)
 
 
 class MCInjector(BaseInjector):

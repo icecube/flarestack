@@ -73,15 +73,19 @@ class Season:
         blinded analysis.
         :return: data: The scrambled dataset
         """
+        if self.loaded_background is None:
+            self.load_background_data()
         data = np.copy(self.loaded_background)
         # Assigns a flat random distribution for Right Ascension
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
         np.random.shuffle(data["time"])
-        return data[list(self.get_background_dtype().names)].copy()
+        return np.array(data[list(self.get_background_dtype().names)].copy(
+
+        ))[:,]
 
     def get_exp_data(self, **kwargs):
-        return self.load_data(self.exp_path, **kwargs)
+        return np.array(self.load_data(self.exp_path, **kwargs))
 
     def get_livetime_data(self):
         pass

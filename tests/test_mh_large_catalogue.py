@@ -59,8 +59,6 @@ class TestTimeIntegrated(unittest.TestCase):
             "inj_dict": {}
         }
 
-        MinimisationHandler.create(unblind_dict)
-
         ub = create_unblinder(unblind_dict)
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]

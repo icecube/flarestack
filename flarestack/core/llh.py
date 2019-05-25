@@ -1252,7 +1252,7 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             :param cut_data: Subset of Dataset with coincident events
             :return: Array of Signal Spacetime PDF values
             """
-            space_term = self.signal_spatial(source, cut_data)
+            space_term = self.spatial_pdf.signal_spatial(source, cut_data)
 
             return space_term
 
@@ -1295,7 +1295,7 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             :param source: Source to be considered
             :return: SoB of events in coincident dataset
             """
-            sig = self.signal_spatial(source, coincident_data)
+            sig = self.spatial_pdf.signal_spatial(source, coincident_data)
             bkg = self.background_spatial(coincident_data)
             SoB_space = sig / bkg
 
