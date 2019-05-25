@@ -123,14 +123,14 @@ class SpatialPDF:
 class CircularGaussian(SpatialPDF):
 
     def simulate_distribution(self, source, data):
-        data["ra"] = np.pi + norm.rvs(size=len(data)) * data["sigma"]/1.177
-        data["dec"] = norm.rvs(size=len(data)) * data["sigma"]/1.177
+        data["ra"] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
+        data["dec"] = norm.rvs(size=len(data)) * data["sigma"]
         data["sinDec"] = np.sin(data["dec"])
         data = append_fields(
             data, ["trueRa", "trueDec"],
-            [np.zeros_like(data["dec"]) for _ in range(2)]
+            [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])]
         ).copy()
-
+        
         data = self.rotate_to_position(
             data, source["ra_rad"], source["dec_rad"]).copy()
 
