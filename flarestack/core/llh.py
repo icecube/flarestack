@@ -223,7 +223,7 @@ class LLH(object):
         # Checks if background spatial spline has been created
 
         if not os.path.isfile(bkg_spline_path(self.season)):
-            self.season.make_background_spline()
+            self.season.make_background_spatial()
 
         return load_bkg_spatial_spline(self.season)
 

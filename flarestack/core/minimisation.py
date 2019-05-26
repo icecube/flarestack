@@ -46,6 +46,7 @@ def read_mh_dict(mh_dict):
 
     maps = [
         ("inj kwargs", "inj_dict"),
+        ("datasets", "dataset")
     ]
 
     for (old_key, new_key) in maps:
@@ -82,6 +83,8 @@ class MinimisationHandler(object):
 
     def __init__(self, mh_dict):
 
+        mh_dict = read_mh_dict(mh_dict)
+
         sources = load_catalogue(mh_dict["catalogue"])
 
         self.name = mh_dict["name"]
@@ -89,7 +92,7 @@ class MinimisationHandler(object):
         self.pickle_output_dir = name_pickle_output_dir(self.name)
         self.injectors = dict()
         self.llhs = dict()
-        self.seasons = mh_dict["datasets"]
+        self.seasons = mh_dict["dataset"]
         self.sources = sources
         self.mh_dict = mh_dict
         self.pull_correctors = dict()
@@ -110,6 +113,24 @@ class MinimisationHandler(object):
                 inj["injection_time_pdf"] = time_smear(inj)
 
             self.inj_kwargs = inj
+
+        # An independent set of Season objects can be used for the injector
+        # This enables, for example, different MC sets to be used for
+        # injection, to test the impact of different systematics
+
+        try:
+            self.inj_seasons = mh_dict["inj_dict"]["injection_dataset"]
+            print("Using independent injection dataset.")
+
+            if self.inj_seasons.keys() != self.seasons.keys():
+                raise Exception("Key mismatch between injection and llh "
+                                "Season objects. Injection Seasons have "
+                                "keys:\n {0} \n and LLH Seasons have keys: \n"
+                                "{1}". format(self.inj_seasons.keys(),
+                                              self.seasons.keys()))
+
+        except KeyError:
+            self.inj_seasons = self.seasons
 
         self.llh_dict = mh_dict["llh_dict"]
 
@@ -155,7 +176,8 @@ class MinimisationHandler(object):
         # provided.
         for (name, season) in self.seasons.items():
             self.llhs[name] = self.add_likelihood(season)
-            self.injectors[name] = self.add_injector(season, sources)
+            inj_season = self.inj_seasons[name]
+            self.injectors[name] = self.add_injector(inj_season, sources)
             self.pull_correctors[name] = BasePullCorrector.create(
                 season, self.llh_dict["llh_energy_pdf"], self.floor_name,
                 self.pull_name

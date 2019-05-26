@@ -8,7 +8,6 @@ from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
 
 
-
 class Dataset:
     def __init__(self, **kwargs):
         self.seasons = dict()

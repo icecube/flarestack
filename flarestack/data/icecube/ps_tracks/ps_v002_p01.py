@@ -61,6 +61,7 @@ from flarestack.shared import dataset_dir
 from flarestack.data.icecube import IceCubeDataset, IceCubeSeason
 from flarestack.data.icecube.ps_tracks import ps_binning
 import numpy as np
+import copy
 
 ps_data_dir = dataset_dir + "ps_tracks/version-002-p01/"
 
@@ -152,4 +153,17 @@ ic86_234 = IceCubeSeason(
 )
 
 ps_7year.add_season(ic86_234)
+
+ps_3_systematic_set = IceCubeDataset()
+
+for i, season_name in enumerate(["IC79", "IC86_1", "IC86_2"]):
+    try:
+        season = copy.copy(ps_7year.seasons[season_name])
+    except KeyError:
+        season = copy.copy(ps_7year.subseasons[season_name])
+
+    season.season_name = ["IC79-2010", "IC86-2011", "IC86-2012"][i]
+    season.sample_name = "all_sky_3_year_mc"
+
+    ps_3_systematic_set.add_season(season)
 

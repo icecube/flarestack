@@ -1,12 +1,14 @@
 import pickle
 import argparse
-from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
 from multiprocessing import JoinableQueue, Process
 import random
 import numpy as np
 
 
 def generate_dynamic_mh_class(mh_dict):
+
+    # mh_dict = read_mh_dict(mh_dict)
 
     try:
         mh_name = mh_dict["mh_name"]

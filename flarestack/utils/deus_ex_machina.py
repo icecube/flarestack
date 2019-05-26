@@ -9,7 +9,6 @@ from __future__ import division
 from builtins import object
 import numpy as np
 from flarestack.core.llh import LLH
-from flarestack.core.injector import Injector
 from flarestack.core.astro import angular_distance
 from flarestack.shared import weighted_quantile, k_to_flux, flux_to_k
 from flarestack.utils.catalogue_loader import load_catalogue, \
@@ -32,12 +31,15 @@ def estimate_discovery_potential(injectors, sources):
     season_sig = []
 
     def weight_f(n_s, n_bkg):
-        metric = np.array(n_s)/np.sqrt(np.array(n_bkg))
-        return metric / np.mean(metric)
+        metric = np.array(n_s)#/np.sqrt(np.array(n_bkg))
+        return metric / np.mean(metric)#/ max(metric)
 
     weight_scale = calculate_source_weight(sources)
 
     livetime = 0.
+
+    all_ns = []
+    all_nbkg = []
 
     for (season, inj) in injectors.items():
 
@@ -47,7 +49,7 @@ def estimate_discovery_potential(injectors, sources):
         llh = LLH.create(inj.season, sources, llh_dict)
 
         # print("Season", season)
-        data = inj._raw_data
+        data = inj.season.get_background_model()
         # n_bkg_tot += len(inj._raw_data)
         # print("Number of events", n_bkg_tot)
         livetime += inj.time_pdf.livetime * 60 * 60 * 24
@@ -115,7 +117,7 @@ def estimate_discovery_potential(injectors, sources):
             n_bkg = local_rate * area #* source_weight
 
             sig_scale = 1.
-            sig_scale = np.sqrt(np.mean(data_weights))
+            # sig_scale = np.sqrt(np.mean(data_weights))
             # sig_scale = np.sqrt(n_bkg)
             # sig_scale = n_bkg/np.mean(data_weights)
             # "ow"]) #/
@@ -138,6 +140,10 @@ def estimate_discovery_potential(injectors, sources):
         season_sig.append(sum_n_sigs)
         season_bkg.append(sum_n_bkgs)
 
+        all_ns.append(n_sigs)
+        all_nbkg.append(n_bkgs)
+
+
     season_sig = np.array(season_sig)
     season_bkg = np.array(season_bkg)
 
@@ -146,7 +152,36 @@ def estimate_discovery_potential(injectors, sources):
     int_sig = np.sum(season_sig * season_weights)
     int_bkg = np.sum(season_bkg * season_weights)
 
-    disc_count = norm.ppf(norm.cdf(5.0), loc=int_bkg, scale=np.sqrt(int_bkg))
+    disc_count = norm.ppf(norm.cdf(5.0), loc=int_bkg,
+                          scale=np.sqrt(int_bkg))
+
+    # all_ns = np.array(all_ns)
+    # all_nbkg = np.array(all_nbkg)
+    # weights = all_ns/max([max(x) for x in all_ns])
+    #
+    # print(all_ns, all_nbkg, weights)
+    #
+    # all_nbkg *= weights
+    #
+    # print(all_nbkg)
+    # 
+    # n_bkg = np.sum([np.sum(x) for x in all_nbkg])
+    # n_s = np.sum(np.sum(x) for x in all_ns)
+    #
+    # print("disc:", disc_count)
+    # print("Int sig:", int_sig)
+    #
+    # print("N bkg:", n_bkg)
+    # print("Ns", n_s)
+    # disc_count = norm.ppf(norm.cdf(5.0), loc=n_bkg, scale=np.sqrt(max(
+    #     [max(x) for x in all_nbkg])))
+    # int_sig = np.sum(np.sum(x) for x in all_ns*weights)
+    # int_bkg = n_bkg
+    # print("disc count:", disc_count)
+    # print("Ns:", np.sum(np.sum(x) for x in all_ns*weights))
+
+    # input("prompt?")
+
 
     disc_pot = disc_count - int_bkg
 
@@ -161,7 +196,8 @@ def estimate_discovery_potential(injectors, sources):
     # fudge_factor = (1.25 + 0.75 * np.tanh(np.log(int_bkg)))
     # fudge_factor = (1.25 + 0.75 * np.tanh(np.log(disc_count)))
     fudge_factor = 2.0
-    fudge_factor *= 1.2
+    fudge_factor *= 0.8
+    # fudge_factor *= 0.5
 
     scale /= fudge_factor
 
@@ -185,8 +221,9 @@ class DeusExMachina(object):
         self.seasons = seasons
         self.injectors = dict()
 
-        for season in self.seasons:
-            self.injectors[season["Name"]] = Injector(season, [], **inj_dict)
+        for season in self.seasons.values():
+            self.injectors[season.season_name] = season.make_injector([],
+                                                                  **inj_dict)
 
     def guess_discovery_potential(self, source_path):
         sources = load_catalogue(source_path)

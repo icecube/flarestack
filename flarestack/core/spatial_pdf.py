@@ -130,7 +130,7 @@ class CircularGaussian(SpatialPDF):
             data, ["trueRa", "trueDec"],
             [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])]
         ).copy()
-        
+
         data = self.rotate_to_position(
             data, source["ra_rad"], source["dec_rad"]).copy()
 
