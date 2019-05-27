@@ -32,7 +32,10 @@ class Dataset:
                     season_dict[name] = self.subseasons[name]
                 else:
                     raise Exception(
-                        "Unrecognised season name: {0} not found".format(name))
+                        "Unrecognised season name: {0} not found. \n"
+                        "Available seasons are: {1} \n"
+                        "Available subseasons are: {2}".format(
+                            name, self.seasons.keys(), self.subseasons.keys()))
             return season_dict
 
 
