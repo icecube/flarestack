@@ -12,6 +12,7 @@ from flarestack.data.icecube.public import PublicICSeason
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import zipfile
+from flarestack.icecube_utils.dataset_loader import data_loader
 
 src_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -22,13 +23,6 @@ extract_dir = output_base_dir + "extracted_data"
 data_dir = extract_dir + "/3year-data-release/"
 output_data_dir = output_base_dir + "events/"
 pseudo_mc_dir = output_data_dir + "pseudo_mc/"
-
-# If data has not been extracted, then extract from zip file
-
-if not os.path.isdir(data_dir):
-
-    with zipfile.ZipFile(zip_file, "r") as zip_ref:
-        zip_ref.extractall(extract_dir)
 
 
 for path in [output_data_dir, pseudo_mc_dir]:
@@ -93,9 +87,7 @@ def parse_numpy_dataset():
 
         exp_path = data_path(dataset)
 
-        with open(exp_path, "wb") as f:
-            print("Saving converted numpy array to", exp_path)
-            pickle.dump(data, f)
+        np.save(exp_path, data)
 
 
 sample_name = "all_sky_3_year"
@@ -332,9 +324,7 @@ def parse_effective_areas():
 
         mc_path = pseudo_mc_path(dataset)
 
-        with open(mc_path, "wb") as f:
-            print("Saving converted numpy array to", mc_path)
-            pickle.dump(pseudo_mc, f)
+        np.save(mc_path, pseudo_mc)
 
         ep_path = energy_proxy_path(ps_3_year.seasons[dataset])
 
@@ -348,15 +338,8 @@ def parse_effective_areas():
             pickle.dump([x, np.log(y)], f)
 
 
-if __name__ == "__main__":
-    from flarestack.icecube_utils.dataset_loader import data_loader
-
-    # mc = data_loader(ps_7year[0]["mc_path"])
-    # print(mc.dtype.names)
-    # for x in mc:
-    #     true_e = x["trueE"]
-    #     print(true_e, np.log10(true_e), x["logE"])
-    #     input("prompt")
+def run_all():
+    parse_numpy_dataset()
     parse_angular_resolution()
     parse_effective_areas()
 
@@ -365,3 +348,23 @@ if __name__ == "__main__":
         # mc = data_loader(season["pseudo_mc"])
         # make_individual_spline_set(season, SoB_spline_path(season))
         season.plot_effective_area()
+
+
+# If data has not been extracted, then extract from zip file
+
+if not os.path.isdir(data_dir):
+
+    with zipfile.ZipFile(zip_file, "r") as zip_ref:
+        zip_ref.extractall(extract_dir)
+
+    run_all()
+
+
+if __name__ == "__main__":
+    run_all()
+    # mc = data_loader(ps_7year[0]["mc_path"])
+    # print(mc.dtype.names)
+    # for x in mc:
+    #     true_e = x["trueE"]
+    #     print(true_e, np.log10(true_e), x["logE"])
+    #     input("prompt")
