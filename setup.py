@@ -23,7 +23,7 @@ setuptools.setup(
     install_requires=[
         "numpy",
         "numexpr",
-        "healpy==1.10.3",
+        "healpy",
         "scipy",
         "matplotlib",
         "astropy"
