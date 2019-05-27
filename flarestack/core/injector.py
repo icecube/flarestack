@@ -87,16 +87,32 @@ class BaseInjector:
         else:
             self.poisson_smear = True
 
-        self.ref_fluxes = {
-            scale_shortener(0.0): dict()
-        }
-        for source in sources:
-            self.ref_fluxes[scale_shortener(0.0)][source["source_name"]] = 0.0
+        self.n_exp = np.nan
 
         try:
             self.fixed_n = kwargs["fixed_n"]
         except KeyError:
             self.fixed_n = np.nan
+
+    def calculate_n_exp(self):
+
+        all_n_exp = np.empty((len(self.sources), 1), dtype=np.dtype(
+            [('source_name', 'a30'), ('n_exp', np.float)]))
+
+        for i, source in enumerate(self.sources):
+            all_n_exp[i]["source_name"] = source["source_name"]
+            all_n_exp[i]["n_exp"] = self.calculate_n_exp_single(source)
+
+        return all_n_exp
+
+    def calculate_n_exp_single(self, source):
+        return
+
+    def get_n_exp_single(self, source):
+        return self.n_exp[self.n_exp["source_name"] == source["source_name"]]
+
+    def get_expectation(self, source, scale):
+        return self.get_n_exp_single(source)["n_exp"] * scale
 
     def update_sources(self, sources):
         """Reuses an injector with new sources
@@ -106,11 +122,7 @@ class BaseInjector:
         self.sources = sources
         self.weight_scale = np.sum(
                 self.sources["base_weight"] * self.sources["distance_mpc"]**-2)
-        self.ref_fluxes = {
-            scale_shortener(0.0): dict()
-        }
-        for source in sources:
-            self.ref_fluxes[scale_shortener(0.0)][source["source_name"]] = 0.0
+        self.n_exp = self.calculate_n_exp()
 
     def create_dataset(self, scale, pull_corrector):
         """Create a dataset based on scrambled data for background, and Monte
@@ -166,6 +178,18 @@ class BaseInjector:
         else:
             return cls.subclasses[inj_name](season, sources, **inj_dict)
 
+    @staticmethod
+    def get_dec_and_omega(source):
+        # Sets half width of band
+        dec_width = np.deg2rad(2.)
+
+        # Sets a declination band 5 degrees above and below the source
+        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
+        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
+        # Gives the solid angle coverage of the sky for the band
+        omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+        return dec_width, min_dec, max_dec, omega
+
 
 class MCInjector(BaseInjector):
     """Core Injector Class, returns a dataset on which calculations can be
@@ -177,12 +201,13 @@ class MCInjector(BaseInjector):
 
     def __init__(self, season, sources, **kwargs):
         kwargs = read_injector_dict(kwargs)
-        BaseInjector.__init__(self, season, sources, **kwargs)
-
         self._mc = season.get_mc()
+        BaseInjector.__init__(self, season, sources, **kwargs)
 
         try:
             self.mc_weights = self.energy_pdf.weight_mc(self._mc)
+            self.n_exp = self.calculate_n_exp()
+
         except KeyError:
             print("No Injection Arguments. Are you unblinding?")
             pass
@@ -198,15 +223,15 @@ class MCInjector(BaseInjector):
         :return: band_mask: The mask which removes events outside band
         """
 
-        # Sets half width of band
-        dec_width = np.deg2rad(5.)
+        dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
 
-        # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
-        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
-        # Gives the solid angle coverage of the sky for the band
-        omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+        band_mask = self.get_band_mask(source, min_dec, max_dec)
 
+        # print(band_mask)
+
+        return np.copy(self._mc[band_mask]), omega, band_mask
+
+    def get_band_mask(self, source, min_dec, max_dec):
         # Checks if the mask has already been evaluated for the source
         # If not, creates the mask for this source, and saves it
         if source["source_name"] in list(self.injection_band_mask.keys()):
@@ -216,10 +241,10 @@ class MCInjector(BaseInjector):
                                        np.less(self._mc["trueDec"], max_dec))
             self.injection_band_mask[source["source_name"]] = band_mask
 
-        return np.copy(self._mc[band_mask]), omega, band_mask
+        return band_mask
 
     def calculate_single_source(self, source, scale):
-        """Calculate the weighted MC for a signle source, given a flux scale
+        """Calculate the weighted MC for a single source, given a flux scale
         and a distance scale.
 
         :param source:
@@ -233,6 +258,9 @@ class MCInjector(BaseInjector):
                                            band_mask, omega)
 
         return source_mc
+
+    def calculate_n_exp_single(self, source):
+        return np.sum(self.calculate_single_source(source, 1.)["ow"])
 
     def calculate_fluence(self, source, scale, source_mc, band_mask, omega):
         """Function to calculate the fluence for a given source, and multiply
@@ -285,15 +313,8 @@ class MCInjector(BaseInjector):
 
         n_tot_exp = 0
 
-        scale_key = scale_shortener(scale)
-
-        if scale_key not in list(self.ref_fluxes.keys()):
-            self.ref_fluxes[scale_key] = dict()
-
         # Loop over each source to be simulated
         for i, source in enumerate(self.sources):
-
-            source_mc = self.calculate_single_source(source, scale)
 
             # If a number of neutrinos to inject is specified, use that.
             # Otherwise, inject based on the flux scale as normal.
@@ -301,12 +322,9 @@ class MCInjector(BaseInjector):
             if not np.isnan(self.fixed_n):
                 n_inj = int(self.fixed_n)
             else:
-                n_inj = np.sum(source_mc["ow"])
+                n_inj = self.get_expectation(source, scale)
 
             n_tot_exp += n_inj
-
-            if source["source_name"] not in list(self.ref_fluxes[scale_key].keys()):
-                self.ref_fluxes[scale_key][source["source_name"]] = n_inj
 
             # Simulates poisson noise around the expectation value n_inj.
             if self.poisson_smear:
@@ -318,6 +336,8 @@ class MCInjector(BaseInjector):
             #  If n_s = 0, skips simulation step.
             if n_s < 1:
                 continue
+
+            source_mc = self.calculate_single_source(source, scale)
 
             # Creates a normalised array of OneWeights
             p_select = source_mc['ow'] / np.sum(source_mc['ow'])
@@ -354,21 +374,43 @@ class MCInjector(BaseInjector):
 class LowMemoryInjector(MCInjector):
     """For large numbers of sources O(~100), saving MC masks becomes
     increasingly burdensome. As a solution, the LowMemoryInjector should be
-    used instead. It will be somewhat slower if you inject neutrinos multiple
-    times, but will have much more reasonable memory consumption.
+    used instead. It will be somewhat slower, but will have much more
+    reasonable memory consumption.
     """
 
     def __init__(self, season, sources, **kwargs):
-        MCInjector.__init__(self, season, sources, **kwargs)
-        self.split_cats, self.injection_band_paths = band_mask_cache_name(
-            season, self.sources
-        )
+        self.split_cats = None
+        self.injection_band_paths = None
+        self.band_mask_cache = None
+        self.band_mask_index = None
 
-        if np.sum([not os.path.isfile(x) for x in self.injection_band_paths])\
-                > 0.:
+        MCInjector.__init__(self, season, sources, **kwargs)
+
+    def calculate_n_exp(self):
+
+        cats, paths, m_index, s_index = band_mask_cache_name(
+            self.season, self.sources
+        )
+        self.split_cats = cats
+        self.injection_band_paths = paths
+
+        if np.sum([not os.path.isfile(x) for x in self.injection_band_paths]) > 0.:
+            print("No saved band masks found. These will have to be made "
+                  "first.")
             self.make_injection_band_mask()
-        else:
-            print("Loading injection band mask from", self.injection_band_paths)
+
+        self.n_exp = np.empty((len(self.sources), 1), dtype=np.dtype(
+            [('source_name', 'a30'), ('n_exp', np.float),
+             ('mask_index', np.int), ("source_index", np.int)]))
+
+        self.n_exp["mask_index"] = np.array(m_index).reshape(len(m_index), 1)
+        self.n_exp["source_index"] = np.array(s_index).reshape(len(s_index), 1)
+
+        for i, source in enumerate(self.sources):
+            self.n_exp[i]["source_name"] = source["source_name"]
+            self.n_exp[i]["n_exp"] = self.calculate_n_exp_single(source)
+
+        return self.n_exp
 
     def make_injection_band_mask(self):
 
@@ -388,7 +430,7 @@ class LowMemoryInjector(MCInjector):
                 dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
                 band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
                                            np.less(self._mc["trueDec"], max_dec))
-                injection_band_mask[i,:] = band_mask
+                injection_band_mask[i, :] = band_mask
             injection_band_mask = injection_band_mask.tocsr()
             sparse.save_npz(path, injection_band_mask)
 
@@ -396,126 +438,27 @@ class LowMemoryInjector(MCInjector):
 
             print("Saving to", path)
 
-    @staticmethod              
-    def get_dec_and_omega( source):
-        # Sets half width of band
-        dec_width = np.deg2rad(2.)
+    def load_band_mask(self, index):
+        path = self.injection_band_paths[index]
+        del self.band_mask_cache
+        self.band_mask_cache = sparse.load_npz(path)
+        self.band_mask_index = index
+        # return sparse.load_npz(path)
 
-        # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
-        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
-        # Gives the solid angle coverage of the sky for the band
-        omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
-        return dec_width, min_dec, max_dec, omega
+    def get_band_mask(self, source, min_dec, max_dec):
 
-    def select_mc_band(self, source):
-        """For a given source, selects MC events within a declination band of
-        width +/- 5 degrees that contains the source. Then returns the MC data
-        subset containing only those MC events.
+        entry = self.get_n_exp_single(source)
+        mask_index = entry["mask_index"]
 
-        :param mc: Monte Carlo simulation
-        :param source: Source to be simulated
-        :return: mc (cut): Simulated events which lie within the band
-        :return: omega: Solid Angle of the chosen band
-        :return: band_mask: The mask which removes events outside band
-        """
-        dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
-        band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
-                                   np.less(self._mc["trueDec"], max_dec))
-        return np.copy(self._mc[band_mask]), omega, band_mask
+        if not np.logical_and(self.band_mask_cache is not None,
+                              self.band_mask_index == mask_index):
+            self.load_band_mask(mask_index[0])
 
-    def inject_signal(self, scale):
-        """Randomly select simulated events from the Monte Carlo dataset to
-        simulate a signal for each source. The source flux can be scaled by
-        the scale parameter.
+        # band_mask = self.load_band_mask(mask_index[0])
 
-        :param scale: Ratio of Injected Flux to source flux.
-        :return: Set of signal events for the given IC Season.
-        """
-        # Creates empty signal event array
-        sig_events = np.empty((0, ), dtype=self.season.get_background_dtype())
+        return self.band_mask_cache.getrow(entry["source_index"][0]).toarray(
 
-        n_tot_exp = 0
-
-        scale_key = scale_shortener(scale)
-
-        if scale_key not in list(self.ref_fluxes.keys()):
-            self.ref_fluxes[scale_key] = dict()
-
-        for j, path in enumerate(self.injection_band_paths):
-
-            injection_band_mask = sparse.load_npz(path)
-
-            # Loop over each source to be simulated
-            for i, source in enumerate(self.split_cats[j]):
-
-                dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
-                band_mask = injection_band_mask.getrow(i).toarray()[0]
-                source_mc = np.copy(self._mc[band_mask])
-
-                source_mc = self.calculate_fluence(source, scale, source_mc,
-                                                   band_mask, omega)
-
-                # If a number of neutrinos to inject is specified, use that.
-                # Otherwise, inject based on the flux scale as normal.
-
-                if not np.isnan(self.fixed_n):
-                    n_inj = int(self.fixed_n)
-                else:
-                    n_inj = np.sum(source_mc["ow"])
-
-                n_tot_exp += n_inj
-
-                if source["source_name"] not in list(
-                        self.ref_fluxes[scale_key].keys()):
-                    self.ref_fluxes[scale_key][source["source_name"]] = n_inj
-
-                # Simulates poisson noise around the expectation value n_inj.
-                if self.poisson_smear:
-                    n_s = np.random.poisson(n_inj)
-
-                # If there is no poisson noise, rounds n_s to nearest integer
-                else:
-                    n_s = int(n_inj)
-
-                #  If n_s = 0, skips simulation step.
-                if n_s < 1:
-                    continue
-
-                # Creates a normalised array of OneWeights
-                p_select = source_mc['ow'] / np.sum(source_mc['ow'])
-
-                # Creates an array with n_signal entries.
-                # Each entry is a random integer between 0 and no. of sources.
-                # The probability for each integer is equal to the OneWeight of
-                # the corresponding source_path.
-                ind = np.random.choice(len(source_mc['ow']), size=n_s, p=p_select)
-
-                # Selects the sources corresponding to the random integer array
-                sim_ev = source_mc[ind]
-
-                # Rotates the Monte Carlo events onto the source_path
-                sim_ev = self.rotate_to_source(
-                    sim_ev, source['ra_rad'], source['dec_rad']
-                )
-
-                # Generates times for each simulated event, drawing from the
-                # Injector time PDF.
-
-                sim_ev["time"] = self.time_pdf.simulate_times(source, n_s)
-
-                # Joins the new events to the signal events
-                sig_events = np.concatenate(
-                    (sig_events, sim_ev[list(self._raw_data.dtype.names)]))
-
-            del injection_band_mask
-
-        # print "Injecting", n_tot_exp
-        # print max([x/n_tot_exp for x
-        #            in self.ref_fluxes[scale_key].itervalues()])
-        # raw_input("prompt")
-
-        return sig_events
+        )[0]
 
 
 class EffectiveAreaInjector(BaseInjector):
@@ -526,6 +469,7 @@ class EffectiveAreaInjector(BaseInjector):
 
     def __init__(self, season, sources, **kwargs):
         BaseInjector.__init__(self, season, sources, **kwargs)
+        self.n_exp = self.calculate_n_exp()
         self.effective_area_f = season.load_effective_area()
         self.energy_proxy_mapping = season.load_energy_proxy_mapping()
         self.angular_res_f = season.load_angular_resolution()
@@ -539,11 +483,6 @@ class EffectiveAreaInjector(BaseInjector):
 
         n_tot_exp = 0
 
-        scale_key = scale_shortener(scale)
-
-        if scale_key not in list(self.ref_fluxes.keys()):
-            self.ref_fluxes[scale_key] = dict()
-
         # Loop over each source to be simulated
         for i, source in enumerate(self.sources):
 
@@ -553,13 +492,9 @@ class EffectiveAreaInjector(BaseInjector):
             if not np.isnan(self.fixed_n):
                 n_inj = int(self.fixed_n)
             else:
-                n_inj = self.calculate_single_source(source, scale)
+                n_inj = self.get_expectation(source, scale)
 
             n_tot_exp += n_inj
-
-            if source["source_name"] not in list(
-                    self.ref_fluxes[scale_key].keys()):
-                self.ref_fluxes[scale_key][source["source_name"]] = n_inj
 
             # Simulates poisson noise around the expectation value n_inj.
             if self.poisson_smear:
@@ -641,6 +576,9 @@ class EffectiveAreaInjector(BaseInjector):
         n_inj = fluence*int_eff_a
 
         return n_inj
+
+    def calculate_n_exp_single(self, source):
+        return self.calculate_single_source(source, scale=1.)
 
     def calculate_energy_proxy(self, source):
         # Simulates energy proxy values

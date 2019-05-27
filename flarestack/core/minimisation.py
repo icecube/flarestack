@@ -55,7 +55,10 @@ def read_mh_dict(mh_dict):
             mh_dict[new_key] = mh_dict[old_key]
 
     if "name" not in mh_dict.keys():
-        mh_dict["name"] = ""
+        mh_dict["name"] = " "
+
+    elif mh_dict["name"][-1] != "/":
+        mh_dict["name"] += "/"
 
     pairs = [
         ("inj_dict", read_injector_dict),
@@ -229,7 +232,6 @@ class MinimisationHandler(object):
     def run(self, n_trials, scale=1., seed=None):
         pass
 
-
     @staticmethod
     def trial_params(mh_dict):
 
@@ -362,7 +364,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                             "Cannot save results without a unique directory"
                             " name being specified.")
 
+        print(scale)
+
         inj_dict = self.return_injected_parameters(scale)
+        print(inj_dict)
+        # print self.exp
 
         inj_dir = inj_dir_name(self.name)
 
@@ -942,17 +948,22 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     def return_injected_parameters(self, scale):
 
-        n_inj = 0
-        for source in self.sources:
-            name = source["source_name"]
+        # n_inj = 0
+        # for source in self.sources:
+        #     name = source["source_name"]
+        #
+        #     for inj in self.injectors.values():
+        #         print(inj)
+        #         try:
+        #             n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
+        #
+        #         # If source not overlapping season, will not be in dict
+        #         except KeyError:
+        #             pass
 
-            for inj in self.injectors.values():
-                try:
-                    n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
-
-                # If source not overlapping season, will not be in dict
-                except KeyError:
-                    pass
+        n_inj = 0.
+        for inj in self.injectors.values():
+            n_inj += np.sum(inj.n_exp["n_exp"] * scale)
 
         inj_params = {
             "n_s": n_inj

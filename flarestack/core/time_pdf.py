@@ -115,7 +115,8 @@ class TimePDF(object):
         min_int = self.product_integral(self.sig_t0(source), source)
         fraction = max_int - min_int
 
-        t_range = np.linspace(self.sig_t0(source), self.sig_t1(source), 1e4)
+        t_range = np.linspace(self.sig_t0(source), self.sig_t1(source),
+                              int(1e4))
         cumu = (self.product_integral(t_range, source) - min_int) / fraction
 
         # Checks to ensure the cumulative fraction spans 0 to 1

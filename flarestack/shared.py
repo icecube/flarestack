@@ -157,7 +157,7 @@ def llh_energy_hash_pickles(llh_dict, season):
     return SoB_path, acc_path
 
 
-band_mask_chunk_size = 500
+band_mask_chunk_size = 100
 
 
 def band_mask_hash_dir(catalogue):
@@ -170,15 +170,22 @@ def band_mask_cache_name(season, catalogue):
     print("Breaking catalogue into", n_chunks, "chunks of", band_mask_chunk_size)
 
     cats = []
+    mask_indices = []
+    source_indices = []
 
     for i in range(n_chunks):
         cat = catalogue[(i*band_mask_chunk_size):((i+1) * band_mask_chunk_size)]
         cats.append(cat)
+        mask_indices += [i for _ in range(band_mask_chunk_size)]
+        source_indices += [x for x in range(band_mask_chunk_size)]
 
     paths = [band_mask_hash_dir(cat) + season.sample_name + "/" +
              season.season_name + ".npz" for cat in cats]
 
-    return cats, paths
+    mask_indices = mask_indices[:len(catalogue)]
+    source_indices = source_indices[:len(catalogue)]
+
+    return cats, paths, mask_indices, source_indices
 
 
 def name_pickle_output_dir(name):
