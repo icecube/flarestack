@@ -3,7 +3,7 @@ It includes runs 125865-125867 with 2 dropped strings.
 """
 from flarestack.shared import dataset_dir
 from flarestack.data.icecube import IceCubeSeason, IceCubeDataset
-from flarestack.data.icecube.ps_tracks import ps_binning
+from flarestack.data.icecube.ps_tracks import get_ps_binning
 import numpy as np
 
 ps_data_dir = dataset_dir + "ps_tracks/version-003-p02/"
@@ -24,8 +24,8 @@ def old_ic_season(season):
         exp_path=ps_data_dir + "{0}_exp.npy".format(season),
         mc_path=ps_data_dir + "{0}_MC.npy".format(season),
         grl_path=grl_data_dir + "{0}_exp.npy".format(season),
-        sin_dec_bins=ps_binning[season][0],
-        log_e_bins=ps_binning[season][1]
+        sin_dec_bins=get_ps_binning(season)[0],
+        log_e_bins=get_ps_binning(season)[1]
     )
 
 
@@ -48,8 +48,8 @@ ic86_234567 = IceCubeSeason(
     grl_path=[
         grl_data_dir + "IC86_{0}_exp.npy".format(x) for x in new_years
     ],
-    sin_dec_bins=ps_binning["IC86"][0],
-    log_e_bins=ps_binning["IC86"][1]
+    sin_dec_bins=get_ps_binning("IC86")[0],
+    log_e_bins=get_ps_binning("IC86")[1]
 )
 
 ps_10year.add_season(ic86_234567)
@@ -64,8 +64,8 @@ def ic86_new_season(year):
         exp_path=ps_data_dir + "IC86_{0}_exp.npy".format(year),
         mc_path=ps_data_dir + "IC86_2012_MC.npy",
         grl_path=grl_data_dir + "IC86_{0}_exp.npy".format(year),
-        sin_dec_bins=ps_binning["IC86"][0],
-        log_e_bins=ps_binning["IC86"][1]
+        sin_dec_bins=get_ps_binning("IC86")[0],
+        log_e_bins=get_ps_binning("IC86")[1]
     )
 
 

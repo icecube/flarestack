@@ -37,3 +37,9 @@ ps_binning = {
     )
 }
 
+
+def get_ps_binning(season):
+    if "IC86" in season:
+        season = "IC86"
+    return ps_binning[season]
+
