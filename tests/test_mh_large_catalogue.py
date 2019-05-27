@@ -103,9 +103,6 @@ class TestTimeIntegrated(unittest.TestCase):
         print("Best fit values", list(res["x"]))
         print("Reference best fit", true_parameters[1])
 
-        from flarestack.cluster import analyse
-        analyse(mh_dict)
-
 
 if __name__ == '__main__':
     unittest.main()
