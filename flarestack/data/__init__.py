@@ -82,9 +82,7 @@ class Season:
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
         np.random.shuffle(data["time"])
-        return np.array(data[list(self.get_background_dtype().names)].copy(
-
-        ))[:,]
+        return np.array(data[list(self.get_background_dtype().names)].copy())[:,]
 
     def get_exp_data(self, **kwargs):
         return np.array(self.load_data(self.exp_path, **kwargs))

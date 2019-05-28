@@ -60,7 +60,7 @@ class PublicICSeason(SeasonWithoutMC):
 
         return lambda e: np.exp(map_f(np.log10(e)))
 
-    def plot_effective_area(self):
+    def plot_effective_area(self, show=False):
 
         savepath = eff_a_plot_dir + self.sample_name + "/" + self.season_name \
                    + ".pdf"
@@ -93,4 +93,7 @@ class PublicICSeason(SeasonWithoutMC):
         plt.xlabel(r"$E_{\nu}$")
         print("Saving to", savepath)
         plt.savefig(savepath)
-        plt.close()
+        if show:
+            plt.show()
+        else:
+            plt.close()
