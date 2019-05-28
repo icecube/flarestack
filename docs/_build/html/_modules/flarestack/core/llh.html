@@ -1,0 +1,1489 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>flarestack.core.llh &#8212; Flarestack 2.0-beta.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for flarestack.core.llh</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">object</span>
+<span class="kn">import</span> <span class="nn">numexpr</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">flarestack.core.astro</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.interpolate</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">sparse</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">flarestack.shared</span> <span class="k">import</span> <span class="n">acceptance_path</span><span class="p">,</span> <span class="n">llh_energy_hash_pickles</span><span class="p">,</span> \
+    <span class="n">SoB_spline_path</span><span class="p">,</span> <span class="n">bkg_spline_path</span>
+<span class="kn">from</span> <span class="nn">flarestack.core.time_pdf</span> <span class="k">import</span> <span class="n">TimePDF</span><span class="p">,</span> <span class="n">read_t_pdf_dict</span>
+<span class="kn">from</span> <span class="nn">flarestack.utils.make_SoB_splines</span> <span class="k">import</span> <span class="n">load_spline</span><span class="p">,</span> \
+    <span class="n">load_bkg_spatial_spline</span>
+<span class="kn">from</span> <span class="nn">flarestack.core.energy_pdf</span> <span class="k">import</span> <span class="n">EnergyPDF</span><span class="p">,</span> <span class="n">read_e_pdf_dict</span>
+<span class="kn">from</span> <span class="nn">flarestack.core.spatial_pdf</span> <span class="k">import</span> <span class="n">SpatialPDF</span>
+<span class="kn">from</span> <span class="nn">flarestack.utils.create_acceptance_functions</span> <span class="k">import</span> <span class="n">dec_range</span><span class="p">,</span>\
+    <span class="n">make_acceptance_season</span>
+<span class="kn">from</span> <span class="nn">flarestack.icecube_utils.dataset_loader</span> <span class="k">import</span> <span class="n">data_loader</span>
+<span class="kn">from</span> <span class="nn">flarestack.utils.make_SoB_splines</span> <span class="k">import</span> <span class="n">create_2d_ratio_hist</span><span class="p">,</span> \
+    <span class="n">make_2d_spline_from_hist</span><span class="p">,</span> \
+    <span class="n">make_background_spline</span><span class="p">,</span> <span class="n">make_individual_spline_set</span>
+
+
+<div class="viewcode-block" id="read_llh_dict"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.read_llh_dict">[docs]</a><span class="k">def</span> <span class="nf">read_llh_dict</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Ensures that llh dictionaries remain backwards-compatible</span>
+
+<span class="sd">    :param llh_dict: LLH Dictionary</span>
+<span class="sd">    :return: LLH Dictionary compatible with new format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">maps</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;llh_name&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;LLH Time PDF&quot;</span><span class="p">,</span> <span class="s2">&quot;llh_time_pdf&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;LLH Energy PDF&quot;</span><span class="p">,</span> <span class="s2">&quot;llh_energy_pdf&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;Fit Negative n_s?&quot;</span><span class="p">,</span> <span class="s2">&quot;negative_ns_bool&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">old_key</span><span class="p">,</span> <span class="n">new_key</span><span class="p">)</span> <span class="ow">in</span> <span class="n">maps</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">old_key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">llh_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">llh_dict</span><span class="p">[</span><span class="n">new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">llh_dict</span><span class="p">[</span><span class="n">old_key</span><span class="p">]</span>
+
+    <span class="n">pairs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;llh_energy_pdf&quot;</span><span class="p">,</span> <span class="n">read_e_pdf_dict</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;llh_time_pdf&quot;</span><span class="p">,</span> <span class="n">read_t_pdf_dict</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">llh_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">llh_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">llh_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="s2">&quot;llh_spatial_pdf&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">llh_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_spatial_pdf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">return</span> <span class="n">llh_dict</span></div>
+
+
+<div class="viewcode-block" id="LLH"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH">[docs]</a><span class="k">class</span> <span class="nc">LLH</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class LLH.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="LLH.__init__"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">season</span> <span class="o">=</span> <span class="n">season</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sources</span> <span class="o">=</span> <span class="n">sources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">llh_dict</span> <span class="o">=</span> <span class="n">llh_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pdf</span> <span class="o">=</span> <span class="n">SpatialPDF</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_spatial_pdf&quot;</span><span class="p">])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">time_dict</span> <span class="o">=</span> <span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_time_pdf&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time_pdf</span> <span class="o">=</span> <span class="n">TimePDF</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">time_dict</span><span class="p">,</span> <span class="n">season</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;No Time PDF specified. Please add an &#39;llh_time_pdf&#39;&quot;</span>
+                           <span class="s2">&quot; entry to the llh_dict, and try again. If &quot;</span>
+                           <span class="s2">&quot;you do not want time dependence in your &quot;</span>
+                           <span class="s2">&quot;likelihood, please specify a &#39;Steady&#39; Time PDF.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_spatial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_background_function</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceptance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_weight_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_energy_functions</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="LLH.register_subclass"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">llh_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a new subclass of EnergyPDF, with class name equal to</span>
+<span class="sd">        &quot;energy_pdf_name&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">llh_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="LLH.create"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">):</span>
+
+        <span class="n">llh_dict</span> <span class="o">=</span> <span class="n">read_llh_dict</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">)</span>
+        <span class="n">llh_name</span> <span class="o">=</span> <span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_name&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">llh_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad LLH name </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">llh_name</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">llh_name</span><span class="p">](</span><span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LLH.get_parameters"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.get_parameters">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">):</span>
+        <span class="n">llh_name</span> <span class="o">=</span> <span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_name&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">llh_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad LLH name </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">llh_name</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">llh_name</span><span class="p">]</span><span class="o">.</span><span class="n">return_llh_parameters</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LLH.get_injected_parameters"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.get_injected_parameters">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_injected_parameters</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mh_dict</span><span class="p">):</span>
+        <span class="n">llh_name</span> <span class="o">=</span> <span class="n">mh_dict</span><span class="p">[</span><span class="s2">&quot;llh_dict&quot;</span><span class="p">][</span><span class="s2">&quot;llh_name&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">llh_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad LLH name </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">llh_name</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">llh_name</span><span class="p">]</span><span class="o">.</span><span class="n">return_injected_parameters</span><span class="p">(</span><span class="n">mh_dict</span><span class="p">)</span></div>
+
+    <span class="c1"># ==========================================================================</span>
+    <span class="c1"># Signal PDF</span>
+    <span class="c1"># ==========================================================================</span>
+
+<div class="viewcode-block" id="LLH.signal_pdf"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.signal_pdf">[docs]</a>    <span class="k">def</span> <span class="nf">signal_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">cut_data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the value of the signal spatial PDF for a given source</span>
+<span class="sd">        for each event in the coincident data subsample. If there is a Time PDF</span>
+<span class="sd">        given, also calculates the value of the signal Time PDF for each event.</span>
+<span class="sd">        Returns either the signal spatial PDF values, or the product of the</span>
+<span class="sd">        signal spatial and time PDFs.</span>
+
+<span class="sd">        :param source: Source to be considered</span>
+<span class="sd">        :param cut_data: Subset of Dataset with coincident events</span>
+<span class="sd">        :return: Array of Signal Spacetime PDF values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">space_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pdf</span><span class="o">.</span><span class="n">signal_spatial</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cut_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;time_pdf&quot;</span><span class="p">):</span>
+            <span class="n">time_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_pdf</span><span class="o">.</span><span class="n">signal_f</span><span class="p">(</span><span class="n">cut_data</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">],</span> <span class="n">source</span><span class="p">)</span>
+
+            <span class="n">sig_pdf</span> <span class="o">=</span> <span class="n">space_term</span> <span class="o">*</span> <span class="n">time_term</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sig_pdf</span> <span class="o">=</span> <span class="n">space_term</span>
+
+        <span class="k">return</span> <span class="n">sig_pdf</span></div>
+
+    <span class="c1"># @staticmethod</span>
+    <span class="c1"># def signal_spatial(source, cut_data):</span>
+    <span class="c1">#     &quot;&quot;&quot;Calculates the angular distance between the source and the</span>
+    <span class="c1">#     coincident dataset. Uses a Gaussian PDF function, centered on the</span>
+    <span class="c1">#     source. Returns the value of the Gaussian at the given distances.</span>
+    <span class="c1">#</span>
+    <span class="c1">#     :param source: Single Source</span>
+    <span class="c1">#     :param cut_data: Subset of Dataset with coincident events</span>
+    <span class="c1">#     :return: Array of Spatial PDF values</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     distance = flarestack.core.astro.angular_distance(</span>
+    <span class="c1">#         cut_data[&#39;ra&#39;], cut_data[&#39;dec&#39;],</span>
+    <span class="c1">#         source[&#39;ra_rad&#39;], source[&#39;dec_rad&#39;]</span>
+    <span class="c1">#     )</span>
+    <span class="c1">#     space_term = (1. / (2. * np.pi * cut_data[&#39;sigma&#39;] ** 2.) *</span>
+    <span class="c1">#                   np.exp(-0.5 * (distance / cut_data[&#39;sigma&#39;]) ** 2.))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     return space_term</span>
+
+    <span class="c1"># ==========================================================================</span>
+    <span class="c1"># Background PDF</span>
+    <span class="c1"># ==========================================================================</span>
+
+<div class="viewcode-block" id="LLH.background_pdf"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.background_pdf">[docs]</a>    <span class="k">def</span> <span class="nf">background_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">cut_data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the value of the background spatial PDF for a given</span>
+<span class="sd">        source for each event in the coincident data subsample. Thus is done</span>
+<span class="sd">        by calling the self.bkg_spline spline function, which was fitted to</span>
+<span class="sd">        the Sin(Declination) distribution of the data.</span>
+
+<span class="sd">        If there is a signal Time PDF given, then the background time PDF</span>
+<span class="sd">        is also calculated for each event. This is assumed to be a normalised</span>
+<span class="sd">        uniform distribution for the season.</span>
+
+<span class="sd">        Returns either the background spatial PDF values, or the product of the</span>
+<span class="sd">        background spatial and time PDFs.</span>
+
+<span class="sd">        :param source: Source to be considered</span>
+<span class="sd">        :param cut_data: Subset of Dataset with coincident events</span>
+<span class="sd">        :return: Array of Background Spacetime PDF values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">space_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">background_spatial</span><span class="p">(</span><span class="n">cut_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;time_pdf&quot;</span><span class="p">):</span>
+            <span class="n">time_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_pdf</span><span class="o">.</span><span class="n">background_f</span><span class="p">(</span><span class="n">cut_data</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">],</span> <span class="n">source</span><span class="p">)</span>
+
+            <span class="n">sig_pdf</span> <span class="o">=</span> <span class="n">space_term</span> <span class="o">*</span> <span class="n">time_term</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sig_pdf</span> <span class="o">=</span> <span class="n">space_term</span>
+
+        <span class="k">return</span> <span class="n">sig_pdf</span></div>
+
+<div class="viewcode-block" id="LLH.background_spatial"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.background_spatial">[docs]</a>    <span class="k">def</span> <span class="nf">background_spatial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_data</span><span class="p">):</span>
+        <span class="n">space_term</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_spatial</span><span class="p">(</span><span class="n">cut_data</span><span class="p">[</span><span class="s2">&quot;sinDec&quot;</span><span class="p">]))</span>
+        <span class="c1"># space_term = (1 / (4 * np.pi))</span>
+        <span class="k">return</span> <span class="n">space_term</span></div>
+
+    <span class="c1"># def acceptance(self, source, params=None):</span>
+    <span class="c1">#     &quot;&quot;&quot;Calculates the detector acceptance for a given source, using the</span>
+    <span class="c1">#     1D interpolation of the acceptance as a function of declination based</span>
+    <span class="c1">#     on the IC data rate. This is a crude estimation.</span>
+    <span class="c1">#</span>
+    <span class="c1">#     :param source: Source to be considered</span>
+    <span class="c1">#     :param params: Parameter array</span>
+    <span class="c1">#     :return: Value for the acceptance of the detector, in the given</span>
+    <span class="c1">#     season, for the source</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     return self.acceptance_f(source, params)</span>
+
+<div class="viewcode-block" id="LLH.create_background_function"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.create_background_function">[docs]</a>    <span class="k">def</span> <span class="nf">create_background_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># Checks if background spatial spline has been created</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">bkg_spline_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="o">.</span><span class="n">make_background_spatial</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">load_bkg_spatial_spline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LLH.create_energy_functions"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.create_energy_functions">[docs]</a>    <span class="k">def</span> <span class="nf">create_energy_functions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the acceptance function, which parameterises signal</span>
+<span class="sd">        acceptance as a function of declination, and the energy weighting</span>
+<span class="sd">        function, which gives the energy signal-over-background ratio</span>
+
+<span class="sd">        :return: Acceptance function, energy_weighting_function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">acc_f</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">1.</span>
+
+        <span class="k">def</span> <span class="nf">energy_weight_f</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">1.</span>
+
+        <span class="k">return</span> <span class="n">acc_f</span><span class="p">,</span> <span class="n">energy_weight_f</span></div>
+
+<div class="viewcode-block" id="LLH.select_spatially_coincident_data"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.select_spatially_coincident_data">[docs]</a>    <span class="k">def</span> <span class="nf">select_spatially_coincident_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sources</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks each source, and only identifies events in data which are</span>
+<span class="sd">        both spatially and time-coincident with the source. Spatial</span>
+<span class="sd">        coincidence is defined as a +/- 5 degree box centered on the  given</span>
+<span class="sd">        source. Time coincidence is determined by the parameters of the LLH</span>
+<span class="sd">        Time PDF. Produces a mask for the dataset, which removes all events</span>
+<span class="sd">        which are not coincident with at least one source.</span>
+
+<span class="sd">        :param data: Dataset to be tested</span>
+<span class="sd">        :param sources: Sources to be tested</span>
+<span class="sd">        :return: Mask to remove</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">veto</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+
+            <span class="c1"># Sets half width of spatial box</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">5.</span><span class="p">)</span>
+
+            <span class="c1"># Sets a declination band 5 degrees above and below the source</span>
+            <span class="n">min_dec</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">source</span><span class="p">[</span><span class="s1">&#39;dec_rad&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">width</span><span class="p">)</span>
+            <span class="n">max_dec</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">source</span><span class="p">[</span><span class="s1">&#39;dec_rad&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">width</span><span class="p">)</span>
+
+            <span class="c1"># Accepts events lying within a 5 degree band of the source</span>
+            <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">greater</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">],</span> <span class="n">min_dec</span><span class="p">),</span>
+                                      <span class="n">np</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">],</span> <span class="n">max_dec</span><span class="p">))</span>
+
+            <span class="c1"># Sets the minimum value of cos(dec)</span>
+            <span class="n">cos_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">([</span><span class="n">min_dec</span><span class="p">,</span> <span class="n">max_dec</span><span class="p">]))</span>
+
+            <span class="c1"># Scales the width of the box in ra, to give a roughly constant</span>
+            <span class="c1"># area. However, if the width would have to be greater that +/- pi,</span>
+            <span class="c1"># then sets the area to be exactly 2 pi.</span>
+            <span class="n">dPhi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">([</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">width</span> <span class="o">/</span> <span class="n">cos_factor</span><span class="p">])</span>
+
+            <span class="c1"># Accounts for wrapping effects at ra=0, calculates the distance</span>
+            <span class="c1"># of each event to the source.</span>
+            <span class="n">ra_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">source</span><span class="p">[</span><span class="s1">&#39;ra_rad&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+            <span class="n">ra_mask</span> <span class="o">=</span> <span class="n">ra_dist</span> <span class="o">&lt;</span> <span class="n">dPhi</span> <span class="o">/</span> <span class="mf">2.</span>
+
+            <span class="n">spatial_mask</span> <span class="o">=</span> <span class="n">dec_mask</span> <span class="o">&amp;</span> <span class="n">ra_mask</span>
+
+            <span class="n">veto</span> <span class="o">=</span> <span class="n">veto</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">spatial_mask</span>
+
+        <span class="k">return</span> <span class="o">~</span><span class="n">veto</span></div>
+
+<div class="viewcode-block" id="LLH.assume_background"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.assume_background">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">assume_background</span><span class="p">(</span><span class="n">n_s</span><span class="p">,</span> <span class="n">n_coincident</span><span class="p">,</span> <span class="n">n_all</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;To save time with likelihood calculation, it can be assumed that</span>
+<span class="sd">        all events defined as &quot;non-coincident&quot;, because of distance in space</span>
+<span class="sd">        and time to the source, are in fact background events. This is</span>
+<span class="sd">        equivalent to setting S=0 for all non-coincident events. IN this</span>
+<span class="sd">        case, the likelihood can be calculated as the product of the number</span>
+<span class="sd">        of non-coincident events, and the likelihood of an event which has S=0.</span>
+
+<span class="sd">        :param n_s: Array of expected number of events</span>
+<span class="sd">        :param n_coincident: Number of events that were not assumed to have S=0</span>
+<span class="sd">        :param n_all: The total number of events</span>
+<span class="sd">        :return: Log Likelihood value for the given</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">n_all</span> <span class="o">-</span> <span class="n">n_coincident</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="o">-</span><span class="n">n_s</span> <span class="o">/</span> <span class="n">n_all</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LLH.create_kwargs"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.create_kwargs">[docs]</a>    <span class="k">def</span> <span class="nf">create_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">,</span> <span class="n">weight_f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">kwargs</span></div>
+
+<div class="viewcode-block" id="LLH.create_llh_function"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.create_llh_function">[docs]</a>    <span class="k">def</span> <span class="nf">create_llh_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">,</span> <span class="n">weight_f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a likelihood function to minimise, based on the dataset.</span>
+
+<span class="sd">        :param data: Dataset</span>
+<span class="sd">        :return: LLH function that can be minimised</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_kwargs</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">,</span> <span class="n">weight_f</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">test_statistic</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_test_statistic</span><span class="p">(</span>
+                <span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">test_statistic</span></div>
+
+<div class="viewcode-block" id="LLH.calculate_test_statistic"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.calculate_test_statistic">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_test_statistic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="LLH.return_llh_parameters"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.return_llh_parameters">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">return_llh_parameters</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">):</span>
+        <span class="n">seeds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">return</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">bounds</span></div>
+
+<div class="viewcode-block" id="LLH.return_injected_parameters"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.LLH.return_injected_parameters">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">return_injected_parameters</span><span class="p">(</span><span class="n">mh_dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span></div></div>
+
+
+<div class="viewcode-block" id="SpatialLLH"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.SpatialLLH">[docs]</a><span class="nd">@LLH</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;spatial&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">SpatialLLH</span><span class="p">(</span><span class="n">LLH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Most basic LLH, in which only spatial, and optionally also temporal,</span>
+<span class="sd">    information is included. No Energy PDF is used, and no energy weighting</span>
+<span class="sd">    is applied.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fit_energy</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="SpatialLLH.__init__"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.SpatialLLH.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">):</span>
+        <span class="n">LLH</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;energy_pdf_name&quot;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_energy_pdf&quot;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Found &#39;llh_energy_pdf&#39; entry in llh_dict, &quot;</span>
+                            <span class="s2">&quot;but SpatialLLH does not use Energy PDFs. </span><span class="se">\n</span><span class="s2">&quot;</span>
+                            <span class="s2">&quot;Please remove this entry, and try again.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SpatialLLH.create_energy_function"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.SpatialLLH.create_energy_function">[docs]</a>    <span class="k">def</span> <span class="nf">create_energy_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;In the most simple case of spatial-only weighting, you would</span>
+<span class="sd">        neglect the energy weighting of events. Then, you can simply assume</span>
+<span class="sd">        that the detector acceptance is roughly proportional to the data rate,</span>
+<span class="sd">        i.e assuming that the incident background atmospheric neutrino flux</span>
+<span class="sd">        is uniform. Thus the acceptance of the detector is simply the</span>
+<span class="sd">        background spatial PDF (which is a spline fitted to data as a</span>
+<span class="sd">        function of declination). This method does, admittedly neglect the</span>
+<span class="sd">        fact that background in the southern hemisphere is mainly composed of</span>
+<span class="sd">        muon bundles, rather than atmospheric neutrinos. Still, it&#39;s slighty</span>
+<span class="sd">        better than assuming a uniform detector acceptance</span>
+
+<span class="sd">        :return: 1D linear interpolation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="n">data_loader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">[</span><span class="s2">&quot;exp_path&quot;</span><span class="p">])</span>
+        <span class="n">data_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">))</span>
+        <span class="k">del</span> <span class="n">exp</span>
+
+        <span class="c1"># return lambda x: data_rate</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bkg_spatial</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span> <span class="o">*</span> <span class="n">data_rate</span></div>
+
+<div class="viewcode-block" id="SpatialLLH.create_llh_function"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.SpatialLLH.create_llh_function">[docs]</a>    <span class="k">def</span> <span class="nf">create_llh_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">,</span> <span class="n">weight_f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a likelihood function to minimise, based on the dataset.</span>
+
+<span class="sd">        :param data: Dataset</span>
+<span class="sd">        :param pull_corrector: pull_corrector</span>
+<span class="sd">        :return: LLH function that can be minimised</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_all</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">SoB_spacetime</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">assumed_bkg_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">source</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sources</span><span class="p">):</span>
+
+            <span class="n">s_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_spatially_coincident_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="n">source</span><span class="p">])</span>
+
+            <span class="n">assumed_bkg_mask</span> <span class="o">*=</span> <span class="o">~</span><span class="n">s_mask</span>
+            <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+                <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">)</span>
+
+                <span class="n">bkg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">))</span>
+
+                <span class="n">SoB_spacetime</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sig</span> <span class="o">/</span> <span class="n">bkg</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">sig</span>
+                <span class="k">del</span> <span class="n">bkg</span>
+
+        <span class="n">n_coincident</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">assumed_bkg_mask</span><span class="p">)</span>
+
+        <span class="n">SoB_spacetime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">SoB_spacetime</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">test_statistic</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_test_statistic</span><span class="p">(</span>
+                <span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">n_all</span><span class="o">=</span><span class="n">n_all</span><span class="p">,</span> <span class="n">n_coincident</span><span class="o">=</span><span class="n">n_coincident</span><span class="p">,</span>
+                <span class="n">SoB_spacetime</span><span class="o">=</span><span class="n">SoB_spacetime</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">test_statistic</span></div>
+
+<div class="viewcode-block" id="SpatialLLH.calculate_test_statistic"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.SpatialLLH.calculate_test_statistic">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_test_statistic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the test statistic, given the parameters. Uses numexpr</span>
+<span class="sd">        for faster calculations.</span>
+
+<span class="sd">        :param params: Parameters from Minimisation</span>
+<span class="sd">        :param weights: Normalised fraction of n_s allocated to each source</span>
+<span class="sd">        :return: 2 * llh value (Equal to Test Statistic)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">n_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># Calculates the expected number of signal events for each source in</span>
+        <span class="c1"># the season</span>
+        <span class="n">all_n_j</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_s</span> <span class="o">*</span> <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n_j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_n_j</span><span class="p">):</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_j</span> <span class="o">/</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span> <span class="o">*</span>
+                          <span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_spacetime&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x_row</span> <span class="o">&lt;=</span> <span class="mf">0.</span><span class="p">)</span> <span class="k">for</span> <span class="n">x_row</span> <span class="ow">in</span> <span class="n">x</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">llh_value</span> <span class="o">=</span> <span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">llh_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">y</span><span class="p">))</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="p">])</span>
+
+            <span class="n">llh_value</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assume_background</span><span class="p">(</span>
+                <span class="n">all_n_j</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_coincident&quot;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">all_n_j</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span>
+                              <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">llh_value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span><span class="p">)):</span>
+                <span class="n">llh_value</span> <span class="o">=</span> <span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span>
+
+        <span class="c1"># Definition of test statistic</span>
+        <span class="k">return</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">llh_value</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="FixedEnergyLLH"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.FixedEnergyLLH">[docs]</a><span class="nd">@LLH</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;fixed_energy&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">FixedEnergyLLH</span><span class="p">(</span><span class="n">LLH</span><span class="p">):</span>
+
+    <span class="n">fit_energy</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="FixedEnergyLLH.__init__"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.FixedEnergyLLH.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">):</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">e_pdf_dict</span> <span class="o">=</span> <span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_energy_pdf&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">energy_pdf</span> <span class="o">=</span> <span class="n">EnergyPDF</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">e_pdf_dict</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;LLH with energy term selected, but no energy PDF &quot;</span>
+                           <span class="s2">&quot;has been provided. Please add an &#39;llh_energy_pdf&#39; &quot;</span>
+                           <span class="s2">&quot;dictionary to the LLH dictionary, and try &quot;</span>
+                           <span class="s2">&quot;again.&quot;</span><span class="p">)</span>
+
+        <span class="n">LLH</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FixedEnergyLLH.create_energy_functions"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.FixedEnergyLLH.create_energy_functions">[docs]</a>    <span class="k">def</span> <span class="nf">create_energy_functions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the acceptance function, which parameterises signal</span>
+<span class="sd">        acceptance as a function of declination, and the energy weighting</span>
+<span class="sd">        function, which gives the energy signal-over-background ratio</span>
+
+<span class="sd">        :return: Acceptance function, energy_weighting_function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">SoB_path</span><span class="p">,</span> <span class="n">acc_path</span> <span class="o">=</span> <span class="n">llh_energy_hash_pickles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">llh_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)</span>
+
+        <span class="c1"># Set up acceptance function, creating values if they have not been</span>
+        <span class="c1"># created before</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">acc_path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_acceptance_function</span><span class="p">(</span><span class="n">acc_path</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading from&quot;</span><span class="p">,</span> <span class="n">acc_path</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">acc_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">dec_vals</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="n">acc_spline</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">dec_vals</span><span class="p">,</span> <span class="n">acc</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">acc_f</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">acc_spline</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="s2">&quot;dec_rad&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Sets up energy weighting function, creating values if they have not</span>
+        <span class="c1"># been created before</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">SoB_path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_energy_weighting_function</span><span class="p">(</span><span class="n">SoB_path</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading from&quot;</span><span class="p">,</span> <span class="n">SoB_path</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">SoB_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">dec_vals</span><span class="p">,</span> <span class="n">ratio_hist</span><span class="p">]</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="n">spline</span> <span class="o">=</span> <span class="n">make_2d_spline_from_hist</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ratio_hist</span><span class="p">),</span> <span class="n">dec_vals</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="o">.</span><span class="n">log_e_bins</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">energy_weight_f</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">spline</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s2">&quot;logE&quot;</span><span class="p">],</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;sinDec&quot;</span><span class="p">],</span> <span class="n">grid</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">acc_f</span><span class="p">,</span> <span class="n">energy_weight_f</span></div>
+
+<div class="viewcode-block" id="FixedEnergyLLH.create_acceptance_function"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.FixedEnergyLLH.create_acceptance_function">[docs]</a>    <span class="k">def</span> <span class="nf">create_acceptance_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acc_path</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building acceptance functions in sin(dec) bins &quot;</span> \
+              <span class="s2">&quot;(with fixed energy weighting)&quot;</span><span class="p">)</span>
+
+        <span class="n">mc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="o">.</span><span class="n">get_pseudo_mc</span><span class="p">()</span>
+
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">dec_range</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dec_range</span><span class="p">):</span>
+
+            <span class="c1"># Sets half width of band</span>
+            <span class="n">dec_width</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">5.</span><span class="p">)</span>
+
+            <span class="c1"># Sets a declination band 5 degrees above and below the source</span>
+            <span class="n">min_dec</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">dec</span> <span class="o">-</span> <span class="n">dec_width</span><span class="p">)</span>
+            <span class="n">max_dec</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">dec</span> <span class="o">+</span> <span class="n">dec_width</span><span class="p">)</span>
+            <span class="c1"># Gives the solid angle coverage of the sky for the band</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">max_dec</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">min_dec</span><span class="p">))</span>
+
+            <span class="n">band_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">greater</span><span class="p">(</span><span class="n">mc</span><span class="p">[</span><span class="s2">&quot;trueDec&quot;</span><span class="p">],</span> <span class="n">min_dec</span><span class="p">),</span>
+                                       <span class="n">np</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">mc</span><span class="p">[</span><span class="s2">&quot;trueDec&quot;</span><span class="p">],</span> <span class="n">max_dec</span><span class="p">))</span>
+
+            <span class="n">cut_mc</span> <span class="o">=</span> <span class="n">mc</span><span class="p">[</span><span class="n">band_mask</span><span class="p">]</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_pdf</span><span class="o">.</span><span class="n">weight_mc</span><span class="p">(</span><span class="n">cut_mc</span><span class="p">)</span>
+            <span class="n">acc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span> <span class="o">/</span> <span class="n">omega</span><span class="p">)</span>
+
+        <span class="k">del</span> <span class="n">mc</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">acc_path</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving to&quot;</span><span class="p">,</span> <span class="n">acc_path</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">acc_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">([</span><span class="n">dec_range</span><span class="p">,</span> <span class="n">acc</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">f</span></div>
+
+<div class="viewcode-block" id="FixedEnergyLLH.create_energy_weighting_function"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.FixedEnergyLLH.create_energy_weighting_function">[docs]</a>    <span class="k">def</span> <span class="nf">create_energy_weighting_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">SoB_path</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building energy-weighting functions in sin(dec) vs log E bins &quot;</span> \
+              <span class="s2">&quot;(with fixed energy weighting)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># dec_range = self.season[&quot;sinDec bins&quot;]</span>
+
+        <span class="n">ratio_hist</span> <span class="o">=</span> <span class="n">create_2d_ratio_hist</span><span class="p">(</span>
+            <span class="n">exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="o">.</span><span class="n">get_background_model</span><span class="p">(),</span>
+            <span class="n">mc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="o">.</span><span class="n">get_pseudo_mc</span><span class="p">(),</span>
+            <span class="n">sin_dec_bins</span><span class="o">=</span><span class="n">dec_range</span><span class="p">,</span>
+            <span class="n">log_e_bins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="o">.</span><span class="n">log_e_bins</span><span class="p">,</span>
+            <span class="n">weight_function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_pdf</span><span class="o">.</span><span class="n">weight_mc</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">SoB_path</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">SoB_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">([</span><span class="n">dec_range</span><span class="p">,</span> <span class="n">ratio_hist</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">f</span></div>
+
+<div class="viewcode-block" id="FixedEnergyLLH.create_kwargs"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.FixedEnergyLLH.create_kwargs">[docs]</a>    <span class="k">def</span> <span class="nf">create_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">,</span> <span class="n">weight_f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a likelihood function to minimise, based on the dataset.</span>
+
+<span class="sd">        :param data: Dataset</span>
+<span class="sd">        :return: LLH function that can be minimised</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">SoB</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">assumed_bkg_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">source</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sources</span><span class="p">):</span>
+
+            <span class="n">s_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_spatially_coincident_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="n">source</span><span class="p">])</span>
+
+            <span class="n">assumed_bkg_mask</span> <span class="o">*=</span> <span class="o">~</span><span class="n">s_mask</span>
+            <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+                <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">)</span>
+                <span class="n">bkg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">))</span>
+
+                <span class="n">SoB_energy_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_weight_f</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span>
+
+                <span class="n">SoB</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SoB_energy_ratio</span> <span class="o">*</span> <span class="n">sig</span> <span class="o">/</span> <span class="n">bkg</span><span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_coincident&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">assumed_bkg_mask</span><span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">SoB</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">kwargs</span></div>
+
+
+<div class="viewcode-block" id="FixedEnergyLLH.calculate_test_statistic"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.FixedEnergyLLH.calculate_test_statistic">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_test_statistic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the test statistic, given the parameters. Uses numexpr</span>
+<span class="sd">        for faster calculations.</span>
+
+<span class="sd">        :param params: Parameters from Minimisation</span>
+<span class="sd">        :param weights: Normalised fraction of n_s allocated to each source</span>
+<span class="sd">        :return: 2 * llh value (Equal to Test Statistic)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># Calculates the expected number of signal events for each source in</span>
+        <span class="c1"># the season</span>
+        <span class="n">all_n_j</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_s</span> <span class="o">*</span> <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n_j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_n_j</span><span class="p">):</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_j</span> <span class="o">/</span>  <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span> <span class="o">*</span>
+                          <span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x_row</span> <span class="o">&lt;=</span> <span class="mf">0.</span><span class="p">)</span> <span class="k">for</span> <span class="n">x_row</span> <span class="ow">in</span> <span class="n">x</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">llh_value</span> <span class="o">=</span> <span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">llh_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">y</span><span class="p">))</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="p">])</span>
+
+            <span class="n">llh_value</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assume_background</span><span class="p">(</span>
+                <span class="n">all_n_j</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_coincident&quot;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">all_n_j</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span>
+                              <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">llh_value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span><span class="p">)):</span>
+                <span class="n">llh_value</span> <span class="o">=</span> <span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span>
+
+        <span class="c1"># Definition of test statistic</span>
+        <span class="k">return</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">llh_value</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="StandardLLH"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH">[docs]</a><span class="nd">@LLH</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;standard&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">StandardLLH</span><span class="p">(</span><span class="n">FixedEnergyLLH</span><span class="p">):</span>
+
+    <span class="n">fit_energy</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="StandardLLH.__init__"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">):</span>
+
+        <span class="n">FixedEnergyLLH</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">)</span>
+
+        <span class="c1"># Bins for energy Log(E/GeV)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">,</span> <span class="mi">40</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Sets precision for energy SoB</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precision</span> <span class="o">=</span> <span class="o">.</span><span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">SoB_spline_2Ds</span> <span class="o">=</span> <span class="n">load_spline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loaded&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SoB_spline_2Ds</span><span class="p">),</span> <span class="s2">&quot;Splines.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceptance_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_acceptance_function</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceptance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_acceptance</span></div>
+
+        <span class="c1"># self.SoB_energy_cache = []</span>
+
+    <span class="k">def</span> <span class="nf">_around</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Produces an array in which the precision of the value</span>
+<span class="sd">        is rounded to the nearest integer. This is then multiplied</span>
+<span class="sd">        by the precision, and the new value is returned.</span>
+
+<span class="sd">        :param value: value to be processed</span>
+<span class="sd">        :return: value after processed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span>
+
+<div class="viewcode-block" id="StandardLLH.create_energy_functions"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.create_energy_functions">[docs]</a>    <span class="k">def</span> <span class="nf">create_energy_functions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the acceptance function, which parameterises signal</span>
+<span class="sd">        acceptance as a function of declination, and the energy weighting</span>
+<span class="sd">        function, which gives the energy signal-over-background ratio</span>
+
+<span class="sd">        :return: Acceptance function, energy_weighting_function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">SoB_path</span> <span class="o">=</span> <span class="n">SoB_spline_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)</span>
+        <span class="n">acc_path</span> <span class="o">=</span> <span class="n">acceptance_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)</span>
+
+        <span class="c1"># Set up acceptance function, creating values if they have not been</span>
+        <span class="c1"># created before</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">acc_path</span><span class="p">):</span>
+            <span class="n">make_acceptance_season</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">,</span> <span class="n">acc_path</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading from&quot;</span><span class="p">,</span> <span class="n">acc_path</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">acc_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">dec_bins</span><span class="p">,</span> <span class="n">gamma_bins</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># acc_spline = scipy.interpolate.interp2d(</span>
+        <span class="c1">#     dec_bins, gamma_bins, np.array(acc).T, kind=&#39;linear&#39;)</span>
+        <span class="c1">#</span>
+        <span class="c1"># def acc_f(source, params):</span>
+        <span class="c1">#     return acc_spline(source[&quot;dec_rad&quot;], params[-1])</span>
+
+        <span class="n">acc_f</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Checks if energy weighting functions have been created</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">SoB_path</span><span class="p">):</span>
+            <span class="n">make_individual_spline_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">,</span> <span class="n">SoB_path</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">acc_f</span><span class="p">,</span> <span class="kc">None</span></div>
+
+    <span class="c1"># def create_acceptance_function(self, acc_path):</span>
+    <span class="c1">#     &quot;&quot;&quot;Creates a 2D linear interpolation of the acceptance of the detector</span>
+    <span class="c1">#     for the given season, as a function of declination and gamma. Returns</span>
+    <span class="c1">#     this interpolation function.</span>
+    <span class="c1">#</span>
+    <span class="c1">#     :return: 2D linear interpolation</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # acc_path = acceptance_path(self.season)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     with open(acc_path) as f:</span>
+    <span class="c1">#         acc_dict = pickle.load(f)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     dec_bins = acc_dict[&quot;dec&quot;]</span>
+    <span class="c1">#     gamma_bins = acc_dict[&quot;gamma&quot;]</span>
+    <span class="c1">#     values = acc_dict[&quot;acceptance&quot;]</span>
+    <span class="c1">#     f = scipy.interpolate.interp2d(</span>
+    <span class="c1">#         dec_bins, gamma_bins, values.T, kind=&#39;linear&#39;)</span>
+    <span class="c1">#     return f</span>
+
+<div class="viewcode-block" id="StandardLLH.create_acceptance_function"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.create_acceptance_function">[docs]</a>    <span class="k">def</span> <span class="nf">create_acceptance_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a 2D linear interpolation of the acceptance of the detector</span>
+<span class="sd">        for the given season, as a function of declination and gamma. Returns</span>
+<span class="sd">        this interpolation function.</span>
+
+<span class="sd">        :return: 2D linear interpolation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">acc_path</span> <span class="o">=</span> <span class="n">acceptance_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">acc_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">dec_bins</span><span class="p">,</span> <span class="n">gamma_bins</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp2d</span><span class="p">(</span>
+            <span class="n">dec_bins</span><span class="p">,</span> <span class="n">gamma_bins</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span></div>
+
+<div class="viewcode-block" id="StandardLLH.new_acceptance"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.new_acceptance">[docs]</a>    <span class="k">def</span> <span class="nf">new_acceptance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the detector acceptance for a given source, using the</span>
+<span class="sd">        2D interpolation of the acceptance as a function of declination and</span>
+<span class="sd">        gamma. If gamma IS NOT being fit, uses the default value of gamma for</span>
+<span class="sd">        weighting (determined in __init__). If gamma IS being fit, it will be</span>
+<span class="sd">        the last entry in the parameter array, and is the acceptance uses</span>
+<span class="sd">        this value.</span>
+
+<span class="sd">        :param source: Source to be considered</span>
+<span class="sd">        :param params: Parameter array</span>
+<span class="sd">        :return: Value for the acceptance of the detector, in the given</span>
+<span class="sd">        season, for the source</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="s2">&quot;dec_rad&quot;</span><span class="p">]</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">acceptance_f</span><span class="p">(</span><span class="n">dec</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StandardLLH.create_kwargs"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.create_kwargs">[docs]</a>    <span class="k">def</span> <span class="nf">create_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">,</span> <span class="n">weight_f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">SoB_spacetime</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">SoB_energy_cache</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">assumed_background_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">source</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sources</span><span class="p">):</span>
+
+            <span class="n">s_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_spatially_coincident_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="n">source</span><span class="p">])</span>
+
+            <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Only bother accepting neutrinos where the spatial</span>
+                <span class="c1"># likelihood is greater than 1e-21. This prevents 0s</span>
+                <span class="c1"># appearing in dynamic pull corrections, but also speeds</span>
+                <span class="c1"># things up (those neutrinos won&#39;t contribute anything to the</span>
+                <span class="c1"># likelihood!)</span>
+
+                <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">)</span>
+                <span class="n">nonzero_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">sig</span> <span class="o">&gt;</span> <span class="mf">1e-21</span><span class="p">)</span>
+
+                <span class="n">s_mask</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">nonzero_mask</span>
+
+                <span class="n">assumed_background_mask</span> <span class="o">*=</span> <span class="o">~</span><span class="n">s_mask</span>
+                <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+                    <span class="n">SoB_pdf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">/</span> \
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">background_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+                    <span class="n">spatial_cache</span> <span class="o">=</span> <span class="n">pull_corrector</span><span class="o">.</span><span class="n">create_spatial_cache</span><span class="p">(</span>
+                        <span class="n">coincident_data</span><span class="p">,</span> <span class="n">SoB_pdf</span>
+                    <span class="p">)</span>
+
+                    <span class="n">SoB_spacetime</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spatial_cache</span><span class="p">)</span>
+
+                    <span class="n">energy_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_SoB_energy_cache</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span>
+
+                    <span class="n">SoB_energy_cache</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">energy_cache</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">SoB_spacetime</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                    <span class="n">SoB_energy_cache</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">SoB_spacetime</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                <span class="n">SoB_energy_cache</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_coincident&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">assumed_background_mask</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_spacetime_cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">SoB_spacetime</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_energy_cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SoB_energy_cache</span>
+        <span class="c1"># self.SoB_energy_cache = SoB_energy_cache</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pull_corrector&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pull_corrector</span>
+
+        <span class="k">return</span> <span class="n">kwargs</span></div>
+
+<div class="viewcode-block" id="StandardLLH.calculate_test_statistic"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.calculate_test_statistic">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_test_statistic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the test statistic, given the parameters. Uses numexpr</span>
+<span class="sd">        for faster calculations.</span>
+
+<span class="sd">        :param params: Parameters from Minimisation</span>
+<span class="sd">        :param weights: Normalised fraction of n_s allocated to each source</span>
+<span class="sd">        :return: 2 * llh value (Equal to Test Statistic)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">params</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Calculates the expected number of signal events for each source in</span>
+        <span class="c1"># the season</span>
+        <span class="n">all_n_j</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_s</span> <span class="o">*</span> <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># If n_s if negative, then removes the energy term from the likelihood</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n_j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_n_j</span><span class="p">):</span>
+
+            <span class="n">SoB_spacetime</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_spacetime_cache&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># Switches off Energy term for negative n_s, which should in theory</span>
+            <span class="c1"># be a continuous change that does not alter the likelihood for</span>
+            <span class="c1"># n_s &gt; 0 (as it is not included for n_s=0).</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">SoB_spacetime</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]))</span>
+
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="n">SoB_spacetime</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pull_corrector&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">estimate_spatial</span><span class="p">(</span>
+                    <span class="n">gamma</span><span class="p">,</span> <span class="n">SoB_spacetime</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">n_j</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_j</span> <span class="o">/</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span>
+                            <span class="n">SoB_spacetime</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+
+                <span class="k">else</span><span class="p">:</span>
+
+                    <span class="n">SoB_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_energy_weights</span><span class="p">(</span>
+                            <span class="n">gamma</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_energy_cache&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+
+                    <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="p">((</span><span class="n">n_j</span> <span class="o">/</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span>
+                            <span class="p">(</span><span class="n">SoB_energy</span> <span class="o">*</span> <span class="n">SoB_spacetime</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x_row</span> <span class="o">&lt;=</span> <span class="mf">0.</span><span class="p">)</span> <span class="k">for</span> <span class="n">x_row</span> <span class="ow">in</span> <span class="n">x</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">llh_value</span> <span class="o">=</span> <span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">llh_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">y</span><span class="p">))</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="p">])</span>
+
+            <span class="n">llh_value</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assume_background</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">all_n_j</span><span class="p">),</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_coincident&quot;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">]))</span>
+
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">all_n_j</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span>
+                              <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">llh_value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span><span class="p">)):</span>
+                <span class="n">llh_value</span> <span class="o">=</span> <span class="o">-</span><span class="mf">50.</span> <span class="o">+</span> <span class="n">all_n_j</span>
+
+        <span class="c1"># Definition of test statistic</span>
+        <span class="k">return</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">llh_value</span><span class="p">)</span></div>
+
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Energy Log(Signal/Background) Ratio</span>
+<span class="c1"># ==============================================================================</span>
+
+<div class="viewcode-block" id="StandardLLH.create_SoB_energy_cache"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.create_SoB_energy_cache">[docs]</a>    <span class="k">def</span> <span class="nf">create_SoB_energy_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluates the Log(Signal/Background) values for all coincident</span>
+<span class="sd">        data. For each value of gamma in self.gamma_support_points, calculates</span>
+<span class="sd">        the Log(Signal/Background) values for the coincident data. Then saves</span>
+<span class="sd">        each weight array to a dictionary.</span>
+
+<span class="sd">        :param cut_data: Subset of the data containing only coincident events</span>
+<span class="sd">        :return: Dictionary containing SoB values for each event for each</span>
+<span class="sd">        gamma value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">energy_SoB_cache</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">gamma</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SoB_spline_2Ds</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">energy_SoB_cache</span><span class="p">[</span><span class="n">gamma</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SoB_spline_2Ds</span><span class="p">[</span><span class="n">gamma</span><span class="p">]</span><span class="o">.</span><span class="n">ev</span><span class="p">(</span>
+                <span class="n">cut_data</span><span class="p">[</span><span class="s2">&quot;logE&quot;</span><span class="p">],</span> <span class="n">cut_data</span><span class="p">[</span><span class="s2">&quot;sinDec&quot;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">energy_SoB_cache</span></div>
+
+<div class="viewcode-block" id="StandardLLH.estimate_energy_weights"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.estimate_energy_weights">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_energy_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">energy_SoB_cache</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Quickly estimates the value of Signal/Background for Gamma.</span>
+<span class="sd">        Uses pre-calculated values for first and second derivatives.</span>
+<span class="sd">        Uses a Taylor series to estimate S(gamma), unless SoB has already</span>
+<span class="sd">        been calculated for a given gamma.</span>
+
+<span class="sd">        :param gamma: Spectral Index</span>
+<span class="sd">        :param energy_SoB_cache: Weight cache</span>
+<span class="sd">        :return: Estimated value for S(gamma)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">gamma</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">energy_SoB_cache</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">energy_SoB_cache</span><span class="p">[</span><span class="n">gamma</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">g1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_around</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
+            <span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span>
+
+            <span class="n">g0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_around</span><span class="p">(</span><span class="n">g1</span> <span class="o">-</span> <span class="n">dg</span><span class="p">)</span>
+            <span class="n">g2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_around</span><span class="p">(</span><span class="n">g1</span> <span class="o">+</span> <span class="n">dg</span><span class="p">)</span>
+
+            <span class="c1"># Uses Numexpr to quickly estimate S(gamma)</span>
+
+            <span class="n">S0</span> <span class="o">=</span> <span class="n">energy_SoB_cache</span><span class="p">[</span><span class="n">g0</span><span class="p">]</span>
+            <span class="n">S1</span> <span class="o">=</span> <span class="n">energy_SoB_cache</span><span class="p">[</span><span class="n">g1</span><span class="p">]</span>
+            <span class="n">S2</span> <span class="o">=</span> <span class="n">energy_SoB_cache</span><span class="p">[</span><span class="n">g2</span><span class="p">]</span>
+
+            <span class="n">val</span> <span class="o">=</span> <span class="n">numexpr</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span>
+                <span class="s2">&quot;exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2&quot;</span> <span class="o">+</span> \
+                <span class="s2">&quot; + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">val</span></div>
+
+<div class="viewcode-block" id="StandardLLH.return_llh_parameters"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.return_llh_parameters">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">return_llh_parameters</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">):</span>
+        <span class="n">e_pdf</span> <span class="o">=</span> <span class="n">EnergyPDF</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_energy_pdf&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">e_pdf</span><span class="o">.</span><span class="n">return_energy_parameters</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StandardLLH.return_injected_parameters"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardLLH.return_injected_parameters">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">return_injected_parameters</span><span class="p">(</span><span class="n">mh_dict</span><span class="p">):</span>
+
+        <span class="k">try</span><span class="p">:</span>
+
+            <span class="n">inj</span> <span class="o">=</span> <span class="n">mh_dict</span><span class="p">[</span><span class="s2">&quot;inj_dict&quot;</span><span class="p">][</span><span class="s2">&quot;injection_energy_pdf&quot;</span><span class="p">]</span>
+            <span class="n">llh</span> <span class="o">=</span> <span class="n">mh_dict</span><span class="p">[</span><span class="s2">&quot;llh_dict&quot;</span><span class="p">][</span><span class="s2">&quot;llh_energy_pdf&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">inj</span><span class="p">[</span><span class="s2">&quot;energy_pdf_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">llh</span><span class="p">[</span><span class="s2">&quot;energy_pdf_name&quot;</span><span class="p">]:</span>
+                <span class="n">e_pdf</span> <span class="o">=</span> <span class="n">EnergyPDF</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">inj</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">e_pdf</span><span class="o">.</span><span class="n">return_injected_parameters</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">seeds</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">names</span> <span class="o">=</span> <span class="n">LLH</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">mh_dict</span><span class="p">[</span><span class="s2">&quot;llh_dict&quot;</span><span class="p">])</span>
+
+        <span class="n">res_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+            <span class="n">res_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="k">return</span> <span class="n">res_dict</span></div></div>
+
+
+<div class="viewcode-block" id="StandardOverlappingLLH"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardOverlappingLLH">[docs]</a><span class="nd">@LLH</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;standard_overlapping&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">StandardOverlappingLLH</span><span class="p">(</span><span class="n">StandardLLH</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StandardOverlappingLLH.create_kwargs"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardOverlappingLLH.create_kwargs">[docs]</a>    <span class="k">def</span> <span class="nf">create_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">,</span> <span class="n">weight_f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">weight_f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Weight function not passed, but is required for &quot;</span>
+                            <span class="s2">&quot;standard_overlapping LLH functions.&quot;</span><span class="p">)</span>
+
+        <span class="n">season_weight</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">weight_f</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="n">assumed_background_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">source</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sources</span><span class="p">):</span>
+
+            <span class="n">s_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_spatially_coincident_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="n">source</span><span class="p">])</span>
+
+            <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Only bother accepting neutrinos where the spacial</span>
+                <span class="c1"># likelihood is greater than 1e-21. This prevents 0s</span>
+                <span class="c1"># appearing in dynamic pull corrections, but also speeds</span>
+                <span class="c1"># things up (those neutrinos won&#39;t contribute anything to the</span>
+                <span class="c1"># likelihood!)</span>
+
+                <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">)</span>
+                <span class="n">nonzero_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">sig</span> <span class="o">&gt;</span> <span class="mf">1e-21</span><span class="p">)</span>
+                <span class="n">s_mask</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">nonzero_mask</span>
+
+                <span class="n">assumed_background_mask</span> <span class="o">*=</span> <span class="o">~</span><span class="n">s_mask</span>
+
+        <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">~</span><span class="n">assumed_background_mask</span><span class="p">]</span>
+
+        <span class="n">SoB_energy_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_SoB_energy_cache</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">joint_SoB</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="n">season_weight</span><span class="p">(</span><span class="n">gamma</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span> <span class="o">/</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">background_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dataset</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">source</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sources</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">season_weight</span><span class="p">(</span><span class="n">gamma</span><span class="p">))</span>
+
+        <span class="n">SoB_spacetime</span> <span class="o">=</span> <span class="n">pull_corrector</span><span class="o">.</span><span class="n">create_spatial_cache</span><span class="p">(</span>
+            <span class="n">coincident_data</span><span class="p">,</span> <span class="n">joint_SoB</span>
+        <span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_coincident&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">assumed_background_mask</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_spacetime_cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SoB_spacetime</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_energy_cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SoB_energy_cache</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pull_corrector&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pull_corrector</span>
+
+        <span class="k">return</span> <span class="n">kwargs</span></div>
+
+<div class="viewcode-block" id="StandardOverlappingLLH.calculate_test_statistic"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardOverlappingLLH.calculate_test_statistic">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_test_statistic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the test statistic, given the parameters. Uses numexpr</span>
+<span class="sd">        for faster calculations.</span>
+
+<span class="sd">        :param params: Parameters from Minimisation</span>
+<span class="sd">        :param weights: Normalised fraction of n_s allocated to each source</span>
+<span class="sd">        :return: 2 * llh value (Equal to Test Statistic)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">params</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">SoB_spacetime</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pull_corrector&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">estimate_spatial</span><span class="p">(</span>
+                <span class="n">gamma</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_spacetime_cache&quot;</span><span class="p">])</span>
+
+        <span class="n">SoB_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_energy_weights</span><span class="p">(</span>
+                <span class="n">gamma</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_energy_cache&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Calculates the expected number of signal events for each source in</span>
+        <span class="c1"># the season</span>
+        <span class="n">n_j</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_s</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
+
+        <span class="c1"># If n_s if negative, then removes the energy term from the likelihood</span>
+
+        <span class="c1"># Switches off Energy term for negative n_s, which should in theory</span>
+        <span class="c1"># be a continuous change that does not alter the likelihood for</span>
+        <span class="c1"># n_s &gt; 0 (as it is not included for n_s=0).</span>
+        <span class="k">if</span> <span class="n">n_j</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="p">((</span><span class="n">n_j</span> <span class="o">/</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span>
+                    <span class="n">SoB_spacetime</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="p">((</span><span class="n">n_j</span> <span class="o">/</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">SoB_energy</span> <span class="o">*</span> <span class="n">SoB_spacetime</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)))</span>
+
+        <span class="n">llh_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+        <span class="n">llh_value</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assume_background</span><span class="p">(</span>
+            <span class="n">n_j</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_coincident&quot;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Definition of test statistic</span>
+        <span class="k">return</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">llh_value</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="StandardMatrixLLH"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardMatrixLLH">[docs]</a><span class="nd">@LLH</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;standard_matrix&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">StandardMatrixLLH</span><span class="p">(</span><span class="n">StandardOverlappingLLH</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StandardMatrixLLH.create_kwargs"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.StandardMatrixLLH.create_kwargs">[docs]</a>    <span class="k">def</span> <span class="nf">create_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">,</span> <span class="n">weight_f</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">weight_f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Weight function not passed, but is required for &quot;</span>
+                            <span class="s2">&quot;standard_overlapping LLH functions.&quot;</span><span class="p">)</span>
+
+        <span class="n">coincidence_matrix</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">lil_matrix</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sources</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
+                                                      <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="n">sources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sources</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">source</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sources</span><span class="p">):</span>
+
+            <span class="n">s_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_spatially_coincident_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="n">source</span><span class="p">])</span>
+
+            <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Only bother accepting neutrinos where the spacial</span>
+                <span class="c1"># likelihood is greater than 1e-21. This prevents 0s</span>
+                <span class="c1"># appearing in dynamic pull corrections, but also speeds</span>
+                <span class="c1"># things up (those neutrinos won&#39;t contribute anything to the</span>
+                <span class="c1"># likelihood!)</span>
+
+                <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_pdf</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">)</span>
+                <span class="n">nonzero_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">sig</span> <span class="o">&gt;</span> <span class="mf">1e-21</span><span class="p">)</span>
+                <span class="n">s_mask</span><span class="p">[</span><span class="n">s_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">nonzero_mask</span>
+
+                <span class="n">coincidence_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_mask</span>
+
+        <span class="c1"># Using Sparse matrixes</span>
+        <span class="n">coincident_nu_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">coincidence_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">coincident_nu_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coincident_nu_mask</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">coincident_source_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">coincidence_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">coincident_source_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coincident_source_mask</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+        <span class="n">coincidence_matrix</span> <span class="o">=</span> <span class="n">coincidence_matrix</span><span class="p">[</span><span class="n">coincident_source_mask</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">[</span>
+            <span class="n">coincident_nu_mask</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">coincidence_matrix</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()</span>
+
+        <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">coincident_nu_mask</span><span class="p">]</span>
+        <span class="n">coincident_sources</span> <span class="o">=</span> <span class="n">sources</span><span class="p">[</span><span class="n">coincident_source_mask</span><span class="p">]</span>
+
+        <span class="n">season_weight</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">weight_f</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">season</span><span class="p">)[</span><span class="n">coincident_source_mask</span><span class="p">]</span>
+
+        <span class="n">SoB_energy_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_SoB_energy_cache</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">joint_SoB</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+
+            <span class="n">weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">season_weight</span><span class="p">(</span><span class="n">gamma</span><span class="p">))</span>
+            <span class="n">weight</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span>
+
+            <span class="c1"># create an empty lil_matrix (good for matrix creation) with shape</span>
+            <span class="c1"># of coincidence_matrix and type float</span>
+            <span class="n">SoB_matrix_sparse</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">lil_matrix</span><span class="p">(</span><span class="n">coincidence_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                                  <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">src</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coincident_sources</span><span class="p">):</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">coincidence_matrix</span><span class="o">.</span><span class="n">getrow</span><span class="p">(</span><span class="n">i</span><span class="p">))</span><span class="o">.</span><span class="n">toarray</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">SoB_matrix_sparse</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">mask</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">weight</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_pdf</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dataset</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">/</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">background_pdf</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dataset</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+
+            <span class="n">SoB_sum</span> <span class="o">=</span> <span class="n">SoB_matrix_sparse</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">return_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">SoB_sum</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="n">return_value</span>
+
+        <span class="n">SoB_spacetime</span> <span class="o">=</span> <span class="n">pull_corrector</span><span class="o">.</span><span class="n">create_spatial_cache</span><span class="p">(</span>
+            <span class="n">coincident_data</span><span class="p">,</span> <span class="n">joint_SoB</span>
+        <span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_coincident&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">coincident_nu_mask</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_spacetime_cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SoB_spacetime</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;SoB_energy_cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SoB_energy_cache</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pull_corrector&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pull_corrector</span>
+
+        <span class="k">return</span> <span class="n">kwargs</span></div></div>
+
+
+<div class="viewcode-block" id="generate_dynamic_flare_class"><a class="viewcode-back" href="../../../index.html#flarestack.core.llh.generate_dynamic_flare_class">[docs]</a><span class="k">def</span> <span class="nf">generate_dynamic_flare_class</span><span class="p">(</span><span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">):</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">mh_name</span> <span class="o">=</span> <span class="n">llh_dict</span><span class="p">[</span><span class="s2">&quot;llh_name&quot;</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;No LLH specified.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Set up dynamic inheritance</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ParentLLH</span> <span class="o">=</span> <span class="n">LLH</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">mh_name</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Parent class </span><span class="si">{}</span><span class="s2"> not found.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mh_name</span><span class="p">))</span>
+
+    <span class="c1"># Defines custom Flare class</span>
+
+    <span class="k">class</span> <span class="nc">FlareLLH</span><span class="p">(</span><span class="n">ParentLLH</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">create_flare_llh_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flare_veto</span><span class="p">,</span>
+                                      <span class="n">n_all</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">n_season</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">):</span>
+
+            <span class="n">coincident_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">~</span><span class="n">flare_veto</span><span class="p">]</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_kwargs</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">,</span> <span class="n">pull_corrector</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_all</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">])</span>
+
+            <span class="k">def</span> <span class="nf">test_statistic</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_test_statistic</span><span class="p">(</span>
+                    <span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+            <span class="c1"># Super ugly-looking code that magically takes the old llh</span>
+            <span class="c1"># object, sets the assume_background contribution to zero,</span>
+            <span class="c1"># and then adds on a new assume_season_background where mutiple</span>
+            <span class="c1"># datasets are treated as one season of data.</span>
+
+            <span class="k">def</span> <span class="nf">combined_test_statistic</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">test_statistic</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>
+                        <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">assume_season_background</span><span class="p">(</span>
+                    <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">flare_veto</span><span class="p">),</span> <span class="n">n_season</span><span class="p">,</span> <span class="n">n_all</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">combined_test_statistic</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">assume_background</span><span class="p">(</span><span class="n">n_s</span><span class="p">,</span> <span class="n">n_coincident</span><span class="p">,</span> <span class="n">n_all</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;In the standard create_llh_function method that the FlareClass</span>
+<span class="sd">            inherits, this method will be called. To maintain modularity, we</span>
+<span class="sd">            simply set it to 0 here. The Flare class treats all neutrino events</span>
+<span class="sd">            collectively, rather than splitting them by season. As a result,</span>
+<span class="sd">            the assume_season_background method is called seperately to handle</span>
+<span class="sd">            the non-coincident neutrinos.</span>
+
+<span class="sd">            :param n_s: Array of expected number of events</span>
+<span class="sd">            :param n_coincident: Number of events that were not assumed to have S=0</span>
+<span class="sd">            :param n_all: The total number of events</span>
+<span class="sd">            :return: 0.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="mf">0.</span>
+
+        <span class="k">def</span> <span class="nf">signal_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">cut_data</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Calculates the value of the signal spatial PDF for a given source</span>
+<span class="sd">            for each event in the coincident data subsample. If there is a Time PDF</span>
+<span class="sd">            given, also calculates the value of the signal Time PDF for each event.</span>
+<span class="sd">            Returns either the signal spatial PDF values, or the product of the</span>
+<span class="sd">            signal spatial and time PDFs.</span>
+
+<span class="sd">            :param source: Source to be considered</span>
+<span class="sd">            :param cut_data: Subset of Dataset with coincident events</span>
+<span class="sd">            :return: Array of Signal Spacetime PDF values</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">space_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pdf</span><span class="o">.</span><span class="n">signal_spatial</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cut_data</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">space_term</span>
+
+        <span class="c1"># ==========================================================================</span>
+        <span class="c1"># Background PDF</span>
+        <span class="c1"># ==========================================================================</span>
+
+        <span class="k">def</span> <span class="nf">background_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">cut_data</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;For the flare search, generating repeated box time PDFs would</span>
+<span class="sd">            be required to recalculate the</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">space_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">background_spatial</span><span class="p">(</span><span class="n">cut_data</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">space_term</span>
+
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">assume_season_background</span><span class="p">(</span><span class="n">n_s</span><span class="p">,</span> <span class="n">n_mask</span><span class="p">,</span> <span class="n">n_season</span><span class="p">,</span> <span class="n">n_all</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;To save time with likelihood calculation, it can be assumed that</span>
+<span class="sd">            all events defined as &quot;non-coincident&quot;, because of distance in space</span>
+<span class="sd">            and time to the source, are in fact background events. This is</span>
+<span class="sd">            equivalent to setting S=0 for all non-coincident events. IN this</span>
+<span class="sd">            case, the likelihood can be calculated as the product of the number</span>
+<span class="sd">            of non-coincident events, and the likelihood of an event which has S=0.</span>
+
+<span class="sd">            :param n_s: Array of expected number of events</span>
+<span class="sd">            :param n_mask: Number of events that were not assumed to have S=0</span>
+<span class="sd">            :param n_all: The total number of events</span>
+<span class="sd">            :return: Log Likelihood value for the given</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">n_season</span> <span class="o">-</span> <span class="n">n_mask</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="o">-</span><span class="n">n_s</span> <span class="o">/</span> <span class="n">n_all</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">estimate_significance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Finds events in the coincident dataset (spatially and temporally</span>
+<span class="sd">            overlapping sources), which are significant. This is defined as having a</span>
+<span class="sd">            Signal/Background Ratio that is greater than 1. The S/B ratio is</span>
+<span class="sd">            calculating using spatial and energy PDFs.</span>
+
+<span class="sd">            :param coincident_data: Data overlapping the source spatially/temporally</span>
+<span class="sd">            :param source: Source to be considered</span>
+<span class="sd">            :return: SoB of events in coincident dataset</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pdf</span><span class="o">.</span><span class="n">signal_spatial</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">)</span>
+            <span class="n">bkg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">background_spatial</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span>
+            <span class="n">SoB_space</span> <span class="o">=</span> <span class="n">sig</span> <span class="o">/</span> <span class="n">bkg</span>
+
+            <span class="n">SoB_energy_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_SoB_energy_cache</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">)</span>
+
+            <span class="c1"># ChangeME?</span>
+
+            <span class="n">SoB_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_energy_weights</span><span class="p">(</span>
+                    <span class="n">gamma</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">energy_SoB_cache</span><span class="o">=</span><span class="n">SoB_energy_cache</span><span class="p">)</span>
+
+            <span class="n">SoB</span> <span class="o">=</span> <span class="n">SoB_space</span> <span class="o">*</span> <span class="n">SoB_energy</span>
+            <span class="k">return</span> <span class="n">SoB</span>
+
+        <span class="k">def</span> <span class="nf">find_significant_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coincident_data</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Finds events in the coincident dataset (spatially and temporally</span>
+<span class="sd">            overlapping sources), which are significant. This is defined as having a</span>
+<span class="sd">            Signal/Background Ratio that is greater than 1. The S/B ratio is</span>
+<span class="sd">            calculating using spatial and energy PDFs.</span>
+
+<span class="sd">            :param coincident_data: Data overlapping the source spatially/temporally</span>
+<span class="sd">            :param source: Source to be considered</span>
+<span class="sd">            :return: Significant events in coincident dataset</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="n">SoB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_significance</span><span class="p">(</span><span class="n">coincident_data</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">SoB</span> <span class="o">&gt;</span> <span class="mf">1.0</span>
+
+            <span class="k">return</span> <span class="n">coincident_data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">FlareLLH</span><span class="p">(</span><span class="n">season</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">flarestack.shared</span> <span class="k">import</span> <span class="n">fs_scratch_dir</span>
+    <span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">InterpolatedUnivariateSpline</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="n">EnergyPDF</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;energy_pdf_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PowerLaw&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mf">2.2</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="n">e_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mf">1e3</span><span class="p">)</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">e_range</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">e_range</span><span class="p">)))</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">fs_scratch_dir</span> <span class="o">+</span> <span class="s2">&quot;tester_spline.npy&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+    <span class="n">e_pdf</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;energy_pdf_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Spline&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;spline_path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="kn">from</span> <span class="nn">flarestack.data.icecube.ps_tracks.ps_v002_p01</span> <span class="k">import</span> <span class="n">IC86_1_dict</span>
+    <span class="kn">from</span> <span class="nn">flarestack.utils.prepare_catalogue</span> <span class="k">import</span> <span class="n">ps_catalogue_name</span>
+    <span class="kn">from</span> <span class="nn">flarestack.core.injector</span> <span class="k">import</span> <span class="n">Injector</span>
+
+    <span class="n">llh_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;llh_name&quot;</span><span class="p">:</span> <span class="s2">&quot;FixedEnergy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;llh_time_pdf&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;time_pdf_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Steady&quot;</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;llh_energy_pdf&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;energy_pdf_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PowerLaw&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mf">2.2</span>
+        <span class="p">}</span>
+        <span class="c1"># &quot;LLH Energy PDF&quot;: e_pdf_dict</span>
+    <span class="p">}</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ps_catalogue_name</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+
+    <span class="n">llh</span> <span class="o">=</span> <span class="n">LLH</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">IC86_1_dict</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">llh_dict</span><span class="p">)</span>
+
+    <span class="c1"># inj = MockUnblindedInjector(IC86_1_dict, source)</span>
+    <span class="n">inj</span> <span class="o">=</span> <span class="n">Injector</span><span class="p">(</span><span class="n">IC86_1_dict</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">llh</span><span class="o">.</span><span class="n">create_llh_function</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mi">21</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">f</span><span class="p">([</span><span class="n">i</span><span class="p">],</span> <span class="n">weights</span><span class="p">))</span>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Flarestack</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Robert Stein.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,184 @@
+\indexentry{flarestack.core.time\_pdf (module)@\spxentry{flarestack.core.time\_pdf}\spxextra{module}|hyperpage}{1}
+\indexentry{Box (class in flarestack.core.time\_pdf)@\spxentry{Box}\spxextra{class in flarestack.core.time\_pdf}|hyperpage}{1}
+\indexentry{\_\_init\_\_() (flarestack.core.time\_pdf.Box method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.time\_pdf.Box method}|hyperpage}{1}
+\indexentry{effective\_injection\_time() (flarestack.core.time\_pdf.Box method)@\spxentry{effective\_injection\_time()}\spxextra{flarestack.core.time\_pdf.Box method}|hyperpage}{1}
+\indexentry{flare\_time\_mask() (flarestack.core.time\_pdf.Box method)@\spxentry{flare\_time\_mask()}\spxextra{flarestack.core.time\_pdf.Box method}|hyperpage}{1}
+\indexentry{raw\_injection\_time() (flarestack.core.time\_pdf.Box method)@\spxentry{raw\_injection\_time()}\spxextra{flarestack.core.time\_pdf.Box method}|hyperpage}{1}
+\indexentry{sig\_t0() (flarestack.core.time\_pdf.Box method)@\spxentry{sig\_t0()}\spxextra{flarestack.core.time\_pdf.Box method}|hyperpage}{1}
+\indexentry{sig\_t1() (flarestack.core.time\_pdf.Box method)@\spxentry{sig\_t1()}\spxextra{flarestack.core.time\_pdf.Box method}|hyperpage}{1}
+\indexentry{signal\_f() (flarestack.core.time\_pdf.Box method)@\spxentry{signal\_f()}\spxextra{flarestack.core.time\_pdf.Box method}|hyperpage}{1}
+\indexentry{signal\_integral() (flarestack.core.time\_pdf.Box method)@\spxentry{signal\_integral()}\spxextra{flarestack.core.time\_pdf.Box method}|hyperpage}{2}
+\indexentry{FixedEndBox (class in flarestack.core.time\_pdf)@\spxentry{FixedEndBox}\spxextra{class in flarestack.core.time\_pdf}|hyperpage}{2}
+\indexentry{\_\_init\_\_() (flarestack.core.time\_pdf.FixedEndBox method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.time\_pdf.FixedEndBox method}|hyperpage}{2}
+\indexentry{sig\_t0() (flarestack.core.time\_pdf.FixedEndBox method)@\spxentry{sig\_t0()}\spxextra{flarestack.core.time\_pdf.FixedEndBox method}|hyperpage}{2}
+\indexentry{sig\_t1() (flarestack.core.time\_pdf.FixedEndBox method)@\spxentry{sig\_t1()}\spxextra{flarestack.core.time\_pdf.FixedEndBox method}|hyperpage}{2}
+\indexentry{FixedRefBox (class in flarestack.core.time\_pdf)@\spxentry{FixedRefBox}\spxextra{class in flarestack.core.time\_pdf}|hyperpage}{2}
+\indexentry{\_\_init\_\_() (flarestack.core.time\_pdf.FixedRefBox method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.time\_pdf.FixedRefBox method}|hyperpage}{2}
+\indexentry{sig\_t0() (flarestack.core.time\_pdf.FixedRefBox method)@\spxentry{sig\_t0()}\spxextra{flarestack.core.time\_pdf.FixedRefBox method}|hyperpage}{2}
+\indexentry{sig\_t1() (flarestack.core.time\_pdf.FixedRefBox method)@\spxentry{sig\_t1()}\spxextra{flarestack.core.time\_pdf.FixedRefBox method}|hyperpage}{2}
+\indexentry{Steady (class in flarestack.core.time\_pdf)@\spxentry{Steady}\spxextra{class in flarestack.core.time\_pdf}|hyperpage}{3}
+\indexentry{effective\_injection\_time() (flarestack.core.time\_pdf.Steady method)@\spxentry{effective\_injection\_time()}\spxextra{flarestack.core.time\_pdf.Steady method}|hyperpage}{3}
+\indexentry{flare\_time\_mask() (flarestack.core.time\_pdf.Steady method)@\spxentry{flare\_time\_mask()}\spxextra{flarestack.core.time\_pdf.Steady method}|hyperpage}{3}
+\indexentry{raw\_injection\_time() (flarestack.core.time\_pdf.Steady method)@\spxentry{raw\_injection\_time()}\spxextra{flarestack.core.time\_pdf.Steady method}|hyperpage}{3}
+\indexentry{sig\_t0() (flarestack.core.time\_pdf.Steady method)@\spxentry{sig\_t0()}\spxextra{flarestack.core.time\_pdf.Steady method}|hyperpage}{3}
+\indexentry{sig\_t1() (flarestack.core.time\_pdf.Steady method)@\spxentry{sig\_t1()}\spxextra{flarestack.core.time\_pdf.Steady method}|hyperpage}{3}
+\indexentry{signal\_f() (flarestack.core.time\_pdf.Steady method)@\spxentry{signal\_f()}\spxextra{flarestack.core.time\_pdf.Steady method}|hyperpage}{3}
+\indexentry{signal\_integral() (flarestack.core.time\_pdf.Steady method)@\spxentry{signal\_integral()}\spxextra{flarestack.core.time\_pdf.Steady method}|hyperpage}{3}
+\indexentry{TimePDF (class in flarestack.core.time\_pdf)@\spxentry{TimePDF}\spxextra{class in flarestack.core.time\_pdf}|hyperpage}{4}
+\indexentry{\_\_init\_\_() (flarestack.core.time\_pdf.TimePDF method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.time\_pdf.TimePDF method}|hyperpage}{4}
+\indexentry{background\_f() (flarestack.core.time\_pdf.TimePDF method)@\spxentry{background\_f()}\spxextra{flarestack.core.time\_pdf.TimePDF method}|hyperpage}{4}
+\indexentry{create() (flarestack.core.time\_pdf.TimePDF class method)@\spxentry{create()}\spxextra{flarestack.core.time\_pdf.TimePDF class method}|hyperpage}{4}
+\indexentry{inverse\_interpolate() (flarestack.core.time\_pdf.TimePDF method)@\spxentry{inverse\_interpolate()}\spxextra{flarestack.core.time\_pdf.TimePDF method}|hyperpage}{4}
+\indexentry{product\_integral() (flarestack.core.time\_pdf.TimePDF method)@\spxentry{product\_integral()}\spxextra{flarestack.core.time\_pdf.TimePDF method}|hyperpage}{4}
+\indexentry{register\_subclass() (flarestack.core.time\_pdf.TimePDF class method)@\spxentry{register\_subclass()}\spxextra{flarestack.core.time\_pdf.TimePDF class method}|hyperpage}{4}
+\indexentry{simulate\_times() (flarestack.core.time\_pdf.TimePDF method)@\spxentry{simulate\_times()}\spxextra{flarestack.core.time\_pdf.TimePDF method}|hyperpage}{4}
+\indexentry{subclasses (flarestack.core.time\_pdf.TimePDF attribute)@\spxentry{subclasses}\spxextra{flarestack.core.time\_pdf.TimePDF attribute}|hyperpage}{4}
+\indexentry{box\_func() (in module flarestack.core.time\_pdf)@\spxentry{box\_func()}\spxextra{in module flarestack.core.time\_pdf}|hyperpage}{5}
+\indexentry{read\_t\_pdf\_dict() (in module flarestack.core.time\_pdf)@\spxentry{read\_t\_pdf\_dict()}\spxextra{in module flarestack.core.time\_pdf}|hyperpage}{5}
+\indexentry{flarestack.core.energy\_pdf (module)@\spxentry{flarestack.core.energy\_pdf}\spxextra{module}|hyperpage}{5}
+\indexentry{EnergyPDF (class in flarestack.core.energy\_pdf)@\spxentry{EnergyPDF}\spxextra{class in flarestack.core.energy\_pdf}|hyperpage}{5}
+\indexentry{\_\_init\_\_() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{5}
+\indexentry{create() (flarestack.core.energy\_pdf.EnergyPDF class method)@\spxentry{create()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF class method}|hyperpage}{5}
+\indexentry{f() (flarestack.core.energy\_pdf.EnergyPDF static method)@\spxentry{f()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF static method}|hyperpage}{5}
+\indexentry{fluence\_integral() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{fluence\_integral()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{5}
+\indexentry{flux\_integral() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{flux\_integral()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{5}
+\indexentry{integrate\_over\_E() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{integrate\_over\_E()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{5}
+\indexentry{register\_subclass() (flarestack.core.energy\_pdf.EnergyPDF class method)@\spxentry{register\_subclass()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF class method}|hyperpage}{5}
+\indexentry{return\_energy\_parameters() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{return\_energy\_parameters()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{5}
+\indexentry{subclasses (flarestack.core.energy\_pdf.EnergyPDF attribute)@\spxentry{subclasses}\spxextra{flarestack.core.energy\_pdf.EnergyPDF attribute}|hyperpage}{5}
+\indexentry{PowerLaw (class in flarestack.core.energy\_pdf)@\spxentry{PowerLaw}\spxextra{class in flarestack.core.energy\_pdf}|hyperpage}{5}
+\indexentry{\_\_init\_\_() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{5}
+\indexentry{f() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{f()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{6}
+\indexentry{fluence\_integral() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{fluence\_integral()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{6}
+\indexentry{flux\_integral() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{flux\_integral()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{6}
+\indexentry{return\_energy\_parameters() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{return\_energy\_parameters()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{6}
+\indexentry{return\_injected\_parameters() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{return\_injected\_parameters()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{6}
+\indexentry{weight\_mc() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{weight\_mc()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{6}
+\indexentry{Spline (class in flarestack.core.energy\_pdf)@\spxentry{Spline}\spxextra{class in flarestack.core.energy\_pdf}|hyperpage}{6}
+\indexentry{\_\_init\_\_() (flarestack.core.energy\_pdf.Spline method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.energy\_pdf.Spline method}|hyperpage}{6}
+\indexentry{weight\_mc() (flarestack.core.energy\_pdf.Spline method)@\spxentry{weight\_mc()}\spxextra{flarestack.core.energy\_pdf.Spline method}|hyperpage}{6}
+\indexentry{read\_e\_pdf\_dict() (in module flarestack.core.energy\_pdf)@\spxentry{read\_e\_pdf\_dict()}\spxextra{in module flarestack.core.energy\_pdf}|hyperpage}{6}
+\indexentry{flarestack.core.energy\_pdf (module)@\spxentry{flarestack.core.energy\_pdf}\spxextra{module}|hyperpage}{6}
+\indexentry{EnergyPDF (class in flarestack.core.energy\_pdf)@\spxentry{EnergyPDF}\spxextra{class in flarestack.core.energy\_pdf}|hyperpage}{6}
+\indexentry{\_\_init\_\_() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{6}
+\indexentry{create() (flarestack.core.energy\_pdf.EnergyPDF class method)@\spxentry{create()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF class method}|hyperpage}{7}
+\indexentry{f() (flarestack.core.energy\_pdf.EnergyPDF static method)@\spxentry{f()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF static method}|hyperpage}{7}
+\indexentry{fluence\_integral() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{fluence\_integral()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{7}
+\indexentry{flux\_integral() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{flux\_integral()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{7}
+\indexentry{integrate\_over\_E() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{integrate\_over\_E()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{7}
+\indexentry{register\_subclass() (flarestack.core.energy\_pdf.EnergyPDF class method)@\spxentry{register\_subclass()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF class method}|hyperpage}{7}
+\indexentry{return\_energy\_parameters() (flarestack.core.energy\_pdf.EnergyPDF method)@\spxentry{return\_energy\_parameters()}\spxextra{flarestack.core.energy\_pdf.EnergyPDF method}|hyperpage}{7}
+\indexentry{subclasses (flarestack.core.energy\_pdf.EnergyPDF attribute)@\spxentry{subclasses}\spxextra{flarestack.core.energy\_pdf.EnergyPDF attribute}|hyperpage}{7}
+\indexentry{PowerLaw (class in flarestack.core.energy\_pdf)@\spxentry{PowerLaw}\spxextra{class in flarestack.core.energy\_pdf}|hyperpage}{7}
+\indexentry{\_\_init\_\_() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{7}
+\indexentry{f() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{f()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{7}
+\indexentry{fluence\_integral() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{fluence\_integral()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{7}
+\indexentry{flux\_integral() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{flux\_integral()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{7}
+\indexentry{return\_energy\_parameters() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{return\_energy\_parameters()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{7}
+\indexentry{return\_injected\_parameters() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{return\_injected\_parameters()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{7}
+\indexentry{weight\_mc() (flarestack.core.energy\_pdf.PowerLaw method)@\spxentry{weight\_mc()}\spxextra{flarestack.core.energy\_pdf.PowerLaw method}|hyperpage}{7}
+\indexentry{Spline (class in flarestack.core.energy\_pdf)@\spxentry{Spline}\spxextra{class in flarestack.core.energy\_pdf}|hyperpage}{7}
+\indexentry{\_\_init\_\_() (flarestack.core.energy\_pdf.Spline method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.energy\_pdf.Spline method}|hyperpage}{8}
+\indexentry{weight\_mc() (flarestack.core.energy\_pdf.Spline method)@\spxentry{weight\_mc()}\spxextra{flarestack.core.energy\_pdf.Spline method}|hyperpage}{8}
+\indexentry{read\_e\_pdf\_dict() (in module flarestack.core.energy\_pdf)@\spxentry{read\_e\_pdf\_dict()}\spxextra{in module flarestack.core.energy\_pdf}|hyperpage}{8}
+\indexentry{flarestack.core.injector (module)@\spxentry{flarestack.core.injector}\spxextra{module}|hyperpage}{9}
+\indexentry{BaseInjector (class in flarestack.core.injector)@\spxentry{BaseInjector}\spxextra{class in flarestack.core.injector}|hyperpage}{9}
+\indexentry{\_\_init\_\_() (flarestack.core.injector.BaseInjector method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.injector.BaseInjector method}|hyperpage}{9}
+\indexentry{calculate\_n\_exp() (flarestack.core.injector.BaseInjector method)@\spxentry{calculate\_n\_exp()}\spxextra{flarestack.core.injector.BaseInjector method}|hyperpage}{9}
+\indexentry{calculate\_n\_exp\_single() (flarestack.core.injector.BaseInjector method)@\spxentry{calculate\_n\_exp\_single()}\spxextra{flarestack.core.injector.BaseInjector method}|hyperpage}{9}
+\indexentry{create() (flarestack.core.injector.BaseInjector class method)@\spxentry{create()}\spxextra{flarestack.core.injector.BaseInjector class method}|hyperpage}{9}
+\indexentry{create\_dataset() (flarestack.core.injector.BaseInjector method)@\spxentry{create\_dataset()}\spxextra{flarestack.core.injector.BaseInjector method}|hyperpage}{9}
+\indexentry{get\_dec\_and\_omega() (flarestack.core.injector.BaseInjector static method)@\spxentry{get\_dec\_and\_omega()}\spxextra{flarestack.core.injector.BaseInjector static method}|hyperpage}{9}
+\indexentry{get\_expectation() (flarestack.core.injector.BaseInjector method)@\spxentry{get\_expectation()}\spxextra{flarestack.core.injector.BaseInjector method}|hyperpage}{9}
+\indexentry{get\_n\_exp\_single() (flarestack.core.injector.BaseInjector method)@\spxentry{get\_n\_exp\_single()}\spxextra{flarestack.core.injector.BaseInjector method}|hyperpage}{9}
+\indexentry{inject\_signal() (flarestack.core.injector.BaseInjector method)@\spxentry{inject\_signal()}\spxextra{flarestack.core.injector.BaseInjector method}|hyperpage}{9}
+\indexentry{register\_subclass() (flarestack.core.injector.BaseInjector class method)@\spxentry{register\_subclass()}\spxextra{flarestack.core.injector.BaseInjector class method}|hyperpage}{9}
+\indexentry{subclasses (flarestack.core.injector.BaseInjector attribute)@\spxentry{subclasses}\spxextra{flarestack.core.injector.BaseInjector attribute}|hyperpage}{9}
+\indexentry{update\_sources() (flarestack.core.injector.BaseInjector method)@\spxentry{update\_sources()}\spxextra{flarestack.core.injector.BaseInjector method}|hyperpage}{9}
+\indexentry{EffectiveAreaInjector (class in flarestack.core.injector)@\spxentry{EffectiveAreaInjector}\spxextra{class in flarestack.core.injector}|hyperpage}{9}
+\indexentry{\_\_init\_\_() (flarestack.core.injector.EffectiveAreaInjector method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.injector.EffectiveAreaInjector method}|hyperpage}{9}
+\indexentry{calculate\_energy\_proxy() (flarestack.core.injector.EffectiveAreaInjector method)@\spxentry{calculate\_energy\_proxy()}\spxextra{flarestack.core.injector.EffectiveAreaInjector method}|hyperpage}{9}
+\indexentry{calculate\_n\_exp\_single() (flarestack.core.injector.EffectiveAreaInjector method)@\spxentry{calculate\_n\_exp\_single()}\spxextra{flarestack.core.injector.EffectiveAreaInjector method}|hyperpage}{9}
+\indexentry{calculate\_single\_source() (flarestack.core.injector.EffectiveAreaInjector method)@\spxentry{calculate\_single\_source()}\spxextra{flarestack.core.injector.EffectiveAreaInjector method}|hyperpage}{10}
+\indexentry{inject\_signal() (flarestack.core.injector.EffectiveAreaInjector method)@\spxentry{inject\_signal()}\spxextra{flarestack.core.injector.EffectiveAreaInjector method}|hyperpage}{10}
+\indexentry{LowMemoryInjector (class in flarestack.core.injector)@\spxentry{LowMemoryInjector}\spxextra{class in flarestack.core.injector}|hyperpage}{10}
+\indexentry{\_\_init\_\_() (flarestack.core.injector.LowMemoryInjector method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.injector.LowMemoryInjector method}|hyperpage}{10}
+\indexentry{calculate\_n\_exp() (flarestack.core.injector.LowMemoryInjector method)@\spxentry{calculate\_n\_exp()}\spxextra{flarestack.core.injector.LowMemoryInjector method}|hyperpage}{10}
+\indexentry{get\_band\_mask() (flarestack.core.injector.LowMemoryInjector method)@\spxentry{get\_band\_mask()}\spxextra{flarestack.core.injector.LowMemoryInjector method}|hyperpage}{10}
+\indexentry{load\_band\_mask() (flarestack.core.injector.LowMemoryInjector method)@\spxentry{load\_band\_mask()}\spxextra{flarestack.core.injector.LowMemoryInjector method}|hyperpage}{10}
+\indexentry{make\_injection\_band\_mask() (flarestack.core.injector.LowMemoryInjector method)@\spxentry{make\_injection\_band\_mask()}\spxextra{flarestack.core.injector.LowMemoryInjector method}|hyperpage}{10}
+\indexentry{MCInjector (class in flarestack.core.injector)@\spxentry{MCInjector}\spxextra{class in flarestack.core.injector}|hyperpage}{10}
+\indexentry{\_\_init\_\_() (flarestack.core.injector.MCInjector method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.injector.MCInjector method}|hyperpage}{10}
+\indexentry{calculate\_fluence() (flarestack.core.injector.MCInjector method)@\spxentry{calculate\_fluence()}\spxextra{flarestack.core.injector.MCInjector method}|hyperpage}{10}
+\indexentry{calculate\_n\_exp\_single() (flarestack.core.injector.MCInjector method)@\spxentry{calculate\_n\_exp\_single()}\spxextra{flarestack.core.injector.MCInjector method}|hyperpage}{10}
+\indexentry{calculate\_single\_source() (flarestack.core.injector.MCInjector method)@\spxentry{calculate\_single\_source()}\spxextra{flarestack.core.injector.MCInjector method}|hyperpage}{10}
+\indexentry{get\_band\_mask() (flarestack.core.injector.MCInjector method)@\spxentry{get\_band\_mask()}\spxextra{flarestack.core.injector.MCInjector method}|hyperpage}{10}
+\indexentry{inject\_signal() (flarestack.core.injector.MCInjector method)@\spxentry{inject\_signal()}\spxextra{flarestack.core.injector.MCInjector method}|hyperpage}{10}
+\indexentry{select\_mc\_band() (flarestack.core.injector.MCInjector method)@\spxentry{select\_mc\_band()}\spxextra{flarestack.core.injector.MCInjector method}|hyperpage}{10}
+\indexentry{subclasses (flarestack.core.injector.MCInjector attribute)@\spxentry{subclasses}\spxextra{flarestack.core.injector.MCInjector attribute}|hyperpage}{11}
+\indexentry{MockUnblindedInjector (class in flarestack.core.injector)@\spxentry{MockUnblindedInjector}\spxextra{class in flarestack.core.injector}|hyperpage}{11}
+\indexentry{\_\_init\_\_() (flarestack.core.injector.MockUnblindedInjector method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.injector.MockUnblindedInjector method}|hyperpage}{11}
+\indexentry{create\_dataset() (flarestack.core.injector.MockUnblindedInjector method)@\spxentry{create\_dataset()}\spxextra{flarestack.core.injector.MockUnblindedInjector method}|hyperpage}{11}
+\indexentry{TrueUnblindedInjector (class in flarestack.core.injector)@\spxentry{TrueUnblindedInjector}\spxextra{class in flarestack.core.injector}|hyperpage}{11}
+\indexentry{\_\_init\_\_() (flarestack.core.injector.TrueUnblindedInjector method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.injector.TrueUnblindedInjector method}|hyperpage}{11}
+\indexentry{create\_dataset() (flarestack.core.injector.TrueUnblindedInjector method)@\spxentry{create\_dataset()}\spxextra{flarestack.core.injector.TrueUnblindedInjector method}|hyperpage}{11}
+\indexentry{read\_injector\_dict() (in module flarestack.core.injector)@\spxentry{read\_injector\_dict()}\spxextra{in module flarestack.core.injector}|hyperpage}{11}
+\indexentry{flarestack.core.llh (module)@\spxentry{flarestack.core.llh}\spxextra{module}|hyperpage}{11}
+\indexentry{FixedEnergyLLH (class in flarestack.core.llh)@\spxentry{FixedEnergyLLH}\spxextra{class in flarestack.core.llh}|hyperpage}{11}
+\indexentry{\_\_init\_\_() (flarestack.core.llh.FixedEnergyLLH method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.llh.FixedEnergyLLH method}|hyperpage}{11}
+\indexentry{calculate\_test\_statistic() (flarestack.core.llh.FixedEnergyLLH method)@\spxentry{calculate\_test\_statistic()}\spxextra{flarestack.core.llh.FixedEnergyLLH method}|hyperpage}{11}
+\indexentry{create\_acceptance\_function() (flarestack.core.llh.FixedEnergyLLH method)@\spxentry{create\_acceptance\_function()}\spxextra{flarestack.core.llh.FixedEnergyLLH method}|hyperpage}{11}
+\indexentry{create\_energy\_functions() (flarestack.core.llh.FixedEnergyLLH method)@\spxentry{create\_energy\_functions()}\spxextra{flarestack.core.llh.FixedEnergyLLH method}|hyperpage}{11}
+\indexentry{create\_energy\_weighting\_function() (flarestack.core.llh.FixedEnergyLLH method)@\spxentry{create\_energy\_weighting\_function()}\spxextra{flarestack.core.llh.FixedEnergyLLH method}|hyperpage}{12}
+\indexentry{create\_kwargs() (flarestack.core.llh.FixedEnergyLLH method)@\spxentry{create\_kwargs()}\spxextra{flarestack.core.llh.FixedEnergyLLH method}|hyperpage}{12}
+\indexentry{fit\_energy (flarestack.core.llh.FixedEnergyLLH attribute)@\spxentry{fit\_energy}\spxextra{flarestack.core.llh.FixedEnergyLLH attribute}|hyperpage}{12}
+\indexentry{LLH (class in flarestack.core.llh)@\spxentry{LLH}\spxextra{class in flarestack.core.llh}|hyperpage}{12}
+\indexentry{\_\_init\_\_() (flarestack.core.llh.LLH method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{12}
+\indexentry{assume\_background() (flarestack.core.llh.LLH static method)@\spxentry{assume\_background()}\spxextra{flarestack.core.llh.LLH static method}|hyperpage}{12}
+\indexentry{background\_pdf() (flarestack.core.llh.LLH method)@\spxentry{background\_pdf()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{12}
+\indexentry{background\_spatial() (flarestack.core.llh.LLH method)@\spxentry{background\_spatial()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{12}
+\indexentry{calculate\_test\_statistic() (flarestack.core.llh.LLH method)@\spxentry{calculate\_test\_statistic()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{12}
+\indexentry{create() (flarestack.core.llh.LLH class method)@\spxentry{create()}\spxextra{flarestack.core.llh.LLH class method}|hyperpage}{12}
+\indexentry{create\_background\_function() (flarestack.core.llh.LLH method)@\spxentry{create\_background\_function()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{12}
+\indexentry{create\_energy\_functions() (flarestack.core.llh.LLH method)@\spxentry{create\_energy\_functions()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{12}
+\indexentry{create\_kwargs() (flarestack.core.llh.LLH method)@\spxentry{create\_kwargs()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{13}
+\indexentry{create\_llh\_function() (flarestack.core.llh.LLH method)@\spxentry{create\_llh\_function()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{13}
+\indexentry{get\_injected\_parameters() (flarestack.core.llh.LLH class method)@\spxentry{get\_injected\_parameters()}\spxextra{flarestack.core.llh.LLH class method}|hyperpage}{13}
+\indexentry{get\_parameters() (flarestack.core.llh.LLH class method)@\spxentry{get\_parameters()}\spxextra{flarestack.core.llh.LLH class method}|hyperpage}{13}
+\indexentry{register\_subclass() (flarestack.core.llh.LLH class method)@\spxentry{register\_subclass()}\spxextra{flarestack.core.llh.LLH class method}|hyperpage}{13}
+\indexentry{return\_injected\_parameters() (flarestack.core.llh.LLH static method)@\spxentry{return\_injected\_parameters()}\spxextra{flarestack.core.llh.LLH static method}|hyperpage}{13}
+\indexentry{return\_llh\_parameters() (flarestack.core.llh.LLH static method)@\spxentry{return\_llh\_parameters()}\spxextra{flarestack.core.llh.LLH static method}|hyperpage}{13}
+\indexentry{select\_spatially\_coincident\_data() (flarestack.core.llh.LLH method)@\spxentry{select\_spatially\_coincident\_data()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{13}
+\indexentry{signal\_pdf() (flarestack.core.llh.LLH method)@\spxentry{signal\_pdf()}\spxextra{flarestack.core.llh.LLH method}|hyperpage}{13}
+\indexentry{subclasses (flarestack.core.llh.LLH attribute)@\spxentry{subclasses}\spxextra{flarestack.core.llh.LLH attribute}|hyperpage}{13}
+\indexentry{SpatialLLH (class in flarestack.core.llh)@\spxentry{SpatialLLH}\spxextra{class in flarestack.core.llh}|hyperpage}{13}
+\indexentry{\_\_init\_\_() (flarestack.core.llh.SpatialLLH method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.llh.SpatialLLH method}|hyperpage}{13}
+\indexentry{calculate\_test\_statistic() (flarestack.core.llh.SpatialLLH method)@\spxentry{calculate\_test\_statistic()}\spxextra{flarestack.core.llh.SpatialLLH method}|hyperpage}{13}
+\indexentry{create\_energy\_function() (flarestack.core.llh.SpatialLLH method)@\spxentry{create\_energy\_function()}\spxextra{flarestack.core.llh.SpatialLLH method}|hyperpage}{14}
+\indexentry{create\_llh\_function() (flarestack.core.llh.SpatialLLH method)@\spxentry{create\_llh\_function()}\spxextra{flarestack.core.llh.SpatialLLH method}|hyperpage}{14}
+\indexentry{fit\_energy (flarestack.core.llh.SpatialLLH attribute)@\spxentry{fit\_energy}\spxextra{flarestack.core.llh.SpatialLLH attribute}|hyperpage}{14}
+\indexentry{StandardLLH (class in flarestack.core.llh)@\spxentry{StandardLLH}\spxextra{class in flarestack.core.llh}|hyperpage}{14}
+\indexentry{\_\_init\_\_() (flarestack.core.llh.StandardLLH method)@\spxentry{\_\_init\_\_()}\spxextra{flarestack.core.llh.StandardLLH method}|hyperpage}{14}
+\indexentry{calculate\_test\_statistic() (flarestack.core.llh.StandardLLH method)@\spxentry{calculate\_test\_statistic()}\spxextra{flarestack.core.llh.StandardLLH method}|hyperpage}{14}
+\indexentry{create\_SoB\_energy\_cache() (flarestack.core.llh.StandardLLH method)@\spxentry{create\_SoB\_energy\_cache()}\spxextra{flarestack.core.llh.StandardLLH method}|hyperpage}{14}
+\indexentry{create\_acceptance\_function() (flarestack.core.llh.StandardLLH method)@\spxentry{create\_acceptance\_function()}\spxextra{flarestack.core.llh.StandardLLH method}|hyperpage}{14}
+\indexentry{create\_energy\_functions() (flarestack.core.llh.StandardLLH method)@\spxentry{create\_energy\_functions()}\spxextra{flarestack.core.llh.StandardLLH method}|hyperpage}{14}
+\indexentry{create\_kwargs() (flarestack.core.llh.StandardLLH method)@\spxentry{create\_kwargs()}\spxextra{flarestack.core.llh.StandardLLH method}|hyperpage}{15}
+\indexentry{estimate\_energy\_weights() (flarestack.core.llh.StandardLLH method)@\spxentry{estimate\_energy\_weights()}\spxextra{flarestack.core.llh.StandardLLH method}|hyperpage}{15}
+\indexentry{fit\_energy (flarestack.core.llh.StandardLLH attribute)@\spxentry{fit\_energy}\spxextra{flarestack.core.llh.StandardLLH attribute}|hyperpage}{15}
+\indexentry{new\_acceptance() (flarestack.core.llh.StandardLLH method)@\spxentry{new\_acceptance()}\spxextra{flarestack.core.llh.StandardLLH method}|hyperpage}{15}
+\indexentry{return\_injected\_parameters() (flarestack.core.llh.StandardLLH static method)@\spxentry{return\_injected\_parameters()}\spxextra{flarestack.core.llh.StandardLLH static method}|hyperpage}{15}
+\indexentry{return\_llh\_parameters() (flarestack.core.llh.StandardLLH static method)@\spxentry{return\_llh\_parameters()}\spxextra{flarestack.core.llh.StandardLLH static method}|hyperpage}{15}
+\indexentry{StandardMatrixLLH (class in flarestack.core.llh)@\spxentry{StandardMatrixLLH}\spxextra{class in flarestack.core.llh}|hyperpage}{15}
+\indexentry{create\_kwargs() (flarestack.core.llh.StandardMatrixLLH method)@\spxentry{create\_kwargs()}\spxextra{flarestack.core.llh.StandardMatrixLLH method}|hyperpage}{15}
+\indexentry{StandardOverlappingLLH (class in flarestack.core.llh)@\spxentry{StandardOverlappingLLH}\spxextra{class in flarestack.core.llh}|hyperpage}{15}
+\indexentry{calculate\_test\_statistic() (flarestack.core.llh.StandardOverlappingLLH method)@\spxentry{calculate\_test\_statistic()}\spxextra{flarestack.core.llh.StandardOverlappingLLH method}|hyperpage}{15}
+\indexentry{create\_kwargs() (flarestack.core.llh.StandardOverlappingLLH method)@\spxentry{create\_kwargs()}\spxextra{flarestack.core.llh.StandardOverlappingLLH method}|hyperpage}{16}
+\indexentry{generate\_dynamic\_flare\_class() (in module flarestack.core.llh)@\spxentry{generate\_dynamic\_flare\_class()}\spxextra{in module flarestack.core.llh}|hyperpage}{16}
+\indexentry{read\_llh\_dict() (in module flarestack.core.llh)@\spxentry{read\_llh\_dict()}\spxextra{in module flarestack.core.llh}|hyperpage}{16}
+\indexentry{flarestack.icecube\_utils.dataset\_loader (module)@\spxentry{flarestack.icecube\_utils.dataset\_loader}\spxextra{module}|hyperpage}{17}
+\indexentry{convert\_grl() (in module flarestack.icecube\_utils.dataset\_loader)@\spxentry{convert\_grl()}\spxextra{in module flarestack.icecube\_utils.dataset\_loader}|hyperpage}{17}
+\indexentry{data\_loader() (in module flarestack.icecube\_utils.dataset\_loader)@\spxentry{data\_loader()}\spxextra{in module flarestack.icecube\_utils.dataset\_loader}|hyperpage}{17}
+\indexentry{grl\_loader() (in module flarestack.icecube\_utils.dataset\_loader)@\spxentry{grl\_loader()}\spxextra{in module flarestack.icecube\_utils.dataset\_loader}|hyperpage}{17}
+\indexentry{verify\_grl\_with\_data() (in module flarestack.icecube\_utils.dataset\_loader)@\spxentry{verify\_grl\_with\_data()}\spxextra{in module flarestack.icecube\_utils.dataset\_loader}|hyperpage}{17}
+\indexentry{flarestack.utils (module)@\spxentry{flarestack.utils}\spxextra{module}|hyperpage}{17}
