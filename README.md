@@ -6,6 +6,14 @@ Both time-dependent and time-independent analyses can be performed, as well as a
 Performs single point source analyses, as well as the stacking of sources according to predefined weighting. 
 Also performs stacking analyses where the signal strength of each source is fit individually.
 
+# Getting started
+
+The easiest way to start using Flarestack is to play with the introductory ipython notebooks:
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
+
+This avoids the need for local installation, and should provide understanding of how the code works. 
+
 # Installation instructions
 
 ## How do I actually install Flarestack?
