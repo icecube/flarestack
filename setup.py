@@ -26,6 +26,11 @@ setuptools.setup(
         "healpy",
         "scipy",
         "matplotlib",
-        "astropy"
+        "astropy",
+        "sphinx"
     ],
+    package_data={'flarestack': [
+        'data/icecube/public/all_sky_point_source/raw_data/*.zip']},
+    include_package_data=True
 )
+
