@@ -21,7 +21,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "setuptools==41.0.8",
+        "setuptools==41.0.1",
         "numpy==1.16.3",
         "numexpr==2.6.4",
         "healpy==1.10.1",
