@@ -10,11 +10,13 @@ Also performs stacking analyses where the signal strength of each source is fit 
 
 # Getting started
 
-The easiest way to start using Flarestack is to play with the introductory ipython notebooks:
+The easiest way to start using Flarestack is to play with the introductory ipython notebooks, which can be opened with the following link:
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
 
-This avoids the need for local installation, and should provide understanding of how the code works. 
+The notebooks themselves are found under *docs/ipython_notebooks/*.
+
+The "Binder" provides a pre-built Docker image containing all necessary dependencies, so you can simply click and play. It avoids the need for local installation, and should provide understanding of how the code works. 
 
 # Installation instructions
 
