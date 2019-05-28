@@ -29,7 +29,7 @@ Energy PDFs
 ************
 Spatial PDFs
 ************
-.. automodule:: flarestack.core.energy_pdf
+.. automodule:: flarestack.core.spatial_pdf
     :members:
 
 #####################
