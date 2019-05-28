@@ -21,9 +21,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "numpy",
-        "numexpr",
-        "healpy=1.10.1",
+        "numpy==1.16.3",
+        "numexpr==2.6.4",
+        "healpy==1.10.1",
         "scipy",
         "matplotlib",
         "astropy"
