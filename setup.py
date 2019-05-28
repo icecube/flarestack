@@ -16,15 +16,14 @@ setuptools.setup(
     url="https://github.com/IceCubeOpenSource/flarestack",
     packages=setuptools.find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "setuptools==41.0.1",
-        "numpy==1.16.3",
-        "numexpr==2.6.4",
-        "healpy==1.10.1",
+        "numpy",
+        "numexpr",
+        "healpy",
         "scipy",
         "matplotlib",
         "astropy"
