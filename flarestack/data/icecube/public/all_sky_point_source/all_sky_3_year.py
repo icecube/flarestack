@@ -7,6 +7,7 @@ from flarestack.shared import public_dataset_dir, \
     ang_res_plot_path
 from flarestack.utils.make_SoB_splines import make_individual_spline_set
 from flarestack.shared import SoB_spline_path, dataset_plot_dir
+from flarestack.icecube_utils import atmospheric_neutrino_spectrum
 from flarestack.data import Dataset
 from flarestack.data.icecube.public import PublicICSeason
 import matplotlib.pyplot as plt
@@ -203,7 +204,7 @@ def parse_angular_resolution():
             pickle.dump([full_x, full_y], f)
 
 
-def parse_effective_areas():
+def parse_effective_areas(show=False):
     """Function to parse effective areas .txt into a format that flarestack
     can use to build Signal/Background splines.
     """
@@ -227,13 +228,6 @@ def parse_effective_areas():
         lower_e = min(exp["logE"])
         upper_e = max(exp["logE"])
 
-        # Select only upgoing muons. For these events, the dominant
-        # background is atmospheric neutrinos with a known spectrum of E^-3.7.
-        # Downgoing events, on the other hand, are contaminated by sneaking
-        # muon bundles which are harder to model.
-
-        exp = exp[exp["sinDec"] > 0.]
-
         with open(path, "r") as f:
 
             csv_reader = csv.reader(f, delimiter=" ")
@@ -249,24 +243,21 @@ def parse_effective_areas():
                     true_dec = np.arcsin(sin_dec)
                     a_eff = row[4]
 
-                    randoms = [log_e]
+                    entry = tuple([
+                        log_e, true_e, sin_dec, true_dec,
+                        a_eff, a_eff, np.nan
+                    ])
 
-                    for log_e in randoms:
-
-                        # if log_e < 3.:
-                        #     factor = 1e-4
-                        # else:
-                        #     factor = 1.
-                        factor = 1.
-
-                        entry = tuple([
-                            log_e, true_e, sin_dec, true_dec,
-                            a_eff, a_eff, np.nan
-                        ])
-
-                        pseudo_mc.append(entry)
+                    pseudo_mc.append(entry)
 
         pseudo_mc = np.array(pseudo_mc, dtype=data_dtype)
+
+        # Select only upgoing muons. For these events, the dominant
+        # background is atmospheric neutrinos with a known spectrum of E^-3.7.
+        # Downgoing events, on the other hand, are contaminated by sneaking
+        # muon bundles which are harder to model.
+
+        exp = exp[exp["sinDec"] > 0.]
 
         plt.figure()
         ax1 = plt.subplot(311)
@@ -310,15 +301,14 @@ def parse_effective_areas():
                  linestyle=":")
         ax3.set_yscale("log")
 
+        plt.savefig(save_path)
+
         save_path = effective_area_plot_path(ps_3_year.seasons[dataset])
 
         try:
             os.makedirs(os.path.dirname(save_path))
         except OSError:
             pass
-
-        plt.savefig(save_path)
-        plt.close()
 
         pseudo_mc["ow"] *= np.exp(log_e_weighting(pseudo_mc["logE"]))
 
@@ -336,6 +326,11 @@ def parse_effective_areas():
         with open(ep_path, "wb") as f:
             print("Saving converted numpy array to", ep_path)
             pickle.dump([x, np.log(y)], f)
+
+        if not show:
+            plt.close()
+        else:
+            plt.show()
 
 
 def run_all():

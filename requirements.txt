@@ -4,3 +4,4 @@ healpy
 scipy
 matplotlib
 astropy
+sphinx

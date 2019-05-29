@@ -7,6 +7,35 @@ from flarestack.core.injector import MCInjector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
 
+class DatasetHolder:
+
+    def __init__(self, sample_name):
+
+        self.sample_name = sample_name
+
+        self.datasets = dict()
+        self.current = None
+
+    def set_current(self, version):
+        if version in self.datasets.keys():
+            self.current = version
+        else:
+            raise Exception("Unrecognised version key: {0} \n "
+                            "Stored dataset keys are: {1}".format(
+                version, self.datasets.keys()
+            ))
+
+    def get_current(self):
+        if self.current is not None:
+            return self.datasets[self.current]
+        else:
+            print("Warning: no file listed as current.")
+            key = sorted(list(self.datasets.keys()))
+            print("Using key {0} out of {1}".format(
+                key, self.datasets.keys())
+            )
+            return self.datasets[key]
+
 
 class Dataset:
     def __init__(self, **kwargs):

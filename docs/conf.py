@@ -28,7 +28,6 @@ version = '2.0.b.1'
 # The full version, including alpha/beta/rc tags
 release = '2.0-beta.1'
 
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -188,3 +187,11 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+html_context = {
+    "display_github": True, # Integrate GitHub
+    "github_user": "IceCubeOpenSource", # Username
+    "github_repo": "flarestack", # Repo name
+    "github_version": "master", # Version
+    "conf_py_path": "/source/", # Path in the checkout to the docs root
+}

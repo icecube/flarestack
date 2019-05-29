@@ -14,7 +14,7 @@ The easiest way to start using Flarestack is to play with the introductory ipyth
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
 
-The notebooks themselves are found under *docs/ipython_notebooks/*.
+The notebooks themselves are found under *examples/ipython_notebooks/*.
 
 The "Binder" provides a pre-built Docker image containing all necessary dependencies, so you can simply click and play. It avoids the need for local installation, and should provide understanding of how the code works. 
 
