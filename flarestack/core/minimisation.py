@@ -23,7 +23,7 @@ from flarestack.core.time_pdf import TimePDF, Box, Steady
 from flarestack.core.pull_corrector import BasePullCorrector
 from flarestack.utils.catalogue_loader import load_catalogue, \
     calculate_source_weight
-from flarestack.utils.deus_ex_machina import estimate_discovery_potential
+from flarestack.utils.asimov_estimator import estimate_discovery_potential
 
 
 
