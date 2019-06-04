@@ -87,7 +87,7 @@ class Season:
     def get_background_dtype(self):
         if self.background_dtype is None:
             exp = self.get_exp_data()
-            self.background_dtype = exp.dypte
+            self.background_dtype = exp.dtype
             del exp
         return self.background_dtype
 
