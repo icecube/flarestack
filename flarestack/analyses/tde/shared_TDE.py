@@ -88,6 +88,36 @@ def make_limit_plot(name):
         plt.savefig(savepath)
         plt.close()
 
+def make_individual_limit_plot(name):
+    path = limits_dir + "analyses/tde/compare_spectral_indices_individual/" +\
+        name + "/flare_winter/real_unblind/limit.pkl"
+
+    if os.path.isfile(path):
+        print "Making plot", path
+        with open(path, "r") as f:
+            data = Pickle.load(f)
+
+        savepath = os.path.dirname(path) + "/" + name + "_limit_plot.pdf"
+
+        f = interp1d(data["x"], np.log(data["energy"]))
+
+        x_range = np.linspace(data["x"][0], data["x"][-1], 10)
+
+        plt.figure()
+        plt.errorbar(x_range, np.exp(f(x_range)),
+                     yerr=.25 * np.exp(f(x_range)),
+                     uplims=True)
+        # plt.plot(x_range, np.exp(f(x_range)))
+        plt.ylabel(r"Per-flavour $E_{\nu}$ [erg]")
+        plt.xlabel(r"Spectral Index ($\gamma$)")
+        plt.yscale("log")
+        plt.title("{0} neutrino emission limit (100GeV - 10PeV)".format(name))
+        plt.tight_layout()
+        plt.savefig(savepath)
+        plt.close()
 
 for cat in tde_catalogues:
     make_limit_plot(cat)
+
+for cat in individual_tdes:
+    make_individual_limit_plot(cat)
