@@ -76,6 +76,7 @@ class Season:
         self.exp_path = exp_path
         self.loaded_background = None
         self.pseudo_mc_path = None
+        self.background_dtype = None
         self.all_paths = [self.exp_path]
 
     def load_background_data(self):
@@ -84,7 +85,11 @@ class Season:
         self.loaded_background = self.get_background_model()
 
     def get_background_dtype(self):
-        return drop_fields(self.loaded_background, "weight").dtype
+        if self.background_dtype is None:
+            exp = self.load_data(self.exp_path)
+            self.background_dtype = exp.dypte
+            del exp
+        return self.background_dtype
 
     def get_background_model(self, **kwargs):
         """Generic Function to return background model. This could be
