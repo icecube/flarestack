@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib as mpl
 from flarestack.core.time_pdf import TimePDF, Box, Steady
-from flarestack.core.pull_corrector import BasePullCorrector
+from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.utils.catalogue_loader import load_catalogue, \
     calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
@@ -181,7 +181,7 @@ class MinimisationHandler(object):
             self.llhs[name] = self.add_likelihood(season)
             inj_season = self.inj_seasons[name]
             self.injectors[name] = self.add_injector(inj_season, sources)
-            self.pull_correctors[name] = BasePullCorrector.create(
+            self.pull_correctors[name] = BaseAngularErrorModifier.create(
                 season, self.llh_dict["llh_energy_pdf"], self.floor_name,
                 self.pull_name
             )

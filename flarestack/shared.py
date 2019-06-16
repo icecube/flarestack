@@ -119,7 +119,7 @@ def deterministic_hash(hash_dict):
 
 # Sets the minimum angular error
 
-min_angular_err = np.deg2rad(0.0)
+min_angular_err = np.deg2rad(0.2)
 
 # Sets an angular error floor based on the 25th quantile
 

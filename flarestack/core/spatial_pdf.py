@@ -9,6 +9,9 @@ from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
 
 
 class SpatialPDF:
+    """General SpatialPDF holder class. Has separate signal and background
+    spatial PDF objects.
+    """
 
     def __init__(self, spatial_pdf_dict, season):
         self.signal = SignalSpatialPDF.create(spatial_pdf_dict)
@@ -16,10 +19,9 @@ class SpatialPDF:
 
         self.simulate_distribution = self.signal.simulate_distribution
         self.signal_spatial = self.signal.signal_spatial
+        self.rotate_to_position = self.signal.rotate_to_position
 
         self.background_spatial = self.background.background_spatial
-
-        self.rotate_to_position = self.signal.rotate_to_position
 
 
 # ==============================================================================
@@ -28,6 +30,8 @@ class SpatialPDF:
 
 
 class SignalSpatialPDF:
+    """Base Signal Spatial PDF class.
+    """
 
     subclasses = {}
 
