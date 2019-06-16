@@ -1,16 +1,46 @@
 import numpy as np
 import healpy as hp
+import os
 from scipy.stats import norm
 from numpy.lib.recfunctions import append_fields
 from flarestack.core.astro import angular_distance
+from flarestack.shared import bkg_spline_path
+from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
 
 
 class SpatialPDF:
+
+    def __init__(self, spatial_pdf_dict, season):
+        self.signal = SignalSpatialPDF.create(spatial_pdf_dict)
+        self.background = BackgroundSpatialPDF.create(spatial_pdf_dict, season)
+
+        self.simulate_distribution = self.signal.simulate_distribution
+        self.signal_spatial = self.signal.signal_spatial
+
+        self.background_spatial = self.background.background_spatial
+
+        self.rotate_to_position = self.signal.rotate_to_position
+
+
+# ==============================================================================
+# Signal Spatial PDFs
+# ==============================================================================
+
+
+class SignalSpatialPDF:
 
     subclasses = {}
 
     def __init__(self, spatial_pdf_dict):
         pass
+
+    @staticmethod
+    def simulate_distribution(source, data):
+        return data
+
+    @staticmethod
+    def signal_spatial(source, events):
+        return
 
     @classmethod
     def register_subclass(cls, spatial_pdf_name):
@@ -32,17 +62,11 @@ class SpatialPDF:
             s_pdf_name = "circular_gaussian"
 
         if s_pdf_name not in cls.subclasses:
-            raise ValueError('Bad spatial PDF name {}'.format(s_pdf_name))
+            raise ValueError('Bad Signal Spatial PDF name {0} \n'
+                             'Available names are {1}'.format(
+                s_pdf_name, cls.subclasses))
 
         return cls.subclasses[s_pdf_name](s_pdf_dict)
-
-    @staticmethod
-    def simulate_distribution(source, data):
-        return data
-
-    @staticmethod
-    def signal_spatial(source, events):
-        return
 
     @staticmethod
     def rotate(ra1, dec1, ra2, dec2, ra3, dec3):
@@ -119,8 +143,8 @@ class SpatialPDF:
         return ev
 
 
-@SpatialPDF.register_subclass("circular_gaussian")
-class CircularGaussian(SpatialPDF):
+@SignalSpatialPDF.register_subclass("circular_gaussian")
+class CircularGaussian(SignalSpatialPDF):
 
     def simulate_distribution(self, source, data):
         data["ra"] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
@@ -153,5 +177,112 @@ class CircularGaussian(SpatialPDF):
         space_term = (1. / (2. * np.pi * cut_data['sigma'] ** 2.) *
                       np.exp(-0.5 * (distance / cut_data['sigma']) ** 2.))
 
+        return space_term
+
+# ==============================================================================
+# Background Spatial PDFs
+# ==============================================================================
+
+
+class BackgroundSpatialPDF:
+    subclasses = {}
+
+    def __init__(self, spatial_pdf_dict, season):
+        pass
+
+    @classmethod
+    def register_subclass(cls, bkg_spatial_name):
+        """Adds a new subclass of BackgroundSpatialPDF, with class name equal to
+        "spatial_pdf_name".
+        """
+
+        def decorator(subclass):
+            cls.subclasses[bkg_spatial_name] = subclass
+            return subclass
+
+        return decorator
+
+    @classmethod
+    def create(cls, s_pdf_dict, season):
+
+        try:
+            s_pdf_name = s_pdf_dict["bkg_spatial_pdf"]
+        except KeyError:
+            s_pdf_name = "zenith_spline"
+
+        if s_pdf_name not in cls.subclasses:
+            raise ValueError('Bad Background Spatial PDF name {0} \n'
+                             'Available names are {1}'.format(
+                s_pdf_name, cls.subclasses))
+
+        return cls.subclasses[s_pdf_name](s_pdf_dict, season)
+
+    def background_spatial(self, events):
+        return np.ones(len(events))
+
+
+@BackgroundSpatialPDF.register_subclass("uniform")
+class UniformPDF(BackgroundSpatialPDF):
+    """A highly-simplified spatial PDF in which events are distributed
+    uniformly over the celestial sphere.
+    """
+
+    def background_spatial(self, events):
+        space_term = (1. / (4. * np.pi)) * np.ones(len(events))
+        return space_term
+
+
+@BackgroundSpatialPDF.register_subclass("uniform_solid_angle")
+class UniformSolidAngle(BackgroundSpatialPDF):
+    """Generic class for a background PDF that is uniform over some fixed
+    area, and 0 otherwise. Requires an argument to be passed in the
+    'spatial_pdf_dict', with key 'background_solid_angle'. In the limit of a
+    solid angle of 4 pi, this becomes identical to the UniformPDF class.
+    """
+
+    def __init__(self, spatial_pdf_dict, season):
+        BackgroundSpatialPDF.__init__(self, spatial_pdf_dict, season)
+
+        try:
+            self.solid_angle = spatial_pdf_dict['background_solid_angle']
+        except KeyError:
+            raise KeyError("No solid angle passed to UniformSolidAngle class.\n"
+                           "Please include an entry 'background_solid_angle' "
+                           "in the 'spatial_pdf_dict'.")
+
+        if self.solid_angle > 4 * np.pi:
+            raise ValueError("Solid angle {0} was provided, but this is "
+                             "larger than 4pi. Please provide a valid solid "
+                             "angle.")
+
+    def background_spatial(self, events):
+        space_term = (1. / self.solid_angle) * np.ones(len(events))
+        return space_term
+
+
+@BackgroundSpatialPDF.register_subclass("zenith_spline")
+class ZenithSpline(BackgroundSpatialPDF):
+    """A 1D background spatial PDF, in which the background is assumed to be
+    uniform in azimuth, but varying as a function of zenith. A
+    spline is used to parameterise this distribution.
+    """
+
+    def __init__(self, spatial_pdf_dict, season):
+        BackgroundSpatialPDF.__init__(self, spatial_pdf_dict, season)
+        self.bkg_f = self.create_background_function(season)
+
+    @staticmethod
+    def create_background_function(season):
+
+        # Checks if background spatial spline has been created
+
+        if not os.path.isfile(bkg_spline_path(season)):
+            season.make_background_spatial()
+
+        return load_bkg_spatial_spline(season)
+
+    def background_spatial(self, events):
+        space_term = (1. / (2. * np.pi)) * np.exp(
+            self.bkg_f(events["sinDec"]))
         return space_term
 

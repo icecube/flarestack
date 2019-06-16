@@ -74,8 +74,8 @@ class BaseInjector:
             self.time_pdf = TimePDF.create(kwargs["injection_time_pdf"],
                                            season)
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
-            self.spatial_pdf = SpatialPDF.create(
-                kwargs["injection_spatial_pdf"])
+            self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"],
+                                          season)
         except KeyError:
             raise Exception("Injection Arguments missing. \n "
                             "'injection_energy_pdf', 'injection_time_pdf',"
