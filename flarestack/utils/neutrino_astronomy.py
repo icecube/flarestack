@@ -72,9 +72,9 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     tot_fluence = (flux * e_integral)
 
-    astro_res["Total Fluence (GeV cm^{-2} s^{-1})"] = tot_fluence.value
+    astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = tot_fluence.value
 
-    print("Total Fluence", tot_fluence)
+    print("Energy Flux", tot_fluence)
 
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
