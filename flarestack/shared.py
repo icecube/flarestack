@@ -44,6 +44,7 @@ plots_dir = output_dir + "plots/"
 limits_dir = output_dir + "limits/"
 dataset_plot_dir = output_dir + "dataset_plots/"
 eff_a_plot_dir = dataset_plot_dir + "effective_area_plots/"
+energy_proxy_plot_dir = dataset_plot_dir + "energy_proxy_map/"
 ang_res_plot_dir = dataset_plot_dir + "angular_resolution_plots/"
 
 illustration_dir = plots_dir + "illustrations/"
@@ -63,7 +64,7 @@ all_dirs = [
     SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
     bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir,
     cache_dir, cat_cache_dir, public_dataset_dir, energy_proxy_dir,
-    eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir
+    eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir, energy_proxy_plot_dir
 ]
 
 # ==============================================================================
@@ -232,6 +233,10 @@ def med_ang_res_path(season):
 
 def ang_res_plot_path(season):
     return ang_res_plot_dir + season.sample_name + "/" + \
+           season.season_name + ".pdf"
+
+def energy_proxy_plot_path(season):
+    return energy_proxy_plot_dir + season.sample_name + "/" + \
            season.season_name + ".pdf"
 
 
