@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pickle
+import csv
 import scipy.interpolate
 from flarestack.data import SeasonWithoutMC
 from flarestack.icecube_utils.dataset_loader import data_loader
@@ -14,11 +15,12 @@ from flarestack.shared import eff_a_plot_dir, energy_proxy_path, \
 class PublicICSeason(SeasonWithoutMC):
 
     def __init__(self, season_name, sample_name, exp_path, pseudo_mc_path,
-                 sin_dec_bins, log_e_bins, **kwargs):
+                 sin_dec_bins, log_e_bins, a_eff_path, **kwargs):
         SeasonWithoutMC.__init__(self, season_name, sample_name, exp_path,
                                  pseudo_mc_path, **kwargs)
         self.sin_dec_bins = sin_dec_bins
         self.log_e_bins = log_e_bins
+        self.a_eff_path = a_eff_path
 
     def load_data(self, path, **kwargs):
         return data_loader(path, **kwargs)
@@ -98,14 +100,51 @@ class PublicICSeason(SeasonWithoutMC):
         else:
             plt.close()
 
-    def map_energy_proxy(self, show=False, raw_pseudo_mc=None):
+    def get_raw_pseudo_mc(self):
+
+        data_dtype = np.dtype([
+            ('logE', np.float),
+            ('trueE', np.float),
+            ('sinDec', np.float),
+            ('trueDec', np.float),
+            ('ow', np.float),
+            ('a_eff', np.float),
+            ("sigma", np.float)
+        ])
+
+        pseudo_mc = []
+
+        with open(self.a_eff_path, "r") as f:
+
+            csv_reader = csv.reader(f, delimiter=" ")
+
+            for i, row in enumerate(csv_reader):
+
+                if i > 0:
+                    row = [float(x) for x in row if x != ""]
+
+                    true_e = 0.5*(row[0] + row[1])
+                    log_e = np.log10(true_e)
+                    sin_dec = -0.5*(row[2] + row[3])
+                    true_dec = np.arcsin(sin_dec)
+                    a_eff = row[4]
+
+                    entry = tuple([
+                        log_e, true_e, sin_dec, true_dec,
+                        a_eff, a_eff, np.nan
+                    ])
+
+                    pseudo_mc.append(entry)
+
+        pseudo_mc = np.array(pseudo_mc, dtype=data_dtype)
+
+        return pseudo_mc
+
+    def map_energy_proxy(self, show=False):
 
         exp = self.get_background_model()
 
-        if raw_pseudo_mc is None:
-            pseudo_mc = self.get_pseudo_mc()
-        else:
-            pseudo_mc = raw_pseudo_mc
+        pseudo_mc = self.get_raw_pseudo_mc()
 
         # Select only upgoing muons. For these events, the dominant
         # background is atmospheric neutrinos with a known spectrum of E^-3.7.
@@ -117,6 +156,8 @@ class PublicICSeason(SeasonWithoutMC):
         plt.figure()
         ax1 = plt.subplot(311)
         res = ax1.hist(exp["logE"], density=True)
+        ax1.set_title("Energy Proxy (Data)")
+        ax1.set_xlabel(r"$\log_{10}(E_{proxy})$")
 
         exp_vals = res[0]
         exp_bins = res[1]
@@ -129,6 +170,8 @@ class PublicICSeason(SeasonWithoutMC):
         mc_vals = res[0]
 
         ax2.set_yscale("log")
+        ax2.set_title(r"Expected True Energy ($E^{-3.7}$)")
+        ax2.set_xlabel(r"$\log_{10}(E_{true})$")
 
         # Maps ratio of expected neutrino energies to energy proxy values
         # This can tell us about how true energy maps to energy proxy
@@ -145,26 +188,32 @@ class PublicICSeason(SeasonWithoutMC):
         y = exp_vals / mc_vals
         y = [y[0]] + list(y) + [y[-1]]
 
-        log_e_weighting = interp1d(x, np.log(y))
+        log_e_weighting = scipy.interpolate.interp1d(x, np.log(y))
 
         ax3 = plt.subplot(313)
         plt.plot(centers, exp_vals / mc_vals)
         plt.plot(centers, np.exp(log_e_weighting(centers)),
                  linestyle=":")
         ax3.set_yscale("log")
+        ax3.set_title("Ratio")
+        ax3.set_xlabel(r"$\log_{10}(E)$")
 
-        save_path = energy_proxy_plot_path(ps_3_year.seasons[dataset])
+        plt.tight_layout()
 
-        plt.savefig(save_path)
+        save_path = energy_proxy_plot_path(self)
 
         try:
             os.makedirs(os.path.dirname(save_path))
         except OSError:
             pass
 
+        print("Saving to", save_path)
+
+        plt.savefig(save_path)
+
         pseudo_mc["ow"] *= np.exp(log_e_weighting(pseudo_mc["logE"]))
 
-        mc_path = pseudo_mc_path(dataset)
+        mc_path = self.pseudo_mc_path
 
         np.save(mc_path, pseudo_mc)
 
@@ -179,7 +228,7 @@ class PublicICSeason(SeasonWithoutMC):
             print("Saving converted numpy array to", ep_path)
             pickle.dump([x, np.log(y)], f)
 
-        if not show:
-            plt.close()
-        else:
+        if show:
             plt.show()
+        else:
+            plt.close()

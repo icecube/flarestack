@@ -6,12 +6,11 @@ from flarestack.shared import public_dataset_dir, \
     energy_proxy_path, med_ang_res_path, effective_area_plot_path,\
     ang_res_plot_path
 from flarestack.utils.make_SoB_splines import make_individual_spline_set
-from flarestack.shared import SoB_spline_path, dataset_plot_dir
+from flarestack.shared import SoB_spline_path, energy_proxy_plot_path
 from flarestack.icecube_utils import atmospheric_neutrino_spectrum
 from flarestack.data import Dataset
 from flarestack.data.icecube.public import PublicICSeason
 import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
 import zipfile
 from flarestack.icecube_utils.dataset_loader import data_loader
 
@@ -103,7 +102,8 @@ def make_season(season_name):
         exp_path=data_path(season_name),
         pseudo_mc_path=pseudo_mc_path(season_name),
         sin_dec_bins=np.linspace(-1., 1., 50),
-        log_e_bins=np.arange(2., 9. + 0.01, 0.25)
+        log_e_bins=np.arange(2., 9. + 0.01, 0.25),
+        a_eff_path=data_dir + season_name + "-TabulatedAeff.txt"
     )
     ps_3_year.add_season(season)
 
@@ -204,68 +204,14 @@ def parse_angular_resolution():
             pickle.dump([full_x, full_y], f)
 
 
-def parse_effective_areas(show=False):
-    """Function to parse effective areas .txt into a format that flarestack
-    can use to build Signal/Background splines.
-    """
-    data_dtype = np.dtype([
-        ('logE', np.float),
-        ('trueE', np.float),
-        ('sinDec', np.float),
-        ('trueDec', np.float),
-        ('ow', np.float),
-        ('a_eff', np.float),
-        ("sigma", np.float)
-    ])
-
-    for dataset in datasets:
-
-        pseudo_mc = []
-
-        path = data_dir + dataset + "-TabulatedAeff.txt"
-
-        exp = data_loader(data_path(dataset))
-        lower_e = min(exp["logE"])
-        upper_e = max(exp["logE"])
-
-        with open(path, "r") as f:
-
-            csv_reader = csv.reader(f, delimiter=" ")
-
-            for i, row in enumerate(csv_reader):
-
-                if i > 0:
-                    row = [float(x) for x in row if x != ""]
-
-                    true_e = 0.5*(row[0] + row[1])
-                    log_e = np.log10(true_e)
-                    sin_dec = -0.5*(row[2] + row[3])
-                    true_dec = np.arcsin(sin_dec)
-                    a_eff = row[4]
-
-                    entry = tuple([
-                        log_e, true_e, sin_dec, true_dec,
-                        a_eff, a_eff, np.nan
-                    ])
-
-                    pseudo_mc.append(entry)
-
-        pseudo_mc = np.array(pseudo_mc, dtype=data_dtype)
-
-        season = ps_3_year.seasons[dataset]
-        season.map_energy_proxy(raw_pseudo_mc=pseudo_mc)
-
-
 def run_all():
     parse_numpy_dataset()
     parse_angular_resolution()
-    parse_effective_areas()
 
     for season in ps_3_year.get_seasons().values():
-        # exp = data_loader(season["exp_path"])
-        # mc = data_loader(season["pseudo_mc"])
-        # make_individual_spline_set(season, SoB_spline_path(season))
+        season.map_energy_proxy()
         season.plot_effective_area()
+        # make_individual_spline_set(season, SoB_spline_path(season))
 
 
 # If data has not been extracted, then extract from zip file

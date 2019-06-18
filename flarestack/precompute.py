@@ -169,4 +169,4 @@ if __name__ == "__main__":
     from flarestack.data.icecube.public.all_sky_point_source.all_sky_3_year \
         import ps_3_year
 
-    run_precompute()
+    run_precompute(ps_3_year)
