@@ -982,7 +982,7 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
     """
 
     compatible_llh = ["standard_matrix"]
-    compatible_negative_n_s = False
+    compatible_negative_n_s = True
 
     def __init__(self, mh_dict):
         FixedWeightMinimisationHandler.__init__(self, mh_dict)

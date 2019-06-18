@@ -7,6 +7,35 @@ from flarestack.core.injector import MCInjector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
 
+class DatasetHolder:
+
+    def __init__(self, sample_name):
+
+        self.sample_name = sample_name
+
+        self.datasets = dict()
+        self.current = None
+
+    def set_current(self, version):
+        if version in self.datasets.keys():
+            self.current = version
+        else:
+            raise Exception("Unrecognised version key: {0} \n "
+                            "Stored dataset keys are: {1}".format(
+                version, self.datasets.keys()
+            ))
+
+    def get_current(self):
+        if self.current is not None:
+            return self.datasets[self.current]
+        else:
+            print("Warning: no file listed as current.")
+            key = sorted(list(self.datasets.keys()))
+            print("Using key {0} out of {1}".format(
+                key, self.datasets.keys())
+            )
+            return self.datasets[key]
+
 
 class Dataset:
     def __init__(self, **kwargs):
@@ -47,6 +76,7 @@ class Season:
         self.exp_path = exp_path
         self.loaded_background = None
         self.pseudo_mc_path = None
+        self.background_dtype = None
         self.all_paths = [self.exp_path]
 
     def load_background_data(self):
@@ -55,7 +85,11 @@ class Season:
         self.loaded_background = self.get_background_model()
 
     def get_background_dtype(self):
-        return drop_fields(self.loaded_background, "weight").dtype
+        if self.background_dtype is None:
+            exp = self.get_exp_data()
+            self.background_dtype = exp.dtype
+            del exp
+        return self.background_dtype
 
     def get_background_model(self, **kwargs):
         """Generic Function to return background model. This could be
@@ -82,9 +116,7 @@ class Season:
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
         np.random.shuffle(data["time"])
-        return np.array(data[list(self.get_background_dtype().names)].copy(
-
-        ))[:,]
+        return np.array(data[list(self.get_background_dtype().names)].copy())[:,]
 
     def get_exp_data(self, **kwargs):
         return np.array(self.load_data(self.exp_path, **kwargs))
