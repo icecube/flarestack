@@ -20,10 +20,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib as mpl
 from flarestack.core.time_pdf import TimePDF, Box, Steady
-from flarestack.core.pull_corrector import BasePullCorrector
+from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.utils.catalogue_loader import load_catalogue, \
     calculate_source_weight
-from flarestack.utils.deus_ex_machina import estimate_discovery_potential
+from flarestack.utils.asimov_estimator import estimate_discovery_potential
 
 
 
@@ -181,7 +181,7 @@ class MinimisationHandler(object):
             self.llhs[name] = self.add_likelihood(season)
             inj_season = self.inj_seasons[name]
             self.injectors[name] = self.add_injector(inj_season, sources)
-            self.pull_correctors[name] = BasePullCorrector.create(
+            self.pull_correctors[name] = BaseAngularErrorModifier.create(
                 season, self.llh_dict["llh_energy_pdf"], self.floor_name,
                 self.pull_name
             )
@@ -337,50 +337,51 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         :param seed: Random seed used for running of trials
         """
 
-        if self.name == "":
-            raise Exception("No field 'name' was specified in mh_dict object. "
+        if self.name == " /":
+            print("No field 'name' was specified in mh_dict object. "
                             "Cannot save results without a unique directory"
                             " name being specified.")
 
-        write_dir = self.pickle_output_dir + scale_shortener(scale) + "/"
+        else:
 
-        # Tries to create the parent directory, unless it already exists
-        try:
-            os.makedirs(write_dir)
-        except OSError:
-            pass
+            write_dir = self.pickle_output_dir + scale_shortener(scale) + "/"
 
-        file_name = write_dir + str(seed) + ".pkl"
+            # Tries to create the parent directory, unless it already exists
+            try:
+                os.makedirs(write_dir)
+            except OSError:
+                pass
 
-        print("Saving to", file_name)
+            file_name = write_dir + str(seed) + ".pkl"
 
-        with open(file_name, "wb") as f:
-            Pickle.dump(results, f)
+            print("Saving to", file_name)
+
+            with open(file_name, "wb") as f:
+                Pickle.dump(results, f)
 
     def dump_injection_values(self, scale):
 
-        if self.name == "":
+        if self.name == " /":
             raise Exception("No field 'name' was specified in mh_dict object. "
                             "Cannot save results without a unique directory"
                             " name being specified.")
 
-        print(scale)
+        else:
 
-        inj_dict = self.return_injected_parameters(scale)
-        print(inj_dict)
-        # print self.exp
+            inj_dict = self.return_injected_parameters(scale)
+            # print self.exp
 
-        inj_dir = inj_dir_name(self.name)
+            inj_dir = inj_dir_name(self.name)
 
-        # Tries to create the parent directory, unless it already exists
-        try:
-            os.makedirs(inj_dir)
-        except OSError:
-            pass
+            # Tries to create the parent directory, unless it already exists
+            try:
+                os.makedirs(inj_dir)
+            except OSError:
+                pass
 
-        file_name = inj_dir + scale_shortener(scale) + ".pkl"
-        with open(file_name, "wb") as f:
-            Pickle.dump(inj_dict, f)
+            file_name = inj_dir + scale_shortener(scale) + ".pkl"
+            with open(file_name, "wb") as f:
+                Pickle.dump(inj_dict, f)
 
     def run_trial(self, full_dataset):
 
@@ -982,7 +983,7 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
     """
 
     compatible_llh = ["standard_matrix"]
-    compatible_negative_n_s = True
+    compatible_negative_n_s = False
 
     def __init__(self, mh_dict):
         FixedWeightMinimisationHandler.__init__(self, mh_dict)
