@@ -252,85 +252,8 @@ def parse_effective_areas(show=False):
 
         pseudo_mc = np.array(pseudo_mc, dtype=data_dtype)
 
-        # Select only upgoing muons. For these events, the dominant
-        # background is atmospheric neutrinos with a known spectrum of E^-3.7.
-        # Downgoing events, on the other hand, are contaminated by sneaking
-        # muon bundles which are harder to model.
-
-        exp = exp[exp["sinDec"] > 0.]
-
-        plt.figure()
-        ax1 = plt.subplot(311)
-        res = ax1.hist(exp["logE"], density=True)
-
-        exp_vals = res[0]
-        exp_bins = res[1]
-        ax1.set_yscale("log")
-        ax2 = plt.subplot(312, sharex=ax1)
-        res = ax2.hist(
-            pseudo_mc["logE"],
-            weights=pseudo_mc["ow"] * pseudo_mc["trueE"]**-3.7,
-            density=True, bins=exp_bins)
-        mc_vals = res[0]
-
-        ax2.set_yscale("log")
-
-        # Maps ratio of expected neutrino energies to energy proxy values
-        # This can tell us about how true energy maps to energy proxy
-
-        centers = 0.5 * (exp_bins[:-1] + exp_bins[1:])
-
-        # Fill in empty bins
-
-        mc_vals = np.array(mc_vals)
-
-        # print(mc_vals)
-
-        mc_vals += min(pseudo_mc["ow"][pseudo_mc["ow"] > 0.]) * centers ** -3.7
-        # print(mc_vals)
-
-        x = [-5.0] + list(centers) + [15.0]
-        y = exp_vals / mc_vals
-        y = [y[0]] + list(y) + [y[-1]]
-
-        log_e_weighting = interp1d(x, np.log(y))
-
-        ax3 = plt.subplot(313)
-        plt.plot(centers, exp_vals/mc_vals)
-        plt.plot(centers, np.exp(log_e_weighting(centers)),
-                 linestyle=":")
-        ax3.set_yscale("log")
-
-        plt.savefig(save_path)
-
-        save_path = effective_area_plot_path(ps_3_year.seasons[dataset])
-
-        try:
-            os.makedirs(os.path.dirname(save_path))
-        except OSError:
-            pass
-
-        pseudo_mc["ow"] *= np.exp(log_e_weighting(pseudo_mc["logE"]))
-
-        mc_path = pseudo_mc_path(dataset)
-
-        np.save(mc_path, pseudo_mc)
-
-        ep_path = energy_proxy_path(ps_3_year.seasons[dataset])
-
-        try:
-            os.makedirs(os.path.dirname(ep_path))
-        except OSError:
-            pass
-
-        with open(ep_path, "wb") as f:
-            print("Saving converted numpy array to", ep_path)
-            pickle.dump([x, np.log(y)], f)
-
-        if not show:
-            plt.close()
-        else:
-            plt.show()
+        season = ps_3_year.seasons[dataset]
+        season.map_energy_proxy(raw_pseudo_mc=pseudo_mc)
 
 
 def run_all():
