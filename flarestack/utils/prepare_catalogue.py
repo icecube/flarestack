@@ -68,10 +68,8 @@ def make_single_sources():
     for sindec in sindecs:
         cat = single_source(sindec)
         save_path = ps_catalogue_name(sindec)
-        stdout.write("\rSaving to " + save_path)
-        stdout.flush()
+        print("Saving to " + save_path)
         np.save(save_path, cat)
-        time.sleep(0.1)
 
     print("\n")
     print("Single Source catalogues created!", "\n")

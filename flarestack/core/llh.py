@@ -68,7 +68,7 @@ class LLH(object):
         self.season = season
         self.sources = sources
         self.llh_dict = llh_dict
-        self.spatial_pdf = SpatialPDF.create(llh_dict["llh_spatial_pdf"])
+        self.spatial_pdf = SpatialPDF(llh_dict["llh_spatial_pdf"], season)
 
         try:
             time_dict = llh_dict["llh_time_pdf"]
@@ -79,7 +79,6 @@ class LLH(object):
                            "you do not want time dependence in your "
                            "likelihood, please specify a 'Steady' Time PDF.")
 
-        self.bkg_spatial = self.create_background_function()
         self.acceptance, self.energy_weight_f = self.create_energy_functions()
 
     @classmethod
@@ -150,7 +149,7 @@ class LLH(object):
         return sig_pdf
 
     # @staticmethod
-    # def signal_spatial(source, cut_data):
+    # def signal(source, cut_data):
     #     """Calculates the angular distance between the source and the
     #     coincident dataset. Uses a Gaussian PDF function, centered on the
     #     source. Returns the value of the Gaussian at the given distances.
@@ -189,7 +188,7 @@ class LLH(object):
         :param cut_data: Subset of Dataset with coincident events
         :return: Array of Background Spacetime PDF values
         """
-        space_term = self.background_spatial(cut_data)
+        space_term = self.spatial_pdf.background_spatial(cut_data)
 
         if hasattr(self, "time_pdf"):
             time_term = self.time_pdf.background_f(cut_data["time"], source)
@@ -199,12 +198,6 @@ class LLH(object):
             sig_pdf = space_term
 
         return sig_pdf
-
-    def background_spatial(self, cut_data):
-        space_term = (1. / (2. * np.pi)) * np.exp(
-            self.bkg_spatial(cut_data["sinDec"]))
-        # space_term = (1 / (4 * np.pi))
-        return space_term
 
     # def acceptance(self, source, params=None):
     #     """Calculates the detector acceptance for a given source, using the
@@ -217,15 +210,6 @@ class LLH(object):
     #     season, for the source
     #     """
     #     return self.acceptance_f(source, params)
-
-    def create_background_function(self):
-
-        # Checks if background spatial spline has been created
-
-        if not os.path.isfile(bkg_spline_path(self.season)):
-            self.season.make_background_spatial()
-
-        return load_bkg_spatial_spline(self.season)
 
     def create_energy_functions(self):
         """Creates the acceptance function, which parameterises signal
@@ -372,7 +356,7 @@ class SpatialLLH(LLH):
 
         :return: 1D linear interpolation
         """
-        exp = data_loader(self.season["exp_path"])
+        exp = self.season.get_background_model()
         data_rate = float(len(exp))
         del exp
 
@@ -1264,7 +1248,7 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             """For the flare search, generating repeated box time PDFs would
             be required to recalculate the
             """
-            space_term = self.background_spatial(cut_data)
+            space_term = self.spatial_pdf.background_spatial(cut_data)
 
             return space_term
 
@@ -1296,7 +1280,7 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             :return: SoB of events in coincident dataset
             """
             sig = self.spatial_pdf.signal_spatial(source, coincident_data)
-            bkg = self.background_spatial(coincident_data)
+            bkg = self.spatial_pdf.background_spatial(coincident_data)
             SoB_space = sig / bkg
 
             SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)

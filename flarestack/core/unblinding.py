@@ -86,15 +86,20 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
             try:
                 if self.mock_unblind:
-                    self.name += "mock_unblind/"
                     self.limit_path = limit_output_path(
                         self.unblind_dict["background TS"] + "mock_unblind/")
                 else:
-                    self.name += "real_unblind/"
                     self.limit_path = limit_output_path(
                         self.unblind_dict["background TS"] + "real_unblind/")
             except KeyError:
                 self.limit_path = np.nan
+
+            if self.name != " /":
+                if self.mock_unblind:
+                    self.name += "mock_unblind/"
+                else:
+                    self.name += "real_unblind/"
+
 
             self.plot_dir = plot_output_dir(self.name)
 

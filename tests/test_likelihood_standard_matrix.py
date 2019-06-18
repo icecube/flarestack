@@ -32,7 +32,7 @@ catalogue = tde_catalogue_name("jetted")
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
 
-true_parameters = [2.3136930208626496, 1.8383163478531814]
+true_parameters = [2.3300319373809333, 1.8385540231080426]
 
 
 class TestTimeIntegrated(unittest.TestCase):

@@ -84,6 +84,7 @@ class ResultsHandler(object):
         self.frac_over = np.nan
         self.disc_potential = np.nan
         self.disc_potential_25 = np.nan
+        self.disc_ts_threshold = np.nan
         self.extrapolated_sens = False
         self.extrapolated_disc = False
 
@@ -388,6 +389,9 @@ class ResultsHandler(object):
 
         disc_threshold = plot_background_ts_distribution(
             bkg_ts, ts_path, ts_type=self.ts_type)
+
+        self.disc_ts_threshold = disc_threshold
+
         bkg_median = np.median(bkg_ts)
         x = sorted(self.results.keys())
         y = []

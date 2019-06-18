@@ -105,8 +105,8 @@ class StaticFloor(BaseStaticFloor):
         except KeyError:
             self.min_error = min_angular_err
 
-        print("Applying an angular error floor of", np.degrees(self.min_error), end=' ')
-        print("degrees")
+        print("Applying an angular error floor of", np.degrees(self.min_error),
+              "degrees")
 
     def floor(self, data):
         return np.array([self.min_error for _ in data])
@@ -192,7 +192,7 @@ class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
             [np.exp(func(x["logE"], params[0])[0]) for x in data]).T
 
 
-class BasePullCorrector(object):
+class BaseAngularErrorModifier(object):
     subclasses = {}
 
     def __init__(self, pull_dict):
@@ -202,32 +202,35 @@ class BasePullCorrector(object):
         self.pull_name = pull_pickle(pull_dict)
 
     @classmethod
-    def register_subclass(cls, pull_name):
-        """Adds a new subclass of BasePullCorrector, with class name equal to
-        "pull_name".
+    def register_subclass(cls, aem_name):
+        """Adds a new subclass of BaseAngularErrorModifier,
+        with class name equal to aem_name.
+
+        :param aem_name: AngularErrorModifier name
+        :return: AngularErrorModifier object
         """
 
         def decorator(subclass):
-            cls.subclasses[pull_name] = subclass
+            cls.subclasses[aem_name] = subclass
             return subclass
 
         return decorator
 
     @classmethod
     def create(cls, season, e_pdf_dict, floor_name="static_floor",
-               pull_name="no_pull", **kwargs):
+               aem_name="no_modifier", **kwargs):
 
         pull_dict = dict()
         pull_dict["season"] = season
         pull_dict["e_pdf_dict"] = e_pdf_dict
         pull_dict["floor_name"] = floor_name
-        pull_dict["pull_name"] = pull_name
+        pull_dict["aem_name"] = aem_name
         pull_dict.update(kwargs)
 
-        if pull_name not in cls.subclasses:
-            raise ValueError('Bad pull name {}'.format(pull_name))
+        if aem_name not in cls.subclasses:
+            raise ValueError('Bad pull name {}'.format(aem_name))
 
-        return cls.subclasses[pull_name](pull_dict)
+        return cls.subclasses[aem_name](pull_dict)
 
     def pull_correct(self, data, params):
         return data
@@ -294,15 +297,15 @@ class BasePullCorrector(object):
         return val
 
 
-@BasePullCorrector.register_subclass('no_pull')
-class NoPull(BasePullCorrector):
+@BaseAngularErrorModifier.register_subclass('no_pull')
+class NoPull(BaseAngularErrorModifier):
     pass
 
 
-class BaseMedianPullCorrector(BasePullCorrector):
+class BaseMedianAngularErrorModifier(BaseAngularErrorModifier):
 
     def __init__(self, pull_dict):
-        BasePullCorrector.__init__(self, pull_dict)
+        BaseAngularErrorModifier.__init__(self, pull_dict)
 
         if not os.path.isfile(self.pull_name):
             self.create_pickle()
@@ -326,10 +329,10 @@ class BaseMedianPullCorrector(BasePullCorrector):
         return lambda data: np.array([1. for _ in data])
 
 
-class StaticMedianPullCorrector(BaseMedianPullCorrector):
+class StaticMedianPullCorrector(BaseMedianAngularErrorModifier):
 
     def __init__(self, pull_dict):
-        BaseMedianPullCorrector.__init__(self, pull_dict)
+        BaseMedianAngularErrorModifier.__init__(self, pull_dict)
 
         self.static_f = self.create_static()
 
@@ -342,10 +345,10 @@ class StaticMedianPullCorrector(BaseMedianPullCorrector):
         return data
 
 
-class DynamicMedianPullCorrector(BaseMedianPullCorrector):
+class DynamicMedianPullCorrector(BaseMedianAngularErrorModifier):
 
     def __init__(self, pull_dict):
-        BasePullCorrector.__init__(self, pull_dict)
+        BaseAngularErrorModifier.__init__(self, pull_dict)
 
     def estimate_spatial(self, gamma, spatial_cache):
         return self.estimate_spatial_dynamic(gamma, spatial_cache)
@@ -387,7 +390,7 @@ class DynamicMedianPullCorrector(BaseMedianPullCorrector):
         return spatial_cache
 
 
-@BasePullCorrector.register_subclass("median_0d_e")
+@BaseAngularErrorModifier.register_subclass("median_0d_e")
 class MedianPullEParam0D(DynamicMedianPullCorrector):
 
     def create_pickle(self):
@@ -397,7 +400,7 @@ class MedianPullEParam0D(DynamicMedianPullCorrector):
         return lambda data: np.array([pickled_array for _ in data])
 
 
-@BasePullCorrector.register_subclass("median_1d")
+@BaseAngularErrorModifier.register_subclass("median_1d")
 class MedianPull1D(StaticMedianPullCorrector):
 
     def create_pickle(self):
@@ -408,7 +411,7 @@ class MedianPull1D(StaticMedianPullCorrector):
         return lambda data: func(data["logE"])
 
 
-@BasePullCorrector.register_subclass("median_1d_e")
+@BaseAngularErrorModifier.register_subclass("median_1d_e")
 class MedianPullEParam1D(DynamicMedianPullCorrector):
 
     def create_pickle(self):
@@ -418,7 +421,7 @@ class MedianPullEParam1D(DynamicMedianPullCorrector):
         func = interp1d(pickled_array[0], pickled_array[1])
         return lambda data: func(data["logE"])
 
-@BasePullCorrector.register_subclass("median_2d")
+@BaseAngularErrorModifier.register_subclass("median_2d")
 class MedianPull2D(StaticMedianPullCorrector):
 
     def create_pickle(self):
@@ -431,7 +434,7 @@ class MedianPull2D(StaticMedianPullCorrector):
         return lambda data: [func(x["logE"], x["sinDec"])[0][0] for x in data]
         # return lambda data:
 
-@BasePullCorrector.register_subclass("median_2d_e")
+@BaseAngularErrorModifier.register_subclass("median_2d_e")
 class MedianPullEParam2D(DynamicMedianPullCorrector):
 
     def create_pickle(self):
@@ -471,7 +474,7 @@ if __name__ == "__main__":
 
     e_pdf = EnergyPDF.create(e_pdf_dict)
 
-    pc = BasePullCorrector.create(IC86_1_dict, e_pdf_dict, "no_floor",
+    pc = BaseAngularErrorModifier.create(IC86_1_dict, e_pdf_dict, "no_floor",
                                   "median_2d")
     mc, x, y = get_data(IC86_1_dict)[:10]
 
@@ -500,11 +503,11 @@ if __name__ == "__main__":
 
     print(median_pull)
 
-# @BasePullCorrector.register_subclass('static_pull_corrector')
-# class Static1DPullCorrector(BasePullCorrector):
+# @BaseAngularErrorModifier.register_subclass('static_pull_corrector')
+# class Static1DPullCorrector(BaseAngularErrorModifier):
 #
 #     def __init__(self, season, e_pdf_dict, **kwargs):
-#         BasePullCorrector.__init__(self, season, e_pdf_dict)
+#         BaseAngularErrorModifier.__init__(self, season, e_pdf_dict)
 
 
 # x = BaseFloorClass.create(IC86_1_dict, e_pdf_dict, "quantile_floor_1d_e",

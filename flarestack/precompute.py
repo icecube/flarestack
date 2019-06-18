@@ -27,7 +27,7 @@ def set_scratch_directory(path):
         f.write(("scratch_path = '" + path + "'").encode())
 
 
-def run_precompute(all_data, ask=True):
+def run_precompute(all_data=[], ask=True):
     """Builds directory substructure, creates standard source catalogues and
     creates acceptance functions + Signal/Background splines
 
@@ -114,35 +114,39 @@ def run_precompute(all_data, ask=True):
     print("*                                                                  *")
     print("********************************************************************")
 
-    for y in all_data.values():
-        y.check_files_exist()
+    if not isinstance(all_data, list):
+        all_data = [all_data]
 
-    print("\n")
-    print("********************************************************************")
-    print("*                                                                  *")
-    print("*                       Checking GoodRunLists                      *")
-    print("*                                                                  *")
-    print("********************************************************************")
-    print("\n")
-    verify_grl_with_data(all_data)
+    for dataset in all_data:
+        for y in dataset.seasons.values():
+            y.check_files_exist()
 
-    print("\n")
-    print("********************************************************************")
-    print("*                                                                  *")
-    print("*                   Making Acceptance Functions                    *")
-    print("*                                                                  *")
-    print("********************************************************************")
-    print("\n")
-    make_acceptance_f(all_data)
-
-    print("\n")
-    print("********************************************************************")
-    print("*                                                                  *")
-    print("*    Creating Log(Energy) vs. Sin(Declination) Sig/Bkg splines     *")
-    print("*                                                                  *")
-    print("********************************************************************")
-    print("\n")
-    make_spline(all_data)
+    # print("\n")
+    # print("********************************************************************")
+    # print("*                                                                  *")
+    # print("*                       Checking GoodRunLists                      *")
+    # print("*                                                                  *")
+    # print("********************************************************************")
+    # print("\n")
+    # verify_grl_with_data(all_data)
+    #
+    # print("\n")
+    # print("********************************************************************")
+    # print("*                                                                  *")
+    # print("*                   Making Acceptance Functions                    *")
+    # print("*                                                                  *")
+    # print("********************************************************************")
+    # print("\n")
+    # make_acceptance_f(all_data)
+    #
+    # print("\n")
+    # print("********************************************************************")
+    # print("*                                                                  *")
+    # print("*    Creating Log(Energy) vs. Sin(Declination) Sig/Bkg splines     *")
+    # print("*                                                                  *")
+    # print("********************************************************************")
+    # print("\n")
+    # make_spline(all_data)
 
 
 if __name__ == "__main__":
@@ -162,6 +166,7 @@ if __name__ == "__main__":
         del scratch_path
         set_scratch_directory(cfg.scratch_path)
 
-    from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+    from flarestack.data.icecube.public.all_sky_point_source.all_sky_3_year \
+        import ps_3_year
 
-    run_precompute(ps_7year.get_seasons())
+    run_precompute(ps_3_year)

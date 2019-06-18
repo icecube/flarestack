@@ -1,10 +1,22 @@
 # flarestack
+[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
+
 Code for unbinned likelihood analysis of astroparticle physics data, created by [@robertdstein](https://github.com/robertdstein).
 
 Both time-dependent and time-independent analyses can be performed, as well as a "flare-search" algorithm to find event clustering in time as well as space.
 
 Performs single point source analyses, as well as the stacking of sources according to predefined weighting. 
 Also performs stacking analyses where the signal strength of each source is fit individually.
+
+# Getting started
+
+The easiest way to start using Flarestack is to play with the introductory ipython notebooks, which can be opened with the following link:
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
+
+The notebooks themselves are found under *examples/ipython_notebooks/*.
+
+The "Binder" provides a pre-built Docker image containing all necessary dependencies, so you can simply click and play. It avoids the need for local installation, and should provide understanding of how the code works. 
 
 # Installation instructions
 
@@ -34,12 +46,12 @@ This will give you the very latest copy of the code, update the installed versio
 
 ### What actually are the dependencies, by the way?
 
-Flarestack uses python 3.6, and requires the following packages:
+Flarestack uses python 3.7, and requires the following packages:
 
 * numpy
 * scipy
 * astropy
-* healpy=1.10.3
+* healpy=1.10.1
 * matplotlib
 * numexpr
 
@@ -81,10 +93,6 @@ The above 4/6 lines of code will then build all relevant files for the datasets 
 In either case, the code will then run. *Be prepared that this will take some time*. Fortunately, having done this once, you will not need to repeat it unless you require new datasets or a new release of Flarestack. The scratch directory will not need to be set again, although the dataset directory will need to be newly assigned at the top of your analysis scripts. 
 
 You can them simply run scripts such as those under /flarestack/analyses/, and do your science!
-
-### Anything else?
-
-One additional file that is useful is the published IceCube 7 year Point source sensitivity. In general, Flarestack calculates sensitivity/discovery potential by generating TS distributions at fixed points between 0 and a characteristic flux level, and then interpolates between these points to determine the 90% sensitivity and 50% discovery potential. To meaningfully estimate the sensitivity/discovery potential, the characteristic flux scale must be large enough to exceed the sensitivity or discovery potential, while still small enough so that the interpolation points are not entirely composed of overfluctutations. Selecting reasonable values for this flux scale is typically done by multiplying the published ps sensitivity by various factors. The file can be downloaded from https://icecube.wisc.edu/~coenders/sens.npy, and should be saved to /path/to/scratch/flarestack__data/input/skylab_reference/sens.npy . As with the datasets, this step does not need to be performed for users of DESY/WIPAC because Flarestack will automatically find the relevant files. Users without access to these files will be unable to use the _reference_sensitivity_ function, but will otherwise be able to perform analyses as usual.
 
 # Testing Flarestack
 

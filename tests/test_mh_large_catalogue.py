@@ -46,8 +46,8 @@ catalogue = agn_subset_catalogue("radioloud", "radioselected", n_sources)
 # compared to these values.
 
 true_parameters = [
-    [0.0, 2.7849363898525303],
-    [4.899457256050394, 1.9038645526134297]
+    [0.0, 2.7849355815707613],
+    [4.8994426086549545, 1.9038635286769627]
 ]
 
 
