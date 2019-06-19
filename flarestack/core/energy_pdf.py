@@ -299,6 +299,27 @@ class Spline(EnergyPDF):
         return weights
 
 
+class EnergyPDFConstructor:
+
+    subclasses = {}
+
+    def __init__(self, e_pdf_dict):
+
+        self.signal_energy_pdf = EnergyPDF.create(e_pdf_dict)
+
+
+    @classmethod
+    def create(cls, e_pdf_dict):
+        e_pdf_dict = read_e_pdf_dict(e_pdf_dict)
+
+        e_pdf_name = e_pdf_dict["energy_pdf_name"]
+
+        if e_pdf_name not in cls.subclasses:
+            raise ValueError('Bad energy PDF name {}'.format(e_pdf_name))
+
+        return cls.subclasses[e_pdf_name](e_pdf_dict)
+
+
 # if __name__ == "__main__":
 #
 #     from flarestack.shared import plots_dir, fs_scratch_dir
