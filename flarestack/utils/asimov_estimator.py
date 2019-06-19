@@ -194,12 +194,12 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
             # source_mc["sigma"] = 1.177 * true_errors
             #
-            # print(max(llh.background_spatial(source_mc)),
-            #       min(llh.background_spatial(source_mc)))
-            # print(max(llh.spatial_pdf.signal_spatial(
-            #     source, source_mc) / llh.background_spatial(source_mc)),
-            #       min(llh.spatial_pdf.signal_spatial(
-            #     source, source_mc) / llh.background_spatial(source_mc)))
+            # print(max(llh.background(source_mc)),
+            #       min(llh.background(source_mc)))
+            # print(max(llh.spatial_pdf.signal(
+            #     source, source_mc) / llh.background(source_mc)),
+            #       min(llh.spatial_pdf.signal(
+            #     source, source_mc) / llh.background(source_mc)))
             #
             # input("?")
 
@@ -213,13 +213,13 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
             # print(min(1. / (2. * np.pi * true_errors ** 2.) *
             #      np.exp(-0.5 * ((1.177) **
             #                     2.))))
-            # print(min(llh.background_spatial(source_mc)),
-            #       max(llh.background_spatial(source_mc)))
+            # print(min(llh.background(source_mc)),
+            #       max(llh.background(source_mc)))
             #
             #
             # ratio_spatial = (1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
             #                  np.exp(-0.5 * ((true_errors/source_mc["sigma"]) **
-            #                     2.))) / llh.background_spatial(source_mc)
+            #                     2.))) / llh.background(source_mc)
 
             # ratio_spatial = np.log(gaussian_spatial)
             # print("Spatial", np.mean(gaussian_spatial), np.mean(
@@ -230,12 +230,12 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
             sig_spatial = (1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
                              np.exp(-0.5 * (
                                      (true_errors/source_mc["sigma"]) **2.))) \
-                            / llh.background_spatial(source_mc)
+                            / llh.spatial_pdf.background_spatial(source_mc)
 
             bkg_spatial = (1. / (2. * np.pi * local_data["sigma"] ** 2.) *
                              np.exp(-0.5 * (
                                      (1.177) ** 2.))) \
-                            / llh.background_spatial(local_data)
+                            / llh.spatial_pdf.background_spatial(local_data)
 
 
             # print(min(ratio_spatial), np.mean(ratio_spatial), max(ratio_spatial))
@@ -254,7 +254,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
             bkg_spatial = (1. / (2. * np.pi * local_data["sigma"] ** 2.) *
                            np.exp(-0.5 * ((dists/local_data["sigma"]) ** 2.))) \
-                            / llh.background_spatial(local_data)
+                            / llh.spatial_pdf.background_spatial(local_data)
 
             # print(np.mean(np.log10(bkg_spatial)))
             # input("?")
