@@ -11,8 +11,6 @@ from flarestack.shared import plots_dir
 from flarestack.utils.neutrino_astronomy import calculate_neutrinos
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_dict
 
 
 def get_diffuse_flux_at_100TeV(fit="joint"):
@@ -41,7 +39,9 @@ def get_diffuse_flux_at_100TeV(fit="joint"):
         diffuse_gamma = 2.19
 
     else:
-        raise Exception("Fit " + fit + " not recognised!")
+        raise Exception("Fit '{0}' not recognised! \n"
+                        "The following fits are available: \n"
+                        "'joint', 'northern_tracks'".format(fit, ))
 
     return diffuse_flux, diffuse_gamma
 
@@ -336,31 +336,31 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     return nu_at_horizon
 
 
-def estimate_northern_neutrinos(diffuse_fit="joint"):
-    diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
+# def estimate_northern_neutrinos(diffuse_fit="joint"):
+#     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
+#
+#     print("\n")
+#
+#     print("Let's assume that 50% of the diffuse flux is distributed on a \n" \
+#           "single source in the northern sky. That's unrealistic, but \n " \
+#           "should give us an idea of expected neutrino numbers! \n")
+#
+#     source = np.load(ps_catalogue_name(0.2))
+#
+#     inj_kwargs = {
+#         "injection_time_pdf": {
+#             "time_pdf_name": "Steady"
+#         },
+#         "injection_energy_pdf": {
+#             "energy_pdf_name": "PowerLaw",
+#             "gamma": diffuse_gamma,
+#             "flux_at_1_gev": diffuse_flux*0.5
+#         }
+#     }
+#
+#     calculate_neutrinos(source[0], IC86_1_dict, inj_kwargs)
 
-    print("\n")
-
-    print("Let's assume that 50% of the diffuse flux is distributed on a \n" \
-          "single source in the northern sky. That's unrealistic, but \n " \
-          "should give us an idea of expected neutrino numbers! \n")
-
-    source = np.load(ps_catalogue_name(0.2))
-
-    inj_kwargs = {
-        "injection_time_pdf": {
-            "time_pdf_name": "Steady"
-        },
-        "injection_energy_pdf": {
-            "energy_pdf_name": "PowerLaw",
-            "gamma": diffuse_gamma,
-            "flux_at_1_gev": diffuse_flux*0.5
-        }
-    }
-
-    calculate_neutrinos(source[0], IC86_1_dict, inj_kwargs)
-
-
-if __name__ == "__main__":
-    estimate_northern_neutrinos(diffuse_fit="joint")
-    estimate_northern_neutrinos(diffuse_fit="northern_tracks")
+#
+# if __name__ == "__main__":
+#     estimate_northern_neutrinos(diffuse_fit="joint")
+#     estimate_northern_neutrinos(diffuse_fit="northern_tracks")
