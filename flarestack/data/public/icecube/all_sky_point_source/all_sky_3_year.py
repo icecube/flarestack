@@ -9,7 +9,7 @@ from flarestack.utils.make_SoB_splines import make_individual_spline_set
 from flarestack.shared import SoB_spline_path, energy_proxy_plot_path
 from flarestack.icecube_utils import atmospheric_neutrino_spectrum
 from flarestack.data import Dataset
-from flarestack.data.icecube.public import PublicICSeason
+from flarestack.data.public.icecube import PublicICSeason
 import matplotlib.pyplot as plt
 import zipfile
 from flarestack.icecube_utils.dataset_loader import data_loader
@@ -205,13 +205,13 @@ def parse_angular_resolution():
 
 
 def run_all():
-    parse_numpy_dataset()
-    parse_angular_resolution()
+    # parse_numpy_dataset()
+    # parse_angular_resolution()
 
     for season in ps_3_year.get_seasons().values():
         season.map_energy_proxy()
         season.plot_effective_area()
-        # make_individual_spline_set(season, SoB_spline_path(season))
+        make_individual_spline_set(season, SoB_spline_path(season))
 
 
 # If data has not been extracted, then extract from zip file

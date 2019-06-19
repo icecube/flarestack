@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import csv
 import scipy.interpolate
-from flarestack.data import SeasonWithoutMC
+from flarestack.data import SeasonWithoutMC, Season
 from flarestack.icecube_utils.dataset_loader import data_loader
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -151,84 +151,122 @@ class PublicICSeason(SeasonWithoutMC):
         # Downgoing events, on the other hand, are contaminated by sneaking
         # muon bundles which are harder to model.
 
-        exp = exp[exp["sinDec"] > 0.]
+        # exp = exp[exp["sinDec"] < 0.]
 
-        plt.figure()
-        ax1 = plt.subplot(311)
-        res = ax1.hist(exp["logE"], density=True)
-        ax1.set_title("Energy Proxy (Data)")
-        ax1.set_xlabel(r"$\log_{10}(E_{proxy})$")
+        # pseudo_mc = pseudo_mc[]
 
-        exp_vals = res[0]
-        exp_bins = res[1]
-        ax1.set_yscale("log")
-        ax2 = plt.subplot(312, sharex=ax1)
-        res = ax2.hist(
-            pseudo_mc["logE"],
-            weights=pseudo_mc["ow"] * pseudo_mc["trueE"] ** -3.7,
-            density=True, bins=exp_bins)
-        mc_vals = res[0]
+        for i, x in enumerate([-5.]):#, -15.]):
+            label = ["Upgoing", "Downgoing"][i]
+            cut_value = np.sin(np.deg2rad(x))
 
-        ax2.set_yscale("log")
-        ax2.set_title(r"Expected True Energy ($E^{-3.7}$)")
-        ax2.set_xlabel(r"$\log_{10}(E_{true})$")
+            sign = np.sign(i-0.5)
 
-        # Maps ratio of expected neutrino energies to energy proxy values
-        # This can tell us about how true energy maps to energy proxy
+            # Cut down then up
 
-        centers = 0.5 * (exp_bins[:-1] + exp_bins[1:])
+            exp_cut = exp[(sign * exp["sinDec"]) < (sign * cut_value)]
 
-        # Fill in empty bins
 
-        mc_vals = np.array(mc_vals)
+            pseudo_mc_cut = pseudo_mc[
+                (sign * pseudo_mc["sinDec"]) < (sign * cut_value)
+            ]
 
-        mc_vals += min(pseudo_mc["ow"][pseudo_mc["ow"] > 0.]) * centers ** -3.7
+            log_e_exp = exp_cut["logE"]
+            log_e_exp[log_e_exp < min(pseudo_mc_cut["logE"])] = min(
+                pseudo_mc_cut["logE"])
 
-        x = [-5.0] + list(centers) + [15.0]
-        y = exp_vals / mc_vals
-        y = [y[0]] + list(y) + [y[-1]]
+            # spread = np.linspace(-1., 1., 10)
+            # weights = scipy.stats.norm.pdf(spread, scale=0.3)
+            # print(log_e_vals[:,] * spread.T)
 
-        log_e_weighting = scipy.interpolate.interp1d(x, np.log(y))
+            # log_e_vals = np.dot(log_e_vals[:,None], spread[:,None].T).ravel()
+            # weights = np.dot(pseudo_mc_cut["ow"][:, None],
+            #                     weights[:,None].T).ravel()
+            #
+            # true_e = np.dot(pseudo_mc_cut["ow"][:, None],
+            #                 np.ones_like(spread)[:,None].T).ravel()
+            # print(log_e_vals)
+            #
+            # print("Weights", weights)
+            # input("?")
 
-        ax3 = plt.subplot(313)
-        plt.plot(centers, exp_vals / mc_vals)
-        plt.plot(centers, np.exp(log_e_weighting(centers)),
-                 linestyle=":")
-        ax3.set_yscale("log")
-        ax3.set_title("Ratio")
-        ax3.set_xlabel(r"$\log_{10}(E)$")
+            index = [3.7, 3.0][i]
 
-        plt.tight_layout()
+            plt.figure()
+            ax1 = plt.subplot(311)
+            res = ax1.hist(log_e_exp, density=True)
+            ax1.set_title("Energy Proxy (Data)")
 
-        save_path = energy_proxy_plot_path(self)
+            exp_vals = res[0]
+            exp_bins = res[1]
+            ax1.set_yscale("log")
+            ax2 = plt.subplot(312, sharex=ax1)
+            res = ax2.hist(
+                pseudo_mc_cut["logE"],
+                weights=pseudo_mc_cut["ow"] * pseudo_mc_cut["trueE"] ** -index,
+                density=True, bins=exp_bins)
+            mc_vals = res[0]
 
-        try:
-            os.makedirs(os.path.dirname(save_path))
-        except OSError:
-            pass
+            ax2.set_yscale("log")
+            ax2.set_title(r"Expected True Energy ($E^{-" + str(index) + r"}$)")
 
-        print("Saving to", save_path)
+            # Maps ratio of expected neutrino energies to energy proxy values
+            # This can tell us about how true energy maps to energy proxy
 
-        plt.savefig(save_path)
+            centers = 0.5 * (exp_bins[:-1] + exp_bins[1:])
 
-        pseudo_mc["ow"] *= np.exp(log_e_weighting(pseudo_mc["logE"]))
+            # Fill in empty bins
 
-        mc_path = self.pseudo_mc_path
+            mc_vals = np.array(mc_vals)
 
-        np.save(mc_path, pseudo_mc)
+            x = [-5.0] + list(centers) + [15.0]
+            y = exp_vals / mc_vals
+            y = [y[0]] + list(y) + [y[-1]]
 
-        ep_path = energy_proxy_path(self)
+            log_e_weighting = scipy.interpolate.interp1d(x, np.log(y))
 
-        try:
-            os.makedirs(os.path.dirname(ep_path))
-        except OSError:
-            pass
+            ax3 = plt.subplot(313)
+            plt.plot(centers, exp_vals / mc_vals)
+            plt.plot(centers, np.exp(log_e_weighting(centers)),
+                     linestyle=":")
+            ax3.set_yscale("log")
+            ax3.set_title("Ratio")
+            ax3.set_xlabel(r"$\log_{10}(E)$")
 
-        with open(ep_path, "wb") as f:
-            print("Saving converted numpy array to", ep_path)
-            pickle.dump([x, np.log(y)], f)
+            plt.tight_layout()
 
-        if show:
-            plt.show()
-        else:
-            plt.close()
+            save_path = energy_proxy_plot_path(self)
+
+            try:
+                os.makedirs(os.path.dirname(save_path))
+            except OSError:
+                pass
+
+            save_path = os.path.dirname(save_path) + "/{0}-{1}.pdf".format(
+                self.season_name, label
+            )
+
+            print("Saving to", save_path)
+
+            plt.savefig(save_path)
+
+            if show:
+                plt.show()
+            else:
+                plt.close()
+
+            pseudo_mc["ow"] *= np.exp(log_e_weighting(pseudo_mc["logE"]))
+
+            mc_path = self.pseudo_mc_path
+
+            np.save(mc_path, pseudo_mc)
+
+            ep_path = energy_proxy_path(self)
+
+            try:
+                os.makedirs(os.path.dirname(ep_path))
+            except OSError:
+                pass
+
+            with open(ep_path, "wb") as f:
+                print("Saving converted numpy array to", ep_path)
+                pickle.dump([x, np.log(y)], f)
