@@ -7,6 +7,7 @@ from flarestack.core.injector import MCInjector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
 
+
 class DatasetHolder:
 
     def __init__(self, sample_name):
@@ -66,6 +67,9 @@ class Dataset:
                         "Available subseasons are: {2}".format(
                             name, self.seasons.keys(), self.subseasons.keys()))
             return season_dict
+
+    def get_single_season(self, name):
+        return self.get_seasons(name)[name]
 
 
 class Season:
