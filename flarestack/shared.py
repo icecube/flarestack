@@ -32,6 +32,7 @@ cache_dir = storage_dir + "cache/"
 cat_cache_dir = cache_dir + "catalogue_cache/"
 
 public_dataset_dir = input_dir + "public_datasets/"
+sim_dataset_dir = input_dir + "sim_datasets/"
 
 catalogue_dir = input_dir + "catalogues/"
 transients_dir = catalogue_dir + "transients/"
@@ -64,7 +65,8 @@ all_dirs = [
     SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
     bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir,
     cache_dir, cat_cache_dir, public_dataset_dir, energy_proxy_dir,
-    eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir, energy_proxy_plot_dir
+    eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir, energy_proxy_plot_dir,
+    sim_dataset_dir
 ]
 
 # ==============================================================================
@@ -204,6 +206,12 @@ def plot_output_dir(name):
 def limit_output_path(name):
     path = limits_dir + name + "limit.pkl"
     return path
+
+
+def sim_dataset_dir_path(season, flux, e_pdf_dict):
+    return sim_dataset_dir + season.sample_name + "/" + \
+           season.season_name + '/' + str(deterministic_hash(e_pdf_dict)) + \
+           "/" + str(flux)
 
 
 def acceptance_path(season):

@@ -10,6 +10,7 @@ from flarestack.shared import SoB_spline_path, energy_proxy_plot_path
 from flarestack.icecube_utils import atmospheric_neutrino_spectrum
 from flarestack.data import Dataset
 from flarestack.data.public.icecube import PublicICSeason
+from flarestack.data.simulate import generate_sim_season_class
 import matplotlib.pyplot as plt
 import zipfile
 from flarestack.icecube_utils.dataset_loader import data_loader
@@ -94,6 +95,8 @@ sample_name = "all_sky_3_year"
 
 ps_3_year = Dataset()
 
+ic_sim_seasons = dict()
+
 
 def make_season(season_name):
     season = PublicICSeason(
@@ -106,6 +109,18 @@ def make_season(season_name):
         a_eff_path=data_dir + season_name + "-TabulatedAeff.txt"
     )
     ps_3_year.add_season(season)
+    sim_season = generate_sim_season_class(
+        PublicICSeason,
+        season_name=season_name,
+        sample_name=sample_name,
+        exp_path=data_path(season_name),
+        pseudo_mc_path=pseudo_mc_path(season_name),
+        sin_dec_bins=np.linspace(-1., 1., 50),
+        log_e_bins=np.arange(2., 9. + 0.01, 0.25),
+        a_eff_path=data_dir + season_name + "-TabulatedAeff.txt"
+    )
+
+    ic_sim_seasons[season_name] = sim_season
 
 
 for season_name in datasets:
