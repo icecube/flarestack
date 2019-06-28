@@ -57,13 +57,13 @@ Path to local copy of point source tracks, downloaded on 24/04/18 from
       MC File    IC86-2014_corrected_MC_v2.npy
 
 """
-from flarestack.shared import dataset_dir
-from flarestack.data.icecube import IceCubeDataset, IceCubeSeason
+from flarestack.data.icecube import IceCubeDataset, IceCubeSeason, \
+    icecube_dataset_dir
 from flarestack.data.icecube.ps_tracks import ps_binning
 import numpy as np
 import copy
 
-ps_data_dir = dataset_dir + "ps_tracks/version-002-p01/"
+ps_data_dir = icecube_dataset_dir + "ps_tracks/version-002-p01/"
 
 ps_7year = IceCubeDataset()
 

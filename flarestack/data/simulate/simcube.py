@@ -3,11 +3,8 @@ from flarestack.data.simulate import SimSeason, SimDataset
 
 class SimCubeSeason(SimSeason):
 
-    pass
-
-    # def __init__(self, season_name, sample_name, pseudo_mc_path,
-    #              mjd_start, mjd_end, bkg_flux_norm, bkg_e_pdf_dict,
-    #              **kwargs):
+    def generate_sim_data(self):
+        return None
 
 
 

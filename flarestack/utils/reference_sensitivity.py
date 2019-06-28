@@ -2,7 +2,7 @@ from builtins import range
 import os
 import numpy as np
 from scipy.interpolate import interp1d, interp2d
-from flarestack.shared import skylab_ref_dir
+from flarestack.data.icecube import skylab_ref_dir
 
 
 def reference_sensitivity(sindec=np.array(0.0), gamma=2.0):

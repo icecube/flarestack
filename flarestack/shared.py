@@ -75,36 +75,6 @@ all_dirs = [
 
 host = socket.gethostname()
 
-if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
-    dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
-    skylab_ref_dir = dataset_dir + "mirror-7year-PS-sens/"
-    print("Loading datasets from", dataset_dir, "(DESY)")
-    host_server = "DESY"
-elif "icecube.wisc.edu" in host:
-    dataset_dir = "/data/ana/analyses/"
-    skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
-    print("Loading datasets from", dataset_dir, "(WIPAC)")
-    host_server = "WIPAC"
-else:
-    dataset_dir = None
-    host_server = None
-
-
-# Dataset directory can be changed if needed
-
-def set_dataset_directory(path):
-    """Sets the dataset directory to be a custom path, and exports this.
-
-    :param path: Path to datasets
-    """
-    if not os.path.isdir(path):
-        raise Exception("Attempting to set invalid path for datasets. "
-                        "Directory", path, "does not exist!")
-    print("Loading datasets from", path)
-
-    global dataset_dir
-    dataset_dir = path
-
 
 # gamma_range = [1., 4.]
 gamma_precision = .025

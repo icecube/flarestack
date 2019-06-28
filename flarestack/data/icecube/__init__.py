@@ -1,6 +1,39 @@
+import numpy as np
+import os
 from flarestack.data import Dataset, SeasonWithMC
 from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader, \
     convert_grl, verify_grl_with_data
+from flarestack.shared import host
+
+if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
+    icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
+    skylab_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
+    print("Loading datasets from", icecube_dataset_dir, "(DESY)")
+    host_server = "DESY"
+elif "icecube.wisc.edu" in host:
+    icecube_dataset_dir = "/data/ana/analyses/"
+    skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
+    print("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
+    host_server = "WIPAC"
+else:
+    icecube_dataset_dir = None
+    host_server = None
+
+
+# Dataset directory can be changed if needed
+
+def set_icecube_dataset_directory(path):
+    """Sets the dataset directory to be a custom path, and exports this.
+
+    :param path: Path to datasets
+    """
+    if not os.path.isdir(path):
+        raise Exception("Attempting to set invalid path for datasets. "
+                        "Directory", path, "does not exist!")
+    print("Loading datasets from", path)
+
+    global icecube_dataset_dir
+    icecube_dataset_dir = path
 
 
 class IceCubeDataset(Dataset):
