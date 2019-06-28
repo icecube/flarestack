@@ -208,9 +208,9 @@ def limit_output_path(name):
     return path
 
 
-def sim_dataset_dir_path(season, flux, e_pdf_dict):
-    return sim_dataset_dir + season.sample_name + "/" + \
-           season.season_name + '/' + str(deterministic_hash(e_pdf_dict)) + \
+def sim_dataset_dir_path(sample_name, season_name, flux, e_pdf_dict):
+    return sim_dataset_dir + sample_name + "/" + \
+           season_name + '/' + str(deterministic_hash(e_pdf_dict)) + \
            "/" + str(flux)
 
 
