@@ -3,21 +3,18 @@ import os
 from flarestack.data import Dataset, SeasonWithMC
 from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader, \
     convert_grl, verify_grl_with_data
-from flarestack.shared import host
+from flarestack.shared import host_server
 
-if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
+if host_server == "DESY":
     icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
     skylab_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
     print("Loading datasets from", icecube_dataset_dir, "(DESY)")
-    host_server = "DESY"
-elif "icecube.wisc.edu" in host:
+elif host_server == "WIPAC":
     icecube_dataset_dir = "/data/ana/analyses/"
     skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
     print("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
-    host_server = "WIPAC"
 else:
     icecube_dataset_dir = None
-    host_server = None
 
 
 # Dataset directory can be changed if needed

@@ -75,6 +75,12 @@ all_dirs = [
 
 host = socket.gethostname()
 
+if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
+    host_server = "DESY"
+elif "icecube.wisc.edu" in host:
+    host_server = "WIPAC"
+else:
+    host_server = None
 
 # gamma_range = [1., 4.]
 gamma_precision = .025
