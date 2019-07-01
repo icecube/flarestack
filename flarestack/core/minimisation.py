@@ -949,19 +949,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     def return_injected_parameters(self, scale):
 
-        # n_inj = 0
-        # for source in self.sources:
-        #     name = source["source_name"]
-        #
-        #     for inj in self.injectors.values():
-        #         print(inj)
-        #         try:
-        #             n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
-        #
-        #         # If source not overlapping season, will not be in dict
-        #         except KeyError:
-        #             pass
-
         n_inj = 0.
         for inj in self.injectors.values():
             n_inj += np.sum(inj.n_exp["n_exp"] * scale)
