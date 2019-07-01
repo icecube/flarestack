@@ -9,15 +9,12 @@ from __future__ import print_function
 from __future__ import division
 from builtins import str
 import numpy as np
-import os
-import pickle as Pickle
 from flarestack.core.results import ResultsHandler
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_v002_p01
+from flarestack.data.icecube import gfu_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k,  \
     transients_dir, make_analysis_pickle
 from flarestack.utils.prepare_catalogue import custom_sources
-from flarestack.utils.reference_sensitivity import reference_sensitivity
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
 from astropy.coordinates import Distance

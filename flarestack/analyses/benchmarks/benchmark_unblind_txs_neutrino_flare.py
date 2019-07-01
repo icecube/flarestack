@@ -1,14 +1,8 @@
 """Script to replicate unblinding of the neutrino flare found for the source
 TXS 0506+056, as described in https://arxiv.org/abs/1807.08794.
 """
-import numpy as np
-import os
-import pickle as Pickle
 from flarestack.core.unblinding import create_unblinder
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_234_dict
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
-    catalogue_dir
+from flarestack.data.icecube import txs_sample_v1
 from flarestack.analyses.txs_0506_056.make_txs_catalogue import txs_cat_path,\
     txs_catalogue
 from flarestack.utils.custom_seasons import custom_dataset
