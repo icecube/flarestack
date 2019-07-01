@@ -4,10 +4,10 @@ import numpy as np
 import os
 import pickle as Pickle
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.data.icecube import ps_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.utils.reference_sensitivity import reference_sensitivity
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
 
@@ -82,7 +82,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
 
         mh_dict = {
             "name": full_name,
-            "datasets": [ps_7year[-1]],
+            "datasets": [ps_v002_p01[-1]],
             "catalogue": cat_path,
             "inj kwargs": inj_kwargs,
             "llh kwargs": llh_kwargs,

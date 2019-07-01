@@ -1,5 +1,5 @@
 import numpy as np
-from flarestack.data.icecube import IceCubeDataset, IceCubeSeason
+from flarestack.data.icecube.ic_season import IceCubeDataset, IceCubeSeason
 
 # Sets transition between North/South
 

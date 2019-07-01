@@ -641,8 +641,8 @@ class TrueUnblindedInjector:
 
 
 # if __name__ == "__main__":
-#     from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-#     data = ps_7year[0]
+#     from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+#     data = ps_v002_p01[0]
 #     from flarestack.analyses.agn_cores.shared_agncores import agncores_cat_dir
 #     cat = np.load(
 #         agncores_cat_dir +

@@ -1,18 +1,13 @@
 from __future__ import division
 import numpy as np
 import os
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
-from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
-from flarestack.data.icecube.northern_tracks.nt_v002_p05 import diffuse_8year
-from flarestack.shared import plot_output_dir, flux_to_k, k_to_flux
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+from flarestack.shared import plot_output_dir
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.utils.reference_sensitivity import \
+from flarestack.icecube_utils.reference_sensitivity import \
     reference_7year_discovery_potential
 import matplotlib.pyplot as plt
-from flarestack.analyses.agn_cores.shared_agncores import agn_catalogue_name
-from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
-from flarestack.utils.deus_ex_machina import DeusExMachina
+from flarestack.utils.asimov_estimator import AsimovEstimator
 
 name = "verify_disc_potential"
 
@@ -55,22 +50,23 @@ sindecs = np.linspace(0.75, -0.75, 7)
 # cat_path = tde_catalogue_name("jetted")
 
 single_year = [
-    ("PS Sample (7 year)", ps_7year[-2:-1], True),
-    ("PS Sample (10 year)", ps_10year[-2:-1], True),
-    # ("GFU Sample (8 year)", gfu_v002_p04, True),
-    ("Diffuse Sample (8 year)", diffuse_8year[-2:-1], False)
+    ("PS Sample (7 year)", ps_v002_p01.get_seasons("IC86_1"), True),
+    # ("PS Sample (10 year)", ps_v002_p01.get_seasons("IC86_1"), True),
+    # # ("GFU Sample (8 year)", ps_v002_p01.get_seasons("IC86_2011"), True),
+    # ("Diffuse Sample (8 year)", nt_v002_p05.get_seasons("IC86_2011"),
+    # False)
 ]
 
 all_year = [
-    ("PS Sample (7 year)", ps_7year, True),
-    ("PS Sample (10 year)", ps_10year, True),
-    ("GFU Sample (8 year)", gfu_v002_p04, True),
-    ("Diffuse Sample (8 year)", diffuse_8year, False)
+    ("PS Sample (7 year)", ps_v002_p01.get_seasons(), True),
+    # ("PS Sample (10 year)", ps_v003_p02.get_seasons(), True),
+    # ("GFU Sample (8 year)", gfu_v002_p04.get_seasons(), True),
+    # ("Diffuse Sample (8 year)", nt_v002_p05.get_seasons(), False)
 ]
 
 loop_datasets = [
-    single_year,
-    all_year
+    all_year,
+    # single_year,
 ]
 
 for i, datasets in enumerate(loop_datasets):
@@ -94,7 +90,7 @@ for i, datasets in enumerate(loop_datasets):
 
         color = ['r', "blue", 'green', 'y'][j]
 
-        dem = DeusExMachina(dataset, inj_kwargs)
+        dem = AsimovEstimator(dataset, inj_kwargs)
 
         for sindec in sindecs[mask]:
             cat_path = ps_catalogue_name(sindec)
@@ -104,7 +100,7 @@ for i, datasets in enumerate(loop_datasets):
             # mh_dict = {
             #     "name": "",
             #     "mh_name": "fixed_weights",
-            #     "datasets": ps_7year,
+            #     "datasets": ps_v002_p01,
             #     "catalogue": cat_path,
             #     "inj_dict": inj_kwargs,
             #     "llh_dict": llh_kwargs,
@@ -170,7 +166,7 @@ for i, datasets in enumerate(loop_datasets):
     except OSError:
         pass
 
-    title = ["/IC86_1.pdf", "/PSDisc.pdf"][i]
+    title = ["/PSDisc.pdf", "/IC86_1.pdf"][i]
 
     plt.savefig(save_dir + title)
     plt.close()

@@ -8,9 +8,8 @@ from flarestack.core.results import ResultsHandler
 from flarestack.cluster import run_desy_cluster as rd
 from flarestack.shared import flux_to_k, plot_output_dir, scale_shortener, \
     make_analysis_pickle
-from flarestack.utils.reference_sensitivity import reference_sensitivity
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 import matplotlib.pyplot as plt
-import json
 import numpy as np
 
 all_res = dict()

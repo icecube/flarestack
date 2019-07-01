@@ -421,7 +421,7 @@ class FixedEndBox(Box):
         return min(t1, self.t1)
 
 
-# from data.icecube_pointsource_7_year import ps_7year
+# from data.icecube_pointsource_7_year import ps_v002_p01
 # from shared import catalogue_dir
 #
 # cat_path = catalogue_dir + "TDEs/individual_TDEs/Swift J1644+57_catalogue.npy"
@@ -438,7 +438,7 @@ class FixedEndBox(Box):
 #     livetime = 0
 #     tot = 0
 #
-#     for season in ps_7year[-2:-1]:
+#     for season in ps_v002_p01[-2:-1]:
 #         tpdf = TimePDF.create(time_dict, season)
 #         livetime += tpdf.effective_injection_time(
 #             catalogue

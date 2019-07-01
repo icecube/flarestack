@@ -86,8 +86,8 @@ if __name__ == "__main__":
 
     results = [
         ["IIn", 1.0],
-        ["IIP", 1.0],
-        ["Ibc", 1.0]
+        # ["IIP", 1.0],
+        # ["Ibc", 1.0]
     ]
 
     norms = dict()
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         # diffuse_gamma)
         norms[name] = calculate_transient(e_pdf_dict, f, name, zmax=6.0,
                                           nu_bright_fraction=nu_bright,
-                                          diffuse_fit="Joint")
+                                          diffuse_fit="joint")
 
     base_dir = plot_output_dir("analyses/ccsn/")
 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
         alpha=.5,
     )
 
-    diffuse_norm, diffuse_gamma = get_diffuse_flux_at_1GeV("Joint")
+    diffuse_norm, diffuse_gamma = get_diffuse_flux_at_1GeV("joint")
 
     plt.plot(global_fit_e_range,
              diffuse_norm * global_fit_e_range ** (2. - diffuse_gamma),

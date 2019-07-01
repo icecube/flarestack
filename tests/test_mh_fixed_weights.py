@@ -3,7 +3,7 @@ IceCube data (IC86_1).
 """
 from __future__ import print_function
 import unittest
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.data.icecube import ps_v002_p01
 from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack.utils.catalogue_loader import load_catalogue
@@ -44,7 +44,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         unblind_dict = {
             "mh_name": "fixed_weights",
-            "datasets": custom_dataset(ps_7year, load_catalogue(catalogue),
+            "datasets": custom_dataset(ps_v002_p01, load_catalogue(catalogue),
                                        llh_dict["llh_time_pdf"]),
             "catalogue": catalogue,
             "llh_dict": llh_dict,

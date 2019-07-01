@@ -1,11 +1,8 @@
 from builtins import str
-import unittest
-import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.shared import fs_scratch_dir, flux_to_k
-from flarestack.utils.reference_sensitivity import reference_sensitivity
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack.core.results import ResultsHandler
 

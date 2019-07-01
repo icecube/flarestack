@@ -9,22 +9,15 @@ from __future__ import print_function
 from __future__ import division
 from builtins import str
 import numpy as np
-import os
-import pickle as Pickle
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
+from flarestack.data.icecube import txs_sample_v1
 from flarestack.utils.custom_seasons import custom_dataset
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
-    transients_dir
+from flarestack.shared import plot_output_dir, flux_to_k, transients_dir
 from flarestack.utils.prepare_catalogue import custom_sources
-from flarestack.utils.reference_sensitivity import reference_sensitivity
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import analyse, wait_for_cluster
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from flarestack.core.time_pdf import TimePDF
-from astropy import units as u
 from astropy.coordinates import Distance
 
 name = "analyses/fermi/GB6_blazar_flare_search/"

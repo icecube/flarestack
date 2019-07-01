@@ -4,7 +4,7 @@ IceCube data (IC86_1).
 from __future__ import print_function
 import unittest
 import numpy as np
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.data.icecube import ps_v002_p01
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.utils.asimov_estimator import AsimovEstimator
 
@@ -63,7 +63,7 @@ class TestTimeIntegrated(unittest.TestCase):
             "Injection Time PDF": injection_time,
         }
 
-        ae = AsimovEstimator(ps_7year.get_seasons("IC86_1"), inj_dict)
+        ae = AsimovEstimator(ps_v002_p01.get_seasons("IC86_1"), inj_dict)
 
         for i, sindec in enumerate(sindecs):
             cat_path = ps_catalogue_name(sindec)
