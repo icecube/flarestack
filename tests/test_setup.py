@@ -18,12 +18,13 @@ class TestSetup(unittest.TestCase):
         print("\n")
 
         keys = list(sys.modules.keys())
+
         for key in keys:
             if "flarestack" in key:
                 del sys.modules[key]
 
-        from flarestack.precompute import set_scratch_directory, run_precompute, \
-            config_path
+        from flarestack.precompute import set_scratch_directory, \
+            run_precompute, config_path
 
         with open(config_path, "r") as f:
             scratch_path = f.readline()[16:-2]

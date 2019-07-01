@@ -1,11 +1,9 @@
-from __future__ import print_function
-from builtins import input
 import os
-import sys
 import argparse
 import numpy as np
 
 config_path = os.path.dirname(os.path.realpath(__file__)) + "/config.py"
+
 
 # Scratch directory can be changed if needed
 
@@ -27,7 +25,7 @@ def set_scratch_directory(path):
         f.write(("scratch_path = '" + path + "'").encode())
 
 
-def run_precompute(all_data=[], ask=True):
+def run_precompute(all_data=list(), ask=True):
     """Builds directory substructure, creates standard source catalogues and
     creates acceptance functions + Signal/Background splines
 

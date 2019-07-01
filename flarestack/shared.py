@@ -1,14 +1,8 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from builtins import str
-from builtins import range
 import os
 import numpy as np
 from flarestack import config
 import socket
 import pickle
-from flarestack.core.energy_pdf import gamma_range, EnergyPDF
 import json
 import zlib
 
