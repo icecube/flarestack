@@ -38,6 +38,17 @@ def read_t_pdf_dict(t_pdf_dict):
         if old_key in list(t_pdf_dict.keys()):
             t_pdf_dict[new_key] = t_pdf_dict[old_key]
 
+    name_maps = [
+        ("Steady", "steady"),
+        ("Box", "box"),
+        ("FixedRefBox", "fixed_ref_box"),
+        ("FixedEndBox", "fixed_end_box")
+    ]
+
+    for (old_key, new_key) in name_maps:
+        if t_pdf_dict["time_pdf_name"] == old_key:
+            t_pdf_dict["time_pdf_name"] = new_key
+
     return t_pdf_dict
 
 
@@ -69,17 +80,6 @@ class TimePDF(object):
             raise ValueError('Bad time PDF name {}'.format(t_pdf_name))
 
         return cls.subclasses[t_pdf_name](t_pdf_dict, season)
-
-    def background_f(self, t, source):
-        """In all cases, we assume that the background is uniform in time.
-        Thus, the background PDF is just a normalised version of the season_f
-        box function.
-
-        :param t: Time
-        :param source: Source to be considered
-        :return: Value of normalised box function at t
-        """
-        return 1. / self.livetime
 
     def product_integral(self, t, source):
         """Calculates the product of the given signal PDF with the season box
@@ -140,15 +140,24 @@ class TimePDF(object):
 
         return f(np.random.uniform(0., 1., n_s))
 
+    def uniform_f(self):
+        return 1. / self.livetime
 
-@TimePDF.register_subclass('Steady')
+    def f(self, t, source):
+        return NotImplementedError(
+            "No 'f' has been implemented for {0}".format(
+                self.__class__.__name__
+            ))
+
+
+@TimePDF.register_subclass('steady')
 class Steady(TimePDF):
     """The time-independent case for a Time PDF. Requires no additional
     arguments in the dictionary for __init__. Used for a steady source that
     is continuously emitting.
     """
 
-    def signal_f(self, t, source):
+    def f(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
         time. It is thus simply equal to the season_f, normalised with the
         length of the season to give an integral of 1. It is thus equal to
@@ -158,7 +167,7 @@ class Steady(TimePDF):
         :param source: Source to be considered
         :return: Value of normalised box function at t
         """
-        return self.background_f(t, source)
+        return self.uniform_f()
 
     def signal_integral(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
@@ -226,8 +235,11 @@ class Steady(TimePDF):
         """
         return self.t1
 
+    def effective_injector_time(self, source):
+        return self.livetime
 
-@TimePDF.register_subclass('Box')
+
+@TimePDF.register_subclass('box')
 class Box(TimePDF):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. Requires arguments of
@@ -266,7 +278,7 @@ class Box(TimePDF):
         """
         return min(source["ref_time_mjd"] + self.post_window, self.t1)
 
-    def signal_f(self, t, source):
+    def f(self, t, source):
         """In this case, the signal PDF is a uniform PDF for a fixed duration of
         time. It is normalised with the length of the box in LIVETIME rather
         than days, to give an integral of 1.
@@ -344,7 +356,7 @@ class Box(TimePDF):
         return diff * (60 * 60 * 24)
 
 
-@TimePDF.register_subclass('FixedRefBox')
+@TimePDF.register_subclass('fixed_ref_box')
 class FixedRefBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. In this case, the start
@@ -378,7 +390,7 @@ class FixedRefBox(Box):
         return min(self.fixed_ref + self.post_window, self.t1)
 
 
-@TimePDF.register_subclass('FixedEndBox')
+@TimePDF.register_subclass('fixed_end_box')
 class FixedEndBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. In this case, the start
@@ -419,6 +431,16 @@ class FixedEndBox(Box):
         t1 = source["end_time_mjd"] + self.offset
 
         return min(t1, self.t1)
+
+
+@TimePDF.register_subclass("run_list")
+class RunList(TimePDF):
+
+    def __init__(self, t_pdf_dict, season):
+        TimePDF.__init__(self, t_pdf_dict, season)
+
+
+
 
 
 # from data.icecube_pointsource_7_year import ps_v002_p01

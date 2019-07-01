@@ -24,9 +24,10 @@ def read_injector_dict(inj_dict):
     """
 
     maps = [
-        ("Injection Time PDF", "injection_time_pdf"),
+        ("Injection Time PDF", "injection_sig_time_pdf"),
         ("Injection Energy PDF", "injection_energy_pdf"),
-        ("Poisson Smear?", "poisson_smear_bool")
+        ("Poisson Smear?", "poisson_smear_bool"),
+        ("injection_time_pdf", "injection_sig_time_pdf")
     ]
 
     for (old_key, new_key) in maps:
@@ -36,7 +37,7 @@ def read_injector_dict(inj_dict):
 
     pairs = [
         ("injection_energy_pdf", read_e_pdf_dict),
-        ("injection_time_pdf", read_t_pdf_dict)
+        ("injection_sig_time_pdf", read_t_pdf_dict)
     ]
 
     for (key, f) in pairs:
@@ -71,8 +72,8 @@ class BaseInjector:
             self.weight_scale = calculate_source_weight(self.sources)
 
         try:
-            self.time_pdf = TimePDF.create(kwargs["injection_time_pdf"],
-                                           season)
+            self.sig_time_pdf = TimePDF.create(kwargs["injection_sig_time_pdf"],
+                                               season)
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
             self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"],
                                           season)
@@ -277,7 +278,7 @@ class MCInjector(BaseInjector):
         # Calculate the effective injection time for simulation. Equal to
         # the overlap between the season and the injection time PDF for
         # the source, scaled if the injection PDF is not uniform in time.
-        eff_inj_time = self.time_pdf.effective_injection_time(source)
+        eff_inj_time = self.sig_time_pdf.effective_injection_time(source)
 
         # All injection fluxes are given in terms of k, equal to 1e-9
         inj_flux = k_to_flux(source["injection_weight_modifier"] * scale)
@@ -359,7 +360,7 @@ class MCInjector(BaseInjector):
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.
 
-            sim_ev["time"] = self.time_pdf.simulate_times(source, n_s)
+            sim_ev["time"] = self.sig_time_pdf.simulate_times(source, n_s)
 
             # Joins the new events to the signal events
             sig_events = np.concatenate(
@@ -527,7 +528,7 @@ class EffectiveAreaInjector(BaseInjector):
 
             # Simulates times according to Time PDF
 
-            sim_ev["time"] = self.time_pdf.simulate_times(source, n_s)
+            sim_ev["time"] = self.sig_time_pdf.simulate_times(source, n_s)
             sim_ev["sigma"] = self.angular_res_f(sim_ev["logE"]).copy()
             sim_ev["raw_sigma"] = sim_ev["sigma"].copy()
 
@@ -549,7 +550,7 @@ class EffectiveAreaInjector(BaseInjector):
         # Calculate the effective injection time for simulation. Equal to
         # the overlap between the season and the injection time PDF for
         # the source, scaled if the injection PDF is not uniform in time.
-        eff_inj_time = self.time_pdf.effective_injection_time(source)
+        eff_inj_time = self.sig_time_pdf.effective_injection_time(source)
 
         # All injection fluxes are given in terms of k, equal to 1e-9
         inj_flux = k_to_flux(source["injection_weight_modifier"] * scale)

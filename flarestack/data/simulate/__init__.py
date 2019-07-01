@@ -2,6 +2,7 @@ from flarestack.data import SeasonWithoutMC, Dataset
 import os
 import numpy as np
 from flarestack.core.energy_pdf import EnergyPDF
+from flarestack.core.time_pdf import TimePDF
 from flarestack.shared import sim_dataset_dir_path
 
 
@@ -48,14 +49,20 @@ class SimDataset(Dataset):
         self.seasons[name] = self.sim_seasons[name](
             mjd_start, mjd_end, bkg_flux_norm, bkg_e_pdf_dict, **kwargs)
 
+
 class SimSeason(SeasonWithoutMC):
 
     def __init__(self, season_name, sample_name, pseudo_mc_path,
-                 mjd_start, mjd_end, bkg_flux_norm, bkg_e_pdf_dict,
-                 **kwargs):
+                 effective_area_f, bkg_t_pdf_dict, bkg_flux_norm,
+                 bkg_e_pdf_dict, energy_proxy_map, **kwargs):
 
-        self.mjd_start = float(mjd_start)
-        self.mjd_end = float(mjd_end)
+        self.bkg_time_pdf = TimePDF.create(bkg_t_pdf_dict)
+
+        try:
+            self.mjd_start = float(mjd_start)
+            self.mjd_end = float(mjd_end)
+        except KeyError:
+            pass
         self.bkg_flux_norm = bkg_flux_norm
         self.bkg_e_pdf_dict = bkg_e_pdf_dict
 
@@ -69,17 +76,18 @@ class SimSeason(SeasonWithoutMC):
         )
         self.bkg_energy_pdf = EnergyPDF(bkg_e_pdf_dict)
 
-        # self.effective_area_f = self.load_effective_area()
+        self.energy_proxy_map = energy_proxy_map
+
+        self.effective_area_f = effective_area_f
 
         self.check_sim(**kwargs)
 
     def check_sim(self, resimulate=False, **kwargs):
 
-        if np.logical_and(not resimulate, not os.path.isfile(self.exp_path)):
-            self.simulate()
-
-        else:
+        if np.logical_and(not resimulate, os.path.isfile(self.exp_path)):
             print("Found existing simulation at {0}".format(self.exp_path))
+        else:
+            self.simulate()
 
     def dataset_path(self, mjd_start=None, mjd_end=None):
 
@@ -99,10 +107,12 @@ class SimSeason(SeasonWithoutMC):
 
     def simulate(self):
         sim_data = self.generate_sim_data()
-        np.save(self.exp_path, sim_data)
+        # np.save(self.exp_path, sim_data)
 
     def generate_sim_data(self):
         raise NotImplementedError(
             "No generate_sim_data function has been implemented for "
             "class {0}".format(self.__class__.__name__))
         return None
+
+

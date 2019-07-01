@@ -57,7 +57,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
         llh_dict = {"llh_name": "fixed_energy"}
         llh_dict["llh_energy_pdf"] = inj.inj_kwargs["injection_energy_pdf"]
-        llh_dict["llh_time_pdf"] = inj.inj_kwargs["injection_time_pdf"]
+        llh_dict["llh_sig_time_pdf"] = inj.inj_kwargs["injection_sig_time_pdf"]
         llh = LLH.create(inj.season, sources, llh_dict)
 
         # print("Season", season)
@@ -65,9 +65,9 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
         n_tot += len(data)
         # n_bkg_tot += len(inj._raw_data)
         # print("Number of events", n_bkg_tot)
-        livetime += inj.time_pdf.livetime * 60 * 60 * 24
+        livetime += inj.sig_time_pdf.livetime * 60 * 60 * 24
         # print("Livetime is {0} seconds ({1} days)".format(
-        #     livetime, inj.time_pdf.livetime
+        #     livetime, inj.sig_time_pdf.livetime
         # ))
 
         def signalness(sig_over_background):
@@ -205,7 +205,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
             ratio_energy = llh.energy_weight_f(source_mc)
 
-            ratio_time = livetime/llh.time_pdf.effective_injection_time(
+            ratio_time = livetime/llh.sig_time_pdf.effective_injection_time(
                 source)
 
             bkg_energy = llh.energy_weight_f(local_data)

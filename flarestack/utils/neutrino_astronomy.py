@@ -131,7 +131,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 #
 #     energy_pdf = inj_kwargs["Injection Energy PDF"]
 #
-#     energy = energy_pdf["Energy Flux"] * inj.time_pdf.effective_injection_time(
+#     energy = energy_pdf["Energy Flux"] * inj.sig_time_pdf.effective_injection_time(
 #         source)
 #     print "Neutrino Energy is", energy
 #
