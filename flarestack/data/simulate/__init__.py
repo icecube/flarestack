@@ -2,7 +2,7 @@ from flarestack.data import SeasonWithoutMC, Dataset
 import os
 import numpy as np
 from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.core.time_pdf import TimePDF
+from flarestack.core.time_pdf import TimePDF, FixedEndBox, FixedRefBox, OnOffList
 from flarestack.shared import sim_dataset_dir_path
 
 
@@ -33,7 +33,7 @@ class SimDataset(Dataset):
     def add_sim_season(self, name, sim_season_f):
         self.sim_seasons[name] = sim_season_f
 
-    def set_sim_params(self, name, mjd_start, mjd_end, bkg_flux_norm,
+    def set_sim_params(self, name, bkg_time_pdf_dict, bkg_flux_norm,
                        bkg_e_pdf_dict, **kwargs):
 
         if name not in self.sim_seasons.keys():
@@ -42,12 +42,9 @@ class SimDataset(Dataset):
                            "classes must be added with the add_sim_season "
                            "function.".format(name, self.sim_seasons.keys()))
 
-        if mjd_start > mjd_end:
-            raise ValueError("Start time {0} MJD is after end time {1} "
-                             "MJD".format(mjd_start, mjd_end))
 
         self.seasons[name] = self.sim_seasons[name](
-            mjd_start, mjd_end, bkg_flux_norm, bkg_e_pdf_dict, **kwargs)
+            bkg_time_pdf_dict, bkg_flux_norm, bkg_e_pdf_dict, **kwargs)
 
 
 class SimSeason(SeasonWithoutMC):
@@ -56,13 +53,8 @@ class SimSeason(SeasonWithoutMC):
                  effective_area_f, bkg_t_pdf_dict, bkg_flux_norm,
                  bkg_e_pdf_dict, energy_proxy_map, **kwargs):
 
-        self.bkg_time_pdf = TimePDF.create(bkg_t_pdf_dict)
+        self.bkg_t_pdf_dict = bkg_t_pdf_dict
 
-        try:
-            self.mjd_start = float(mjd_start)
-            self.mjd_end = float(mjd_end)
-        except KeyError:
-            pass
         self.bkg_flux_norm = bkg_flux_norm
         self.bkg_e_pdf_dict = bkg_e_pdf_dict
 
@@ -82,6 +74,9 @@ class SimSeason(SeasonWithoutMC):
 
         self.check_sim(**kwargs)
 
+    def build_time_pdf_dict(self):
+        return self.bkg_t_pdf_dict
+
     def check_sim(self, resimulate=False, **kwargs):
 
         if np.logical_and(not resimulate, os.path.isfile(self.exp_path)):
@@ -91,22 +86,25 @@ class SimSeason(SeasonWithoutMC):
 
     def dataset_path(self, mjd_start=None, mjd_end=None):
 
+        time_pdf = self.build_time_pdf()
+
         try:
             os.makedirs(self.base_dataset_path)
         except OSError:
             pass
 
         if mjd_start is None:
-            mjd_start = self.mjd_start
+            mjd_start = time_pdf.sig_t0([])
 
         if mjd_end is None:
-            mjd_end = self.mjd_end
+            mjd_end = time_pdf.sig_t1([])
 
         return "{0}/{1}_{2}.npy".format(
             self.base_dataset_path, mjd_start, mjd_end)
 
     def simulate(self):
-        sim_data = self.generate_sim_data()
+        fluence = self.get_fluence()
+        sim_data = self.generate_sim_data(fluence)
         # np.save(self.exp_path, sim_data)
 
     def generate_sim_data(self):
@@ -114,5 +112,9 @@ class SimSeason(SeasonWithoutMC):
             "No generate_sim_data function has been implemented for "
             "class {0}".format(self.__class__.__name__))
         return None
+
+    def get_fluence(self):
+        print(self.time_pdf.effective_injection_time())
+        return self.bkg_flux_norm * self.time_pdf.effective_injection_time()
 
 

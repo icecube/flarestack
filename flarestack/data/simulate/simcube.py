@@ -64,7 +64,7 @@ for (name, season) in ps_3_year.get_seasons().items():
     def ideal_energy_proxy(e):
         return np.log10(e)
 
-    def wrapper_f(mjd_start, mjd_end, bkg_flux_norm, bkg_e_pdf_dict,
+    def wrapper_f(bkg_time_pdf_dict, bkg_flux_norm, bkg_e_pdf_dict,
                   energy_proxy_map=None, sim_name=None, **kwargs):
 
         if np.logical_and(energy_proxy_map is None, sim_name is None):
@@ -83,8 +83,7 @@ for (name, season) in ps_3_year.get_seasons().items():
             sample_name="SimCube_{0}".format(sim_name),
             pseudo_mc_path=season.pseudo_mc_path,
             effective_area_f=season.load_effective_area(),
-            mjd_start=mjd_start,
-            mjd_end=mjd_end,
+            bkg_time_pdf_dict=bkg_time_pdf_dict,
             bkg_flux_norm=bkg_flux_norm,
             bkg_e_pdf_dict=bkg_e_pdf_dict,
             energy_proxy_map=energy_proxy_map,
@@ -95,10 +94,15 @@ for (name, season) in ps_3_year.get_seasons().items():
 
     simcube_dataset.add_sim_season(name, wrapper_f)
 
+bkg_time_pdf_dict = {
+    "time_pdf_name": "fixed_end_box",
+    "start_time_mjd": 0,
+    "end_time_mjd": 100
+}
+
 simcube_season = simcube_dataset.set_sim_params(
     name="IC86-2012",
-    mjd_start=55000.,
-    mjd_end=55100.,
+    bkg_time_pdf_dict=bkg_time_pdf_dict,
     bkg_flux_norm=1.,
     bkg_e_pdf_dict=e_pdf_dict
 )

@@ -42,7 +42,7 @@ def read_t_pdf_dict(t_pdf_dict):
         ("Steady", "steady"),
         ("Box", "box"),
         ("FixedRefBox", "fixed_ref_box"),
-        ("FixedEndBox", "fixed_end_box")
+        ("FixedEndBox", "custom_source_box") # Not a typo! Class renamed.
     ]
 
     for (old_key, new_key) in name_maps:
@@ -55,11 +55,18 @@ def read_t_pdf_dict(t_pdf_dict):
 class TimePDF(object):
     subclasses = {}
 
-    def __init__(self, t_pdf_dict, season):
+    def __init__(self, t_pdf_dict, livetime_pdf=None):
         self.t_dict = t_pdf_dict
-        self.season = season
-        self.t0, self.t1, self.livetime, self.season_f, \
-        self.mjd_to_livetime, self.livetime_to_mjd = season.get_livetime_data()
+
+        if livetime_pdf is None:
+            self.livetime_f = lambda x: 1
+            self.t0 = np.nan
+            self.t1 = np.nan
+        else:
+            self.livetime_f = livetime_pdf.f
+            self.t0 = livetime_pdf.sig_t0()
+            self.t1 = livetime_pdf.sig_t1()
+
 
     @classmethod
     def register_subclass(cls, time_pdf_name):
@@ -70,7 +77,7 @@ class TimePDF(object):
         return decorator
 
     @classmethod
-    def create(cls, t_pdf_dict, season):
+    def create(cls, t_pdf_dict, livetime_pdf=None):
 
         t_pdf_dict = read_t_pdf_dict(t_pdf_dict)
 
@@ -79,7 +86,7 @@ class TimePDF(object):
         if t_pdf_name not in cls.subclasses:
             raise ValueError('Bad time PDF name {}'.format(t_pdf_name))
 
-        return cls.subclasses[t_pdf_name](t_pdf_dict, season)
+        return cls.subclasses[t_pdf_name](t_pdf_dict, livetime_pdf)
 
     def product_integral(self, t, source):
         """Calculates the product of the given signal PDF with the season box
@@ -140,14 +147,34 @@ class TimePDF(object):
 
         return f(np.random.uniform(0., 1., n_s))
 
-    def uniform_f(self):
-        return 1. / self.livetime
-
     def f(self, t, source):
         return NotImplementedError(
             "No 'f' has been implemented for {0}".format(
                 self.__class__.__name__
             ))
+
+    def sig_t0(self, source):
+        """Calculates the starting time for the time pdf.
+
+        :param source: Source to be considered
+        :return: Time of PDF start
+        """
+        raise NotImplementedError("sig_t0 function not implemented for "
+                                  "{0}".format(self.__class__.__name__))
+
+    def sig_t1(self, source):
+        """Calculates the ending time for the time pdf.
+
+        :param source: Source to be considered
+        :return: Time of PDF end
+        """
+        raise NotImplementedError("sig_t1 function not implemented for "
+                                  "{0}".format(self.__class__.__name__))
+
+    def integral_to_infinity(self, source):
+        max_int = self.product_integral(self.sig_t1(source), source)
+        min_int = self.product_integral(self.sig_t0(source), source)
+        return max_int - min_int
 
 
 @TimePDF.register_subclass('steady')
@@ -156,6 +183,20 @@ class Steady(TimePDF):
     arguments in the dictionary for __init__. Used for a steady source that
     is continuously emitting.
     """
+
+    def __init__(self, t_pdf_dict, livetime_pdf=None):
+        TimePDF.__init__(t_pdf_dict, livetime_pdf)
+
+        if self.livetime_pdf is None:
+            raise ValueError("No livetime pdf has been provided, but a Steady "
+                             "Time PDF has been chosen. Without a fixed start "
+                             "and end point, no PDF can be defined. Please "
+                             "provide a livetime_pdf, or use a different Time "
+                             "PDF class such as FixedEndBox.")
+        else:
+            self.livetime = livetime_pdf.product_to_infinity([])
+
+
 
     def f(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
@@ -167,7 +208,7 @@ class Steady(TimePDF):
         :param source: Source to be considered
         :return: Value of normalised box function at t
         """
-        return self.uniform_f()
+        return self.livetime_f(t)
 
     def signal_integral(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
@@ -194,14 +235,14 @@ class Steady(TimePDF):
 
         return start, end
 
-    def effective_injection_time(self, source):
+    def effective_injection_time(self, source=None):
         """Calculates the effective injection time for the given PDF.
         The livetime is measured in days, but here is converted to seconds.
 
         :param source: Source to be considered
         :return: Effective Livetime in seconds
         """
-        season_length = self.livetime
+        season_length = self.integral_to_infinity(source)
 
         return season_length * (60 * 60 * 24)
 
@@ -330,7 +371,7 @@ class Box(TimePDF):
 
         return start, end
 
-    def effective_injection_time(self, source):
+    def effective_injection_time(self):
         """Calculates the effective injection time for the given PDF.
         The livetime is measured in days, but here is converted to seconds.
 
@@ -368,7 +409,7 @@ class FixedRefBox(Box):
         Box.__init__(self, t_pdf_dict, season)
         self.fixed_ref = t_pdf_dict["fixed_ref_time_mjd"]
 
-    def sig_t0(self, source):
+    def sig_t0(self, source=None):
         """Calculates the starting time for the window, equal to the
         source reference time in MJD minus the length of the pre-reference-time
         window (in days).
@@ -379,7 +420,7 @@ class FixedRefBox(Box):
 
         return max(self.t0, self.fixed_ref - self.pre_window)
 
-    def sig_t1(self, source):
+    def sig_t1(self, source=None):
         """Calculates the starting time for the window, equal to the
         source reference time in MJD plus the length of the post-reference-time
         window (in days).
@@ -392,6 +433,50 @@ class FixedRefBox(Box):
 
 @TimePDF.register_subclass('fixed_end_box')
 class FixedEndBox(Box):
+    """The simplest time-dependent case for a Time PDF. Used for a source that
+    is uniformly emitting for a fixed period of time. In this case, the start
+    and end time for the box is the same for all sources.
+    """
+
+    def __init__(self, t_pdf_dict, season):
+        self.start_time_mjd = t_pdf_dict["start_time_mjd"]
+        self.end_time_mjd = t_pdf_dict["end_time_mjd"]
+        if "offset" in t_pdf_dict:
+            self.offset = self.t_dict["offset"]
+        else:
+            self.offset = 0
+        TimePDF.__init__(self, t_pdf_dict, season)
+
+
+    def sig_t0(self, source=None):
+        """Calculates the starting time for the window, equal to the
+        source reference time in MJD minus the length of the pre-reference-time
+        window (in days).
+
+        :param source: Source to be considered
+        :return: Time of Window Start
+        """
+
+        t0 = self.start_time_mjd + self.offset
+
+        return max(self.t0, t0)
+
+    def sig_t1(self, source=None):
+        """Calculates the starting time for the window, equal to the
+        source reference time in MJD plus the length of the post-reference-time
+        window (in days).
+
+        :param source: Source to be considered
+        :return: Time of Window End
+        """
+
+        t1 = self.end_time_mjd + self.offset
+
+        return min(t1, self.t1)
+
+
+@TimePDF.register_subclass('custom_source_box')
+class CustomSourceBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. In this case, the start
     and end time for the box is unique for each source. The sources must have
@@ -433,11 +518,29 @@ class FixedEndBox(Box):
         return min(t1, self.t1)
 
 
-@TimePDF.register_subclass("run_list")
-class RunList(TimePDF):
+@TimePDF.register_subclass("on_off_list")
+class OnOffList(TimePDF):
+    """TimePDF with predefined on/off periods. Can be used for a livetime
+    function, in which observations are divided into runs with gaps. Can also
+    be used for e.g pre-defined interesting period for a variable source.
+    """
 
-    def __init__(self, t_pdf_dict, season):
-        TimePDF.__init__(self, t_pdf_dict, season)
+    def __init__(self, t_pdf_dict, livetime_f=None):
+        TimePDF.__init__(self, t_pdf_dict, livetime_f)
+
+        try:
+            self.on_off_list = self.parse_list(t_pdf_dict["on_off_list"])
+        except KeyError:
+            raise KeyError("No 'on_off_list' found in t_pdf_dict. The "
+                           "following fields were provided: {0}".format(
+                t_pdf_dict.keys()
+            ))
+
+
+    def parse_list(self, on_off_list):
+        return on_off_list
+
+
 
 
 

@@ -4,6 +4,7 @@ from flarestack.data import Dataset, SeasonWithMC
 from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader, \
     convert_grl, verify_grl_with_data
 from flarestack.shared import host_server
+from flarestack.core.time_pdf import OnOffList
 
 if host_server == "DESY":
     icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
@@ -33,6 +34,12 @@ def set_icecube_dataset_directory(path):
     icecube_dataset_dir = path
 
 
+class IceCubeRunList(OnOffList):
+    """Custom TimePDF class designed to constructed a pdf from an IceCube
+    GoodRunList.
+    """
+
+
 class IceCubeDataset(Dataset):
     pass
 
@@ -48,8 +55,8 @@ class IceCubeSeason(SeasonWithMC):
         self.sin_dec_bins = sin_dec_bins
         self.log_e_bins = log_e_bins
 
-    def get_livetime_data(self):
-        return convert_grl(self)
+    # def get_livetime_data(self):
+    #     return convert_grl(self)
 
     def check_data_quality(self):
         verify_grl_with_data(self)

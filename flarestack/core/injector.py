@@ -64,7 +64,7 @@ class BaseInjector:
         print("Initialising Injector for", season.season_name)
         self.injection_band_mask = dict()
         self.season = season
-        self.season.load_background_data()
+        self.season.load_background_model()
 
         self.sources = sources
 
