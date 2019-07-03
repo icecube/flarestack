@@ -60,12 +60,17 @@ class TimePDF(object):
 
         if livetime_pdf is None:
             self.livetime_f = lambda x: 1
-            self.t0 = np.nan
-            self.t1 = np.nan
+            self.t0 = -np.inf
+            self.t1 = np.inf
+            self.livetime_to_mjd = lambda x: x + self.sig_t0()
+            self.mjd_to_livetime = lambda x: x - self.sig_t0()
         else:
             self.livetime_f = livetime_pdf.f
+            self.livetime_pdf = livetime_pdf
             self.t0 = livetime_pdf.sig_t0()
             self.t1 = livetime_pdf.sig_t1()
+            self.mjd_to_livetime, self.livetime_to_mjd = \
+                self.convert_livetime_mjd()
 
 
     @classmethod
@@ -175,6 +180,19 @@ class TimePDF(object):
         max_int = self.product_integral(self.sig_t1(source), source)
         min_int = self.product_integral(self.sig_t0(source), source)
         return max_int - min_int
+
+    def convert_livetime_mjd(self):
+        t_range = np.linspace(
+            self.livetime_pdf.sig_t0(), self.livetime_pdf.sig_t1(), 1e3)
+        f_range = [self.livetime_f(t) for t in t_range]
+        sum_range = [np.sum(f_range[:i]) for i, _ in enumerate(f_range)]
+
+        mjd_to_livetime = interp1d(t_range, sum_range)
+        livetime_to_mjd = interp1d(sum_range, t_range)
+        return mjd_to_livetime, livetime_to_mjd
+
+
+
 
 
 @TimePDF.register_subclass('steady')
@@ -371,7 +389,7 @@ class Box(TimePDF):
 
         return start, end
 
-    def effective_injection_time(self):
+    def effective_injection_time(self, source=None):
         """Calculates the effective injection time for the given PDF.
         The livetime is measured in days, but here is converted to seconds.
 

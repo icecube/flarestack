@@ -102,6 +102,21 @@ class EnergyPDF(object):
         :return: Integral of function
         """
 
+        diff_sum, _ = self.piecewise_integrate_over_energy(f, lower, upper)
+
+        int_sum = np.sum(diff_sum)
+
+        return int_sum
+
+    def piecewise_integrate_over_energy(self, f, lower=None, upper=None):
+        """Uses Newton's method to integrate function f over the energy
+        range. By default, uses 100GeV to 10PeV, unless otherwise specified.
+        Uses 1000 logarithmically-spaced bins to calculate integral.
+
+        :param f: Function to be integrated
+        :return: Integral of function
+        """
+
         if lower is None:
             lower = self.integral_e_min
 
@@ -110,15 +125,15 @@ class EnergyPDF(object):
 
         nsteps = 1.e3
 
-        e_range = np.linspace(np.log(lower), np.log(upper), nsteps + 1)
-        int_sum = 0.0
+        e_range = np.linspace(np.log10(lower), np.log10(upper), nsteps + 1)
+        diff_sum = []
 
         for i, log_e in enumerate(e_range[:-1]):
             e0 = np.exp(log_e)
             e1 = np.exp(e_range[i + 1])
-            int_sum += 0.5 * (e1 - e0) * (f(e0) + f(e1))
+            diff_sum .append(0.5 * (e1 - e0) * (f(e0) + f(e1)))
 
-        return int_sum
+        return diff_sum, e_range
 
     def flux_integral(self):
         """Integrates over energy PDF to give integrated flux (dN/dT)"""
@@ -139,6 +154,10 @@ class EnergyPDF(object):
         bounds = []
         name = []
         return default, bounds, name
+
+    def simulate_true_energies(self, n_s):
+        raise NotImplementedError("Simulate_true_energies not implemented "
+                                  "for {0}".format(self.__class__.__name__))
 
 
 @EnergyPDF.register_subclass('PowerLaw')
@@ -210,27 +229,41 @@ class PowerLaw(EnergyPDF):
 
         return val
 
-    def flux_integral(self):
+    def flux_integral(self, e_min=None, e_max=None):
         """Integrates over energy PDF to give integrated flux (dN/dT)"""
+
+        if e_max is None:
+            e_max = self.integral_e_max
+        if e_min is None:
+            e_min = self.integral_e_min
 
         # Integrate over flux to get dN/dt
 
-        phi_power = 1 - self.gamma
+        if self.gamma == 1.:
+            phi_integral = np.log(e_max/e_min)
+        else:
 
-        phi_integral = (1. / phi_power) * (
-            (self.integral_e_max ** phi_power) - (
-                self.integral_e_min ** phi_power)
-        )
+            phi_power = 1 - self.gamma
+
+            phi_integral = (1. / phi_power) * (
+                (e_max ** phi_power) - (
+                    e_min ** phi_power)
+            )
 
         return phi_integral
 
-    def fluence_integral(self):
+    def fluence_integral(self, e_min=None, e_max=None):
         """Performs an integral for fluence over a given energy range. This is
         gives the total energy per unit area per second that is radiated.
         """
 
+        if e_max is None:
+            e_max = self.integral_e_max
+        if e_min is None:
+            e_min = self.integral_e_min
+
         if self.gamma == 2:
-            e_integral = np.log(self.integral_e_max/self.integral_e_min)
+            e_integral = np.log(e_max/e_min)
         else:
             power = 2 - self.gamma
 
@@ -238,11 +271,35 @@ class PowerLaw(EnergyPDF):
             # EXACTLY 2)
 
             e_integral = (
-                (1. / power) * ((self.integral_e_max ** power) -
-                                (self.integral_e_min ** power))
+                (1. / power) * ((e_max ** power) -
+                                (e_min ** power))
             )
 
         return e_integral
+
+    # def simulate_true_energies(self, n_s, eff_a_f):
+    #
+    #     log_e_range = np.linspace(
+    #         np.log10(self.integral_e_min), np.log10(self.integral_e_max), 1e3)
+    #
+    #     fluence_ints = [
+    #         self.fluence_integral(10**emin, 10**log_e_range[i+1])
+    #         for i, emin in enumerate(log_e_range[:-1])
+    #     ]
+    #
+    #     fluence_ints = np.array(fluence_ints)
+    #     fluence_ints /= np.sum(fluence_ints)
+    #     # fluence_vals = [0] + fluence_vals
+    #     # fluence_vals = np.array(fluence_vals)
+    #     #
+    #     # mean_fluences = 0.5 * (fluence_vals[:-1] + fluence_vals[1:])
+    #     # widths = 10**log_e_range[1:] - 10**log_e_range[:-1]
+    #     #
+    #     # fluence_ints = widths * mean_fluences
+    #
+    #     print(fluence_ints)
+    #     input("")
+
 
     def return_energy_parameters(self):
         default = [2.]

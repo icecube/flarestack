@@ -3,7 +3,7 @@ import os
 import numpy as np
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.core.time_pdf import TimePDF, FixedEndBox, FixedRefBox, OnOffList
-from flarestack.shared import sim_dataset_dir_path
+from flarestack.shared import sim_dataset_dir_path, k_to_flux
 
 
 # def generate_sim_season_class(season_class, **kwargs):
@@ -50,13 +50,18 @@ class SimDataset(Dataset):
 class SimSeason(SeasonWithoutMC):
 
     def __init__(self, season_name, sample_name, pseudo_mc_path,
-                 effective_area_f, bkg_t_pdf_dict, bkg_flux_norm,
-                 bkg_e_pdf_dict, energy_proxy_map, **kwargs):
+                 event_dtype, effective_area_f, load_angular_resolution,
+                 bkg_t_pdf_dict, bkg_flux_norm, bkg_e_pdf_dict,
+                 energy_proxy_map, **kwargs):
 
         self.bkg_t_pdf_dict = bkg_t_pdf_dict
+        self.event_dtype = event_dtype
 
         self.bkg_flux_norm = bkg_flux_norm
         self.bkg_e_pdf_dict = bkg_e_pdf_dict
+
+        self.load_angular_resolution = load_angular_resolution
+        self.angular_res_f = self.load_angular_resolution()
 
         self.base_dataset_path = sim_dataset_dir_path(
             sample_name, season_name, bkg_flux_norm, bkg_e_pdf_dict)
@@ -66,7 +71,7 @@ class SimSeason(SeasonWithoutMC):
         SeasonWithoutMC.__init__(
             self, season_name, sample_name, exp_path, pseudo_mc_path, **kwargs
         )
-        self.bkg_energy_pdf = EnergyPDF(bkg_e_pdf_dict)
+        self.bkg_energy_pdf = EnergyPDF.create(bkg_e_pdf_dict)
 
         self.energy_proxy_map = energy_proxy_map
 
@@ -103,18 +108,18 @@ class SimSeason(SeasonWithoutMC):
             self.base_dataset_path, mjd_start, mjd_end)
 
     def simulate(self):
-        fluence = self.get_fluence()
-        sim_data = self.generate_sim_data(fluence)
+        ti_flux = self.get_time_integrated_flux()
+        sim_data = self.generate_sim_data(ti_flux)
         # np.save(self.exp_path, sim_data)
 
-    def generate_sim_data(self):
+    def generate_sim_data(self, fluence):
         raise NotImplementedError(
             "No generate_sim_data function has been implemented for "
             "class {0}".format(self.__class__.__name__))
         return None
 
-    def get_fluence(self):
-        print(self.time_pdf.effective_injection_time())
-        return self.bkg_flux_norm * self.time_pdf.effective_injection_time()
+    def get_time_integrated_flux(self):
+        return k_to_flux(
+            self.bkg_flux_norm * self.time_pdf.effective_injection_time())
 
 
