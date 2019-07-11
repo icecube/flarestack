@@ -14,6 +14,9 @@ from flarestack.shared import sim_dataset_dir_path, k_to_flux
 #
 #     base_args = kwargs
 
+sim_dir = os.path.abspath(os.path.dirname(__file__))
+raw_sim_data_dir = sim_dir + "/raw_data/"
+
 class SimDataset(Dataset):
 
     def __init__(self, **kwargs):
@@ -79,6 +82,9 @@ class SimSeason(SeasonWithoutMC):
 
         self.check_sim(**kwargs)
 
+    def load_energy_proxy_mapping(self):
+        return self.energy_proxy_map
+
     def build_time_pdf_dict(self):
         return self.bkg_t_pdf_dict
 
@@ -110,13 +116,13 @@ class SimSeason(SeasonWithoutMC):
     def simulate(self):
         ti_flux = self.get_time_integrated_flux()
         sim_data = self.generate_sim_data(ti_flux)
-        # np.save(self.exp_path, sim_data)
+        np.save(self.exp_path, sim_data)
 
     def generate_sim_data(self, fluence):
         raise NotImplementedError(
             "No generate_sim_data function has been implemented for "
             "class {0}".format(self.__class__.__name__))
-        return None
+        return
 
     def get_time_integrated_flux(self):
         return k_to_flux(
