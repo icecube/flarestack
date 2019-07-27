@@ -114,7 +114,7 @@ class EnergyPDF(object):
         Uses 1000 logarithmically-spaced bins to calculate integral.
 
         :param f: Function to be integrated
-        :return: Integral of function
+        :return: Integral of function bins
         """
 
         if lower is None:
@@ -123,7 +123,7 @@ class EnergyPDF(object):
         if upper is None:
             upper = self.integral_e_max
 
-        nsteps = 1.e3
+        nsteps = int(1.e3)
 
         e_range = np.linspace(np.log10(lower), np.log10(upper), nsteps + 1)
         diff_sum = []
@@ -131,7 +131,7 @@ class EnergyPDF(object):
         for i, log_e in enumerate(e_range[:-1]):
             e0 = np.exp(log_e)
             e1 = np.exp(e_range[i + 1])
-            diff_sum .append(0.5 * (e1 - e0) * (f(e0) + f(e1)))
+            diff_sum.append(0.5 * (e1 - e0) * (f(e0) + f(e1)))
 
         return diff_sum, e_range
 

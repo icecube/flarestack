@@ -153,6 +153,8 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
             data_weights = signalness(llh.energy_weight_f(local_data))
 
+            print("source_mc", source_mc)
+
             mc_weights = signalness(llh.energy_weight_f(source_mc))
 
             # The flux is split across sources. The source weight is equal to
@@ -439,8 +441,8 @@ class AsimovEstimator(object):
         self.injectors = dict()
 
         for season in self.seasons.values():
-            self.injectors[season.season_name] = season.make_injector([],
-                                                                  **inj_dict)
+            self.injectors[season.season_name] = season.make_injector(
+                [], **inj_dict)
 
     def guess_discovery_potential(self, source_path):
         sources = load_catalogue(source_path)

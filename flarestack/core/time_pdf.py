@@ -183,7 +183,8 @@ class TimePDF(object):
 
     def convert_livetime_mjd(self):
         t_range = np.linspace(
-            self.livetime_pdf.sig_t0(), self.livetime_pdf.sig_t1(), 1e3)
+            self.livetime_pdf.sig_t0(), self.livetime_pdf.sig_t1(), int(1e3))
+
         f_range = [self.livetime_f(t) for t in t_range]
         sum_range = [np.sum(f_range[:i]) for i, _ in enumerate(f_range)]
 
@@ -203,7 +204,7 @@ class Steady(TimePDF):
     """
 
     def __init__(self, t_pdf_dict, livetime_pdf=None):
-        TimePDF.__init__(t_pdf_dict, livetime_pdf)
+        TimePDF.__init__(self, t_pdf_dict, livetime_pdf)
 
         if self.livetime_pdf is None:
             raise ValueError("No livetime pdf has been provided, but a Steady "
@@ -212,7 +213,7 @@ class Steady(TimePDF):
                              "provide a livetime_pdf, or use a different Time "
                              "PDF class such as FixedEndBox.")
         else:
-            self.livetime = livetime_pdf.product_to_infinity([])
+            self.livetime = livetime_pdf.integral_to_infinity([])
 
 
 
@@ -337,7 +338,7 @@ class Box(TimePDF):
         """
         return min(source["ref_time_mjd"] + self.post_window, self.t1)
 
-    def f(self, t, source):
+    def f(self, t, source=None):
         """In this case, the signal PDF is a uniform PDF for a fixed duration of
         time. It is normalised with the length of the box in LIVETIME rather
         than days, to give an integral of 1.
