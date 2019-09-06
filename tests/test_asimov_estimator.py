@@ -50,7 +50,7 @@ class TestTimeIntegrated(unittest.TestCase):
         print("\n")
 
         injection_energy = {
-            "energy_pdf_name": "PowerLaw",
+            "energy_pdf_name": "power_law",
             "gamma": 2.0,
         }
 
@@ -59,8 +59,8 @@ class TestTimeIntegrated(unittest.TestCase):
         }
 
         inj_dict = {
-            "Injection Energy PDF": injection_energy,
-            "Injection Time PDF": injection_time,
+            "injection_energy_pdf": injection_energy,
+            "injection_time_pdf": injection_time,
         }
 
         ae = AsimovEstimator(ps_v002_p01.get_seasons("IC86_1"), inj_dict)

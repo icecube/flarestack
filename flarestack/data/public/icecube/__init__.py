@@ -38,9 +38,6 @@ class PublicICSeason(SeasonWithoutMC):
     def load_effective_area(self):
         pseudo_mc = self.get_pseudo_mc(cut_fields=False)
 
-        print(pseudo_mc.dtype.names)
-        print(pseudo_mc[:5])
-
         entry_0 = pseudo_mc[0]
 
         log_e_bin_center = list(pseudo_mc[

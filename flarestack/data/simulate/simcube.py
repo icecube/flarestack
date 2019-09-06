@@ -1,8 +1,84 @@
 from flarestack.data.public import ps_3_year
+from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.data.simulate import SimSeason, SimDataset
 import numpy as np
 import random
 from scipy.interpolate import interp1d
+
+
+class IceCubeBackgroundFluxModel:
+
+    def __init__(self):
+        self.atmo = self.atmo_flux()
+        self.muon_bundle = self.muon_bundle_flux()
+
+    @staticmethod
+    def atmo_flux():
+        e_pdf_dict = {
+            "energy_pdf_name": "PowerLaw",
+            "gamma": 3.7,
+        }
+        return EnergyPDF.create(e_pdf_dict)
+
+    @staticmethod
+    def muon_bundle_flux():
+        e_pdf_dict = {
+            "energy_pdf_name": "PowerLaw",
+            "gamma": 3.0,
+        }
+        return EnergyPDF.create(e_pdf_dict)
+
+    @staticmethod
+    def path_through_earth(sindec):
+
+        ic_angle = np.arccos(sindec)
+
+
+
+        dec = np.arccos(sindec)
+
+        earth_radius = 6400.
+        ic_depth = 2.
+
+        dist_to_center = earth_radius - ic_depth
+
+        center_adjacent = earth_radius * np.cos(dec)
+        center_opposite = earth_radius * np.sin(dec)
+
+        adjacent_full = dist_to_center + center_adjacent
+        full_dist = np.sqrt(adjacent_full**2 + center_opposite**2)
+
+        return full_dist
+
+    def muon_bundle_extent(self, sindec):
+
+        length = self.path_through_earth(sindec)
+
+        # This is the fudgiest factor known to man
+
+        muon_decay_length = 3.
+
+        return np.exp(-length/muon_decay_length)
+
+    def flux_model_f(self, e, sindec):
+
+        muon_contrib = self.muon_bundle.f(e) * self.muon_bundle_extent(sindec)
+
+        return self.atmo.f(e) + muon_contrib
+
+# ibfm = IceCubeBackgroundFluxModel()
+#
+# for i in [-1., -0.5, -0.1, 0.0, 0.1, 0.5, 1.]:
+#     print(ibfm.path_through_earth(i))
+# input("?")
+
+bkg_e_pdf_dict = {
+    "energy_pdf_name": "PowerLaw",
+    "gamma": 3.7
+}
+
+
+
 
 
 class SimCubeSeason(SimSeason):
@@ -55,7 +131,6 @@ class SimCubeSeason(SimSeason):
                 np.log10(e), mean_sin_dec) * self.bkg_energy_pdf.f(e)
 
         int_eff_a = self.bkg_energy_pdf.integrate_over_E(source_eff_area)
-        print(int_eff_a)
 
         # Effective areas are given in m2, but flux is in per cm2
 
@@ -103,13 +178,6 @@ class SimCubeSeason(SimSeason):
 
         return new_events
 
-
-e_pdf_dict = {
-    "energy_pdf_name": "PowerLaw",
-    "gamma": 1.7,
-    # "e_min_gev": 1000,
-}
-
 simcube_dataset = SimDataset()
 
 for (name, season) in ps_3_year.get_seasons().items():
@@ -131,6 +199,8 @@ for (name, season) in ps_3_year.get_seasons().items():
                              "provide a unique 'sim_name' to describe this "
                              "simulation.")
 
+        sin_dec_bins = season.sin_dec_bins[season.sin_dec_bins > 0.]
+
         sim_season = SimCubeSeason(
             season_name=name,
             sample_name="SimCube_{0}".format(sim_name),
@@ -142,8 +212,9 @@ for (name, season) in ps_3_year.get_seasons().items():
             bkg_flux_norm=bkg_flux_norm,
             bkg_e_pdf_dict=bkg_e_pdf_dict,
             energy_proxy_map=energy_proxy_map,
-            sin_dec_bins=season.sin_dec_bins,
-            log_e_bins=season.log_e_bins
+            sin_dec_bins=sin_dec_bins,
+            log_e_bins=season.log_e_bins,
+            **kwargs
         )
         return sim_season
 
@@ -152,17 +223,15 @@ for (name, season) in ps_3_year.get_seasons().items():
 bkg_time_pdf_dict = {
     "time_pdf_name": "fixed_end_box",
     "start_time_mjd": 50000,
-    "end_time_mjd": 50020
+    "end_time_mjd": 55000
 }
 
 simcube_season = simcube_dataset.set_sim_params(
     name="IC86-2012",
     bkg_time_pdf_dict=bkg_time_pdf_dict,
-    bkg_flux_norm=1.,
-    bkg_e_pdf_dict=e_pdf_dict
+    bkg_flux_norm=1e8,
+    bkg_e_pdf_dict=bkg_e_pdf_dict
 )
-
-print(simcube_dataset.get_seasons())
 
 # nicecube_10year = SimCubeSeason(0, 100, 1., e_pdf_dict)
 #

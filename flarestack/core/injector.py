@@ -73,7 +73,7 @@ class BaseInjector:
 
         try:
             self.sig_time_pdf = TimePDF.create(kwargs["injection_sig_time_pdf"],
-                                               season)
+                                               season.time_pdf)
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
             self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"],
                                           season)
@@ -469,11 +469,11 @@ class EffectiveAreaInjector(BaseInjector):
     """
 
     def __init__(self, season, sources, **kwargs):
-        BaseInjector.__init__(self, season, sources, **kwargs)
-        self.n_exp = self.calculate_n_exp()
         self.effective_area_f = season.load_effective_area()
         self.energy_proxy_mapping = season.load_energy_proxy_mapping()
         self.angular_res_f = season.load_angular_resolution()
+        BaseInjector.__init__(self, season, sources, **kwargs)
+        self.n_exp = self.calculate_n_exp()
         self.conversion_cache = dict()
 
     def inject_signal(self, scale):

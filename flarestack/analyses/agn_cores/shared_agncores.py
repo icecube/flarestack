@@ -45,9 +45,72 @@ def agn_subset_catalogue(agn_type, xray_cat, n_sources):
         np.save(subset_path, new_cat)
     return subset_path
 
+def agn_subset_catalogue_name_north(agn_type, xray_cat, n_sources):
+    return agn_catalogue_name(
+        agn_type, xray_cat + "_" + str(n_sources) + "brightest_srcs_north",
+        base_dir=subset_agn_dir
+    )
+
+def agn_subset_catalogue_north(agn_type, xray_cat, n_sources):
+    subset_path = agn_subset_catalogue_name_north(agn_type, xray_cat, n_sources)
+    if not os.path.isfile(subset_path):
+        parent_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
+        parent_cat = parent_cat[parent_cat["dec_rad"]>np.deg2rad(-5)]
+        parent_cat = np.sort(parent_cat, order="base_weight")[::-1]
+        new_cat = parent_cat[:n_sources]
+        print("Catalogue not found. Creating one at:", subset_path)
+        np.save(subset_path, new_cat)
+    return subset_path
+
+
+def agn_subset_catalogue_name_north_no_pole(agn_type, xray_cat, n_sources):
+    return agn_catalogue_name(
+        agn_type, xray_cat + "_" + str(n_sources) + "brightest_srcs_north_no_pole",
+        base_dir=subset_agn_dir
+    )
+
+def agn_subset_catalogue_north_no_pole(agn_type, xray_cat, n_sources):
+    subset_path = agn_subset_catalogue_name_north_no_pole(agn_type, xray_cat, n_sources)
+    if not os.path.isfile(subset_path):
+        parent_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
+        print ("Original catalogue (before north + pole + nrsrc selection) is: ", len(parent_cat))
+        parent_cat = parent_cat[parent_cat["dec_rad"]>np.deg2rad(-5)]
+        print("Original catalogue (after north selection) is: ", len(parent_cat))
+        parent_cat = parent_cat[parent_cat["dec_rad"] < np.deg2rad(80)]
+        print("Original catalogue (after north + pole selection) is: ", len(parent_cat))
+
+        parent_cat = np.sort(parent_cat, order="base_weight")[::-1]
+        new_cat = parent_cat[:n_sources]
+        print("Catalogue not found. Creating one at:", subset_path)
+        np.save(subset_path, new_cat)
+    return subset_path
+
+
+def agn_subset_catalogue_name_no_pole(agn_type, xray_cat, n_sources):
+    return agn_catalogue_name(
+        agn_type, xray_cat + "_" + str(n_sources) + "brightest_srcs_no_pole",
+        base_dir=subset_agn_dir
+    )
+
+def agn_subset_catalogue_no_pole(agn_type, xray_cat, n_sources):
+    subset_path = agn_subset_catalogue_name_no_pole(agn_type, xray_cat, n_sources)
+    if not os.path.isfile(subset_path):
+        parent_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
+        print ("Original catalogue (before north + pole + nrsrc selection) is: ", len(parent_cat))
+        # parent_cat = parent_cat[parent_cat["dec_rad"]>np.deg2rad(-5)]
+        # print("Original catalogue (after north selection) is: ", len(parent_cat))
+        parent_cat = parent_cat[parent_cat["dec_rad"] < np.deg2rad(80)]
+        print("Original catalogue (after pole selection) is: ", len(parent_cat))
+
+        parent_cat = np.sort(parent_cat, order="base_weight")[::-1]
+        new_cat = parent_cat[:n_sources]
+        print("Catalogue not found. Creating one at:", subset_path)
+        np.save(subset_path, new_cat)
+    return subset_path
 
 complete_cats = [
-    ("radioloud", "radioselected")
+    ("radioloud", "radioselected"),
+    ("radioloud", "irselected")
 ]
 
 
