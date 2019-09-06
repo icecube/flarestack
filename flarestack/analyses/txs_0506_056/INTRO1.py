@@ -1,7 +1,7 @@
 from __future__ import print_function
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_v003_p02
 from flarestack.shared import make_analysis_pickle
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.cluster import analyse, wait_cluster
@@ -70,11 +70,11 @@ name = "analyses/txs_0506_056/INTRO1/"
 mh_dict = {
     "name": name,
     "mh_name": "fixed_weights",
-    "datasets": ps_7year.get_seasons("IC86_1"),
+    "datasets": ps_v002_p01.get_seasons("IC86_1"),
     "catalogue": txs_cat_path,
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
-    "n_trials": 10,
+    "n_trials": 1,
     "n_steps": 10
 }
 

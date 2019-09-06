@@ -52,3 +52,7 @@ for (sn, sn_dict) in limits.items():
         sn_dict[llh_type + " Energy (erg)"] = energy
 
 
+if __name__ == "__main__":
+    print("LImits", limits)
+
+

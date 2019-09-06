@@ -2,21 +2,17 @@ from __future__ import print_function
 from __future__ import division
 import numpy as np
 import os
-from flarestack.core.results import ResultsHandler
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.shared import plot_output_dir, flux_to_k, \
     make_analysis_pickle, k_to_flux
-from flarestack.utils.reference_sensitivity import reference_sensitivity
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
-from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.simulate_catalogue import simulate_transient_catalogue
 from flarestack.analyses.ccsn.sn_cosmology import get_sn_type_rate
 from flarestack.utils.catalogue_loader import load_catalogue
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
-from flarestack.utils.deus_ex_machina import DeusExMachina
+from flarestack.utils.asimov_estimator import AsimovEstimator
 
 name_root = "analyses/ztf/depth/"
 
@@ -179,7 +175,7 @@ for sn in sn_types:
 
 rd.wait_for_cluster()
 
-dem = DeusExMachina([IC86_1_dict], inj_kwargs)
+dem = AsimovEstimator([IC86_1_dict], inj_kwargs)
 
 for (sn, sn_dict) in res_dict.items():
 

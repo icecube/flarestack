@@ -1,14 +1,8 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from builtins import str
-from builtins import range
 import os
 import numpy as np
 from flarestack import config
 import socket
 import pickle
-from flarestack.core.energy_pdf import gamma_range, EnergyPDF
 import json
 import zlib
 
@@ -32,6 +26,7 @@ cache_dir = storage_dir + "cache/"
 cat_cache_dir = cache_dir + "catalogue_cache/"
 
 public_dataset_dir = input_dir + "public_datasets/"
+sim_dataset_dir = input_dir + "sim_datasets/"
 
 catalogue_dir = input_dir + "catalogues/"
 transients_dir = catalogue_dir + "transients/"
@@ -64,7 +59,8 @@ all_dirs = [
     SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
     bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir,
     cache_dir, cat_cache_dir, public_dataset_dir, energy_proxy_dir,
-    eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir, energy_proxy_plot_dir
+    eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir, energy_proxy_plot_dir,
+    sim_dataset_dir
 ]
 
 # ==============================================================================
@@ -74,35 +70,11 @@ all_dirs = [
 host = socket.gethostname()
 
 if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
-    dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
-    skylab_ref_dir = dataset_dir + "mirror-7year-PS-sens/"
-    print("Loading datasets from", dataset_dir, "(DESY)")
     host_server = "DESY"
 elif "icecube.wisc.edu" in host:
-    dataset_dir = "/data/ana/analyses/"
-    skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
-    print("Loading datasets from", dataset_dir, "(WIPAC)")
     host_server = "WIPAC"
 else:
-    dataset_dir = None
     host_server = None
-
-
-# Dataset directory can be changed if needed
-
-def set_dataset_directory(path):
-    """Sets the dataset directory to be a custom path, and exports this.
-
-    :param path: Path to datasets
-    """
-    if not os.path.isdir(path):
-        raise Exception("Attempting to set invalid path for datasets. "
-                        "Directory", path, "does not exist!")
-    print("Loading datasets from", path)
-
-    global dataset_dir
-    dataset_dir = path
-
 
 # gamma_range = [1., 4.]
 gamma_precision = .025
@@ -204,6 +176,12 @@ def plot_output_dir(name):
 def limit_output_path(name):
     path = limits_dir + name + "limit.pkl"
     return path
+
+
+def sim_dataset_dir_path(sample_name, season_name, flux, e_pdf_dict):
+    return sim_dataset_dir + sample_name + "/" + \
+           season_name + '/' + str(deterministic_hash(e_pdf_dict)) + \
+           "/" + str(flux)
 
 
 def acceptance_path(season):

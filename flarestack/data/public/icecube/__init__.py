@@ -38,10 +38,30 @@ class PublicICSeason(SeasonWithoutMC):
     def load_effective_area(self):
         pseudo_mc = self.get_pseudo_mc(cut_fields=False)
 
-        log_e_bin_center = sorted(set(pseudo_mc["logE"]))
-        sin_bin_center = sorted(set(pseudo_mc["sinDec"]))
+        entry_0 = pseudo_mc[0]
+
+        log_e_bin_center = list(pseudo_mc[
+            pseudo_mc["sinDec"] == entry_0["sinDec"]]["logE"])
+
+        # Make sure values are strictly increasing
+
+        if log_e_bin_center != list(sorted(set(pseudo_mc["logE"]))):
+            x_sign = -1.
+            log_e_bin_center = list(sorted(set(pseudo_mc["logE"])))
+        else:
+            x_sign = 1.
+
+        sin_bin_center = list(pseudo_mc[
+            pseudo_mc["logE"] == entry_0["logE"]]["sinDec"])
+
+        if sin_bin_center != list(sorted(set(pseudo_mc["sinDec"]))):
+            y_sign = -1.
+            sin_bin_center = list(sorted(set(pseudo_mc["sinDec"])))
+        else:
+            y_sign = 1.
 
         eff_a = pseudo_mc
+
         eff_a = np.reshape(eff_a, (len(log_e_bin_center), len(sin_bin_center),))
 
         order = 1
@@ -50,7 +70,8 @@ class PublicICSeason(SeasonWithoutMC):
             log_e_bin_center, sin_bin_center, np.log(eff_a["a_eff"] + 1e-9),
             kx=order, ky=order, s=0)
 
-        return lambda x, y: np.exp(effective_area_spline.ev(x, y))
+        return lambda x, y: np.exp(effective_area_spline.ev(
+            x * x_sign, y * y_sign))
 
     def load_energy_proxy_mapping(self):
         path = energy_proxy_path(self)
@@ -125,8 +146,10 @@ class PublicICSeason(SeasonWithoutMC):
 
                     true_e = 0.5*(row[0] + row[1])
                     log_e = np.log10(true_e)
-                    sin_dec = -0.5*(row[2] + row[3])
-                    true_dec = np.arcsin(sin_dec)
+                    cos_zen = 0.5 * (row[2] + row[3])
+                    zen = np.arccos(cos_zen)
+                    true_dec = (zen - np.pi/2.)
+                    sin_dec = np.sin(true_dec)
                     a_eff = row[4]
 
                     entry = tuple([
@@ -135,7 +158,6 @@ class PublicICSeason(SeasonWithoutMC):
                     ])
 
                     pseudo_mc.append(entry)
-
         pseudo_mc = np.array(pseudo_mc, dtype=data_dtype)
 
         return pseudo_mc
@@ -163,11 +185,10 @@ class PublicICSeason(SeasonWithoutMC):
 
             # Cut down then up
 
-            exp_cut = exp[(sign * exp["sinDec"]) < (sign * cut_value)]
-
+            exp_cut = exp[(sign * exp["sinDec"]) > (sign * cut_value)]
 
             pseudo_mc_cut = pseudo_mc[
-                (sign * pseudo_mc["sinDec"]) < (sign * cut_value)
+                (sign * pseudo_mc["sinDec"]) > (sign * cut_value)
             ]
 
             log_e_exp = exp_cut["logE"]

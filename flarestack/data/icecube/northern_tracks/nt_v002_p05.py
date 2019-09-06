@@ -67,15 +67,15 @@ Path to local copy of point source tracks, downloaded on 18/09/18 from
 
 
 """
-from flarestack.shared import dataset_dir
-from flarestack.data.icecube import IceCubeDataset
+from flarestack.data.icecube.ic_season import IceCubeDataset, \
+    icecube_dataset_dir
 from flarestack.data.icecube.northern_tracks import NTSeason, \
     get_diffuse_binning
 
 
-nt_data_dir = dataset_dir + "northern_tracks/version-002-p05/"
+nt_data_dir = icecube_dataset_dir + "northern_tracks/version-002-p05/"
 
-diffuse_8year = IceCubeDataset()
+nt_v002_p05 = IceCubeDataset()
 
 sample_name = "northern_tracks_v002_p05"
 
@@ -93,7 +93,7 @@ def generate_diffuse_season(name):
         sin_dec_bins=get_diffuse_binning(name)[0],
         log_e_bins=get_diffuse_binning(name)[1]
     )
-    diffuse_8year.add_season(season)
+    nt_v002_p05.add_season(season)
 
 
 seasons = ["IC59", "IC79", "IC86_2011", "IC86_2012_16"]

@@ -3,15 +3,13 @@ from builtins import str
 import numpy as np
 import os
 import pickle as Pickle
-from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
     catalogue_dir
-from flarestack.utils.reference_sensitivity import reference_sensitivity
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
-from flarestack.core.time_pdf import TimePDF
 from flarestack.utils.custom_seasons import custom_dataset
 
 analyses = dict()

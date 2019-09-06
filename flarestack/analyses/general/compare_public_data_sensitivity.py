@@ -10,7 +10,7 @@ from flarestack.data.icecube.public.all_sky_point_source.all_sky_3_year \
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_3_systematic_set
 from flarestack.cluster import analyse, wait_cluster
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.utils.deus_ex_machina import DeusExMachina
+from flarestack.utils.asimov_estimator import AsimovEstimator
 from flarestack.shared import plot_output_dir, flux_to_k
 
 
@@ -54,9 +54,9 @@ datasets = [
 
 base_name = "general/compare_public_data_sensitivity/"
 
-sindecs = np.linspace(-0.75, 0.75, 7)
+sindecs = np.linspace(0.90, -0.90, 13)
 
-ae = DeusExMachina(ps_3_systematic_set.get_seasons(season), inj_dict)
+ae = AsimovEstimator(ps_3_systematic_set.get_seasons(season), inj_dict)
 
 all_res = dict()
 
@@ -83,13 +83,13 @@ for i, dataset in enumerate(datasets):
             "llh_dict": llh_dict,
             "inj_dict": inj_dict,
             "n_steps": 15,
-            "n_trials": 100
+            "n_trials": 1000
         }
 
         mh_dict["scale"] = flux_to_k(
             ae.guess_discovery_potential(cat_path) * 1.5)
 
-        analyse(mh_dict, n_cpu=24)
+        # analyse(mh_dict, n_cpu=24)
 
         dataset_res[sindec] = mh_dict
 

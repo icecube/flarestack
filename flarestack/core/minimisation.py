@@ -560,7 +560,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         source_weights = []
 
         for source in src:
-            time_weights.append(llh.time_pdf.effective_injection_time(
+            time_weights.append(llh.sig_time_pdf.effective_injection_time(
                 source))
             acc.append(llh.acceptance(source, params))
             source_weights.append(calculate_source_weight(source) /
@@ -949,19 +949,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     def return_injected_parameters(self, scale):
 
-        # n_inj = 0
-        # for source in self.sources:
-        #     name = source["source_name"]
-        #
-        #     for inj in self.injectors.values():
-        #         print(inj)
-        #         try:
-        #             n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
-        #
-        #         # If source not overlapping season, will not be in dict
-        #         except KeyError:
-        #             pass
-
         n_inj = 0.
         for inj in self.injectors.values():
             n_inj += np.sum(inj.n_exp["n_exp"] * scale)
@@ -1113,7 +1100,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
         # PDFs provided in llh_kwargs.
         for name in self.seasons:
 
-            tpdf = self.llhs[name].time_pdf
+            tpdf = self.llhs[name].sig_time_pdf
 
             # Check to ensure that no weird new untested time PDF is used
             # with the flare search method, since uniform time PDFs over the
@@ -1167,10 +1154,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 t_mask = np.logical_and(
                     np.greater(
                         spatial_coincident_data["time"],
-                        llh.time_pdf.sig_t0(source)),
+                        llh.sig_time_pdf.sig_t0(source)),
                     np.less(
                         spatial_coincident_data["time"],
-                        llh.time_pdf.sig_t1(source))
+                        llh.sig_time_pdf.sig_t1(source))
                 )
 
                 coincident_data = spatial_coincident_data[t_mask]
@@ -1189,8 +1176,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                         "season_name": season.season_name
                     }
                     new_entry["Coincident Data"] = coincident_data
-                    new_entry["Start (MJD)"] = llh.time_pdf.t0
-                    new_entry["End (MJD)"] = llh.time_pdf.t1
+                    new_entry["Start (MJD)"] = llh.sig_time_pdf.t0
+                    new_entry["End (MJD)"] = llh.sig_time_pdf.t1
 
                     # Identify significant events (S/B > 1)
 
@@ -1232,15 +1219,15 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # Length of search window in livetime
 
             search_window = np.sum([
-                llh.time_pdf.effective_injection_time(src)
+                llh.sig_time_pdf.effective_injection_time(src)
                 for llh in self.llhs.values()]
             )
 
             # If a maximum flare length is specified, sets that here
 
-            if "max_flare" in list(self.llh_dict["llh_time_pdf"].keys()):
+            if "max_flare" in list(self.llh_dict["llh_sig_time_pdf"].keys()):
                 # Maximum flare given in days, here converted to seconds
-                max_flare = self.llh_dict["llh_time_pdf"]["max_flare"] * (
+                max_flare = self.llh_dict["llh_sig_time_pdf"]["max_flare"] * (
                         60 * 60 * 24
                 )
             else:
@@ -1331,7 +1318,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     # Check that flare overlaps with season
 
-                    inj_time = llh.time_pdf.effective_injection_time(
+                    inj_time = llh.sig_time_pdf.effective_injection_time(
                         flare_time
                     )
 
@@ -1466,10 +1453,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
         #             default["Gamma"] = np.nan
 
             # if self.flare:
-            #     fs = [inj.time_pdf.sig_t0(source)
+            #     fs = [inj.sig_time_pdf.sig_t0(source)
             #           for inj in self.injectors.itervalues()]
             #     true_fs = min(fs)
-            #     fe = [inj.time_pdf.sig_t1(source)
+            #     fe = [inj.sig_time_pdf.sig_t1(source)
             #           for inj in self.injectors.itervalues()]
             #     true_fe = max(fe)
             #

@@ -1,5 +1,5 @@
 import numpy as np
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.analyses.ccsn.shared_ccsn import sn_cats, sn_catalogue_name, \
     sn_time_pdfs
 from flarestack.core.unblinding import create_unblinder
@@ -34,7 +34,7 @@ for cat in sn_cats:
         unblind_dict = {
             "name": name,
             "mh_name": "fit_weights",
-            "datasets": custom_dataset(ps_7year, catalogue,
+            "datasets": custom_dataset(ps_v002_p01, catalogue,
                                        llh_time),
             "catalogue": cat_path,
             "llh_dict": unblind_llh,

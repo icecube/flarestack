@@ -1,5 +1,5 @@
 import numpy as np
-from flarestack.data.icecube import IceCubeSeason
+from flarestack.data.icecube.ic_season import IceCubeSeason
 from numpy.lib.recfunctions import rename_fields
 
 

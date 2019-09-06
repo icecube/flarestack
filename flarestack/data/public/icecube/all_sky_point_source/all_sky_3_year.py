@@ -226,7 +226,7 @@ if not os.path.isdir(data_dir):
 
 if __name__ == "__main__":
     run_all()
-    # mc = data_loader(ps_7year[0]["mc_path"])
+    # mc = data_loader(ps_v002_p01[0]["mc_path"])
     # print(mc.dtype.names)
     # for x in mc:
     #     true_e = x["trueE"]

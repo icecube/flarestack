@@ -10,8 +10,7 @@ import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
 from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
-from flarestack.utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import run_desy_cluster as rd
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
 import math

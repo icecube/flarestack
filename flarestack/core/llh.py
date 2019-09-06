@@ -32,9 +32,10 @@ def read_llh_dict(llh_dict):
 
     maps = [
         ("name", "llh_name"),
-        ("LLH Time PDF", "llh_time_pdf"),
+        ("LLH Time PDF", "llh_sig_time_pdf"),
         ("LLH Energy PDF", "llh_energy_pdf"),
-        ("Fit Negative n_s?", "negative_ns_bool")
+        ("Fit Negative n_s?", "negative_ns_bool"),
+        ("llh_time_pdf", "llh_sig_time_pdf")
     ]
 
     for (old_key, new_key) in maps:
@@ -44,7 +45,7 @@ def read_llh_dict(llh_dict):
 
     pairs = [
         ("llh_energy_pdf", read_e_pdf_dict),
-        ("llh_time_pdf", read_t_pdf_dict)
+        ("llh_sig_time_pdf", read_t_pdf_dict)
     ]
 
     for (key, f) in pairs:
@@ -55,6 +56,11 @@ def read_llh_dict(llh_dict):
 
     if "llh_spatial_pdf" not in llh_dict.keys():
         llh_dict["llh_spatial_pdf"] = {}
+
+    if "llh_bkg_time_pdf" not in llh_dict.keys():
+        llh_dict["llh_bkg_time_pdf"] = {
+            "time_pdf_name": "steady"
+        }
 
     return llh_dict
 
@@ -71,13 +77,22 @@ class LLH(object):
         self.spatial_pdf = SpatialPDF(llh_dict["llh_spatial_pdf"], season)
 
         try:
-            time_dict = llh_dict["llh_time_pdf"]
-            self.time_pdf = TimePDF.create(time_dict, season)
+            time_dict = llh_dict["llh_sig_time_pdf"]
+            self.sig_time_pdf = TimePDF.create(time_dict, season.time_pdf)
         except KeyError:
-            raise KeyError("No Time PDF specified. Please add an 'llh_time_pdf'"
-                           " entry to the llh_dict, and try again. If "
-                           "you do not want time dependence in your "
-                           "likelihood, please specify a 'Steady' Time PDF.")
+            raise KeyError("No Signal Time PDF specified. Please add an "
+                           "'llh_sig_time_pdf' entry to the llh_dict, and try "
+                           "again. If you do not want time dependence in your "
+                           "likelihood, please specify a 'steady' Time PDF.")
+
+        try:
+            time_dict = llh_dict["llh_bkg_time_pdf"]
+            self.bkg_time_pdf = TimePDF.create(time_dict, season.time_pdf)
+        except KeyError:
+            raise KeyError("No Signal Time PDF specified. Please add an "
+                           "'llh_bkg_time_pdf' entry to the llh_dict, and try "
+                           "again. If you do not want time dependence in your "
+                           "likelihood, please specify a 'steady' Time PDF.")
 
         self.acceptance, self.energy_weight_f = self.create_energy_functions()
 
@@ -138,8 +153,8 @@ class LLH(object):
         """
         space_term = self.spatial_pdf.signal_spatial(source, cut_data)
 
-        if hasattr(self, "time_pdf"):
-            time_term = self.time_pdf.signal_f(cut_data["time"], source)
+        if hasattr(self, "sig_time_pdf"):
+            time_term = self.sig_time_pdf.f(cut_data["time"], source)
 
             sig_pdf = space_term * time_term
 
@@ -190,9 +205,8 @@ class LLH(object):
         """
         space_term = self.spatial_pdf.background_spatial(cut_data)
 
-        if hasattr(self, "time_pdf"):
-            time_term = self.time_pdf.background_f(cut_data["time"], source)
-
+        if hasattr(self, "sig_time_pdf"):
+            time_term = self.bkg_time_pdf.f(cut_data["time"], source)
             sig_pdf = space_term * time_term
         else:
             sig_pdf = space_term

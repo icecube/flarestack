@@ -6,12 +6,10 @@ import numpy as np
 import datetime
 import os
 import pickle as Pickle
-from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
     catalogue_dir
-from flarestack.utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import run_desy_cluster as rd
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.core.minimisation import MinimisationHandler
 import matplotlib.pyplot as plt
 import math
@@ -109,7 +107,7 @@ for n in n_catalogue:
 
     mh_dict = {
         "name": name,
-        "datasets": ps_7year,
+        "datasets": ps_v002_p01,
         "catalogue": cat_path,
         "inj kwargs": inj_kwargs,
         "llh kwargs": llh_kwargs,

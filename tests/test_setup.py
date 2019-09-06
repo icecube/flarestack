@@ -18,12 +18,13 @@ class TestSetup(unittest.TestCase):
         print("\n")
 
         keys = list(sys.modules.keys())
+
         for key in keys:
             if "flarestack" in key:
                 del sys.modules[key]
 
-        from flarestack.precompute import set_scratch_directory, run_precompute, \
-            config_path
+        from flarestack.precompute import set_scratch_directory, \
+            run_precompute, config_path
 
         with open(config_path, "r") as f:
             scratch_path = f.readline()[16:-2]
@@ -36,8 +37,8 @@ class TestSetup(unittest.TestCase):
 
         set_scratch_directory(temp_scratch_dir)
 
-        from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-        run_precompute(ps_7year.get_seasons("IC40"), ask=False)
+        from flarestack.data.icecube import ps_v002_p01
+        run_precompute(ps_v002_p01.get_seasons("IC40"), ask=False)
 
         keys = list(sys.modules.keys())
         for key in keys:

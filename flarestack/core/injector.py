@@ -24,9 +24,10 @@ def read_injector_dict(inj_dict):
     """
 
     maps = [
-        ("Injection Time PDF", "injection_time_pdf"),
+        ("Injection Time PDF", "injection_sig_time_pdf"),
         ("Injection Energy PDF", "injection_energy_pdf"),
-        ("Poisson Smear?", "poisson_smear_bool")
+        ("Poisson Smear?", "poisson_smear_bool"),
+        ("injection_time_pdf", "injection_sig_time_pdf")
     ]
 
     for (old_key, new_key) in maps:
@@ -36,7 +37,7 @@ def read_injector_dict(inj_dict):
 
     pairs = [
         ("injection_energy_pdf", read_e_pdf_dict),
-        ("injection_time_pdf", read_t_pdf_dict)
+        ("injection_sig_time_pdf", read_t_pdf_dict)
     ]
 
     for (key, f) in pairs:
@@ -63,7 +64,7 @@ class BaseInjector:
         print("Initialising Injector for", season.season_name)
         self.injection_band_mask = dict()
         self.season = season
-        self.season.load_background_data()
+        self.season.load_background_model()
 
         self.sources = sources
 
@@ -71,8 +72,8 @@ class BaseInjector:
             self.weight_scale = calculate_source_weight(self.sources)
 
         try:
-            self.time_pdf = TimePDF.create(kwargs["injection_time_pdf"],
-                                           season)
+            self.sig_time_pdf = TimePDF.create(kwargs["injection_sig_time_pdf"],
+                                               season.time_pdf)
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
             self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"],
                                           season)
@@ -277,7 +278,7 @@ class MCInjector(BaseInjector):
         # Calculate the effective injection time for simulation. Equal to
         # the overlap between the season and the injection time PDF for
         # the source, scaled if the injection PDF is not uniform in time.
-        eff_inj_time = self.time_pdf.effective_injection_time(source)
+        eff_inj_time = self.sig_time_pdf.effective_injection_time(source)
 
         # All injection fluxes are given in terms of k, equal to 1e-9
         inj_flux = k_to_flux(source["injection_weight_modifier"] * scale)
@@ -359,7 +360,7 @@ class MCInjector(BaseInjector):
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.
 
-            sim_ev["time"] = self.time_pdf.simulate_times(source, n_s)
+            sim_ev["time"] = self.sig_time_pdf.simulate_times(source, n_s)
 
             # Joins the new events to the signal events
             sig_events = np.concatenate(
@@ -468,11 +469,11 @@ class EffectiveAreaInjector(BaseInjector):
     """
 
     def __init__(self, season, sources, **kwargs):
-        BaseInjector.__init__(self, season, sources, **kwargs)
-        self.n_exp = self.calculate_n_exp()
         self.effective_area_f = season.load_effective_area()
         self.energy_proxy_mapping = season.load_energy_proxy_mapping()
         self.angular_res_f = season.load_angular_resolution()
+        BaseInjector.__init__(self, season, sources, **kwargs)
+        self.n_exp = self.calculate_n_exp()
         self.conversion_cache = dict()
 
     def inject_signal(self, scale):
@@ -527,7 +528,7 @@ class EffectiveAreaInjector(BaseInjector):
 
             # Simulates times according to Time PDF
 
-            sim_ev["time"] = self.time_pdf.simulate_times(source, n_s)
+            sim_ev["time"] = self.sig_time_pdf.simulate_times(source, n_s)
             sim_ev["sigma"] = self.angular_res_f(sim_ev["logE"]).copy()
             sim_ev["raw_sigma"] = sim_ev["sigma"].copy()
 
@@ -549,7 +550,7 @@ class EffectiveAreaInjector(BaseInjector):
         # Calculate the effective injection time for simulation. Equal to
         # the overlap between the season and the injection time PDF for
         # the source, scaled if the injection PDF is not uniform in time.
-        eff_inj_time = self.time_pdf.effective_injection_time(source)
+        eff_inj_time = self.sig_time_pdf.effective_injection_time(source)
 
         # All injection fluxes are given in terms of k, equal to 1e-9
         inj_flux = k_to_flux(source["injection_weight_modifier"] * scale)
@@ -641,8 +642,8 @@ class TrueUnblindedInjector:
 
 
 # if __name__ == "__main__":
-#     from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-#     data = ps_7year[0]
+#     from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+#     data = ps_v002_p01[0]
 #     from flarestack.analyses.agn_cores.shared_agncores import agncores_cat_dir
 #     cat = np.load(
 #         agncores_cat_dir +

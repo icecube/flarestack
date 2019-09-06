@@ -288,5 +288,6 @@ class ZenithSpline(BackgroundSpatialPDF):
     def background_spatial(self, events):
         space_term = (1. / (2. * np.pi)) * np.exp(
             self.bkg_f(events["sinDec"]))
+
         return space_term
 

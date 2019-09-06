@@ -3,14 +3,11 @@ from __future__ import division
 from builtins import str
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.cluster import run_desy_cluster as rd
-from flarestack.shared import flux_to_k, plot_output_dir, scale_shortener, \
+from flarestack.shared import plot_output_dir, scale_shortener, \
     make_analysis_pickle
-from flarestack.utils.reference_sensitivity import reference_sensitivity
 import matplotlib.pyplot as plt
-import json
 import numpy as np
 
 all_res = dict()

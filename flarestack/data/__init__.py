@@ -6,6 +6,9 @@ from numpy.lib.recfunctions import append_fields, drop_fields
 from flarestack.core.injector import MCInjector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
+from flarestack.core.time_pdf import TimePDF, OnOffList, FixedEndBox, \
+    FixedRefBox
+
 
 class DatasetHolder:
 
@@ -67,6 +70,9 @@ class Dataset:
                             name, self.seasons.keys(), self.subseasons.keys()))
             return season_dict
 
+    def get_single_season(self, name):
+        return self.get_seasons(name)[name]
+
 
 class Season:
 
@@ -77,9 +83,10 @@ class Season:
         self.loaded_background = None
         self.pseudo_mc_path = None
         self.background_dtype = None
+        self.time_pdf = self.build_time_pdf()
         self.all_paths = [self.exp_path]
 
-    def load_background_data(self):
+    def load_background_model(self):
         """Generic function to load background data to memory. It is useful
         for Injector, but does not always need to be used."""
         self.loaded_background = self.get_background_model()
@@ -110,7 +117,7 @@ class Season:
         :return: data: The scrambled dataset
         """
         if self.loaded_background is None:
-            self.load_background_data()
+            self.load_background_model()
         data = np.copy(self.loaded_background)
         # Assigns a flat random distribution for Right Ascension
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
@@ -121,8 +128,41 @@ class Season:
     def get_exp_data(self, **kwargs):
         return np.array(self.load_data(self.exp_path, **kwargs))
 
-    def get_livetime_data(self):
-        pass
+    def build_time_pdf_dict(self):
+        """Function to build a pdf for the livetime of the season. By
+        default, this is assumed to be uniform, spanning from the first to
+        the last event found in the data.
+
+        :return: Time pdf dictionary
+        """
+        exp = self.load_data(self.exp_path)
+        t0 = min(exp["time"])
+        t1 = max(exp["time"])
+
+        t_pdf_dict = {
+            "time_pdf_name": "fixed_end_box",
+            "start_time_mjd": t0,
+            "end_time_mjd": t1
+        }
+
+        return t_pdf_dict
+
+
+    def build_time_pdf(self):
+        t_pdf_dict = self.build_time_pdf_dict()
+        time_pdf = TimePDF.create(t_pdf_dict)
+
+        compatible_time_pdfs = [FixedEndBox, FixedRefBox, OnOffList]
+        if np.sum([isinstance(time_pdf, x) for x in compatible_time_pdfs]) == 0:
+            raise ValueError("Attempting to use a time PDF that is not an "
+                             "allowed time PDF class. Only {0} are allowed. The"
+                             " Only these PDFs have well-defined start and "
+                             "end points. Please prove one of these as a "
+                             "background_time_pdf for the simulation.".format(
+                compatible_time_pdfs
+            ))
+
+        return time_pdf
 
     def load_data(self, path, **kwargs):
         return np.load(path)
@@ -182,9 +222,13 @@ class SeasonWithoutMC(Season):
 
     def __init__(self, season_name, sample_name, exp_path, pseudo_mc_path,
                  **kwargs):
+
+
+
         Season.__init__(self, season_name, sample_name, exp_path, **kwargs)
         self.pseudo_mc_path = pseudo_mc_path
         self.all_paths.append(self.pseudo_mc_path)
+
 
     def make_injector(self, sources, **inj_kwargs):
         return EffectiveAreaInjector.create(self, sources, **inj_kwargs)
@@ -202,14 +246,3 @@ class SeasonWithoutMC(Season):
         :return: function mapping true energy to energy proxy
         """
         return lambda x: np.log10(x)
-
-    def get_livetime_data(self):
-        exp = self.load_data(self.exp_path)
-        t0 = min(exp["time"])
-        t1 = max(exp["time"])
-        livetime = t1 - t0
-        season_f = lambda x: 1.
-        mjd_to_livetime = lambda x: x - t0
-        livetime_to_mjd = lambda x: x + t0
-
-        return t0, t1, livetime, season_f, mjd_to_livetime, livetime_to_mjd

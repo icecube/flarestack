@@ -1,11 +1,9 @@
-from __future__ import print_function
-from builtins import input
 import os
-import sys
 import argparse
 import numpy as np
 
 config_path = os.path.dirname(os.path.realpath(__file__)) + "/config.py"
+
 
 # Scratch directory can be changed if needed
 
@@ -27,7 +25,7 @@ def set_scratch_directory(path):
         f.write(("scratch_path = '" + path + "'").encode())
 
 
-def run_precompute(all_data=[], ask=True):
+def run_precompute(all_data=list(), ask=True):
     """Builds directory substructure, creates standard source catalogues and
     creates acceptance functions + Signal/Background splines
 
@@ -35,7 +33,7 @@ def run_precompute(all_data=[], ask=True):
     :param ask: Explicitly ask before running precompute
     """
     import flarestack.config
-    from flarestack.shared import fs_scratch_dir, dataset_dir, all_dirs
+    from flarestack.shared import fs_scratch_dir, all_dirs
     from flarestack.utils.prepare_catalogue import make_single_sources
     from flarestack.utils.create_acceptance_functions import make_acceptance_f
     from flarestack.utils.make_SoB_splines import make_spline
@@ -118,7 +116,7 @@ def run_precompute(all_data=[], ask=True):
         all_data = [all_data]
 
     for dataset in all_data:
-        for y in dataset.seasons.values():
+        for y in dataset.values():
             y.check_files_exist()
 
     # print("\n")
@@ -166,7 +164,6 @@ if __name__ == "__main__":
         del scratch_path
         set_scratch_directory(cfg.scratch_path)
 
-    from flarestack.data.icecube.public.all_sky_point_source.all_sky_3_year \
-        import ps_3_year
+    from flarestack.data.public import icecube_ps_3_year
 
-    run_precompute(ps_3_year)
+    run_precompute(icecube_ps_3_year)

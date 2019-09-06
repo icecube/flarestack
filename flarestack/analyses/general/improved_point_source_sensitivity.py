@@ -3,10 +3,10 @@ import numpy as np
 import os
 import pickle as Pickle
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.utils.reference_sensitivity import reference_sensitivity, \
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity, \
     reference_7year_discovery_potential
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
@@ -58,7 +58,7 @@ for sindec in sindecs:
 
     mh_dict = {
         "name": subname,
-        "datasets": ps_7year,
+        "datasets": ps_v002_p01,
         "catalogue": cat_path,
         "inj kwargs": inj_kwargs,
         "llh kwargs": llh_kwargs,
