@@ -116,7 +116,7 @@ def run_precompute(all_data=list(), ask=True):
         all_data = [all_data]
 
     for dataset in all_data:
-        for y in dataset.values():
+        for y in dataset:
             y.check_files_exist()
 
     # print("\n")

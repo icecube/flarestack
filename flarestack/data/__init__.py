@@ -73,6 +73,9 @@ class Dataset:
     def get_single_season(self, name):
         return self.get_seasons(name)[name]
 
+    def __iter__(self):
+        return self.seasons.values().__iter__()
+
 
 class Season:
 
