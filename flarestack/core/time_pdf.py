@@ -215,8 +215,6 @@ class Steady(TimePDF):
         else:
             self.livetime = livetime_pdf.integral_to_infinity([])
 
-
-
     def f(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
         time. It is thus simply equal to the season_f, normalised with the

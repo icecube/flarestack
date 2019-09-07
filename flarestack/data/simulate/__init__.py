@@ -126,6 +126,6 @@ class SimSeason(SeasonWithoutMC):
 
     def get_time_integrated_flux(self):
         return k_to_flux(
-            self.bkg_flux_norm * self.time_pdf.effective_injection_time())
+            self.bkg_flux_norm * self.get_time_pdf().effective_injection_time())
 
 

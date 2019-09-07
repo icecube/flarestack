@@ -78,7 +78,7 @@ class LLH(object):
 
         try:
             time_dict = llh_dict["llh_sig_time_pdf"]
-            self.sig_time_pdf = TimePDF.create(time_dict, season.time_pdf)
+            self.sig_time_pdf = TimePDF.create(time_dict, season.get_time_pdf())
         except KeyError:
             raise KeyError("No Signal Time PDF specified. Please add an "
                            "'llh_sig_time_pdf' entry to the llh_dict, and try "
@@ -87,7 +87,7 @@ class LLH(object):
 
         try:
             time_dict = llh_dict["llh_bkg_time_pdf"]
-            self.bkg_time_pdf = TimePDF.create(time_dict, season.time_pdf)
+            self.bkg_time_pdf = TimePDF.create(time_dict, season.get_time_pdf())
         except KeyError:
             raise KeyError("No Signal Time PDF specified. Please add an "
                            "'llh_bkg_time_pdf' entry to the llh_dict, and try "

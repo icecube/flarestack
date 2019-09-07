@@ -75,6 +75,13 @@ class Dataset:
 
     def __iter__(self):
         return self.seasons.values().__iter__()
+    
+    def items(self):
+        return self.seasons.items()
+
+    def __getitem__(self, item):
+        return self.seasons.get(item)
+
 
 
 class Season:
@@ -169,6 +176,10 @@ class Season:
     def get_time_pdf(self):
         if self.time_pdf is None:
             self.time_pdf = self.build_time_pdf()
+        return self.time_pdf
+
+    def clean_season_cache(self):
+        self.time_pdf = None
 
     def load_data(self, path, **kwargs):
         return np.load(path)
