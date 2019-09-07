@@ -36,5 +36,9 @@ gfu_season = IceCubeSeason(
 
 gfu_v002_p01.add_season(gfu_season)
 
-txs_sample_v1 = ps_v002_p01
+txs_sample_v1 = IceCubeDataset()
+
+for season in ps_v002_p01:
+    txs_sample_v1.add_season(season)
+
 txs_sample_v1.add_season(gfu_season)
