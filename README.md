@@ -74,11 +74,10 @@ Alternatively, you can setup your own precomputation in a python console, in the
  set_scratch_directory("/path/to/my/scratch/")
 ```
 
-If you are *not* using the DESY/WIPAC datasets, you'll need to point to the relevant directory where raw datasets are stored:
+If you are *not* using the DESY/WIPAC datasets, you'll need to point to the relevant directory where raw datasets are stored. Run this command in bash:
 
-```python
-from flarestack.shared import set_dataset_directory
-set_dataset_directory("/path/to/datasets/")
+```bash
+export FLARESTACK_DATASET_DIR=/path/to/datasets/
 ```
 
 Finally, you then need to select datasets and run the begin setup:

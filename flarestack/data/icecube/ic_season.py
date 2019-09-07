@@ -6,16 +6,23 @@ from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader, \
 from flarestack.shared import host_server
 from flarestack.core.time_pdf import OnOffList
 
-if host_server == "DESY":
-    icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
-    skylab_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
-    print("Loading datasets from", icecube_dataset_dir, "(DESY)")
-elif host_server == "WIPAC":
-    icecube_dataset_dir = "/data/ana/analyses/"
-    skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
-    print("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
-else:
+try:
+    icecube_dataset_dir = os.environ['FLARESTACK_DATASET_DIR']
+    print("Loading datasets from", icecube_dataset_dir, "(local)")
+except KeyError:
     icecube_dataset_dir = None
+
+if icecube_dataset_dir is None:
+    if host_server == "DESY":
+        icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
+        skylab_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
+        print("Loading datasets from", icecube_dataset_dir, "(DESY)")
+    elif host_server == "WIPAC":
+        icecube_dataset_dir = "/data/ana/analyses/"
+        skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
+        print("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
+    else:
+        icecube_dataset_dir = None
 
 
 # Dataset directory can be changed if needed
