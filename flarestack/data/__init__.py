@@ -83,7 +83,7 @@ class Season:
         self.loaded_background = None
         self.pseudo_mc_path = None
         self.background_dtype = None
-        self.time_pdf = self.build_time_pdf()
+        self.time_pdf = None
         self.all_paths = [self.exp_path]
 
     def load_background_model(self):
@@ -155,14 +155,17 @@ class Season:
         compatible_time_pdfs = [FixedEndBox, FixedRefBox, OnOffList]
         if np.sum([isinstance(time_pdf, x) for x in compatible_time_pdfs]) == 0:
             raise ValueError("Attempting to use a time PDF that is not an "
-                             "allowed time PDF class. Only {0} are allowed. The"
-                             " Only these PDFs have well-defined start and "
+                             "allowed time PDF class. Only {0} are allowed, "
+                             " as these PDFs have well-defined start and "
                              "end points. Please prove one of these as a "
                              "background_time_pdf for the simulation.".format(
                 compatible_time_pdfs
             ))
-
         return time_pdf
+
+    def get_time_pdf(self):
+        if self.time_pdf is None:
+            self.time_pdf = self.build_time_pdf()
 
     def load_data(self, path, **kwargs):
         return np.load(path)

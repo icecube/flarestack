@@ -148,7 +148,7 @@ class SimCubeSeason(SimSeason):
             for _ in range(n_sim)
         ]
         new_events["dec"] = np.arcsin(new_events["sinDec"])
-        new_events["time"] = self.time_pdf.simulate_times([], n_sim)
+        new_events["time"] = self.get_time_pdf().simulate_times([], n_sim)
 
         fluence_ints, log_e_range = \
             self.bkg_energy_pdf.piecewise_integrate_over_energy(
