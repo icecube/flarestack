@@ -257,7 +257,7 @@ def fit_background_ts(ts_array, ts_type):
                  bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
                  label=['TS > 0', "TS <= 0"],
-                 normed=True,
+                 density=True,
                  stacked=True)
 
         chi2 = Chi2_LeftTruncated(ts_array)
@@ -288,7 +288,7 @@ def fit_background_ts(ts_array, ts_type):
                  bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
                  label=['TS > 0', "TS <= 0"],
-                 normed=True,
+                 dennsity=True,
                  stacked=True)
 
         chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
@@ -320,7 +320,7 @@ def fit_background_ts(ts_array, ts_type):
                  bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
                  label=['TS > 0', "TS <= 0"],
-                 normed=True,
+                 density=True,
                  stacked=True)
 
         chi2 = Chi2_one_side(ts_array[ts_array > 0.])
@@ -342,7 +342,7 @@ def plot_expanded_negative(ts_array, path):
              bins=n_bins, lw=2, histtype='step',
              color=['black', "grey"],
              label=['TS > 0', "TS <= 0"],
-             normed=True,
+             density=True,
              stacked=True)
 
     med = np.median(ts_array)
