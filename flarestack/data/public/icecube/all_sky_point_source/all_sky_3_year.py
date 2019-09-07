@@ -205,8 +205,8 @@ def parse_angular_resolution():
 
 
 def run_all():
-    # parse_numpy_dataset()
-    # parse_angular_resolution()
+    parse_numpy_dataset()
+    parse_angular_resolution()
 
     for season in ps_3_year.get_seasons().values():
         season.map_energy_proxy()
