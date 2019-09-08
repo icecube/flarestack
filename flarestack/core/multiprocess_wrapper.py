@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="Path for analysis pkl_file")
-    parser.add_argument("-n", "--n_cpu", default=os.cpu_count())
+    parser.add_argument("-n", "--n_cpu", default=os.cpu_count()-1)
     cfg = parser.parse_args()
 
     print("N CPU available", os.cpu_count())
