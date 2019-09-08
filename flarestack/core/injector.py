@@ -133,7 +133,7 @@ class BaseInjector:
         :param scale: Ratio of Injected Flux to source flux
         :return: Simulated dataset
         """
-        bkg_events = self.season.pseudo_background()
+        bkg_events = self.season.simulate_background()
 
         if scale > 0.:
             sig_events = self.inject_signal(scale)

@@ -79,8 +79,17 @@ class Dataset:
     def items(self):
         return self.seasons.items()
 
+    def values(self):
+        return self.seasons.values()
+
+    def keys(self):
+        return self.seasons.keys()
+
     def __getitem__(self, item):
-        return self.seasons.get(item)
+        return self.seasons[item]
+
+    def get(self, item):
+        return self.seasons[item]
 
 
 
@@ -134,6 +143,9 @@ class Season:
         # Randomly reorders the times
         np.random.shuffle(data["time"])
         return np.array(data[list(self.get_background_dtype().names)].copy())[:,]
+
+    def simulate_background(self):
+        return self.pseudo_background()
 
     def get_exp_data(self, **kwargs):
         return np.array(self.load_data(self.exp_path, **kwargs))
