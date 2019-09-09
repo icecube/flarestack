@@ -93,6 +93,13 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
         for source in sources:
             source_mc = inj.calculate_single_source(source, scale=raw_scale)
 
+            if len(source_mc) == 0:
+                print("Warning, no MC found near source {0}".format(source["source_name"]))
+                ts_vals.append(0.0)
+                n_sigs.append(0.0)
+                n_bkgs.append(0.0)
+            else:
+
             # dist = angular_distance(
             #     source_mc["trueRa"], source_mc["trueDec"],
             #     source_mc["ra"], source_mc["dec"],
@@ -137,165 +144,165 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
             # print(np.mean(source_mc["dec"]))
             # print("?")
 
-            # Sets half width of band
-            dec_width = np.deg2rad(5.)
+                # Sets half width of band
+                dec_width = np.deg2rad(5.)
 
-            # Sets a declination band 5 degrees above and below the source
-            min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
-            max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
-            # Gives the solid angle coverage of the sky for the band
-            omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+                # Sets a declination band 5 degrees above and below the source
+                min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
+                max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
+                # Gives the solid angle coverage of the sky for the band
+                omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
 
-            data_mask = np.logical_and(
-                np.greater(data["dec"], min_dec),
-                np.less(data["dec"], max_dec))
-            local_data = data[data_mask]
+                data_mask = np.logical_and(
+                    np.greater(data["dec"], min_dec),
+                    np.less(data["dec"], max_dec))
+                local_data = data[data_mask]
 
-            data_weights = signalness(llh.energy_weight_f(local_data))
+                data_weights = signalness(llh.energy_weight_f(local_data))
 
-            # print("source_mc", source_mc)
+                # print("source_mc", source_mc)
 
-            mc_weights = signalness(llh.energy_weight_f(source_mc))
+                mc_weights = signalness(llh.energy_weight_f(source_mc))
 
-            # The flux is split across sources. The source weight is equal to
-            # the base source weight / source distance ^2. It is equal to
-            # the fraction of total flux contributed by an individual source.
+                # The flux is split across sources. The source weight is equal to
+                # the base source weight / source distance ^2. It is equal to
+                # the fraction of total flux contributed by an individual source.
 
-            source_weight = calculate_source_weight(source) / weight_scale
+                source_weight = calculate_source_weight(source) / weight_scale
 
-            # Assume we only count within the 50% containment for the source
+                # Assume we only count within the 50% containment for the source
 
-            n_sig = 0.5 * np.sum(
-                source_mc["ow"] * mc_weights)
+                n_sig = 0.5 * np.sum(
+                    source_mc["ow"] * mc_weights)
 
-            true_errors = angular_distance(
-                source_mc["ra"], source_mc["dec"],
-                source_mc["trueRa"], source_mc["trueDec"])
+                true_errors = angular_distance(
+                    source_mc["ra"], source_mc["dec"],
+                    source_mc["trueRa"], source_mc["trueDec"])
 
-            median_sigma = weighted_quantile(
-                        true_errors, 0.5, source_mc["ow"] * mc_weights)
+                median_sigma = weighted_quantile(
+                            true_errors, 0.5, source_mc["ow"] * mc_weights)
 
-            area = np.pi * median_sigma ** 2 / np.cos(source["dec_rad"])
+                area = np.pi * median_sigma ** 2 / np.cos(source["dec_rad"])
 
-            local_rate = np.sum(data_weights)
+                local_rate = np.sum(data_weights)
 
-            n_bkg = local_rate * area #* source_weight
+                n_bkg = local_rate * area #* source_weight
 
-            sig_scale = 1.
-            # sig_scale = np.sqrt(np.mean(data_weights))
-            # sig_scale = np.sqrt(n_bkg)
-            # sig_scale = n_bkg/np.mean(data_weights)
-            # "ow"]) #/
-            # np.sqrt(
-            # n_bkg)# + n_sig)
+                sig_scale = 1.
+                # sig_scale = np.sqrt(np.mean(data_weights))
+                # sig_scale = np.sqrt(n_bkg)
+                # sig_scale = n_bkg/np.mean(data_weights)
+                # "ow"]) #/
+                # np.sqrt(
+                # n_bkg)# + n_sig)
 
-            n_sigs.append(n_sig / sig_scale)
-            n_bkgs.append(n_bkg / sig_scale)
+                n_sigs.append(n_sig / sig_scale)
+                n_bkgs.append(n_bkg / sig_scale)
 
-            # print(min(true_errors), max(true_errors))
+                # print(min(true_errors), max(true_errors))
 
-            # source_mc["sigma"] = 1.177 * true_errors
-            #
-            # print(max(llh.background(source_mc)),
-            #       min(llh.background(source_mc)))
-            # print(max(llh.spatial_pdf.signal(
-            #     source, source_mc) / llh.background(source_mc)),
-            #       min(llh.spatial_pdf.signal(
-            #     source, source_mc) / llh.background(source_mc)))
-            #
-            # input("?")
+                # source_mc["sigma"] = 1.177 * true_errors
+                #
+                # print(max(llh.background(source_mc)),
+                #       min(llh.background(source_mc)))
+                # print(max(llh.spatial_pdf.signal(
+                #     source, source_mc) / llh.background(source_mc)),
+                #       min(llh.spatial_pdf.signal(
+                #     source, source_mc) / llh.background(source_mc)))
+                #
+                # input("?")
 
-            ratio_energy = llh.energy_weight_f(source_mc)
+                ratio_energy = llh.energy_weight_f(source_mc)
 
-            ratio_time = livetime/llh.sig_time_pdf.effective_injection_time(
-                source)
+                ratio_time = livetime/llh.sig_time_pdf.effective_injection_time(
+                    source)
 
-            bkg_energy = llh.energy_weight_f(local_data)
+                bkg_energy = llh.energy_weight_f(local_data)
 
-            # print(min(1. / (2. * np.pi * true_errors ** 2.) *
-            #      np.exp(-0.5 * ((1.177) **
-            #                     2.))))
-            # print(min(llh.background(source_mc)),
-            #       max(llh.background(source_mc)))
-            #
-            #
-            # ratio_spatial = (1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
-            #                  np.exp(-0.5 * ((true_errors/source_mc["sigma"]) **
-            #                     2.))) / llh.background(source_mc)
+                # print(min(1. / (2. * np.pi * true_errors ** 2.) *
+                #      np.exp(-0.5 * ((1.177) **
+                #                     2.))))
+                # print(min(llh.background(source_mc)),
+                #       max(llh.background(source_mc)))
+                #
+                #
+                # ratio_spatial = (1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
+                #                  np.exp(-0.5 * ((true_errors/source_mc["sigma"]) **
+                #                     2.))) / llh.background(source_mc)
 
-            # ratio_spatial = np.log(gaussian_spatial)
-            # print("Spatial", np.mean(gaussian_spatial), np.mean(
-            #     ratio_spatial*source_mc["ow"]/np.mean(source_mc["ow"])))
-            #
-            # input("?")
+                # ratio_spatial = np.log(gaussian_spatial)
+                # print("Spatial", np.mean(gaussian_spatial), np.mean(
+                #     ratio_spatial*source_mc["ow"]/np.mean(source_mc["ow"])))
+                #
+                # input("?")
 
-            sig_spatial = (1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
-                             np.exp(-0.5 * (
-                                     (true_errors/source_mc["sigma"]) **2.))) \
-                            / llh.spatial_pdf.background_spatial(source_mc)
+                sig_spatial = (1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
+                                 np.exp(-0.5 * (
+                                         (true_errors/source_mc["sigma"]) **2.))) \
+                                / llh.spatial_pdf.background_spatial(source_mc)
 
-            bkg_spatial = (1. / (2. * np.pi * local_data["sigma"] ** 2.) *
-                             np.exp(-0.5 * (
-                                     (1.177) ** 2.))) \
-                            / llh.spatial_pdf.background_spatial(local_data)
-
-
-            # print(min(ratio_spatial), np.mean(ratio_spatial), max(ratio_spatial))
-            # print(np.mean((1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
-            #                  np.exp(-0.5 * (
-            #                          (true_errors/source_mc["sigma"]) **2.)))))
-            # input("???")
-
-            ratio_spatial = sig_spatial
-
-            # ratio_spatial = 1.
-
-            dists = angular_distance(
-                local_data["ra"], local_data["dec"],
-                source["ra_rad"], source["dec_rad"])
-
-            bkg_spatial = (1. / (2. * np.pi * local_data["sigma"] ** 2.) *
-                           np.exp(-0.5 * ((dists/local_data["sigma"]) ** 2.))) \
-                            / llh.spatial_pdf.background_spatial(local_data)
-
-            # print(np.mean(np.log10(bkg_spatial)))
-            # input("?")
-
-            # bkg_spatial = 1.
-
-            sum_ratio = np.array(ratio_energy * ratio_spatial * ratio_time)
-            mask = sum_ratio > 0.
-
-            n_s_tot += np.sum(source_mc["ow"])
-            n_s_season += np.sum(source_mc["ow"])
-            med_ts = np.sum(np.log(1. + sum_ratio / len(data))
-                            * source_mc["ow"])
-
-            # med_ts = np.sum(np.log(1 + sum_ratio[mask]) * source_mc["ow"][mask])
-
-            # med_ts = np.sum(np.log(1 + (sum_ratio[mask] * source_mc[
-            #     "ow"][mask]/len(local_data))))
-
-            # print(np.sum(np.log(1. + sum_ratio/len(data))))
-            # print(np.log(1 + np.mean(sum_ratio)))
-
-            # input("?")
-
-            # bkg_ts = 0.
+                bkg_spatial = (1. / (2. * np.pi * local_data["sigma"] ** 2.) *
+                                 np.exp(-0.5 * (
+                                         (1.177) ** 2.))) \
+                                / llh.spatial_pdf.background_spatial(local_data)
 
 
-            # exp = np.log(np.mean(sum_ratio) * len(local_data))
-            # print("BKG TS:", bkg_ts, exp, np.mean(sum_ratio[mask]),
-            #       np.mean(sum_ratio))
-            # input("?")
-            #
-            # med_ts = np.sum((ratio_energy + ratio_spatial) * source_mc[
-            #     "ow"])
-            # print(med_ts)
-            # input("/?")
+                # print(min(ratio_spatial), np.mean(ratio_spatial), max(ratio_spatial))
+                # print(np.mean((1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
+                #                  np.exp(-0.5 * (
+                #                          (true_errors/source_mc["sigma"]) **2.)))))
+                # input("???")
 
-            ts_vals.append(med_ts)
-            # bkg_vals.append(bkg_ts)
+                ratio_spatial = sig_spatial
+
+                # ratio_spatial = 1.
+
+                dists = angular_distance(
+                    local_data["ra"], local_data["dec"],
+                    source["ra_rad"], source["dec_rad"])
+
+                bkg_spatial = (1. / (2. * np.pi * local_data["sigma"] ** 2.) *
+                               np.exp(-0.5 * ((dists/local_data["sigma"]) ** 2.))) \
+                                / llh.spatial_pdf.background_spatial(local_data)
+
+                # print(np.mean(np.log10(bkg_spatial)))
+                # input("?")
+
+                # bkg_spatial = 1.
+
+                sum_ratio = np.array(ratio_energy * ratio_spatial * ratio_time)
+                mask = sum_ratio > 0.
+
+                n_s_tot += np.sum(source_mc["ow"])
+                n_s_season += np.sum(source_mc["ow"])
+                med_ts = np.sum(np.log(1. + sum_ratio / len(data))
+                                * source_mc["ow"])
+
+                # med_ts = np.sum(np.log(1 + sum_ratio[mask]) * source_mc["ow"][mask])
+
+                # med_ts = np.sum(np.log(1 + (sum_ratio[mask] * source_mc[
+                #     "ow"][mask]/len(local_data))))
+
+                # print(np.sum(np.log(1. + sum_ratio/len(data))))
+                # print(np.log(1 + np.mean(sum_ratio)))
+
+                # input("?")
+
+                # bkg_ts = 0.
+
+
+                # exp = np.log(np.mean(sum_ratio) * len(local_data))
+                # print("BKG TS:", bkg_ts, exp, np.mean(sum_ratio[mask]),
+                #       np.mean(sum_ratio))
+                # input("?")
+                #
+                # med_ts = np.sum((ratio_energy + ratio_spatial) * source_mc[
+                #     "ow"])
+                # print(med_ts)
+                # input("/?")
+
+                ts_vals.append(med_ts)
+                # bkg_vals.append(bkg_ts)
 
         n_sigs = np.array(n_sigs)
         n_bkgs = np.array(n_bkgs)
