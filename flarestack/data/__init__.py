@@ -2,6 +2,7 @@
 """
 import os
 import numpy as np
+import copy
 from numpy.lib.recfunctions import append_fields, drop_fields
 from flarestack.core.injector import MCInjector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
@@ -54,27 +55,29 @@ class Dataset:
     def get_seasons(self, *args):
         season_names = list(args)
         if len(season_names) == 0:
-            return dict(self.seasons)
+            return copy.copy(self)
         else:
-            season_dict = dict()
+            cd = copy.copy(self)
+            cd.seasons = dict()
+            cd.subseasons = dict()
             for name in season_names:
                 if name in self.seasons:
-                    season_dict[name] = self.seasons[name]
+                    cd.add_season(self.seasons[name])
                 elif name in self.subseasons:
-                    season_dict[name] = self.subseasons[name]
+                    cd.add_season(self.subseasons[name])
                 else:
                     raise Exception(
                         "Unrecognised season name: {0} not found. \n"
                         "Available seasons are: {1} \n"
                         "Available subseasons are: {2}".format(
                             name, self.seasons.keys(), self.subseasons.keys()))
-            return season_dict
+            return cd
 
     def get_single_season(self, name):
         return self.get_seasons(name)[name]
 
     def __iter__(self):
-        return self.seasons.values().__iter__()
+        return self.seasons.__iter__()
     
     def items(self):
         return self.seasons.items()
@@ -90,6 +93,9 @@ class Dataset:
 
     def get(self, item):
         return self.seasons[item]
+
+    def __len__(self):
+        return self.seasons.__len__()
 
 
 

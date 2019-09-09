@@ -153,7 +153,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
             data_weights = signalness(llh.energy_weight_f(local_data))
 
-            print("source_mc", source_mc)
+            # print("source_mc", source_mc)
 
             mc_weights = signalness(llh.energy_weight_f(source_mc))
 

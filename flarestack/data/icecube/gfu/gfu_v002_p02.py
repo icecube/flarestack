@@ -33,7 +33,7 @@ gfu_v002_p02.add_season(gfu_season)
 
 txs_sample_v2 = IceCubeDataset()
 
-for season in ps_v002_p01:
+for season in ps_v002_p01.values():
     txs_sample_v2.add_season(season)
 
 txs_sample_v2.add_season(gfu_season)
