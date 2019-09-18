@@ -1,18 +1,17 @@
-from __future__ import print_function
-from __future__ import division
 import numpy as np
 import os
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
+from flarestack.data.icecube import diffuse_8_year
 from flarestack.shared import plot_output_dir, flux_to_k, \
     make_analysis_pickle, k_to_flux
-from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import run_desy_cluster as rd
+from flarestack.cluster import analyse, wait_for_cluster
 import matplotlib.pyplot as plt
 from flarestack.utils.simulate_catalogue import simulate_transient_catalogue
 from flarestack.analyses.ccsn.sn_cosmology import get_sn_type_rate
 from flarestack.utils.catalogue_loader import load_catalogue
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
 from flarestack.utils.asimov_estimator import AsimovEstimator
+from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.results import ResultsHandler
 
 name_root = "analyses/ztf/depth/"
 
@@ -28,9 +27,9 @@ post_window = 100.
 # Use a source that is constant in time
 
 injection_time = {
-    "Name": "Box",
-    "Pre-Window": 0.,
-    "Post-Window": post_window
+    "Name": "Steady",
+    # "Pre-Window": 0.,
+    # "Post-Window": post_window
 }
 #injection_time = {
 #    "time_pdf_name": "Steady"
@@ -44,8 +43,8 @@ injection_gamma = 2.0
 injection_energy = {
     "energy_pdf_name": "PowerLaw",
     "gamma": injection_gamma,
-    "e_min_gev": 10 ** 2,
-    "e_max_gev": 10 ** 7
+    # "e_min_gev": 10 ** 2,
+    # "e_max_gev": 10 ** 7
 }
 
 # Fix injection time/energy PDFs, and use "Poisson Smearing" to simulate
@@ -79,10 +78,10 @@ llh_kwargs = {
 
 raw_mh_dict = {
     "mh_name": "large_catalogue",
-    "datasets": [IC86_1_dict],
+    "datasets": diffuse_8_year.get_seasons("IC86_2011"),
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
-    "n_trials": 5,
+    "n_trials": 100,
     "n_steps": 15
 }
 
@@ -104,18 +103,20 @@ for sn in sn_types:
                                                  n_entries=25,
                                                  )
 
-    # print [x for x in all_cat_names.itervalues()]
-    # raw_input("prompt")
+    cats_to_test = list(all_cat_names.items())
 
-    for (sky, cat_names) in all_cat_names.items():
+
+    for (sky, cat_names) in cats_to_test:
 
         sky_dict = dict()
 
         sky_name = base_name + sky + "/"
 
-        for i, cat_name in enumerate(cat_names):
+        for i, cat_name in enumerate(cat_names[:5]):
 
             n_cat = float(len(np.load(cat_name)))
+
+            name = sky_name + os.path.basename(cat_name)[:-4] + "/"
 
             if sky not in ["Northern"]:
                 continue
@@ -128,44 +129,15 @@ for sn in sn_types:
             if n_cat in list(sky_dict.keys()):
                 continue
 
-            cat = load_catalogue(cat_name)
-
-            name = sky_name + os.path.basename(cat_name)[:-4] + "/"
-
-            cat_scale = np.sum(old_div(cat["distance_mpc"]**-2,
-                               min(cat["distance_mpc"])**-2))
-
-            # cat_scale = min(cat["distance_mpc"])**2/\
-            #             np.sum(cat["distance_mpc"]**-2)
-
-            scale = flux_to_k(reference_sensitivity(
-                np.sin(cat[0]["dec_rad"]))) * cat_scale * 15.
-
-            if "full" in cat_name:
-                scale *= 0.5
-
-            # from flarestack.analyses.agn_cores.shared_agncores import agncores_cat_dir
-            # cat_name = agncores_cat_dir + "radioloud_radioselected_100brightest_srcs.npy"
 
             mh_dict = dict(raw_mh_dict)
             mh_dict["name"] = name
             mh_dict["catalogue"] = cat_name
-            mh_dict["scale"] = scale
+            mh = MinimisationHandler.create(mh_dict)
+            mh_dict["scale"] = 2 * mh.guess_scale()
 
-            pkl_file = make_analysis_pickle(mh_dict)
-
-            # if n_cat < 1000.:
-            #     rd.submit_to_cluster(pkl_file, n_jobs=100)
-            # print cat_name
-            # mh = MinimisationHandler.create(mh_dict)
-            #     print mh.run_trial(scale=scale)
-            #     raw_input("prompt")
-
-            # mh.run_trial(scale=scale)
-            # mh_power_law.clear()
-            # rd.submit_to_cluster(pkl_file, n_jobs=100)
-            if n_cat < 1000.:
-                sky_dict[n_cat] = mh_dict
+            # analyse(mh_dict, cluster=False, n_cpu=24)
+            sky_dict[name] = mh_dict
 
         sn_dict[sky] = sky_dict
 
@@ -173,9 +145,9 @@ for sn in sn_types:
 
 # raw_input("prompt")
 
-rd.wait_for_cluster()
+wait_for_cluster()
 
-dem = AsimovEstimator([IC86_1_dict], inj_kwargs)
+# dem = AsimovEstimator(ps_7_year.get_seasons("IC86_1"), inj_kwargs)
 
 for (sn, sn_dict) in res_dict.items():
 
@@ -202,39 +174,39 @@ for (sn, sn_dict) in res_dict.items():
             for (n_cat, rh_dict) in sorted(sky_dict.items())[1:9]:
                 inj_time = post_window * 60 * 60 * 24
 
-                key = "Total Fluence (GeV cm^{-2} s^{-1})"
+                key = "Energy Flux (GeV cm^{-2} s^{-1})"
 
                 e_key = "Mean Luminosity (erg/s)"
 
-                # rh = ResultsHandler(rh_dict)
+                rh = ResultsHandler(rh_dict)
+                #
                 # #
-                # # #
-                # astro_sens, astro_disc = rh.astro_values(
+                astro_sens, astro_disc = rh.astro_values(
+                    rh_dict["inj_dict"]["injection_energy_pdf"])
+                #
+                # energy_pdf = EnergyPDF.create(
                 #     rh_dict["inj_dict"]["injection_energy_pdf"])
-                # #
-                # # energy_pdf = EnergyPDF.create(
-                # #     rh_dict["inj_dict"]["injection_energy_pdf"])
-                # #
+                #
+                # raw_input("prompt")
+
+                disc_convert = rh.disc_potential_25/rh.disc_potential
+                #
+                sens.append(astro_sens[key] * inj_time)
+                disc.append(astro_disc[key] * inj_time)
+                #
+                # # print astro_disc[key], rh.disc_potential, guess_disc
                 # # raw_input("prompt")
                 #
-                # disc_convert = rh.disc_potential_25/rh.disc_potential
-                # #
-                # sens.append(astro_sens[key] * inj_time)
-                # disc.append(astro_disc[key] * inj_time)
-                # #
-                # # # print astro_disc[key], rh.disc_potential, guess_disc
-                # # # raw_input("prompt")
-                # #
-                # disc_25.append(astro_disc[key] * inj_time * disc_convert)
-                # #
-                # sens_e.append(astro_sens[e_key] * inj_time)
-                # disc_e.append(astro_disc[e_key] * inj_time)
-                # disc_25_e.append(astro_disc[e_key] * inj_time * disc_convert)
+                disc_25.append(astro_disc[key] * inj_time * disc_convert)
+                #
+                sens_e.append(astro_sens[e_key] * inj_time)
+                disc_e.append(astro_disc[e_key] * inj_time)
+                disc_25_e.append(astro_disc[e_key] * inj_time * disc_convert)
 
                 cat = load_catalogue(rh_dict["catalogue"])
 
                 guess = k_to_flux(
-                    dem.guess_discovery_potential(rh_dict["catalogue"])
+                    rh_dict["scale"]
                 )
 
                 astro_guess = calculate_astronomy(
@@ -285,6 +257,9 @@ for (sn, sn_dict) in res_dict.items():
 
                 dists = np.array(np.log(dist))[base_mask][mask]
                 log_e = np.log(vals_e[base_mask][mask])
+
+                print(dists)
+                print(log_e)
 
                 z = np.polyfit(dists, log_e, 1)
 

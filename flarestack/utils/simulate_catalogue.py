@@ -1,7 +1,3 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import str
-from builtins import range
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import Distance
@@ -18,12 +14,10 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
                                  cat_name="random", n_entries=30,
                                  local_z=0.1):
 
-    tpdfs = [TimePDF.create(mh_dict["inj_dict"]["injection_time_pdf"],
-                            season_dict)
-             for season_dict in mh_dict["datasets"]]
+    tpdfs = [season.get_time_pdf() for season in mh_dict["datasets"].values()]
 
-    data_start = min([time_pdf.t0 for time_pdf in tpdfs])
-    data_end = max([time_pdf.t1 for time_pdf in tpdfs])
+    data_start = min([time_pdf.sig_t0() for time_pdf in tpdfs])
+    data_end = max([time_pdf.sig_t1() for time_pdf in tpdfs])
 
     try:
         injection_gamma = mh_dict["inj_dict"]["injection_energy_pdf"]["gamma"]
@@ -35,11 +29,11 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
             rate, 1 * u.erg, injection_gamma, nu_bright_fraction=1.0
     )
 
-    print("We can integrate the rate up to z=8.0. This gives", end=' ')
+    print("We can integrate the rate up to z=8.0. This gives")
     n_tot = integrate_over_z(rate_per_z, zmin=0.0, zmax=8.0)
     print("{:.3E}".format(n_tot))
 
-    print("We will only simulate up to z=" + str(local_z) + ".", end=' ')
+    print("We will only simulate up to z=" + str(local_z) + ".")
     n_local = integrate_over_z(rate_per_z, zmin=0.0, zmax=local_z)
     print("In this volume, there are", "{:.3E}".format(n_local))
 
@@ -51,9 +45,9 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
 
     print("Entries in catalogue", n_local)
 
-    print("We expect this region to contribute", end=' ')
+    print("We expect this region to contribute")
     print("{:.3g}".format(
-        cumulative_nu_flux(local_z)[-1] / cumulative_nu_flux(8.0)[-1]), end=' ')
+        cumulative_nu_flux(local_z)[-1] / cumulative_nu_flux(8.0)[-1]))
     print("of all the flux from this source class")
 
     n_catalogue = sorted(list(set(
@@ -147,11 +141,11 @@ def simulate_transients(sim_length_year, rate, injection_gamma=2.0,
         rate, 1 * u.erg, injection_gamma, nu_bright_fraction=1.0
     )
 
-    print("We can integrate the rate up to z=8.0. This gives", end=' ')
+    print("We can integrate the rate up to z=8.0. This gives")
     n_tot = integrate_over_z(rate_per_z, zmin=0.0, zmax=8.0)
     print("{:.3E}".format(n_tot))
 
-    print("We will only simulate up to z=" + str(local_z) + ".", end=' ')
+    print("We will only simulate up to z=" + str(local_z) + ".")
     n_local = integrate_over_z(rate_per_z, zmin=0.0, zmax=local_z)
     print("In this volume, there are", "{:.3E}".format(n_local))
 
@@ -163,9 +157,9 @@ def simulate_transients(sim_length_year, rate, injection_gamma=2.0,
 
     print("Entries in catalogue", n_local)
 
-    print("We expect this region to contribute", end=' ')
+    print("We expect this region to contribute")
     print("{:.3g}".format(
-        cumulative_nu_flux(local_z)[-1] / cumulative_nu_flux(8.0)[-1]), end=' ')
+        cumulative_nu_flux(local_z)[-1] / cumulative_nu_flux(8.0)[-1]))
     print("of all the flux from this source class")
 
     # Define conversion fraction to sample redshift distribution

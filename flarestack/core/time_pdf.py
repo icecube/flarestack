@@ -194,8 +194,6 @@ class TimePDF(object):
 
 
 
-
-
 @TimePDF.register_subclass('steady')
 class Steady(TimePDF):
     """The time-independent case for a Time PDF. Requires no additional
