@@ -1,8 +1,7 @@
 import numpy as np
 import os
-from flarestack.data.icecube import diffuse_8_year
-from flarestack.shared import plot_output_dir, flux_to_k, \
-    make_analysis_pickle, k_to_flux
+from flarestack.data.icecube import ps_7_year
+from flarestack.shared import plot_output_dir, k_to_flux
 from flarestack.cluster import analyse, wait_for_cluster
 import matplotlib.pyplot as plt
 from flarestack.utils.simulate_catalogue import simulate_transient_catalogue
@@ -78,10 +77,10 @@ llh_kwargs = {
 
 raw_mh_dict = {
     "mh_name": "large_catalogue",
-    "datasets": diffuse_8_year.get_seasons("IC86_2011"),
+    "datasets": ps_7_year.get_seasons("IC86_1"),
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
-    "n_trials": 100,
+    "n_trials": 10,
     "n_steps": 15
 }
 
@@ -130,14 +129,16 @@ for sn in sn_types:
                 continue
 
 
+
+
             mh_dict = dict(raw_mh_dict)
             mh_dict["name"] = name
             mh_dict["catalogue"] = cat_name
             mh = MinimisationHandler.create(mh_dict)
-            mh_dict["scale"] = 2 * mh.guess_scale()
+            mh_dict["scale"] = mh.guess_scale()
 
-            # analyse(mh_dict, cluster=False, n_cpu=24)
-            sky_dict[name] = mh_dict
+            # analyse(mh_dict, cluster=False, n_cpu=3)
+            sky_dict[n_cat] = mh_dict
 
         sn_dict[sky] = sky_dict
 
@@ -171,7 +172,7 @@ for (sn, sn_dict) in res_dict.items():
 
             dist = []
 
-            for (n_cat, rh_dict) in sorted(sky_dict.items())[1:9]:
+            for (n_cat, rh_dict) in sorted(sky_dict.items()):
                 inj_time = post_window * 60 * 60 * 24
 
                 key = "Energy Flux (GeV cm^{-2} s^{-1})"
@@ -220,7 +221,7 @@ for (sn, sn_dict) in res_dict.items():
                 n.append(float(len(cat)))
 
                 print(n_cat)
-
+                print(cat)
 
             try:
                 os.makedirs(os.path.dirname(savedir))
@@ -229,10 +230,9 @@ for (sn, sn_dict) in res_dict.items():
 
             pairs = [
                 (guess_disc, guess_disc_e),
-                # (sens, sens_e),
-                # (disc, disc_e),
-                # (disc_25, disc_25_e)
-
+                (sens, sens_e),
+                (disc, disc_e),
+                (disc_25, disc_25_e)
             ]
 
             for j, (vals, vals_e) in enumerate(pairs):
@@ -258,10 +258,11 @@ for (sn, sn_dict) in res_dict.items():
                 dists = np.array(np.log(dist))[base_mask][mask]
                 log_e = np.log(vals_e[base_mask][mask])
 
+                z = np.polyfit(dists, log_e, 1)
+
                 print(dists)
                 print(log_e)
-
-                z = np.polyfit(dists, log_e, 1)
+                input("?")
 
                 def f(x):
                     return np.exp(z[1] + (z[0] * np.log(x)))
