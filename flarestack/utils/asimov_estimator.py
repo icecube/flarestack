@@ -61,7 +61,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
         llh = LLH.create(inj.season, sources, llh_dict)
 
         # print("Season", season)
-        data = inj.season.pseudo_background()
+        data = inj.season.simulate_background()
         n_tot += len(data)
         # n_bkg_tot += len(inj._raw_data)
         # print("Number of events", n_bkg_tot)
