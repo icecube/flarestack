@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import logging
 from flarestack.data.icecube import ps_7_year
 from flarestack.shared import plot_output_dir, k_to_flux
 from flarestack.cluster import analyse, wait_for_cluster
@@ -11,6 +12,8 @@ from flarestack.utils.neutrino_astronomy import calculate_astronomy
 from flarestack.utils.asimov_estimator import AsimovEstimator
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
+
+logging.getLogger().setLevel("INFO")
 
 name_root = "analyses/ztf/depth/"
 
@@ -111,7 +114,7 @@ for sn in sn_types:
 
         sky_name = base_name + sky + "/"
 
-        for i, cat_name in enumerate(cat_names[:5]):
+        for i, cat_name in enumerate(cat_names[:7]):
 
             n_cat = float(len(np.load(cat_name)))
 
@@ -127,9 +130,6 @@ for sn in sn_types:
             # Skips if already tested:
             if n_cat in list(sky_dict.keys()):
                 continue
-
-
-
 
             mh_dict = dict(raw_mh_dict)
             mh_dict["name"] = name
@@ -220,9 +220,6 @@ for (sn, sn_dict) in res_dict.items():
                 dist.append(max(cat["distance_mpc"]))
                 n.append(float(len(cat)))
 
-                print(n_cat)
-                print(cat)
-
             try:
                 os.makedirs(os.path.dirname(savedir))
             except OSError:
@@ -258,11 +255,9 @@ for (sn, sn_dict) in res_dict.items():
                 dists = np.array(np.log(dist))[base_mask][mask]
                 log_e = np.log(vals_e[base_mask][mask])
 
-                z = np.polyfit(dists, log_e, 1)
+                print(dists, log_e)
 
-                print(dists)
-                print(log_e)
-                input("?")
+                z = np.polyfit(dists, log_e, 1)
 
                 def f(x):
                     return np.exp(z[1] + (z[0] * np.log(x)))
