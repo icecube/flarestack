@@ -1,7 +1,4 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import zip
-from builtins import object
+import logging
 import os
 import numpy as np
 import healpy as hp
@@ -64,7 +61,7 @@ class BaseInjector:
         kwargs = read_injector_dict(kwargs)
         self.inj_kwargs = kwargs
 
-        print("Initialising Injector for", season.season_name)
+        logging.info("Initialising Injector for {0}".format(season.season_name))
         self.injection_band_mask = dict()
         self.season = season
         self.season.load_background_model()
@@ -215,7 +212,7 @@ class MCInjector(BaseInjector):
             self.n_exp = self.calculate_n_exp()
 
         except KeyError:
-            print("No Injection Arguments. Are you unblinding?")
+            logging.warning("No Injection Arguments. Are you unblinding?")
             pass
 
     def select_mc_band(self, source):
@@ -401,8 +398,7 @@ class LowMemoryInjector(MCInjector):
         self.injection_band_paths = paths
 
         if np.sum([not os.path.isfile(x) for x in self.injection_band_paths]) > 0.:
-            print("No saved band masks found. These will have to be made "
-                  "first.")
+            logging.info("No saved band masks found. These will have to be made first.")
             self.make_injection_band_mask()
 
         self.n_exp = np.empty((len(self.sources), 1), dtype=np.dtype(
@@ -442,7 +438,7 @@ class LowMemoryInjector(MCInjector):
 
             del injection_band_mask
 
-            print("Saving to", path)
+            logging.info("Saving to {0}".format(path))
 
     def load_band_mask(self, index):
         path = self.injection_band_paths[index]
