@@ -1,5 +1,4 @@
-from __future__ import print_function
-from __future__ import division
+import logging
 import astropy
 from astropy import units as u
 import numpy as np
@@ -74,7 +73,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = tot_fluence.value
 
-    print("Energy Flux", tot_fluence)
+    logging.debug("Energy Flux:{0}".format(tot_fluence))
 
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
@@ -84,9 +83,9 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     astro_res["Flux from nearest source"] = si
 
-    print("Total flux:", flux)
-    print("Fraction from nearest source:", frac)
-    print("Flux from nearest source:", flux * frac)
+    logging.debug("Total flux:".format(flux))
+    logging.debug("Fraction from nearest source:".format(frac))
+    logging.debug("Flux from nearest source:".format(flux * frac))
 
     lumdist = src_1["distance_mpc"] * u.Mpc
 
@@ -98,8 +97,8 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     N = dNdA * area
 
-    print("There would be", '{:.3g}'.format(N), "neutrinos emitted.")
-    print("The energy range was assumed to be between {0} and {1}".format(
+    logging.debug("There would be {:.3g} neutrinos emitted.".format(N))
+    logging.debug("The energy range was assumed to be between {0} and {1}".format(
         energy_PDF.integral_e_min, energy_PDF.integral_e_max
     ))
     # Energy requires a 1/(1+z) factor
@@ -109,13 +108,15 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     astro_res["Mean Luminosity (erg/s)"] = etot.value
 
-    print("The required neutrino luminosity was", etot)
+    logging.debug("The required neutrino luminosity was {0}".format(etot))
 
     cr_e = etot / f_cr_to_nu
 
-    print("Assuming", '{:.3g}'.format(100 * f_cr_to_nu), end=' ')
-    print("% was transferred from CR to neutrinos,", end=' ')
-    print("we would require a total CR luminosity of", cr_e)
+    logging.debug(
+        "Assuming {0:.3g}% was transferred from CR to neutrinos, we would require a total CR luminosity of {1}".format(
+        100 * f_cr_to_nu, cr_e
+        )
+    )
 
     return astro_res
 
@@ -175,7 +176,6 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
 def calculate_neutrinos(source, season, inj_kwargs):
 
-    print(source)
     inj = season.make_injector([source], **inj_kwargs)
     energy_pdf = inj_kwargs["Injection Energy PDF"]
 
