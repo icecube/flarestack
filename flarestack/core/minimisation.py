@@ -123,7 +123,7 @@ class MinimisationHandler(object):
 
         try:
             self.inj_seasons = mh_dict["inj_dict"]["injection_dataset"]
-            print("Using independent injection dataset.")
+            logging.debug("Using independent injection dataset.")
 
             if self.inj_seasons.keys() != self.seasons.keys():
                 raise Exception("Key mismatch between injection and llh "
@@ -145,7 +145,7 @@ class MinimisationHandler(object):
                              "selected MinimisationHandler".format(
                               self.llh_dict["llh_name"]))
         else:
-            print("Using", self.llh_dict["llh_name"], "LLH class")
+            logging.info("Using '{0}' LLH class".format(self.llh_dict["llh_name"]))
 
         # Checks if negative n_s is specified for use, and whether this is
         # compatible with the chosen MinimisationHandler
@@ -338,7 +338,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         """
 
         if self.name == " /":
-            print("No field 'name' was specified in mh_dict object. "
+            logging.warning("No field 'name' was specified in mh_dict object. "
                             "Cannot save results without a unique directory"
                             " name being specified.")
 
@@ -354,7 +354,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             file_name = write_dir + str(seed) + ".pkl"
 
-            print("Saving to", file_name)
+            logging.info("Saving to {0}".format(file_name))
 
             with open(file_name, "wb") as f:
                 Pickle.dump(results, f)
@@ -466,8 +466,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        print("")
-        print('Memory usage max: %s (Gb)' % mem_use)
+        logging.debug('Memory usage max: {0:.2f} (Gb)'.format(mem_use))
 
         results = {
             "TS": ts_vals,
@@ -498,7 +497,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         ts_vals = []
         flags = []
 
-        print("Generating", n_trials, "trials!")
+        logging.info("Generating {0} trials!".format(n_trials))
 
         for i in range(int(n_trials)):
 
@@ -515,24 +514,20 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             for val in inj.ref_fluxes[scale_shortener(scale)].values():
                 n_inj += val
 
-        print("")
-        print("Injected with an expectation of", n_inj, "events.")
+        logging.info("Injected with an expectation of {0} events.".format(n_inj))
 
-        print("")
-        print("FIT RESULTS:")
-        print("")
+        logging.info("FIT RESULTS:")
 
         for (key, param) in sorted(param_vals.items()):
             if len(param) > 0:
-                print("Parameter", key, ":", np.mean(param),
-                      np.median(param), np.std(param))
-        print("Test Statistic:", np.mean(ts_vals),
-              np.median(ts_vals), np.std(ts_vals))
-        print("")
+                logging.info("Parameter {0}: {1} {2} {3}".format(key, np.mean(param),
+                      np.median(param), np.std(param)))
+        logging.info("Test Statistic: {0} {1} {2}".format(np.mean(ts_vals),
+              np.median(ts_vals), np.std(ts_vals)))
 
-        print("FLAG STATISTICS:")
+        logging.info("FLAG STATISTICS:")
         for i in sorted(np.unique(flags)):
-            print("Flag", i, ":", flags.count(i))
+            logging.info("Flag {0}:{1}".format(i, flags.count(i)))
 
         results = {
             "TS": ts_vals,
@@ -760,7 +755,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         plt.savefig(path)
         plt.close()
 
-        print("Saved to", path)
+        logging.info("Saved to {0}".format(path))
 
         # Scan 2D likelihood
 
@@ -842,7 +837,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 plt.savefig(path)
                 plt.close()
 
-                print("Saved to", path)
+                logging.info("Saved to {0}".format(path))
 
         return res_dict
 
@@ -1249,7 +1244,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # If there is are no pairs meeting this criteria, skip
 
             if len(pairs) == 0:
-                print("Continuing because no pairs")
+                logging.debug("Continuing because no pairs")
                 continue
 
             all_res = []
@@ -1281,10 +1276,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 # If the flare is between the minimum and maximum length
 
                 if flare_length < min_flare:
-                    # print "Continuing because flare too short"
                     continue
                 elif flare_length > max_flare:
-                    # print "Continuing because flare too long"
                     continue
 
 
@@ -1323,7 +1316,6 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     )
 
                     if not inj_time > 0:
-                        # print "Continuing because no overlap"
                         continue
 
                     coincident_data = season_dict["Coincident Data"]
@@ -1788,7 +1780,7 @@ if __name__ == '__main__':
     trials = [mh_dict["n_trials"] for _ in seeds]
     loop_args = zip(trials, scales, seeds)
 
-    print("N CPUs:", cfg.n_cpu)
+    logging.info("N CPUs:{0}".format(cfg.n_cpu))
 
     with Pool(int(cfg.n_cpu)) as p:
         p.starmap(mh.run, loop_args)
