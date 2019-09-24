@@ -1,6 +1,4 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import object
+import logging
 import numexpr
 import os
 import flarestack.core.astro
@@ -491,7 +489,7 @@ class FixedEnergyLLH(LLH):
         if not os.path.isfile(acc_path):
             self.create_acceptance_function(acc_path)
 
-        print("Loading from", acc_path)
+        logging.debug("Loading from {0}".format(acc_path))
 
         with open(acc_path, "rb") as f:
             [dec_vals, acc] = pickle.load(f)
@@ -507,7 +505,7 @@ class FixedEnergyLLH(LLH):
         if not os.path.isfile(SoB_path):
             self.create_energy_weighting_function(SoB_path)
 
-        print("Loading from", SoB_path)
+        logging.debug("Loading from {0}".format(SoB_path))
 
         with open(SoB_path, "rb") as f:
             [dec_vals, ratio_hist] = pickle.load(f)
@@ -521,8 +519,8 @@ class FixedEnergyLLH(LLH):
         return acc_f, energy_weight_f
 
     def create_acceptance_function(self, acc_path):
-        print("Building acceptance functions in sin(dec) bins " \
-              "(with fixed energy weighting)")
+        logging.info("Building acceptance functions in sin(dec) bins "
+                     "(with fixed energy weighting)")
 
         mc = self.season.get_pseudo_mc()
 
@@ -553,7 +551,7 @@ class FixedEnergyLLH(LLH):
         except OSError:
             pass
 
-        print("Saving to", acc_path)
+        logging.info("Saving to {0}".format(acc_path))
 
         with open(acc_path, "wb") as f:
             pickle.dump([dec_range, acc], f)
@@ -561,8 +559,8 @@ class FixedEnergyLLH(LLH):
         return f
 
     def create_energy_weighting_function(self, SoB_path):
-        print("Building energy-weighting functions in sin(dec) vs log E bins " \
-              "(with fixed energy weighting)")
+        logging.info("Building energy-weighting functions in sin(dec) vs log E bins "
+                     "(with fixed energy weighting)")
 
         # dec_range = self.season["sinDec bins"]
 
@@ -578,6 +576,8 @@ class FixedEnergyLLH(LLH):
             os.makedirs(os.path.dirname(SoB_path))
         except OSError:
             pass
+
+        logging.info("Saving to {0}".format(SoB_path))
 
         with open(SoB_path, "wb") as f:
             pickle.dump([dec_range, ratio_hist], f)
@@ -673,7 +673,7 @@ class StandardLLH(FixedEnergyLLH):
 
         self.SoB_spline_2Ds = load_spline(self.season)
 
-        print("Loaded", len(self.SoB_spline_2Ds), "Splines.")
+        logging.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
 
         self.acceptance_f = self.create_acceptance_function()
         self.acceptance = self.new_acceptance
@@ -707,7 +707,7 @@ class StandardLLH(FixedEnergyLLH):
         if not os.path.isfile(acc_path):
             make_acceptance_season(self.season, acc_path)
 
-        print("Loading from", acc_path)
+        logging.debug("Loading from {0}".format(acc_path))
 
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)
