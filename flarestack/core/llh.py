@@ -89,7 +89,7 @@ class LLH(object):
             time_dict = llh_dict["llh_bkg_time_pdf"]
             self.bkg_time_pdf = TimePDF.create(time_dict, season.get_time_pdf())
         except KeyError:
-            raise KeyError("No Signal Time PDF specified. Please add an "
+            raise KeyError("No Background Time PDF specified. Please add an "
                            "'llh_bkg_time_pdf' entry to the llh_dict, and try "
                            "again. If you do not want time dependence in your "
                            "likelihood, please specify a 'steady' Time PDF.")

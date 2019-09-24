@@ -4,11 +4,13 @@ from flarestack.data import Dataset, SeasonWithMC
 from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader, \
     convert_grl, verify_grl_with_data
 from flarestack.shared import host_server
-from flarestack.core.time_pdf import OnOffList
+from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
+from scipy.interpolate import interp1d
+import logging
 
 try:
     icecube_dataset_dir = os.environ['FLARESTACK_DATASET_DIR']
-    print("Loading datasets from", icecube_dataset_dir, "(local)")
+    logging.info("Loading datasets from", icecube_dataset_dir, "(local)")
 except KeyError:
     icecube_dataset_dir = None
 
@@ -16,35 +18,81 @@ if icecube_dataset_dir is None:
     if host_server == "DESY":
         icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
         skylab_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
-        print("Loading datasets from", icecube_dataset_dir, "(DESY)")
+        logging.info("Loading datasets from", icecube_dataset_dir, "(DESY)")
     elif host_server == "WIPAC":
         icecube_dataset_dir = "/data/ana/analyses/"
         skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
-        print("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
+        logging.info("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
     else:
         icecube_dataset_dir = None
 
 
-# Dataset directory can be changed if needed
+# # Dataset directory can be changed if needed
+#
+# def set_icecube_dataset_directory(path):
+#     """Sets the dataset directory to be a custom path, and exports this.
+#
+#     :param path: Path to datasets
+#     """
+#     if not os.path.isdir(path):
+#         raise Exception("Attempting to set invalid path for datasets. "
+#                         "Directory", path, "does not exist!")
+#     print("Loading datasets from", path)
+#
+#     global icecube_dataset_dir
+#     icecube_dataset_dir = path
 
-def set_icecube_dataset_directory(path):
-    """Sets the dataset directory to be a custom path, and exports this.
-
-    :param path: Path to datasets
-    """
-    if not os.path.isdir(path):
-        raise Exception("Attempting to set invalid path for datasets. "
-                        "Directory", path, "does not exist!")
-    print("Loading datasets from", path)
-
-    global icecube_dataset_dir
-    icecube_dataset_dir = path
-
-
-class IceCubeRunList(OnOffList):
+@TimePDF.register_subclass("icecube_on_off_list")
+class IceCubeRunList(DetectorOnOffList):
     """Custom TimePDF class designed to constructed a pdf from an IceCube
     GoodRunList.
     """
+
+    def parse_list(self):
+
+        t0 = min(self.on_off_list["start"])
+        t1 = max(self.on_off_list["stop"])
+
+        full_livetime = np.sum(self.on_off_list["length"])
+
+        step = 1e-10
+
+        t_range = [t0 - step]
+        f = [0.]
+
+        mjd = [0.]
+        livetime = [0.]
+        total_t = 0.
+
+        for i, run in enumerate(self.on_off_list):
+            mjd.append(run["start"])
+            livetime.append(total_t)
+            total_t += run["length"]
+            mjd.append(run["stop"])
+            livetime.append(total_t)
+
+            t_range.extend([
+                run["start"] - step, run["start"], run["stop"],
+                run["stop"] + step
+            ])
+            f.extend([0., 1., 1., 0.])
+
+        stitch_t = t_range
+        stitch_f = f
+
+        if stitch_t != sorted(stitch_t):
+            logging.error("Error in ordering GoodRunList!")
+            logging.error("Runs are out of order!")
+
+            print(self.on_off_list[:5])
+
+        mjd.append(1e5)
+        livetime.append(total_t)
+
+        season_f = interp1d(stitch_t, np.array(stitch_f), kind="linear")
+        mjd_to_livetime = interp1d(mjd, livetime, kind="linear")
+        livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
+        return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
 
 class IceCubeDataset(Dataset):
@@ -73,3 +121,18 @@ class IceCubeSeason(SeasonWithMC):
 
     def load_data(self, path, **kwargs):
         return data_loader(path, **kwargs)
+
+    def build_time_pdf_dict(self):
+        """Function to build a pdf for the livetime of the season. By
+        default, this is assumed to be uniform, spanning from the first to
+        the last event found in the data.
+
+        :return: Time pdf dictionary
+        """
+
+        t_pdf_dict = {
+            "time_pdf_name": "icecube_on_off_list",
+            "on_off_list": self.get_grl()
+        }
+
+        return t_pdf_dict

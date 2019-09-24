@@ -4,8 +4,6 @@ single trial, and is good to within ~30-50%). Use with some caution to
 quickly guess appropriate flux scales, or understand trends, without full
 calculations.
 """
-from __future__ import print_function
-from __future__ import division
 from builtins import object
 import numpy as np
 from flarestack.core.llh import LLH
@@ -14,6 +12,7 @@ from flarestack.shared import weighted_quantile, k_to_flux, flux_to_k
 from flarestack.utils.catalogue_loader import load_catalogue, \
     calculate_source_weight
 from scipy.stats import norm
+import logging
 
 
 def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
@@ -25,7 +24,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
     :param sources: Sources to be evaluated
     :return: An estimate for the discovery potential
     """
-    print("Trying to guess scale!")
+    logging.info("Trying to guess scale using AsimovEstimator.")
 
     season_bkg = []
     season_sig = []
@@ -65,10 +64,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
         n_tot += len(data)
         # n_bkg_tot += len(inj._raw_data)
         # print("Number of events", n_bkg_tot)
-        livetime += inj.sig_time_pdf.livetime * 60 * 60 * 24
-        # print("Livetime is {0} seconds ({1} days)".format(
-        #     livetime, inj.sig_time_pdf.livetime
-        # ))
+        livetime += inj.bkg_time_pdf.livetime * 60 * 60 * 24
 
         def signalness(sig_over_background):
             """Converts a signal over background ratio into a signal
@@ -94,7 +90,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
             source_mc = inj.calculate_single_source(source, scale=raw_scale)
 
             if len(source_mc) == 0:
-                print("Warning, no MC found near source {0}".format(source["source_name"]))
+                logging.warning("Warning, no MC found near source {0}".format(source["source_name"]))
                 ts_vals.append(0.0)
                 n_sigs.append(0.0)
                 n_bkgs.append(0.0)
@@ -431,12 +427,9 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
     scale = k_to_flux(scale) * raw_scale
 
-    print()
-    print(
-        "Estimated Discovery Potential is: {:.3g} GeV sr^-1 s^-1 cm^-2".format(
+    logging.info("Estimated Discovery Potential is: {:.3g} GeV sr^-1 s^-1 cm^-2".format(
             scale
         ))
-    print()
     # input("?")
     return scale
 

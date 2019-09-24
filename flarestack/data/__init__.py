@@ -7,7 +7,7 @@ from numpy.lib.recfunctions import append_fields, drop_fields
 from flarestack.core.injector import MCInjector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
-from flarestack.core.time_pdf import TimePDF, OnOffList, FixedEndBox, \
+from flarestack.core.time_pdf import TimePDF, DetectorOnOffList, FixedEndBox, \
     FixedRefBox
 
 
@@ -180,7 +180,7 @@ class Season:
         t_pdf_dict = self.build_time_pdf_dict()
         time_pdf = TimePDF.create(t_pdf_dict)
 
-        compatible_time_pdfs = [FixedEndBox, FixedRefBox, OnOffList]
+        compatible_time_pdfs = [FixedEndBox, FixedRefBox, DetectorOnOffList]
         if np.sum([isinstance(time_pdf, x) for x in compatible_time_pdfs]) == 0:
             raise ValueError("Attempting to use a time PDF that is not an "
                              "allowed time PDF class. Only {0} are allowed, "

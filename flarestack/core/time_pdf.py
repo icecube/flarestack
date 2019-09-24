@@ -58,19 +58,19 @@ class TimePDF(object):
     def __init__(self, t_pdf_dict, livetime_pdf=None):
         self.t_dict = t_pdf_dict
 
-        if livetime_pdf is None:
-            self.livetime_f = lambda x: 1
-            self.t0 = -np.inf
-            self.t1 = np.inf
-            self.livetime_to_mjd = lambda x: x + self.sig_t0()
-            self.mjd_to_livetime = lambda x: x - self.sig_t0()
-        else:
-            self.livetime_f = livetime_pdf.f
+        if livetime_pdf is not None:
+            # self.livetime_f = lambda x: 1.
+            # self.t0 = -np.inf
+            # self.t1 = np.inf
+            # self.livetime_to_mjd = lambda x: x + self.sig_t0()
+            # self.mjd_to_livetime = lambda x: x - self.sig_t0()
+        # else:
+            self.livetime_f = lambda x: livetime_pdf.livetime_f(x)# * livetime_pdf.livetime
             self.livetime_pdf = livetime_pdf
             self.t0 = livetime_pdf.sig_t0()
             self.t1 = livetime_pdf.sig_t1()
-            self.mjd_to_livetime, self.livetime_to_mjd = \
-                self.convert_livetime_mjd()
+            self.mjd_to_livetime = self.livetime_pdf.mjd_to_livetime
+            self.livetime_to_mjd = self.livetime_pdf.livetime_to_mjd
 
 
     @classmethod
@@ -150,10 +150,12 @@ class TimePDF(object):
         """
         f = self.inverse_interpolate(source)
 
-        return f(np.random.uniform(0., 1., n_s))
+        sims = f(np.random.uniform(0., 1., n_s))
+
+        return sims
 
     def f(self, t, source):
-        return NotImplementedError(
+        raise NotImplementedError(
             "No 'f' has been implemented for {0}".format(
                 self.__class__.__name__
             ))
@@ -181,18 +183,21 @@ class TimePDF(object):
         min_int = self.product_integral(self.sig_t0(source), source)
         return max_int - min_int
 
-    def convert_livetime_mjd(self):
-        t_range = np.linspace(
-            self.livetime_pdf.sig_t0(), self.livetime_pdf.sig_t1(), int(1e3))
+    # def convert_livetime_mjd(self):
+    #     t_range = np.linspace(
+    #         self.livetime_pdf.sig_t0(), self.livetime_pdf.sig_t1(), int(1e3))
+    #
+    #     f_range = np.array([self.livetime_pdf.livetime_f(t) for t in t_range])
+    #     f_range /= np.sum(f_range)
+    #
+    #     sum_range = [np.sum(f_range[:i]) for i, _ in enumerate(f_range)]
+    #
+    #     mjd_to_livetime = interp1d(t_range, sum_range)
+    #     livetime_to_mjd = interp1d(sum_range, t_range)
+    #     return mjd_to_livetime, livetime_to_mjd
 
-        f_range = [self.livetime_f(t) for t in t_range]
-        sum_range = [np.sum(f_range[:i]) for i, _ in enumerate(f_range)]
-
-        mjd_to_livetime = interp1d(t_range, sum_range)
-        livetime_to_mjd = interp1d(sum_range, t_range)
-        return mjd_to_livetime, livetime_to_mjd
-
-
+    def effective_injection_time(self, source=None):
+        raise NotImplementedError
 
 @TimePDF.register_subclass('steady')
 class Steady(TimePDF):
@@ -211,7 +216,7 @@ class Steady(TimePDF):
                              "provide a livetime_pdf, or use a different Time "
                              "PDF class such as FixedEndBox.")
         else:
-            self.livetime = livetime_pdf.integral_to_infinity([])
+            self.livetime = livetime_pdf.livetime
 
     def f(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
@@ -223,7 +228,7 @@ class Steady(TimePDF):
         :param source: Source to be considered
         :return: Value of normalised box function at t
         """
-        return self.livetime_f(t)
+        return 1./self.livetime#self.livetime_f(t)# * self.livetime
 
     def signal_integral(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
@@ -291,9 +296,6 @@ class Steady(TimePDF):
         """
         return self.t1
 
-    def effective_injector_time(self, source):
-        return self.livetime
-
 
 @TimePDF.register_subclass('box')
 class Box(TimePDF):
@@ -343,9 +345,9 @@ class Box(TimePDF):
         :param source: Source to be considered
         :return: Value of normalised box function at t
         """
-
         t0 = self.sig_t0(source)
         t1 = self.sig_t1(source)
+
         length = self.mjd_to_livetime(t1) - self.mjd_to_livetime(t0)
 
         if length > 0.:
@@ -533,31 +535,45 @@ class CustomSourceBox(Box):
         return min(t1, self.t1)
 
 
-@TimePDF.register_subclass("on_off_list")
-class OnOffList(TimePDF):
+@TimePDF.register_subclass("detector_on_off_list")
+class DetectorOnOffList(TimePDF):
     """TimePDF with predefined on/off periods. Can be used for a livetime
     function, in which observations are divided into runs with gaps. Can also
     be used for e.g pre-defined interesting period for a variable source.
     """
 
-    def __init__(self, t_pdf_dict, livetime_f=None):
-        TimePDF.__init__(self, t_pdf_dict, livetime_f)
+    def __init__(self, t_pdf_dict, livetime_pdf=None):
+        TimePDF.__init__(self, t_pdf_dict, livetime_pdf)
 
         try:
-            self.on_off_list = self.parse_list(t_pdf_dict["on_off_list"])
+            self.on_off_list = t_pdf_dict["on_off_list"]
         except KeyError:
             raise KeyError("No 'on_off_list' found in t_pdf_dict. The "
                            "following fields were provided: {0}".format(
                 t_pdf_dict.keys()
             ))
+        self.t0, self.t1, self.livetime, self.season_f, self.mjd_to_livetime, self.livetime_to_mjd = self.parse_list()
 
+    def parse_list(self):
+        t0 = min(self.on_off_list["start"])
+        t1 = max(self.on_off_list["stop"])
+        livetime = np.sum(self.on_off_list["length"])
+        return t0, t1, livetime
 
-    def parse_list(self, on_off_list):
-        return on_off_list
+    def f(self, t, source=None):
+        return self.season_f(t)/self.livetime
 
+    def livetime_f(self, t, source=None):
+        return self.f(t, source)
 
+    def sig_t0(self, source=None):
+        return self.t0
 
+    def sig_t1(self, source=None):
+        return self.t1
 
+    def parse_list(self):
+        raise NotImplementedError
 
 
 

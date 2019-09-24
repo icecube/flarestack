@@ -103,6 +103,8 @@ class ResultsHandler(object):
             logging.warning("RuntimeError for discovery potential: \n {0}".format(e))
         except TypeError as e:
             logging.warning("TypeError for discovery potential: \n {0}".format(e))
+        except ValueError as e:
+            logging.warning("TypeError for discovery potential: \n {0}".format(e))
 
         self.plot_bias()
 
