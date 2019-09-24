@@ -210,8 +210,15 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
                 ratio_energy = llh.energy_weight_f(source_mc)
 
-                ratio_time = livetime/llh.sig_time_pdf.effective_injection_time(
+                sig_time = llh.sig_time_pdf.effective_injection_time(
                     source)
+
+                if sig_time > 0.:
+
+                    ratio_time = livetime/sig_time
+
+                else:
+                    ratio_time = 0.
 
                 bkg_energy = llh.energy_weight_f(local_data)
 
