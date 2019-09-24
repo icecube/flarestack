@@ -2,6 +2,7 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import Distance
 import os
+import logging
 from flarestack.shared import catalogue_dir
 from flarestack.utils.prepare_catalogue import cat_dtype
 from flarestack.utils.neutrino_cosmology import define_cosmology_functions, \
@@ -29,26 +30,24 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
             rate, 1 * u.erg, injection_gamma, nu_bright_fraction=1.0
     )
 
-    print("We can integrate the rate up to z=8.0. This gives")
     n_tot = integrate_over_z(rate_per_z, zmin=0.0, zmax=8.0)
-    print("{:.3E}".format(n_tot))
+    logging.info(
+        "We can integrate the rate up to z=8.0. This gives {:.3E}".format(n_tot)
+    )
 
-    print("We will only simulate up to z=" + str(local_z) + ".")
     n_local = integrate_over_z(rate_per_z, zmin=0.0, zmax=local_z)
-    print("In this volume, there are", "{:.3E}".format(n_local))
+    logging.info("We will only simulate up to z={0}. In this volume, there are {1:.3E}".format(local_z, n_local))
 
     sim_length = (data_end - data_start) * u.day
 
-    print("We simulate for", sim_length)
+    logging.info("We simulate for {0}".format(sim_length))
 
     n_local = int(n_local * sim_length)
 
-    print("Entries in catalogue", n_local)
+    logging.debug("Entries in catalogue {0}".format(n_local))
 
-    print("We expect this region to contribute")
-    print("{:.3g}".format(
+    logging.debug("We expect this region to contribute {:.3g} of all the flux from this source class".format(
         cumulative_nu_flux(local_z)[-1] / cumulative_nu_flux(8.0)[-1]))
-    print("of all the flux from this source class")
 
     n_catalogue = sorted(list(set(
         [int(x) for x in np.logspace(-4, 0, n_entries) * n_local
