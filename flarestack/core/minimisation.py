@@ -461,7 +461,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        logging.debug('Memory usage max: {0:.2f} (Gb)'.format(mem_use))
+        logging.debug('Memory usage max: {0} (Gb)'.format(mem_use))
 
         results = {
             "TS": ts_vals,
