@@ -124,11 +124,9 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
                 except OSError:
                     pass
 
-                print(cat_path)
-
                 np.save(cat_path, cat[mask])
 
-                print("Saved", cat_path)
+                logging.info("Saved to {0}".format(cat_path))
 
     return all_cat_names
 

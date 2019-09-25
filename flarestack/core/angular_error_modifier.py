@@ -1,6 +1,4 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import object
+import logging
 import numpy as np
 import os
 from flarestack.core.energy_pdf import EnergyPDF
@@ -105,8 +103,7 @@ class StaticFloor(BaseStaticFloor):
         except KeyError:
             self.min_error = min_angular_err
 
-        print("Applying an angular error floor of", np.degrees(self.min_error),
-              "degrees")
+        logging.debug("Applying an angular error floor of {0} degrees".format(np.degrees(self.min_error)))
 
     def floor(self, data):
         return np.array([self.min_error for _ in data])
@@ -124,13 +121,12 @@ class BaseQuantileFloor(BaseFloorClass):
 
         BaseFloorClass.__init__(self, floor_dict)
 
-        print("Applying an angular error floor using quantile", end=' ')
-        print(self.floor_quantile)
+        logging.debug("Applying an angular error floor using quantile {0}".format(self.floor_quantile))
 
         if not os.path.isfile(self.pickle_name):
             self.create_pickle()
         else:
-            print("Loading from", self.pickle_name)
+            logging.debug("Loading from".format(self.pickle_name))
 
         with open(self.pickle_name, "r") as f:
             pickled_data = Pickle.load(f)
@@ -310,7 +306,7 @@ class BaseMedianAngularErrorModifier(BaseAngularErrorModifier):
         if not os.path.isfile(self.pull_name):
             self.create_pickle()
         else:
-            print("Loading from", self.pull_name)
+            logging.debug("Loading from".format(self.pull_name))
 
         with open(self.pull_name, "r") as f:
             self.pickled_data = Pickle.load(f)

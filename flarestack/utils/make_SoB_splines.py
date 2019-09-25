@@ -1,6 +1,4 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import str
+import logging
 import numpy as np
 import os
 import scipy.interpolate
@@ -265,10 +263,9 @@ def create_bkg_spatial_spline(exp, sin_dec_bins):
 
 def make_spline(seasons):
 
-    print("Splines will be made to calculate the Signal/Background ratio of " \
+    logging.info("Splines will be made to calculate the Signal/Background ratio of " \
           "the MC to data. The MC will be weighted with a power law, for each" \
-          " gamma in:")
-    print(list(gamma_support_points))
+          " gamma in: {0}".format(list(gamma_support_points)))
 
     for season in seasons.values():
         SoB_path = SoB_spline_path(season)
@@ -278,7 +275,7 @@ def make_spline(seasons):
 
 def make_individual_spline_set(season, SoB_path):
     try:
-        print("Making splines for", season.season_name)
+        logging.info("Making splines for {0}".format(season.season_name))
         # path = SoB_spline_path(season)
 
         exp = season.get_background_model()
@@ -289,7 +286,7 @@ def make_individual_spline_set(season, SoB_path):
 
         splines = create_2d_splines(exp, mc, sin_dec_bins, log_e_bins)
 
-        print("Saving to", SoB_path)
+        logging.info("Saving to {0}".format(SoB_path))
 
         try:
             os.makedirs(os.path.dirname(SoB_path))
@@ -389,8 +386,7 @@ def make_background_spline(season):
 
     bkg_spline = create_bkg_spatial_spline(bkg, sin_dec_bins)
 
-    print("Saving to", bkg_path)
-
+    logging.info("Saving to".format(bkg_path))
     try:
         os.makedirs(os.path.dirname(bkg_path))
     except OSError:
@@ -403,7 +399,7 @@ def make_background_spline(season):
 def load_spline(season):
     path = SoB_spline_path(season)
 
-    print("Loading from", path)
+    logging.debug("Loading from {0}".format(path))
 
     with open(path, "rb") as f:
         res = Pickle.load(f)
@@ -414,7 +410,7 @@ def load_spline(season):
 def load_bkg_spatial_spline(season):
     path = bkg_spline_path(season)
 
-    print("Loading from", path)
+    logging.debug("Loading from {0}".format(path))
 
     with open(path, "rb") as f:
         res = Pickle.load(f)

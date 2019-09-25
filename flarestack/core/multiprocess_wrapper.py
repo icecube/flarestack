@@ -108,3 +108,4 @@ if __name__ == '__main__':
     r = MultiProcessor(n_cpu=cfg.n_cpu, mh_dict=mh_dict)
     r.fill_queue()
     r.terminate()
+    del r

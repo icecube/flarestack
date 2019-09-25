@@ -5,6 +5,7 @@ import socket
 import pickle
 import json
 import zlib
+import logging
 
 # ==============================================================================
 # Directory substructure creation

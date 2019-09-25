@@ -461,7 +461,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        logging.debug('Memory usage max: {0} (Gb)'.format(mem_use))
+        logging.info('Memory usage max: {0} (Gb)'.format(mem_use))
 
         results = {
             "TS": ts_vals,
@@ -702,22 +702,22 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             print("PARAM:", self.param_names[i])
             min_y = np.min(y)
-            print("Minimum value of", min_y, end=' ')
+            print("Minimum value of", min_y)
 
             min_index = y.index(min_y)
             min_n = n_range[min_index]
             print("at", min_n)
 
-            print("One Sigma interval between", end=' ')
+            print("One Sigma interval between")
 
             l_y = np.array(y[:min_index])
             try:
                 l_y = min(l_y[l_y > (min_y + 0.5)])
                 l_lim = n_range[y.index(l_y)]
-                print(l_lim, end=' ')
+                print(l_lim)
             except ValueError:
                 l_lim = min(n_range)
-                print("<"+str(l_lim), end=' ')
+                print("<"+str(l_lim))
 
             print("and")
 

@@ -83,9 +83,9 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     astro_res["Flux from nearest source"] = si
 
-    logging.debug("Total flux:".format(flux))
-    logging.debug("Fraction from nearest source:".format(frac))
-    logging.debug("Flux from nearest source:".format(flux * frac))
+    logging.debug("Total flux: {0}".format(flux))
+    logging.debug("Fraction from nearest source: {0}".format(frac))
+    logging.debug("Flux from nearest source: {0}".format(flux * frac))
 
     lumdist = src_1["distance_mpc"] * u.Mpc
 

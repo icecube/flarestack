@@ -2,12 +2,11 @@
 events based on a given energy PDF.
 
 """
-from __future__ import print_function
-from __future__ import division
 from builtins import object
 import numexpr
 import numpy as np
 import pickle as Pickle
+import logging
 
 gamma_range = [1., 4.]
 

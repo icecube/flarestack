@@ -109,10 +109,10 @@ class BaseInjector:
         return all_n_exp
 
     def calculate_n_exp_single(self, source):
-        return
+        raise NotImplementedError
 
     def get_n_exp_single(self, source):
-        return self.n_exp[self.n_exp["source_name"] == source["source_name"]]
+        return np.copy(self.n_exp[self.n_exp["source_name"] == source["source_name"]])
 
     def get_expectation(self, source, scale):
         return self.get_n_exp_single(source)["n_exp"] * scale
