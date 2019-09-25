@@ -90,7 +90,10 @@ class ResultsHandler(object):
         # else:
         #     self.inj = None
 
-        self.merge_pickle_data()
+        try:
+            self.merge_pickle_data()
+        except FileNotFoundError:
+            logging.warning("No files found at {0}".dormat(self.pickle_output_dir))
 
         try:
             self.find_sensitivity()
