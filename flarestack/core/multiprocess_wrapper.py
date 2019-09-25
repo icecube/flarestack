@@ -1,4 +1,5 @@
 import pickle
+import logging
 import argparse
 from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
 from multiprocessing import JoinableQueue, Process
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--n_cpu", default=os.cpu_count()-1)
     cfg = parser.parse_args()
 
-    print("N CPU available", os.cpu_count())
+    logging.info("N CPU available {0}".format(os.cpu_count()))
 
     with open(cfg.file, "rb") as f:
         mh_dict = pickle.load(f)
