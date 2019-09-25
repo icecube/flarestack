@@ -140,7 +140,7 @@ def band_mask_hash_dir(catalogue):
 def band_mask_cache_name(season, catalogue):
     n_chunks = int((len(catalogue) + band_mask_chunk_size - 1) \
                / band_mask_chunk_size)
-    print("Breaking catalogue into", n_chunks, "chunks of", band_mask_chunk_size)
+    logging.info("Breaking catalogue into {0} chunks of {1}".format(n_chunks, band_mask_chunk_size))
 
     cats = []
     mask_indices = []
@@ -221,38 +221,6 @@ def energy_proxy_plot_path(season):
 def effective_area_plot_path(season):
     return eff_a_plot_dir + season.sample_name + "/" + \
            season.season_name + ".pdf"
-
-
-# def fit_setup(llh_kwargs, sources, fit_energy, flare=False):
-#     # The default value for n_s is 1. It can be between 0 and 10000.
-#     p0 = [1.]
-#
-#     bounds = [(0.0, 1000.)]
-#     names = ["n_s"]
-#
-#     # if "Fit Negative n_s?" in llh_kwargs.keys():
-#     #     if llh_kwargs["Fit Negative n_s?"]:
-#     #         bounds = [(-100., 1000.)]
-#
-#     # If weights are to be fitted, then each source has an independent
-#     # n_s in the same 0-1000 range.
-#     if "Fit Weights?" in list(llh_kwargs.keys()):
-#         if llh_kwargs["Fit Weights?"]:
-#             p0 = [1. for x in sources]
-#             bounds = [bounds[0] for x in sources]
-#             names = ["n_s (" + x["Name"] + ")" for x in sources]
-#
-#     if fit_energy:
-#         e_pdf = EnergyPDF.create(llh_kwargs["LLH Energy PDF"])
-#         e_seed, e_bounds, e_names = e_pdf.return_energy_parameters()
-#         p0 += e_seed
-#         bounds += e_bounds
-#         names += e_names
-#
-#     if flare:
-#         names += ["Flare Start", "Flare End", "Flare Length"]
-#
-#     return p0, bounds, names
 
 
 k_flux_factor = 10 ** -9
