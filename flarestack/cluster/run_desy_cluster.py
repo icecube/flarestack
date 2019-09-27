@@ -19,15 +19,13 @@ Once all sub-tasks are completed, the script will proceed to call
 MergeFiles.run() for the given configuration, combining results.
 
 """
-from __future__ import print_function
-from builtins import str
 import subprocess
 import time
 import os
 import os.path
 import argparse
 from flarestack.shared import log_dir, fs_dir
-from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file
+from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file, submit_file
 
 username = os.path.basename(os.environ['HOME'])
 
@@ -75,9 +73,7 @@ def wait_for_cluster():
         tmp = process.stdout.read().decode()
 
 
-def submit_to_cluster(path, n_cpu=2, n_jobs=10, bashname="SubmitDESY.sh"):
-
-    bashfile = fs_dir + "cluster/" + bashname
+def submit_to_cluster(path, n_cpu=2, n_jobs=10):
 
     for file in os.listdir(log_dir):
         os.remove(log_dir + file)
@@ -93,10 +89,14 @@ def submit_to_cluster(path, n_cpu=2, n_jobs=10, bashname="SubmitDESY.sh"):
     print("Ram per core:", ram_per_core)
 
     submit_cmd += "-t 1-{0}:1 {1} {2} {3}".format(
-        n_jobs, bashfile, path, n_cpu
+        n_jobs, submit_file, path, n_cpu
     )
 
     make_desy_submit_file(ram_per_core)
 
     print(time.asctime(time.localtime()), submit_cmd, "\n")
     os.system(submit_cmd)
+
+
+if not os.path.isfile(submit_file):
+    make_desy_submit_file()

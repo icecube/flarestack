@@ -60,21 +60,7 @@ def run_precompute(ask=True):
         else:
             print("Found Directory:", dirname)
 
-    host = socket.gethostname()
-
-    print("\n")
-    print("********************************************************************")
-    print("*                                                                  *")
-    print("*                    Generating Cluster Scripts                    *")
-    print("*                                                                  *")
-    print("********************************************************************")
-    print("\n")
-
-    if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
-        make_desy_submit_file()
-    else:
-        print("Host", host, "not recognised.")
-        print("No Cluster Scripts generated.")
+    # host = socket.gethostname()
 
     # print("********************************************************************")
     # print("*                                                                  *")
