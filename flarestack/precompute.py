@@ -2,30 +2,9 @@ import os
 import argparse
 import numpy as np
 
-config_path = os.path.dirname(os.path.realpath(__file__)) + "/config.py"
-
-
 # Scratch directory can be changed if needed
 
-def set_scratch_directory(path):
-    """Sets the scratch directory to be a custom path, and exports this.
-
-    :param path: Path to scratch
-    """
-    
-    if path[-1] != "/":
-        path += "/"
-
-    if not os.path.isdir(path):
-        raise Exception("Attempting to set invalid path for scratch. "
-                        "Directory", path, "does not exist!")
-    print("Setting scratch path to", path)
-
-    with open(config_path, "wb") as f:
-        f.write(("scratch_path = '" + path + "'").encode())
-
-
-def run_precompute(all_data=list(), ask=True):
+def run_precompute(ask=True):
     """Builds directory substructure, creates standard source catalogues and
     creates acceptance functions + Signal/Background splines
 
@@ -106,18 +85,18 @@ def run_precompute(all_data=list(), ask=True):
     print("\n")
     make_single_sources()
 
-    print("********************************************************************")
-    print("*                                                                  *")
-    print("*                     Checking data directories                    *")
-    print("*                                                                  *")
-    print("********************************************************************")
-
-    if not isinstance(all_data, list):
-        all_data = [all_data]
-
-    for dataset in all_data:
-        for y in dataset:
-            y.check_files_exist()
+    # print("********************************************************************")
+    # print("*                                                                  *")
+    # print("*                     Checking data directories                    *")
+    # print("*                                                                  *")
+    # print("********************************************************************")
+    #
+    # if not isinstance(all_data, list):
+    #     all_data = [all_data]
+    #
+    # for dataset in all_data:
+    #     for y in dataset:
+    #         y.check_files_exist()
 
     # print("\n")
     # print("********************************************************************")
@@ -147,23 +126,23 @@ def run_precompute(all_data=list(), ask=True):
     # make_spline(all_data)
 
 
-if __name__ == "__main__":
-
-    with open(config_path, "r") as f:
-        scratch_path = f.readline()[16:-2]
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("-sp", "--scratch_path",
-                        help="Path to scratch directory",
-                        default=scratch_path)
-
-    cfg = parser.parse_args()
-
-    if cfg.scratch_path != scratch_path:
-        del scratch_path
-        set_scratch_directory(cfg.scratch_path)
-
-    from flarestack.data.public import icecube_ps_3_year
-
-    run_precompute(icecube_ps_3_year)
+# if __name__ == "__main__":
+#
+#     with open(config_path, "r") as f:
+#         scratch_path = f.readline()[16:-2]
+#
+#     parser = argparse.ArgumentParser()
+#
+#     parser.add_argument("-sp", "--scratch_path",
+#                         help="Path to scratch directory",
+#                         default=scratch_path)
+#
+#     cfg = parser.parse_args()
+#
+#     if cfg.scratch_path != scratch_path:
+#         del scratch_path
+#         set_scratch_directory(cfg.scratch_path)
+#
+#     from flarestack.data.public import icecube_ps_3_year
+#
+#     run_precompute(icecube_ps_3_year)

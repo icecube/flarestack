@@ -1,11 +1,11 @@
 import os
 import numpy as np
-from flarestack import config
 import socket
 import pickle
 import json
 import zlib
 import logging
+from pathlib import Path
 
 # ==============================================================================
 # Directory substructure creation
@@ -15,7 +15,13 @@ import logging
 
 fs_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
-fs_scratch_dir = config.scratch_path + "flarestack__data/"
+try:
+    fs_scratch_dir = os.environ['FLARESTACK_SCRATCH_DIR']
+except KeyError:
+    fs_scratch_dir = str(Path.home()) + "/"
+    logging.warning("No scratch directory has been set. Using home directory as default.")
+
+logging.info("Scratch Directory is: {0}".format(fs_scratch_dir))
 
 input_dir = fs_scratch_dir + "input/"
 storage_dir = fs_scratch_dir + "storage/"
