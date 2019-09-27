@@ -5,12 +5,9 @@ the code. Modification of variable n can produces a catalogue with an
 arbitrary number of sources.
 
 """
-from __future__ import print_function
-from builtins import str
 import numpy as np
-import time
 import os
-from sys import stdout
+import logging
 from flarestack.shared import catalogue_dir
 
 cat_dtype = [
@@ -48,9 +45,24 @@ def single_source(sindec):
     return sources
 
 
-def ps_catalogue_name(sindec):
+def build_ps_cat_name(sindec):
     return catalogue_dir + "single_source/sindec_" + '{0:.2f}'.format(sindec)\
            + ".npy"
+
+def make_single_source(sindec):
+    cat = single_source(sindec)
+    save_path = build_ps_cat_name(sindec)
+    logging.info("Saving to {0}".format(save_path))
+    np.save(save_path, cat)
+
+
+def ps_catalogue_name(sindec):
+    name = build_ps_cat_name(sindec)
+    
+    if not os.path.isfile(name):
+        make_single_source(sindec)
+
+    return name
 
 
 def make_single_sources():
@@ -66,10 +78,7 @@ def make_single_sources():
         pass
 
     for sindec in sindecs:
-        cat = single_source(sindec)
-        save_path = ps_catalogue_name(sindec)
-        print("Saving to " + save_path)
-        np.save(save_path, cat)
+        make_single_source(sindec)
 
     print("\n")
     print("Single Source catalogues created!", "\n")

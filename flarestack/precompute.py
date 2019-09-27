@@ -76,15 +76,6 @@ def run_precompute(ask=True):
         print("Host", host, "not recognised.")
         print("No Cluster Scripts generated.")
 
-    print("\n")
-    print("********************************************************************")
-    print("*                                                                  *")
-    print("*                 Initialising catalogue creation                  *")
-    print("*                                                                  *")
-    print("********************************************************************")
-    print("\n")
-    make_single_sources()
-
     # print("********************************************************************")
     # print("*                                                                  *")
     # print("*                     Checking data directories                    *")
