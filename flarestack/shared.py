@@ -18,8 +18,10 @@ fs_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 try:
     fs_scratch_dir = os.environ['FLARESTACK_SCRATCH_DIR']
 except KeyError:
-    fs_scratch_dir = str(Path.home()) + "/"
+    fs_scratch_dir = str(Path.home())
     logging.warning("No scratch directory has been set. Using home directory as default.")
+
+fs_scratch_dir += "/flarestack__data/"
 
 logging.info("Scratch Directory is: {0}".format(fs_scratch_dir))
 
@@ -72,10 +74,10 @@ all_dirs = [
 
 for dirname in all_dirs:
     if not os.path.isdir(dirname):
-        print("Making Directory:", dirname)
+        logging.info("Making Directory: {0}".format(dirname))
         os.makedirs(dirname)
     else:
-        print("Found Directory:", dirname)
+        logging.info("Found Directory: {0}".format(dirname))
 
 # ==============================================================================
 # Check host and specify path to dataset storage
