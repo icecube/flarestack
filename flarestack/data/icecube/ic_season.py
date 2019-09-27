@@ -50,6 +50,11 @@ class IceCubeRunList(DetectorOnOffList):
 
     def parse_list(self):
 
+        if list(self.on_off_list["run"]) != sorted(list(self.on_off_list["run"])):
+            logging.error("Error in ordering GoodRunList!")
+            logging.error("Runs are out of order!")
+            self.on_off_list = np.sort(self.on_off_list, order="run")
+
         t0 = min(self.on_off_list["start"])
         t1 = max(self.on_off_list["stop"])
 
@@ -83,8 +88,6 @@ class IceCubeRunList(DetectorOnOffList):
         if stitch_t != sorted(stitch_t):
             logging.error("Error in ordering GoodRunList!")
             logging.error("Runs are out of order!")
-
-            print(self.on_off_list[:5])
 
         mjd.append(1e5)
         livetime.append(total_t)

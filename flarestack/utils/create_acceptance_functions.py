@@ -4,7 +4,6 @@ import pickle as Pickle
 import logging
 from flarestack.shared import acceptance_path
 from flarestack.core.energy_pdf import PowerLaw
-from flarestack.icecube_utils.dataset_loader import data_loader
 
 sin_dec_range = np.linspace(-1, 1, 101)
 sin_edges = np.append(-1., (sin_dec_range[1:] + sin_dec_range[:-1])/ 2.)
