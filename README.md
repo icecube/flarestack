@@ -59,39 +59,29 @@ All required dependencies can be found using the IceCube py3-v4 environment. The
  
 ### Right, anyway, I've now downloaded Flarestack. Can I use it right away?
  
-Unfortunately, you can't do science quite yet. There is an additional step, in which multiple recycleable values are computed once, and will be frequently reused later on. To perform this step, you need to firstly download some data+MC. IceCube users can download these files from Madison under ```/data/ana/analyses/```, where the appropriate directory naming convention is then mirrored by the ```flarestack/data/IceCube/``` structure. That can be bypassed if you are working on the DESY /afs/ filesystem, or on the cobalt machinces at WIPAC, because Flarestack will instead find the relevant IceCube files automatically. Either way, you then need to select a space to save these precomputed/stored values. Since they can be regenerated at any time, a scratch space is ideal for this purpose. 
+You can get started with flarestack immediatly using public IceCube datasets provided as part of the code. You can simply run scripts such as those under /flarestack/analyses/, and do your science!
 
-The most straighforward way to set up Flarestack is to run the following command from inside the flarestack directory.
+You can optionally set custom directorioes for datasets, and for storing data calculated with the code.
 
-```bash
-python flarestack/precompute.py -sp /path/to/scratch
-```
+### Setting up the dataset directory
 
-Alternatively, you can setup your own precomputation in a python console, in the following way. Firstly, you specify the scratch directory you want to use:
-
-```python
- from flarestack.precompute import run_precompute, set_scratch_directory
- set_scratch_directory("/path/to/my/scratch/")
-```
-
-If you are *not* using the DESY/WIPAC datasets, you'll need to point to the relevant directory where raw datasets are stored. Run this command in bash:
+If you are running on WIPAC or DESY, you do not need to specify a dataset directory, as IceCube data will be found automatically. Otherwise, you can add:
 
 ```bash
-export FLARESTACK_DATASET_DIR=/path/to/datasets/
+export FLARESTACK_DATASET_DIR="/path/to/scratch"
 ```
 
-Finally, you then need to select datasets and run the begin setup:
+to point the code to local copies of Icecube datasets.
 
- ```python
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-run_precompute(txs_sample_v1)
+### Setting up directory for storing data
+
+Flarestack will produce many files that do not need to be version-controlled. The principle is that everything within this directory can be reproduced by the code, so does not need to be backed up. By default, these files will be saved in a separate within the user home directory, but it might be preferrable to save them elsewhere, such as a scratch directory. You can specify the parent directory:
+
+```bash
+export FLARESTACK_SCRATCH_DIR="/path/to/scratch"
 ```
 
-The above 4/6 lines of code will then build all relevant files for the datasets used in the TXS analysis (7 years of Point Source data and 2.5 years of GFU data), in the same way as when flarestack/precompute.py is run directly.
-
-In either case, the code will then run. *Be prepared that this will take some time*. Fortunately, having done this once, you will not need to repeat it unless you require new datasets or a new release of Flarestack. The scratch directory will not need to be set again, although the dataset directory will need to be newly assigned at the top of your analysis scripts. 
-
-You can them simply run scripts such as those under /flarestack/analyses/, and do your science!
+A folder `flarestack__data` will be created in that directory. This is where you will find plots, pickle files and other files produced by the code.
 
 # Testing Flarestack
 
