@@ -68,7 +68,7 @@ You can optionally set custom directorioes for datasets, and for storing data ca
 If you are running on WIPAC or DESY, you do not need to specify a dataset directory, as IceCube data will be found automatically. Otherwise, you can add:
 
 ```bash
-export FLARESTACK_DATASET_DIR="/path/to/scratch"
+export FLARESTACK_DATASET_DIR=/path/to/datasets
 ```
 
 to point the code to local copies of Icecube datasets.
@@ -78,7 +78,7 @@ to point the code to local copies of Icecube datasets.
 Flarestack will produce many files that do not need to be version-controlled. The principle is that everything within this directory can be reproduced by the code, so does not need to be backed up. By default, these files will be saved in a separate within the user home directory, but it might be preferrable to save them elsewhere, such as a scratch directory. You can specify the parent directory:
 
 ```bash
-export FLARESTACK_SCRATCH_DIR="/path/to/scratch"
+export FLARESTACK_SCRATCH_DIR=/path/to/scratch
 ```
 
 A folder `flarestack__data` will be created in that directory. This is where you will find plots, pickle files and other files produced by the code.
