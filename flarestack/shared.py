@@ -21,7 +21,7 @@ except KeyError:
     fs_scratch_dir = str(Path.home())
     logging.warning("No scratch directory has been set. Using home directory as default.")
 
-fs_scratch_dir += "/flarestack__data/"
+fs_scratch_dir = os.path.join(fs_scratch_dir, "flarestack__data/")
 
 logging.info("Scratch Directory is: {0}".format(fs_scratch_dir))
 
