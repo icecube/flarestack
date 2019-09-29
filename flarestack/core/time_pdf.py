@@ -1,6 +1,4 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import object
+import logging
 import numpy as np
 from scipy.interpolate import interp1d
 from flarestack.icecube_utils.dataset_loader import data_loader
@@ -36,6 +34,7 @@ def read_t_pdf_dict(t_pdf_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(t_pdf_dict.keys()):
+            logging.warning("Deprecated t_pdf_key '{0}'. Please use '{1}'.".format(old_key, new_key))
             t_pdf_dict[new_key] = t_pdf_dict[old_key]
 
     name_maps = [
@@ -47,6 +46,7 @@ def read_t_pdf_dict(t_pdf_dict):
 
     for (old_key, new_key) in name_maps:
         if t_pdf_dict["time_pdf_name"] == old_key:
+            logging.warning("Deprecated time_pdf_name '{0}'. Please use '{1}'.".format(old_key, new_key))
             t_pdf_dict["time_pdf_name"] = new_key
 
     return t_pdf_dict
