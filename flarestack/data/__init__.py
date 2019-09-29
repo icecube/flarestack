@@ -108,7 +108,7 @@ class Season:
         self.loaded_background = None
         self.pseudo_mc_path = None
         self.background_dtype = None
-        self.time_pdf = None
+        self._time_pdf = None
         self.all_paths = [self.exp_path]
 
     def load_background_model(self):
@@ -192,12 +192,12 @@ class Season:
         return time_pdf
 
     def get_time_pdf(self):
-        if self.time_pdf is None:
-            self.time_pdf = self.build_time_pdf()
-        return self.time_pdf
+        if self._time_pdf is None:
+            self._time_pdf = self.build_time_pdf()
+        return self._time_pdf
 
     def clean_season_cache(self):
-        self.time_pdf = None
+        self._time_pdf = None
 
     def load_data(self, path, **kwargs):
         return np.load(path)

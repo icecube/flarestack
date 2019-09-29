@@ -32,13 +32,11 @@ limits = {
 
 ref_dist = 1 * u.Mpc
 
-ref_catalogue = np.array([ref_dist.value], dtype=[("Distance (Mpc)", np.float)])
-
 # Limits are calculated assuming the following Energy PDF
 
 e_pdf_dict = {
-    "Name": "Power Law",
-    "Gamma": 2.5
+    "energy_pdf_name": "power_law",
+    "gamma": 2.5
 }
 
 energy_PDF = EnergyPDF.create(e_pdf_dict)
@@ -53,6 +51,6 @@ for (sn, sn_dict) in limits.items():
 
 
 if __name__ == "__main__":
-    print("LImits", limits)
+    print("Limits", limits)
 
 
