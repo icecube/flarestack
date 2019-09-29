@@ -71,10 +71,10 @@ def ps_catalogue_name(sindec):
 
 def make_single_sources():
     """Makes single-source catalogues for a variety of sindec intervals."""
-    print("Making single-source catalogues for the following sin(declinations):")
+    logging.info("Making single-source catalogues for the following sin(declinations):")
 
     sindecs = np.linspace(1.00, -1.00, 41)
-    print(sindecs, "\n")
+    logging.info(sindecs)
 
     try:
         os.makedirs(os.path.dirname(ps_catalogue_name(0.0)))
@@ -84,8 +84,7 @@ def make_single_sources():
     for sindec in sindecs:
         make_single_source(sindec)
 
-    print("\n")
-    print("Single Source catalogues created!", "\n")
+    logging.info("Single Source catalogues created!")
 
 
 def custom_sources(name, ra, dec, weight, distance,
