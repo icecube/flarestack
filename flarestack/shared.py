@@ -303,7 +303,7 @@ def make_analysis_pickle(mh_dict):
                         "Cannot save results without a unique directory"
                         " name being specified.")
 
-    for season in mh_dict["datasets"].values():
+    for season in mh_dict["dataset"].values():
         season.clean_season_cache()
 
     pkl_file = analysis_pickle_path(name)

@@ -8,14 +8,13 @@ from flarestack.utils.prepare_catalogue import cat_dtype
 from flarestack.utils.neutrino_cosmology import define_cosmology_functions, \
     integrate_over_z, cumulative_z
 from scipy.interpolate import interp1d
-from flarestack.core.time_pdf import TimePDF
 
 
 def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
                                  cat_name="random", n_entries=30,
                                  local_z=0.1):
 
-    tpdfs = [season.get_time_pdf() for season in mh_dict["datasets"].values()]
+    tpdfs = [season.get_time_pdf() for season in mh_dict["dataset"].values()]
 
     data_start = min([time_pdf.sig_t0() for time_pdf in tpdfs])
     data_end = max([time_pdf.sig_t1() for time_pdf in tpdfs])
