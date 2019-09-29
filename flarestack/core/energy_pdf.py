@@ -2,7 +2,6 @@
 events based on a given energy PDF.
 
 """
-from builtins import object
 import numexpr
 import numpy as np
 import pickle as Pickle
@@ -32,11 +31,19 @@ def read_e_pdf_dict(e_pdf_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(e_pdf_dict.keys()):
+            logging.warning("Deprecated e_pdf_key '{0}'. Please use '{1}'.".format(old_key, new_key))
             e_pdf_dict[new_key] = e_pdf_dict[old_key]
 
     try:
         if e_pdf_dict["energy_pdf_name"] == "Power Law":
-            e_pdf_dict["energy_pdf_name"] = "PowerLaw"
+            logging.warning("Deprecated energy_pdf_name 'Power Law'. Please use 'power_law'.")
+            e_pdf_dict["energy_pdf_name"] = "power_law"
+        elif e_pdf_dict["energy_pdf_name"] == "PowerLaw":
+            logging.warning("Deprecated energy_pdf_name 'PowerLaw'. Please use 'power_law'.")
+            e_pdf_dict["energy_pdf_name"] = "power_law"
+        elif e_pdf_dict["energy_pdf_name"] == "Spline":
+            logging.warning("Deprecated energy_pdf_name 'Spline'. Please use 'spline'.")
+            e_pdf_dict["energy_pdf_name"] = "spline"
     except KeyError:
         pass
 
@@ -310,7 +317,7 @@ class PowerLaw(EnergyPDF):
         return {"gamma": self.gamma}
 
 
-@EnergyPDF.register_subclass('Spline')
+@EnergyPDF.register_subclass('spline')
 class Spline(EnergyPDF):
     """A Power Law energy PDF. Takes an argument of gamma in the dictionary
     for the init function, where gamma is the spectral index of the Power Law.
