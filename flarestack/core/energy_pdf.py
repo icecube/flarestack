@@ -31,21 +31,19 @@ def read_e_pdf_dict(e_pdf_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(e_pdf_dict.keys()):
-            logging.warning("Deprecated e_pdf_key '{0}'. Please use '{1}'.".format(old_key, new_key))
+            logging.warning("Deprecated e_pdf_key '{0}' was used. Please use '{1}' in future.".format(old_key, new_key))
             e_pdf_dict[new_key] = e_pdf_dict[old_key]
 
-    try:
-        if e_pdf_dict["energy_pdf_name"] == "Power Law":
-            logging.warning("Deprecated energy_pdf_name 'Power Law'. Please use 'power_law'.")
-            e_pdf_dict["energy_pdf_name"] = "power_law"
-        elif e_pdf_dict["energy_pdf_name"] == "PowerLaw":
-            logging.warning("Deprecated energy_pdf_name 'PowerLaw'. Please use 'power_law'.")
-            e_pdf_dict["energy_pdf_name"] = "power_law"
-        elif e_pdf_dict["energy_pdf_name"] == "Spline":
-            logging.warning("Deprecated energy_pdf_name 'Spline'. Please use 'spline'.")
-            e_pdf_dict["energy_pdf_name"] = "spline"
-    except KeyError:
-        pass
+    name_maps = [
+        ("Power Law", "power_law"),
+        ("PowerLaw", "power_law"),
+        ("Spline", "spline"),
+    ]
+
+    for (old_key, new_key) in name_maps:
+        if e_pdf_dict["energy_pdf_name"] == old_key:
+            logging.warning("Deprecated energy_pdf_name '{0}' was used. Please use '{1}' in future.".format(old_key, new_key))
+            e_pdf_dict["energy_pdf_name"] = new_key
 
     return e_pdf_dict
 
@@ -166,7 +164,7 @@ class EnergyPDF(object):
                                   "for {0}".format(self.__class__.__name__))
 
 
-@EnergyPDF.register_subclass('PowerLaw')
+@EnergyPDF.register_subclass('power_law')
 class PowerLaw(EnergyPDF):
     """A Power Law energy PDF. Takes an argument of gamma in the dictionary
     for the init function, where gamma is the spectral index of the Power Law.
