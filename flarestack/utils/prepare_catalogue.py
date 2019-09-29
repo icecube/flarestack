@@ -54,7 +54,7 @@ def make_single_source(sindec):
     save_path = build_ps_cat_name(sindec)
     try:
         os.makedirs(os.path.dirname(save_path))
-    except KeyError:
+    except FileExistsError:
         pass
     logging.info("Saving to {0}".format(save_path))
     np.save(save_path, cat)
