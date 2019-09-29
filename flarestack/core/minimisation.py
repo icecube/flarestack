@@ -47,6 +47,8 @@ def read_mh_dict(mh_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(mh_dict.keys()):
+            logging.warning("Deprecated mh_dict key '{0}' was used. Please use '{1}' in future.".format(
+                old_key, new_key))
             mh_dict[new_key] = mh_dict[old_key]
 
     if "name" not in mh_dict.keys():

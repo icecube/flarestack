@@ -39,6 +39,8 @@ def read_llh_dict(llh_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(llh_dict.keys()):
+            logging.warning("Deprecated llh_dict key'{0}' was used. Please use '{1}' in future.".format(
+                old_key, new_key))
             llh_dict[new_key] = llh_dict[old_key]
 
     pairs = [
@@ -56,6 +58,7 @@ def read_llh_dict(llh_dict):
         llh_dict["llh_spatial_pdf"] = {}
 
     if "llh_bkg_time_pdf" not in llh_dict.keys():
+        logging.warning("No 'llh_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
         llh_dict["llh_bkg_time_pdf"] = {
             "time_pdf_name": "steady"
         }

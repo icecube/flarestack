@@ -30,6 +30,8 @@ def read_injector_dict(inj_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(inj_dict.keys()):
+            logging.warning("Deprecated inj_dict key '{0}' was used. Please use '{1}' in future.".format(
+                old_key, new_key))
             inj_dict[new_key] = inj_dict[old_key]
 
     pairs = [
@@ -45,6 +47,7 @@ def read_injector_dict(inj_dict):
         inj_dict["injection_spatial_pdf"] = {}
 
     if "injection_bkg_time_pdf" not in inj_dict.keys():
+        logging.warning("No 'injection_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
         inj_dict["injection_bkg_time_pdf"] = {"time_pdf_name": "steady"}
 
     return inj_dict
