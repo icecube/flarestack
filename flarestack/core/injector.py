@@ -73,9 +73,9 @@ class BaseInjector:
 
         try:
             self.sig_time_pdf = TimePDF.create(kwargs["injection_sig_time_pdf"],
-                                               season.time_pdf)
+                                               season.get_time_pdf())
             self.bkg_time_pdf = TimePDF.create(kwargs["injection_bkg_time_pdf"],
-                                               season.time_pdf)
+                                               season.get_time_pdf())
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
             self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"],
                                           season)

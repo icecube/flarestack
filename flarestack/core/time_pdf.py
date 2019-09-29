@@ -59,18 +59,15 @@ class TimePDF(object):
         self.t_dict = t_pdf_dict
 
         if livetime_pdf is not None:
-            # self.livetime_f = lambda x: 1.
-            # self.t0 = -np.inf
-            # self.t1 = np.inf
-            # self.livetime_to_mjd = lambda x: x + self.sig_t0()
-            # self.mjd_to_livetime = lambda x: x - self.sig_t0()
-        # else:
             self.livetime_f = lambda x: livetime_pdf.livetime_f(x)# * livetime_pdf.livetime
             self.livetime_pdf = livetime_pdf
             self.t0 = livetime_pdf.sig_t0()
             self.t1 = livetime_pdf.sig_t1()
             self.mjd_to_livetime = self.livetime_pdf.mjd_to_livetime
             self.livetime_to_mjd = self.livetime_pdf.livetime_to_mjd
+
+        else:
+            self.livetime_pdf = None
 
 
     @classmethod
