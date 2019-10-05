@@ -1,8 +1,9 @@
 import pickle
 import logging
+from logging.handlers import QueueHandler, QueueListener
 import argparse
 from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
-from multiprocessing import JoinableQueue, Process
+from multiprocessing import JoinableQueue, Process, Queue
 import random
 import numpy as np
 
@@ -37,12 +38,22 @@ class MultiProcessor:
 
     def __init__(self, n_cpu, **kwargs):
         self.queue = JoinableQueue()
+        self.log_queue = Queue()
         self.processes = [Process(target=self.run_trial, kwargs=kwargs)
                           for _ in range(int(n_cpu))]
 
         self.mh = MinimisationHandler.create(kwargs["mh_dict"])
         self.mh_dict = kwargs["mh_dict"]
         self.scales = []
+
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s: %(asctime)s - %(process)s - %(message)s"))
+        # ql gets records from the queue and sends them to the handler
+        ql = QueueListener(self.log_queue, handler)
+        ql.start()
+        logger = logging.getLogger()
+        # add the handler to the logger so records from this process are handled
+        logger.addHandler(handler)
 
         # self.results = dict()
 
@@ -57,6 +68,10 @@ class MultiProcessor:
             self.mh.dump_injection_values(scale)
 
     def run_trial(self, **kwargs):
+
+        qh = QueueHandler(self.log_queue)
+        logger = logging.getLogger()
+        logger.addHandler(qh)
 
         mh_dict = kwargs["mh_dict"]
 
@@ -82,6 +97,8 @@ class MultiProcessor:
         for scale in scale_range:
             for _ in range(n_trials):
                 r.add_to_queue((scale, int(random.random() * 10 ** 8)))
+
+        logging.info("Added {0} trials to queue. Now processing.".format(len(scale_range) * n_trials))
 
     def terminate(self):
         """ wait until queue is empty and terminate processes """
