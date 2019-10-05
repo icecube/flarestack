@@ -4,18 +4,17 @@ single trial, and is good to within ~30-50%). Use with some caution to
 quickly guess appropriate flux scales, or understand trends, without full
 calculations.
 """
-from builtins import object
 import numpy as np
 from flarestack.core.llh import LLH
 from flarestack.core.astro import angular_distance
-from flarestack.shared import weighted_quantile, k_to_flux, flux_to_k
+from flarestack.shared import k_to_flux
 from flarestack.utils.catalogue_loader import load_catalogue, \
     calculate_source_weight
 from scipy.stats import norm
 import logging
 
 
-def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
+def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale=1.0):
     """Function to estimate discovery potential given an injection model. It
     assumes an optimal LLH construction, i.e aligned time windows and correct
     energy weighting etc. Takes injectors and seasons.
@@ -31,7 +30,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
     def weight_f(n_s, n_bkg):
         metric = np.array(n_s)#/np.sqrt(np.array(n_bkg))
-        return metric / np.mean(metric)#/ max(metric)
+        return 1.#metric #/ np.mean(metric)#/ max(metric)
 
     def ts_weight(n_s):
         return 1.
@@ -45,6 +44,7 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
 
     n_s_tot = 0.
     n_tot = 0.
+    n_tot_coincident = 0.
 
     all_ns = []
     all_nbkg = []
@@ -52,19 +52,22 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
     all_ts = []
     all_bkg_ts = []
 
-    for (season, inj) in injectors.items():
+    final_ts = []
 
-        llh_dict = {"llh_name": "fixed_energy"}
-        llh_dict["llh_energy_pdf"] = inj.inj_kwargs["injection_energy_pdf"]
-        llh_dict["llh_sig_time_pdf"] = inj.inj_kwargs["injection_sig_time_pdf"]
-        llh = LLH.create(inj.season, sources, llh_dict)
+    new_n_s = 0.
+    new_n_bkg = 0.
 
-        # print("Season", season)
-        data = inj.season.simulate_background()
-        n_tot += len(data)
-        # n_bkg_tot += len(inj._raw_data)
-        # print("Number of events", n_bkg_tot)
-        livetime += inj.bkg_time_pdf.livetime * 60 * 60 * 24
+    for season in seasons.values():
+
+        new_llh_dict = dict(llh_dict)
+        new_llh_dict["llh_name"] = "fixed_energy"
+        new_llh_dict["llh_energy_pdf"] = inj_dict["injection_energy_pdf"]
+        llh = LLH.create(season, sources, new_llh_dict)
+
+
+        data = season.get_background_model()
+        n_tot += np.sum(data["weight"])
+        livetime += llh.bkg_time_pdf.livetime * 60 * 60 * 24
 
         def signalness(sig_over_background):
             """Converts a signal over background ratio into a signal
@@ -84,351 +87,159 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
         bkg_vals = []
         n_s_season = 0.
 
-        n_exp = np.sum(inj.n_exp["n_exp"]) * raw_scale
+        # n_exp = np.sum(inj.n_exp["n_exp"]) * raw_scale
 
-        for source in sources:
-            source_mc = inj.calculate_single_source(source, scale=raw_scale)
+        sig_times = np.array([llh.sig_time_pdf.effective_injection_time(x) for x in sources])
+        source_weights = np.array([calculate_source_weight(x) for x in sources])
+        mean_time = np.sum(sig_times*source_weights)/weight_scale
+
+        # print(source_weights)
+
+        fluences = np.array([
+            x * sig_times[i]
+            for i, x in enumerate(source_weights)
+        ])/weight_scale
+        # print(sources.dtype.names)
+        # print(sources["dec_rad"], np.sin(sources["dec_rad"]))
+        # print(fluences)
+        # input("?")
+        res = np.histogram(np.sin(sources["dec_rad"]), bins=season.sin_dec_bins, weights=fluences)
+
+        dummy_sources = []
+        bounds = []
+        n_eff_sources = []
+
+        for i, w in enumerate(res[0]):
+            if w > 0:
+                lower = res[1][i]
+                upper = res[1][i + 1]
+                mid = np.mean([upper, lower])
+
+                mask = np.logical_and(np.sin(sources["dec_rad"]) > lower,
+                                      np.sin(sources["dec_rad"]) < upper)
+
+
+
+                n_eff_sources.append((np.sum(fluences[mask])**2./np.sum(fluences[mask]**2)))
+
+
+                # print(n_eff_sources)
+                # print(fluences[mask])
+                #
+                # tester = np.array([1.5, 1.5, 1.5])
+                #
+                #
+                # print(np.sum(tester**2)/(np.mean(tester)**2.))
+                # input("?")
+
+                dummy_sources.append((np.arcsin(mid), res[0][i], 1., 1., "dummy_{0}".format(mid)))
+                bounds.append((lower, upper))
+
+        dummy_sources = np.array(dummy_sources, dtype=np.dtype([
+            ("dec_rad", np.float),
+            ("base_weight", np.float),
+            ("distance_mpc", np.float),
+            ("injection_weight_modifier", np.float),
+            ("source_name", np.str)
+        ]))
+        inj = season.make_injector(dummy_sources, **inj_dict)
+
+        for j, dummy_source in enumerate(dummy_sources):
+
+            lower, upper = bounds[j]
+
+            n_eff = n_eff_sources[j]
+
+            source_mc = inj.calculate_single_source(dummy_source, scale=raw_scale)
 
             if len(source_mc) == 0:
-                logging.warning("Warning, no MC found near source {0}".format(source["source_name"]))
+                logging.warning("Warning, no MC found for dummy source at declinbation ".format(
+                    np.arcsin(lower), np.arcsin(upper)))
                 ts_vals.append(0.0)
                 n_sigs.append(0.0)
                 n_bkgs.append(0.0)
             else:
-
-            # dist = angular_distance(
-            #     source_mc["trueRa"], source_mc["trueDec"],
-            #     source_mc["ra"], source_mc["dec"],
-            # )/source_mc["sigma"]
-            # #
-            # # # # Only consider MC 3 sigma away or less
-            # # #
-            # min_dist = 3.
-            # source_mc = source_mc[dist < min_dist]
-            #
-            # delta_rad = 0.5
-            #
-            # mask = np.logical_and(
-            #     source_mc["trueRa"] < source["ra_rad"] + delta_rad,
-            #     source_mc["trueRa"] > source["ra_rad"] - delta_rad,
-            # )
-            #
-            # source_mc = source_mc[mask]
-            #
-            #
-            # # Rotates the events to lie on the source
-            # source_mc["ra"], rot_dec = llh.spatial_pdf.rotate(
-            #     source_mc["ra"], np.arcsin(source_mc["sinDec"]),
-            #     source_mc["trueRa"], source_mc["trueDec"],
-            #     source["ra_rad"], source["dec_rad"])
-            #
-            # source_mc["dec"] = rot_dec
-            # source_mc["sinDec"] = np.sin(rot_dec)
-            # source_mc["trueRa"] = source["ra_rad"]
-            # source_mc["trueDec"] = source["dec_rad"]
-
-            # print(len(source_mc))
-            #
-            # print(np.mean(source_mc["ra"]), np.mean(source_mc["dec"]))
-            # shifted_source_mc = llh.spatial_pdf.rotate_to_position(
-            #     source_mc.copy(), source['ra_rad'], source['dec_rad']
-            # ).copy()
-            # source_mc["ra"] = shifted_source_mc["ra"].copy()
-            # source_mc["dec"] = shifted_source_mc["dec"].copy()
-            # print(np.mean(source_mc["ra"]))
-            # print("Source:", source["ra_rad"])
-            # print(np.mean(source_mc["dec"]))
-            # print("?")
-
-                # Sets half width of band
-                dec_width = np.deg2rad(5.)
-
-                # Sets a declination band 5 degrees above and below the source
-                min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
-                max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
                 # Gives the solid angle coverage of the sky for the band
-                omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+                omega = 2. * np.pi * (upper - lower)
 
                 data_mask = np.logical_and(
-                    np.greater(data["dec"], min_dec),
-                    np.less(data["dec"], max_dec))
+                    np.greater(data["dec"], np.arcsin(lower)),
+                    np.less(data["dec"], np.arcsin(upper)))
                 local_data = data[data_mask]
 
-                data_weights = signalness(llh.energy_weight_f(local_data))
+                data_weights = signalness(llh.energy_weight_f(local_data)) * local_data["weight"]
 
                 # print("source_mc", source_mc)
 
                 mc_weights = signalness(llh.energy_weight_f(source_mc))
 
-                # The flux is split across sources. The source weight is equal to
-                # the base source weight / source distance ^2. It is equal to
-                # the fraction of total flux contributed by an individual source.
-
-                source_weight = calculate_source_weight(source) / weight_scale
-
-                # Assume we only count within the 50% containment for the source
-
-                n_sig = 0.5 * np.sum(
-                    source_mc["ow"] * mc_weights)
-
                 true_errors = angular_distance(
                     source_mc["ra"], source_mc["dec"],
                     source_mc["trueRa"], source_mc["trueDec"])
 
-                median_sigma = weighted_quantile(
-                            true_errors, 0.5, source_mc["ow"] * mc_weights)
+                # median_sigma = weighted_quantile(
+                #             true_errors, 0.5, source_mc["ow"] * mc_weights)
 
-                area = np.pi * median_sigma ** 2 / np.cos(source["dec_rad"])
+                median_sigma = np.mean(local_data["sigma"])
+
+                area = np.pi * (2.0 * median_sigma) ** 2 / np.cos(dummy_source["dec_rad"])
 
                 local_rate = np.sum(data_weights)
 
-                n_bkg = local_rate * area #* source_weight
+                # n_bkg = local_rate * area  # * source_weight
+                n_bkg = np.sum(local_data["weight"])
 
-                sig_scale = 1.
-                # sig_scale = np.sqrt(np.mean(data_weights))
-                # sig_scale = np.sqrt(n_bkg)
-                # sig_scale = n_bkg/np.mean(data_weights)
-                # "ow"]) #/
-                # np.sqrt(
-                # n_bkg)# + n_sig)
+                n_tot_coincident += n_bkg
 
-                n_sigs.append(n_sig / sig_scale)
-                n_bkgs.append(n_bkg / sig_scale)
+                ratio_time = livetime / mean_time
 
-                # print(min(true_errors), max(true_errors))
+                sig_spatial = signalness((1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
+                                          np.exp(-0.5 * (
+                                                  (true_errors / source_mc["sigma"]) ** 2.))) \
+                                         / llh.spatial_pdf.background_spatial(source_mc))
 
-                # source_mc["sigma"] = 1.177 * true_errors
-                #
-                # print(max(llh.background(source_mc)),
-                #       min(llh.background(source_mc)))
-                # print(max(llh.spatial_pdf.signal(
-                #     source, source_mc) / llh.background(source_mc)),
-                #       min(llh.spatial_pdf.signal(
-                #     source, source_mc) / llh.background(source_mc)))
-                #
-                # input("?")
+                ra_steps = np.linspace(-np.pi, np.pi, 100)
+                dec_steps = np.linspace(lower, upper, 10)
 
-                ratio_energy = llh.energy_weight_f(source_mc)
+                mean_dec = np.mean(signalness(
+                    norm.pdf(dec_steps, scale=median_sigma/np.cos(dummy_source["dec_rad"]),
+                             loc=np.mean([lower, upper])) * (upper-lower)))
 
-                sig_time = llh.sig_time_pdf.effective_injection_time(
-                    source)
+                mean_ra = np.mean(signalness(
+                    norm.pdf(ra_steps, scale=median_sigma, loc=0.)
+                    * 2. * np.pi))
 
-                if sig_time > 0.:
-
-                    ratio_time = livetime/sig_time
-
-                else:
-                    ratio_time = 0.
-
-                bkg_energy = llh.energy_weight_f(local_data)
-
-                # print(min(1. / (2. * np.pi * true_errors ** 2.) *
-                #      np.exp(-0.5 * ((1.177) **
-                #                     2.))))
-                # print(min(llh.background(source_mc)),
-                #       max(llh.background(source_mc)))
-                #
-                #
-                # ratio_spatial = (1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
-                #                  np.exp(-0.5 * ((true_errors/source_mc["sigma"]) **
-                #                     2.))) / llh.background(source_mc)
-
-                # ratio_spatial = np.log(gaussian_spatial)
-                # print("Spatial", np.mean(gaussian_spatial), np.mean(
-                #     ratio_spatial*source_mc["ow"]/np.mean(source_mc["ow"])))
-                #
-                # input("?")
-
-                sig_spatial = (1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
-                                 np.exp(-0.5 * (
-                                         (true_errors/source_mc["sigma"]) **2.))) \
-                                / llh.spatial_pdf.background_spatial(source_mc)
-
-                bkg_spatial = (1. / (2. * np.pi * local_data["sigma"] ** 2.) *
-                                 np.exp(-0.5 * (
-                                         (1.177) ** 2.))) \
-                                / llh.spatial_pdf.background_spatial(local_data)
-
-
-                # print(min(ratio_spatial), np.mean(ratio_spatial), max(ratio_spatial))
-                # print(np.mean((1. / (2. * np.pi * source_mc["sigma"] ** 2.) *
-                #                  np.exp(-0.5 * (
-                #                          (true_errors/source_mc["sigma"]) **2.)))))
-                # input("???")
-
-                ratio_spatial = sig_spatial
-
-                # ratio_spatial = 1.
-
-                dists = angular_distance(
-                    local_data["ra"], local_data["dec"],
-                    source["ra_rad"], source["dec_rad"])
-
-                bkg_spatial = (1. / (2. * np.pi * local_data["sigma"] ** 2.) *
-                               np.exp(-0.5 * ((dists/local_data["sigma"]) ** 2.))) \
-                                / llh.spatial_pdf.background_spatial(local_data)
-
-                # print(np.mean(np.log10(bkg_spatial)))
-                # input("?")
-
-                # bkg_spatial = 1.
-
-                sum_ratio = np.array(ratio_energy * ratio_spatial * ratio_time)
-                mask = sum_ratio > 0.
+                bkg_spatial = mean_dec * mean_ra# * n_eff
 
                 n_s_tot += np.sum(source_mc["ow"])
                 n_s_season += np.sum(source_mc["ow"])
-                med_ts = np.sum(np.log(1. + sum_ratio / len(data))
-                                * source_mc["ow"])
 
-                # med_ts = np.sum(np.log(1 + sum_ratio[mask]) * source_mc["ow"][mask])
+                med_sig = np.mean(sig_spatial * mc_weights) * signalness(ratio_time) * np.sum(source_mc["ow"])
+                med_bkg = np.mean(bkg_spatial * data_weights) * (1. - signalness(ratio_time)) * n_bkg
 
-                # med_ts = np.sum(np.log(1 + (sum_ratio[mask] * source_mc[
-                #     "ow"][mask]/len(local_data))))
+                new_n_s += med_sig
+                new_n_bkg += med_bkg
 
-                # print(np.sum(np.log(1. + sum_ratio/len(data))))
-                # print(np.log(1 + np.mean(sum_ratio)))
+    scaler_ratio = new_n_s/n_s_tot
 
-                # input("?")
+    scaler_ratio = new_n_bkg/n_tot_coincident
 
-                # bkg_ts = 0.
+    print("Scaler Ratio", scaler_ratio)
 
+    disc_count = norm.ppf(norm.cdf(5.0), loc=0.,
+                          scale=np.sqrt(new_n_bkg))# * scaler_ratio
 
-                # exp = np.log(np.mean(sum_ratio) * len(local_data))
-                # print("BKG TS:", bkg_ts, exp, np.mean(sum_ratio[mask]),
-                #       np.mean(sum_ratio))
-                # input("?")
-                #
-                # med_ts = np.sum((ratio_energy + ratio_spatial) * source_mc[
-                #     "ow"])
-                # print(med_ts)
-                # input("/?")
-
-                ts_vals.append(med_ts)
-                # bkg_vals.append(bkg_ts)
-
-        n_sigs = np.array(n_sigs)
-        n_bkgs = np.array(n_bkgs)
-
-        weights = weight_f(n_sigs, n_bkgs)
-        # weights = (n_sigs / np.mean(n_sigs)) #/ np.sqrt(float(len(sources))) #*
-        # np.median(n_bkgs)
-
-        sum_n_sigs = np.sum(n_sigs * weights)
-        sum_n_bkgs = np.sum(n_bkgs * weights)
-
-        season_sig.append(sum_n_sigs)
-        season_bkg.append(sum_n_bkgs)
-
-        all_ns.append(n_sigs)
-        all_nbkg.append(n_bkgs)
-
-        ts_vals = np.array(ts_vals)
-
-        # bkg_energy = llh.energy_weight_f(data)
-        #
-        # dists = [min([angular_distance(y["ra"], y["dec"], x, 0.0)
-        #               for x in np.linspace(0, 2*np.pi, len(sources))])
-        #          for y in data]
-        #
-        # bkg_spatial = ((1. / (
-        #         2. * np.pi * data["sigma"] ** 2.) *
-        #                      np.exp(-0.5 * ((dists/data["sigma"]) ** 2.)))
-        #                     / (2 * np.pi))
-        #
-        # sum_ratio = np.array(bkg_energy * bkg_spatial)
-        #
-        # bkg_vals = np.sum(np.log(1. + sum_ratio / len(data)))
-
-        bkg_vals = 0.
-
-        # print(bkg_vals)
-        # input("?")
-        # print(ts_vals, ts_weight(n_sigs), ts_weight(n_sigs) * ts_vals)
-
-        all_ts.append(ts_vals * ts_weight(n_sigs))
-        all_bkg_ts.append(bkg_vals)# * ts_weight(n_sigs))
-
-
-    season_sig = np.array(season_sig)
-    season_bkg = np.array(season_bkg)
-
-    season_weights = 1.
-
-    int_sig = np.sum(season_sig * season_weights)
-    int_bkg = np.sum(season_bkg * season_weights)
-
-    disc_count = norm.ppf(norm.cdf(5.0), loc=int_bkg,
-                          scale=np.sqrt(int_bkg))
-
-    # all_ns = np.array(all_ns)
-    # all_nbkg = np.array(all_nbkg)
-    # weights = all_ns/max([max(x) for x in all_ns])
+    simple = 5. * np.sqrt(new_n_bkg)# * scaler_ratio
     #
-    # print(all_ns, all_nbkg, weights)
-    #
-    # all_nbkg *= weights
-    #
-    # print(all_nbkg)
-    # 
-    # n_bkg = np.sum([np.sum(x) for x in all_nbkg])
-    # n_s = np.sum(np.sum(x) for x in all_ns)
-    #
-    # print("disc:", disc_count)
-    # print("Int sig:", int_sig)
-    #
-    # print("N bkg:", n_bkg)
-    # print("Ns", n_s)
-    # disc_count = norm.ppf(norm.cdf(5.0), loc=n_bkg, scale=np.sqrt(max(
-    #     [max(x) for x in all_nbkg])))
-    # int_sig = np.sum(np.sum(x) for x in all_ns*weights)
-    # int_bkg = n_bkg
-    # print("disc count:", disc_count)
-    # print("Ns:", np.sum(np.sum(x) for x in all_ns*weights))
+    # disc_count = simple
 
-    # input("prompt?")
-
-    all_ts = np.array(all_ts).T
-    # print(all_ts, "for", n_s_tot)
-    # print((n_tot - n_s_tot) * np.log1p(-n_s_tot / n_tot))
-    # print("(Final)")
-    # input("?")
-
-    # print(all_ts, ts_weight(season_sig), all_ts*ts_weight(season_sig))
-    # input("?")
-    all_ts *= 2 * ts_weight(season_sig)
-
-    sum_ts = np.sum(all_ts)
-
-    all_bkg = np.array(all_bkg_ts).T
-    all_bkg *= 2 * ts_weight(season_sig)
-    sum_bkg = np.sum(all_bkg)
-    # print("Sum bkg", sum_bkg)
-    # input("?")
-    # print("Sum_TS:", sum_ts)
-    # print("Disc:", 25./sum_ts)
-
-    scale = (25. + sum_bkg)/sum_ts
-
-    scale *= (1. + 0.5 * np.log(len(sources)))
-
-    # disc_pot = disc_count - int_bkg
+    # print(disc_count, simple, simple/disc_count, n_s_tot)
     #
-    # scale = disc_pot / int_sig
+    # print("testerer", new_n_s, new_n_bkg)
     #
-    # # The approximate scaling for idealised + binned to unbinned
-    # # Scales with high vs low statistics. For low statistics, you are
-    # # effectively are background free, so don't take the 50% hit for only
-    # # counting nearby neutrinos. In high-statics regime, previous study
-    # # showed ~factor of 2 improvement for binned vs unbinned
-    #
-    # fudge_factor = (1.25 + 0.75 * np.tanh(np.log(sca)))
-    # # fudge_factor = (1.25 + 0.75 * np.tanh(np.log(disc_count)))
-    # fudge_factor = 2.0
-    # fudge_factor *= 0.8
-    # # fudge_factor *= 0.5
-    #
-    # scale /= fudge_factor
+    print("Disc count", disc_count, disc_count/scaler_ratio)
+    scale = disc_count/new_n_s
+    print(scale)
 
     # Convert from scale factor to flux units
 
@@ -437,15 +248,16 @@ def estimate_discovery_potential(injectors, sources, raw_scale=1.0):
     logging.info("Estimated Discovery Potential is: {:.3g} GeV sr^-1 s^-1 cm^-2".format(
             scale
         ))
-    # input("?")
+
     return scale
 
 class AsimovEstimator(object):
 
-    def __init__(self, seasons, inj_dict):
+    def __init__(self, seasons, inj_dict, llh_dict):
 
         self.seasons = seasons
         self.injectors = dict()
+        self.llh_dict = llh_dict
 
         for season in self.seasons.values():
             self.injectors[season.season_name] = season.make_injector(
@@ -457,4 +269,4 @@ class AsimovEstimator(object):
         for inj in self.injectors.values():
             inj.update_sources(sources)
 
-        return estimate_discovery_potential(self.injectors, sources)
+        return estimate_discovery_potential(self.injectors, sources, self.llh_dict)
