@@ -138,10 +138,10 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
         def add_injector(self, season, sources):
             if self.mock_unblind is False:
                 return TrueUnblindedInjector(
-                    season, sources, **self.inj_kwargs)
+                    season, sources, **self.inj_dict)
             else:
                 return MockUnblindedInjector(
-                    season, sources, **self.inj_kwargs)
+                    season, sources, **self.inj_dict)
 
         def calculate_upper_limits(self):
 
