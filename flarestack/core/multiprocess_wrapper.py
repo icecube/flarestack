@@ -1,9 +1,10 @@
 import pickle
 import logging
+import time
 from logging.handlers import QueueHandler, QueueListener
 import argparse
 from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
-from multiprocessing import JoinableQueue, Process, Queue
+from multiprocessing import JoinableQueue, Process, Queue, Value
 import random
 import numpy as np
 
@@ -39,6 +40,9 @@ class MultiProcessor:
     def __init__(self, n_cpu, **kwargs):
         self.queue = JoinableQueue()
         self.log_queue = Queue()
+        self.n_tasks = Value('i', 0)
+        kwargs["n_tasks"] = self.n_tasks
+
         self.processes = [Process(target=self.run_trial, kwargs=kwargs)
                           for _ in range(int(n_cpu))]
 
@@ -52,6 +56,7 @@ class MultiProcessor:
         ql = QueueListener(self.log_queue, handler)
         ql.start()
         logger = logging.getLogger()
+        logging.getLogger().setLevel("INFO")
         # add the handler to the logger so records from this process are handled
         logger.addHandler(handler)
 
@@ -71,11 +76,14 @@ class MultiProcessor:
 
         qh = QueueHandler(self.log_queue)
         logger = logging.getLogger()
+        logger.setLevel("WARN")
         logger.addHandler(qh)
 
         mh_dict = kwargs["mh_dict"]
 
         mpmh = generate_dynamic_mh_class(mh_dict)
+
+        n_tasks = kwargs["n_tasks"]
 
         while True:
             item = self.queue.get()
@@ -87,6 +95,8 @@ class MultiProcessor:
             full_dataset = self.mh.prepare_dataset(scale, seed)
 
             mpmh.run_single(full_dataset, scale, seed)
+            with n_tasks.get_lock():
+                n_tasks.value -= 1
             self.queue.task_done()
 
     def fill_queue(self):
@@ -98,7 +108,16 @@ class MultiProcessor:
             for _ in range(n_trials):
                 r.add_to_queue((scale, int(random.random() * 10 ** 8)))
 
-        logging.info("Added {0} trials to queue. Now processing.".format(len(scale_range) * n_trials))
+        n_tasks = (len(scale_range) * n_trials)
+        with r.n_tasks.get_lock():
+            r.n_tasks.value += n_tasks
+
+        logging.info("Added {0} trials to queue. Now processing.".format(n_tasks))
+
+        while r.n_tasks.value > 0.:
+            logging.info("{0} tasks remaining.".format(r.n_tasks.value))
+            time.sleep(30)
+        logging.info("Finished processing {0} tasks.".format(n_tasks))
 
     def terminate(self):
         """ wait until queue is empty and terminate processes """
