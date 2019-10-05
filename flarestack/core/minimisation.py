@@ -90,12 +90,12 @@ class MinimisationHandler(object):
         self.name = mh_dict["name"]
 
         self.pickle_output_dir = name_pickle_output_dir(self.name)
-        self.injectors = dict()
-        self.llhs = dict()
+        self._injectors = dict()
+        self._llhs = dict()
+        self._aem = dict()
         self.seasons = mh_dict["dataset"]
         self.sources = sources
         self.mh_dict = mh_dict
-        self.pull_correctors = dict()
 
         if "inj_dict" in mh_dict.keys():
 
@@ -112,7 +112,7 @@ class MinimisationHandler(object):
             if self.time_smear:
                 inj["injection_time_pdf"] = time_smear(inj)
 
-            self.inj_kwargs = inj
+            self.inj_dict = inj
 
         # An independent set of Season objects can be used for the injector
         # This enables, for example, different MC sets to be used for
@@ -170,18 +170,6 @@ class MinimisationHandler(object):
             self.floor_name = self.llh_dict["floor_name"]
         except KeyError:
             self.floor_name = "static_floor"
-
-        # For each season, we create an independent injector and llh using the
-        # source list along with the respective sets of energy/time PDFs
-        # provided.
-        for (name, season) in self.seasons.items():
-            self.llhs[name] = self.add_likelihood(season)
-            inj_season = self.inj_seasons[name]
-            self.injectors[name] = self.add_injector(inj_season, sources)
-            self.pull_correctors[name] = BaseAngularErrorModifier.create(
-                season, self.llh_dict["llh_energy_pdf"], self.floor_name,
-                self.pull_name
-            )
 
         p0, bounds, names = self.return_parameter_info(mh_dict)
 
@@ -270,8 +258,35 @@ class MinimisationHandler(object):
     def add_likelihood(self, season):
         return LLH.create(season, self.sources, self.llh_dict)
 
+    def get_likelihood(self, season_name):
+
+        if season_name not in self._llhs.keys():
+            self._llhs[season_name] = self.add_likelihood(self.seasons[season_name])
+
+        return self._llhs[season_name]
+
     def add_injector(self, season, sources):
-        return season.make_injector(sources, **self.inj_kwargs)
+        return season.make_injector(sources, **self.inj_dict)
+
+    def get_injector(self, season_name):
+
+        if season_name not in self._injectors.keys():
+            self._injectors[season_name] = self.add_injector(self.seasons[season_name], self.sources)
+
+        return self._injectors[season_name]
+
+    def add_angular_error_modifier(self, season):
+        return BaseAngularErrorModifier.create(
+                season, self.llh_dict["llh_energy_pdf"], self.floor_name,
+                self.pull_name
+            )
+
+    def get_angular_error_modifier(self, season_name):
+
+        if season_name not in self._aem.keys():
+            self._aem[season_name] = self.add_angular_error_modifier(self.seasons[season_name])
+
+        return self._aem[season_name]
 
     @staticmethod
     def set_random_seed(seed):
@@ -285,7 +300,7 @@ class MinimisationHandler(object):
 
     def guess_discovery_potential(self):
         self.disc_guess = estimate_discovery_potential(
-            self.injectors, self.sources)
+            self.seasons, dict(self.inj_dict), self.sources, dict(self.llh_dict))
         return self.disc_guess
 
 
@@ -319,8 +334,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     def clear(self):
 
-        self.injectors.clear()
-        self.llhs.clear()
+        self._injectors.clear()
+        self._llhs.clear()
 
         del self
 
@@ -545,7 +560,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         # dist_weight = src["distance_mpc"] ** -2
         # base_weight = src["base_weight"]
 
-        llh = self.llhs[season.season_name]
+        llh = self.get_likelihood(season.season_name)
         acc = []
 
         time_weights = []
@@ -597,8 +612,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         full_dataset = dict()
 
         for name in self.seasons.keys():
-            full_dataset[name] = self.injectors[name].create_dataset(
-                scale, self.pull_correctors[name]
+            full_dataset[name] = self.get_injector(name).create_dataset(
+                scale, self.get_angular_error_modifier(name)
             )
 
         return full_dataset
@@ -610,8 +625,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         for name in self.seasons:
             dataset = full_dataset[name]
-            llh_f = self.llhs[name].create_llh_function(
-                dataset, self.pull_correctors[name],
+            llh_f = self.get_likelihood(name).create_llh_function(
+                dataset, self.get_angular_error_modifier(name),
                 self.make_season_weight
             )
             llh_functions[name] = llh_f
@@ -942,8 +957,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     def return_injected_parameters(self, scale):
 
         n_inj = 0.
-        for inj in self.injectors.values():
-            n_inj += np.sum(inj.n_exp["n_exp"] * scale)
+        for season_name in self.seasons.keys():
+            n_inj += np.sum(self.get_injector(season_name).n_exp["n_exp"] * scale)
 
         inj_params = {
             "n_s": n_inj
@@ -973,14 +988,14 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
 
     def add_injector(self, season, sources):
 
-        if "inj_name" in self.inj_kwargs.keys():
-            if self.inj_kwargs["injection_name"] != "low_memory_injector":
+        if "inj_name" in self.inj_dict.keys():
+            if self.inj_dict["injection_name"] != "low_memory_injector":
                 raise Exception("{0} was provided as injection_name. Please "
                                 "use 'large_memory_injector'.")
         else:
-            self.inj_kwargs["injector_name"] = "low_memory_injector"
+            self.inj_dict["injector_name"] = "low_memory_injector"
 
-        return season.make_injector(sources, **self.inj_kwargs)
+        return season.make_injector(sources, **self.inj_dict)
 
 
 @MinimisationHandler.register_subclass('fit_weights')
@@ -1002,8 +1017,8 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
 
         for name in self.seasons:
             dataset = full_dataset[name]
-            llh_f = self.llhs[name].create_llh_function(
-                dataset, self.pull_correctors[name],
+            llh_f = self.get_likelihood(name).create_llh_function(
+                dataset, self.get_angular_error_modifier(name),
                 self.make_season_weight
             )
             llh_functions[name] = llh_f
@@ -1092,7 +1107,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
         # PDFs provided in llh_kwargs.
         for name in self.seasons:
 
-            tpdf = self.llhs[name].sig_time_pdf
+            tpdf = self.get_likelihood(name).sig_time_pdf
 
             # Check to ensure that no weird new untested time PDF is used
             # with the flare search method, since uniform time PDFs over the
@@ -1130,7 +1145,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # dictionary. Loads the llh for the season.
 
             data = full_dataset[name]
-            llh = self.llhs[name]
+            llh = self.get_likelihood(name)
 
             livetime_calcs[name] = TimePDF.create(time_dict, season)
 
@@ -1343,7 +1358,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     flare_f = llh.create_flare_llh_function(
                         coincident_data, flare_veto, n_all, src, n_season,
-                        self.pull_correctors[season_dict["season_name"]]
+                        self.get_angular_error_modifier(season_dict["season_name"])
                     )
 
                     llhs[season_dict["season_name"]] = {
