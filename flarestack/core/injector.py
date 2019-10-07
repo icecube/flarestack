@@ -20,35 +20,37 @@ def read_injector_dict(inj_dict):
     :return: Injection Dictionary compatible with new format
     """
 
-    maps = [
-        ("Injection Time PDF", "injection_sig_time_pdf"),
-        ("Injection Energy PDF", "injection_energy_pdf"),
-        ("Poisson Smear?", "poisson_smear_bool"),
-        ("injection_time_pdf", "injection_sig_time_pdf")
-    ]
+    if inj_dict != {}:
 
-    for (old_key, new_key) in maps:
+        maps = [
+            ("Injection Time PDF", "injection_sig_time_pdf"),
+            ("Injection Energy PDF", "injection_energy_pdf"),
+            ("Poisson Smear?", "poisson_smear_bool"),
+            ("injection_time_pdf", "injection_sig_time_pdf")
+        ]
 
-        if old_key in list(inj_dict.keys()):
-            logging.warning("Deprecated inj_dict key '{0}' was used. Please use '{1}' in future.".format(
-                old_key, new_key))
-            inj_dict[new_key] = inj_dict[old_key]
+        for (old_key, new_key) in maps:
 
-    pairs = [
-        ("injection_energy_pdf", read_e_pdf_dict),
-        ("injection_sig_time_pdf", read_t_pdf_dict)
-    ]
+            if old_key in list(inj_dict.keys()):
+                logging.warning("Deprecated inj_dict key '{0}' was used. Please use '{1}' in future.".format(
+                    old_key, new_key))
+                inj_dict[new_key] = inj_dict[old_key]
 
-    for (key, f) in pairs:
-        if key in list(inj_dict.keys()):
-            inj_dict[key] = f(inj_dict[key])
+        pairs = [
+            ("injection_energy_pdf", read_e_pdf_dict),
+            ("injection_sig_time_pdf", read_t_pdf_dict)
+        ]
 
-    if "injection_spatial_pdf" not in inj_dict.keys():
-        inj_dict["injection_spatial_pdf"] = {}
+        for (key, f) in pairs:
+            if key in list(inj_dict.keys()):
+                inj_dict[key] = f(inj_dict[key])
 
-    if "injection_bkg_time_pdf" not in inj_dict.keys():
-        logging.warning("No 'injection_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
-        inj_dict["injection_bkg_time_pdf"] = {"time_pdf_name": "steady"}
+        if "injection_spatial_pdf" not in inj_dict.keys():
+            inj_dict["injection_spatial_pdf"] = {}
+
+        if "injection_bkg_time_pdf" not in inj_dict.keys():
+            logging.warning("No 'injection_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
+            inj_dict["injection_bkg_time_pdf"] = {"time_pdf_name": "steady"}
 
     return inj_dict
 
