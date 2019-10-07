@@ -14,15 +14,18 @@ import numpy as np
 
 llh_dict = {
     "llh_name": "standard",
-    "llh_time_pdf": {
-        "time_pdf_name": "FixedEndBox"
+    "llh_sig_time_pdf": {
+        "time_pdf_name": "steady"
+    },
+    "llh_bkg_time_pdf": {
+        "time_pdf_name": "steady",
     },
     "llh_energy_pdf": {
-        "energy_pdf_name": "Power Law"
+        "energy_pdf_name": "power_law"
     }
 }
 
-true_parameters = [3.0178805668906796, 2.099999999632764]
+true_parameters = [2.4806329060480596, 1.850001327552612]
 
 catalogue = tde_catalogue_name("jetted")
 
@@ -44,8 +47,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         unblind_dict = {
             "mh_name": "fixed_weights",
-            "datasets": custom_dataset(ps_v002_p01, load_catalogue(catalogue),
-                                       llh_dict["llh_time_pdf"]),
+            "dataset": ps_v002_p01.get_seasons("IC86_1"),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
         }

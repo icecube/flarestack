@@ -13,16 +13,19 @@ from flarestack.utils.catalogue_loader import load_catalogue
 
 llh_dict = {
     "llh_name": "standard",
-    "llh_time_pdf": {
-        "time_pdf_name": "FixedEndBox"
+    "llh_sig_time_pdf": {
+        "time_pdf_name": "steady"
+    },
+    "llh_bkg_time_pdf": {
+        "time_pdf_name": "steady",
     },
     "llh_energy_pdf": {
-        "energy_pdf_name": "Power Law"
+        "energy_pdf_name": "power_law"
     }
 }
 
 true_parameters = [
-    2.7718103680487167, 0.0, 0.1487744450300557, 2.0500124388556147
+    2.6113204103193324, 0.0, 0.0, 1.3055827834085045
 ]
 
 catalogue = tde_catalogue_name("jetted")
@@ -47,8 +50,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         unblind_dict = {
             "mh_name": mh_name,
-            "datasets": custom_dataset(ps_v002_p01, load_catalogue(catalogue),
-                                       llh_dict["llh_time_pdf"]),
+            "dataset": ps_v002_p01.get_seasons("IC86_1"),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
         }

@@ -10,12 +10,15 @@ from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 # Initialise Injectors/LLHs
 
 llh_dict = {
-    "name": "standard_matrix",
-    "llh_time_pdf": {
-        "time_pdf_name": "Steady"
+    "llh_name": "standard_matrix",
+    "llh_sig_time_pdf": {
+        "time_pdf_name": "steady"
+    },
+    "llh_bkg_time_pdf": {
+        "time_pdf_name": "steady"
     },
     "llh_energy_pdf": {
-        "energy_pdf_name": "PowerLaw"
+        "energy_pdf_name": "power_law"
     }
 }
 
@@ -30,7 +33,7 @@ catalogue = tde_catalogue_name("jetted")
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
 
-true_parameters = [2.3300319373809333, 1.8385540231080426]
+true_parameters = [2.3300309895231655, 1.8385539912951432]
 
 
 class TestTimeIntegrated(unittest.TestCase):
@@ -50,7 +53,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         unblind_dict = {
             "mh_name": "fixed_weights",
-            "datasets": ps_v002_p01.get_seasons("IC86_1"),
+            "dataset": ps_v002_p01.get_seasons("IC86_1"),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
         }

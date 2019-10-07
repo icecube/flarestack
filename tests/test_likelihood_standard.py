@@ -15,7 +15,7 @@ llh_dict = {
     "llh_sig_time_pdf": {
         "time_pdf_name": "steady"
     },
-    "lll_bkd_time_pdf": {
+    "llh_bkg_time_pdf": {
         "time_pdf_name": "steady",
     },
     "llh_energy_pdf": {
