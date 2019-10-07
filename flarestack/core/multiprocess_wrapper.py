@@ -47,6 +47,9 @@ class MultiProcessor:
                           for _ in range(int(n_cpu))]
 
         self.mh = MinimisationHandler.create(kwargs["mh_dict"])
+        for season in self.mh.seasons.keys():
+            inj = self.mh.get_injector(season)
+            inj.calculate_n_exp()
         self.mh_dict = kwargs["mh_dict"]
         self.scales = []
 
