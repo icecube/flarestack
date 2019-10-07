@@ -11,12 +11,15 @@ from flarestack.core.unblinding import create_unblinder
 # Initialise Injectors/LLHs
 
 llh_dict = {
-    "name": "standard",
-    "llh_time_pdf": {
-        "time_pdf_name": "Steady"
+    "llh_name": "standard",
+    "llh_sig_time_pdf": {
+        "time_pdf_name": "steady"
+    },
+    "lll_bkd_time_pdf": {
+        "time_pdf_name": "steady",
     },
     "llh_energy_pdf": {
-        "energy_pdf_name": "PowerLaw"
+        "energy_pdf_name": "power_law"
     }
 }
 
@@ -30,9 +33,9 @@ sindecs = np.linspace(0.5, -0.5, 3)
 # compared to these values.
 
 true_parameters = [
-    [2.852420453833985, 4.0],
-    [0.0, 3.0128881793603277],
-    [2.611395323800308, 2.797875532591461]
+    [2.8524121731705296, 4.0],
+    [0.0, 3.012888497161147],
+    [2.611394680431712, 2.7978753815656057]
 ]
 
 
@@ -55,7 +58,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
             unblind_dict = {
                 "mh_name": "fixed_weights",
-                "datasets": ps_v002_p01.get_seasons("IC86_1"),
+                "dataset": ps_v002_p01.get_seasons("IC86_1"),
                 "catalogue": ps_catalogue_name(sindec),
                 "llh_dict": llh_dict,
             }
