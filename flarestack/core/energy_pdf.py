@@ -20,30 +20,34 @@ def read_e_pdf_dict(e_pdf_dict):
     :return: Updated Energy PDF dictionary compatible with new format
     """
 
-    maps = [
-        ("E Min", "e_min_gev"),
-        ("E Max", "e_max_gev"),
-        ("Name", "energy_pdf_name"),
-        ("Gamma", "gamma"),
-        ("Spline Path", "spline_path")
-    ]
+    if e_pdf_dict != {}:
 
-    for (old_key, new_key) in maps:
+        maps = [
+            ("E Min", "e_min_gev"),
+            ("E Max", "e_max_gev"),
+            ("Name", "energy_pdf_name"),
+            ("Gamma", "gamma"),
+            ("Spline Path", "spline_path")
+        ]
 
-        if old_key in list(e_pdf_dict.keys()):
-            logging.warning("Deprecated e_pdf_key '{0}' was used. Please use '{1}' in future.".format(old_key, new_key))
-            e_pdf_dict[new_key] = e_pdf_dict[old_key]
+        for (old_key, new_key) in maps:
 
-    name_maps = [
-        ("Power Law", "power_law"),
-        ("PowerLaw", "power_law"),
-        ("Spline", "spline"),
-    ]
+            if old_key in list(e_pdf_dict.keys()):
+                logging.warning("Deprecated e_pdf_key '{0}' was used. "
+                                "Please use '{1}' in future.".format(old_key, new_key))
+                e_pdf_dict[new_key] = e_pdf_dict[old_key]
 
-    for (old_key, new_key) in name_maps:
-        if e_pdf_dict["energy_pdf_name"] == old_key:
-            logging.warning("Deprecated energy_pdf_name '{0}' was used. Please use '{1}' in future.".format(old_key, new_key))
-            e_pdf_dict["energy_pdf_name"] = new_key
+        name_maps = [
+            ("Power Law", "power_law"),
+            ("PowerLaw", "power_law"),
+            ("Spline", "spline"),
+        ]
+
+        for (old_key, new_key) in name_maps:
+            if e_pdf_dict["energy_pdf_name"] == old_key:
+                logging.warning("Deprecated energy_pdf_name '{0}' was used. "
+                                "Please use '{1}' in future.".format(old_key, new_key))
+                e_pdf_dict["energy_pdf_name"] = new_key
 
     return e_pdf_dict
 
