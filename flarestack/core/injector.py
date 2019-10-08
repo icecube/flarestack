@@ -48,9 +48,9 @@ def read_injector_dict(inj_dict):
         if "injection_spatial_pdf" not in inj_dict.keys():
             inj_dict["injection_spatial_pdf"] = {}
 
-        if "injection_bkg_time_pdf" not in inj_dict.keys():
-            logging.warning("No 'injection_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
-            inj_dict["injection_bkg_time_pdf"] = {"time_pdf_name": "steady"}
+        # if "injection_bkg_time_pdf" not in inj_dict.keys():
+        #     logging.warning("No 'injection_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
+        #     inj_dict["injection_bkg_time_pdf"] = {"time_pdf_name": "steady"}
 
     return inj_dict
 
@@ -79,8 +79,8 @@ class BaseInjector:
         try:
             self.sig_time_pdf = TimePDF.create(kwargs["injection_sig_time_pdf"],
                                                season.get_time_pdf())
-            self.bkg_time_pdf = TimePDF.create(kwargs["injection_bkg_time_pdf"],
-                                               season.get_time_pdf())
+            # self.bkg_time_pdf = TimePDF.create(kwargs["injection_bkg_time_pdf"],
+            #                                    season.get_time_pdf())
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
             self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"],
                                           season)

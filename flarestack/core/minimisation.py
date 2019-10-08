@@ -23,7 +23,7 @@ from flarestack.utils.asimov_estimator import estimate_discovery_potential
 
 
 def time_smear(inj):
-    inj_time = inj["injection_time_pdf"]
+    inj_time = inj["injection_sig_time_pdf"]
     max_length = inj_time["max_offset"] - inj_time["min_offset"]
     offset = np.random.random() * max_length + inj_time["min_offset"]
     inj_time["offset"] = offset
@@ -105,12 +105,12 @@ class MinimisationHandler(object):
             inj = dict(mh_dict["inj_dict"])
 
             try:
-                self.time_smear = inj["injection_time_pdf"]["time_smear_bool"]
+                self.time_smear = inj["injection_sig_time_pdf"]["time_smear_bool"]
             except KeyError:
                 self.time_smear = False
 
             if self.time_smear:
-                inj["injection_time_pdf"] = time_smear(inj)
+                inj["injection_sig_time_pdf"] = time_smear(inj)
 
             self.inj_dict = inj
 
