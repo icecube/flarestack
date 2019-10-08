@@ -11,21 +11,24 @@ from flarestack.analyses.agn_cores.shared_agncores import agn_subset_catalogue
 # Initialise Injectors/LLHs
 
 llh_dict = {
-    "name": "standard_matrix",
-    "llh_time_pdf": {
-        "time_pdf_name": "Steady"
+    "llh_name": "standard_matrix",
+    "llh_sig_time_pdf": {
+        "time_pdf_name": "steady"
+    },
+    "llh_bkg_time_pdf": {
+        "time_pdf_name": "steady"
     },
     "llh_energy_pdf": {
-        "energy_pdf_name": "PowerLaw"
+        "energy_pdf_name": "power_law"
     }
 }
 
 inj_dict = {
-    "injection_time_pdf": {
-        "time_pdf_name": "Steady"
+    "injection_sig_time_pdf": {
+        "time_pdf_name": "steady"
     },
     "injection_energy_pdf": {
-        "energy_pdf_name": "PowerLaw",
+        "energy_pdf_name": "power_law",
         "gamma": 2.0
     }
 }
@@ -44,8 +47,8 @@ catalogue = agn_subset_catalogue("radioloud", "radioselected", n_sources)
 # compared to these values.
 
 true_parameters = [
-    [0.0, 2.7849355815707613],
-    [4.8994426086549545, 1.9038635286769627]
+    [0.0, 2.7849313199615664],
+    [14.379477037814556, 4.0]
 ]
 
 
@@ -67,7 +70,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         unblind_dict = {
             "mh_name": "large_catalogue",
-            "datasets": ps_v002_p01.get_seasons("IC40"),
+            "dataset": ps_v002_p01.get_seasons("IC40"),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
             "inj_dict": {}
@@ -84,11 +87,11 @@ class TestTimeIntegrated(unittest.TestCase):
         mh_dict = {
             "name": "tests/test_mh_large_catalogue",
             "mh_name": "large_catalogue",
-            "datasets": ps_v002_p01.get_seasons("IC40"),
+            "dataset": ps_v002_p01.get_seasons("IC40"),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
             "inj_dict": inj_dict,
-            "scale": 10,
+            "scale": 10.,
             "n_steps": 5,
             "n_trials": 5
         }
