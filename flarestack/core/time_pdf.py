@@ -34,7 +34,8 @@ def read_t_pdf_dict(t_pdf_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(t_pdf_dict.keys()):
-            logging.warning("Deprecated t_pdf_key '{0}' was used. Please use '{1}' in future.".format(old_key, new_key))
+            logging.warning("Deprecated t_pdf_key '{0}' was used. "
+                            "Please use '{1}' in future.".format(old_key, new_key))
             t_pdf_dict[new_key] = t_pdf_dict[old_key]
 
     name_maps = [
@@ -46,7 +47,8 @@ def read_t_pdf_dict(t_pdf_dict):
 
     for (old_key, new_key) in name_maps:
         if t_pdf_dict["time_pdf_name"] == old_key:
-            logging.warning("Deprecated time_pdf_name '{0}' was used. Please use '{1}' in future.".format(old_key, new_key))
+            logging.warning("Deprecated time_pdf_name '{0}' was used. "
+                            "Please use '{1}' in future.".format(old_key, new_key))
             t_pdf_dict["time_pdf_name"] = new_key
 
     return t_pdf_dict
