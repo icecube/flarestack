@@ -1,14 +1,11 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
-from __future__ import print_function
+import logging
 import unittest
 from flarestack.data.icecube import ps_v002_p01
 from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
-from flarestack.utils.catalogue_loader import load_catalogue
-from flarestack.utils.custom_seasons import custom_dataset
-import numpy as np
 
 # Initialise Injectors/LLHs
 
@@ -37,11 +34,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
     def test_declination_sensitivity(self):
 
-        print("\n")
-        print("\n")
-        print("Testing 'fixed_weight' MinimisationHandler class")
-        print("\n")
-        print("\n")
+        logging.info("Testing 'fixed_weight' MinimisationHandler class")
 
         # Test three declinations
 
@@ -57,8 +50,8 @@ class TestTimeIntegrated(unittest.TestCase):
         res = ub.res_dict[key]
         self.assertEqual(list(res["x"]), true_parameters)
 
-        print("Best fit values", list(res["x"]))
-        print("Reference best fit", true_parameters)
+        logging.info("Best fit values {0}".format(list(res)))
+        logging.info("Reference best fit {0}".format(true_parameters))
 
 
 if __name__ == '__main__':

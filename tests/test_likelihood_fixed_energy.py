@@ -1,7 +1,7 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
-from __future__ import print_function
+import logging
 import unittest
 import numpy as np
 from flarestack.data.icecube import ps_v002_p01
@@ -43,12 +43,7 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
-        print("\n")
-        print("\n")
-        print("Testing 'fixed_energy' LLH class")
-        print("\n")
-        print("\n")
+        logging.info("Testing 'fixed_energy' LLH class")
 
         # Test three declinations
 
@@ -66,8 +61,8 @@ class TestTimeIntegrated(unittest.TestCase):
             res = ub.res_dict[key]
             self.assertEqual(list(res["x"]), true_parameters[j])
 
-            print("Best fit values", list(res["x"]))
-            print("Reference best fit", true_parameters[j])
+            logging.info("Best fit values {0}".format(list(res)))
+            logging.info("Reference best fit {0}".format(true_parameters[j]))
 
 
 if __name__ == '__main__':

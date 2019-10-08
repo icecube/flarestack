@@ -1,7 +1,7 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
-from __future__ import print_function
+import logging
 import unittest
 from flarestack.data.icecube import ps_v002_p01
 from flarestack.core.unblinding import create_unblinder
@@ -59,12 +59,8 @@ class TestTimeIntegrated(unittest.TestCase):
 
     def test_declination_sensitivity(self):
 
-        print("\n")
-        print("\n")
-        print("Testing 'large_catalogue' MinimisationHandler class "
+        logging.info("Testing 'large_catalogue' MinimisationHandler class "
               "with {0} sources and IC40 data".format(n_sources))
-        print("\n")
-        print("\n")
 
         # Test stacking
 
@@ -81,8 +77,8 @@ class TestTimeIntegrated(unittest.TestCase):
         res = ub.res_dict[key]
         self.assertEqual(list(res["x"]), true_parameters[0])
 
-        print("Best fit values", list(res["x"]))
-        print("Reference best fit", true_parameters[0])
+        logging.info("Best fit values {0}".format(list(res)))
+        logging.info("Reference best fit {0}".format(true_parameters[0]))
 
         mh_dict = {
             "name": "tests/test_mh_large_catalogue",
@@ -98,11 +94,10 @@ class TestTimeIntegrated(unittest.TestCase):
 
         mh = MinimisationHandler.create(mh_dict)
         res = mh.simulate_and_run(10)["res"]
-        print(res)
         self.assertEqual(list(res["x"]), true_parameters[1])
 
-        print("Best fit values", list(res["x"]))
-        print("Reference best fit", true_parameters[1])
+        logging.info("Best fit values {0}".format(list(res)))
+        logging.info("Reference best fit {0}".format(true_parameters[1]))
 
 
 if __name__ == '__main__':

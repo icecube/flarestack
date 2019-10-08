@@ -1,9 +1,8 @@
-from __future__ import print_function
+import logging
 from flarestack.data.icecube import ps_v002_p01
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.unblinding import create_unblinder
 import unittest
-
 
 llh_dict = {
     "llh_name": "spatial",
@@ -33,19 +32,15 @@ class TestSpatialLikelihood(unittest.TestCase):
         pass
 
     def test_spatial(self):
-        print("\n")
-        print("\n")
-        print("Testing 'spatial' LLH class")
-        print("\n")
-        print("\n")
+        logging.info("Testing 'spatial' LLH class")
 
         ub = create_unblinder(unblind_dict)
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
         self.assertEqual(list(res["x"]), true_parameters)
 
-        print("Best fit values", list(res["x"]))
-        print("Reference best fit", true_parameters)
+        logging.info("Best fit values {0}".format(list(res)))
+        logging.info("Reference best fit {0}".format(true_parameters))
 
 
 if __name__ == '__main__':

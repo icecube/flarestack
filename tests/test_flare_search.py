@@ -1,11 +1,9 @@
 """Test the flare search method using one fixed-seed background trial. The
 process is deterministic, so the same flare should be found each time.
 """
-from __future__ import print_function
-import numpy as np
+import logging
 from flarestack.data.icecube import ps_v002_p01
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 import unittest
 from flarestack.core.unblinding import create_unblinder
 
@@ -25,6 +23,7 @@ llh_time = {
 unblind_llh = {
     "llh_name": "standard",
     "llh_sig_time_pdf": llh_time,
+    "llh_bkg_time_pdf": {"time_pdf_name": "steady"},
     "llh_energy_pdf": llh_energy
 }
 
@@ -58,17 +57,13 @@ class TestFlareSearch(unittest.TestCase):
         pass
 
     def test_flare(self):
-        print("\n")
-        print("\n")
-        print("Testing 'flare' LLH class")
-        print("\n")
-        print("\n")
+        logging.info("Testing 'flare' LLH class")
         ub = create_unblinder(unblind_dict)
         res = [x for x in ub.res_dict["Parameters"].values()]
         self.assertEqual(res, true_parameters)
 
-        print("Best fit values", list(res))
-        print("Reference best fit", true_parameters)
+        logging.info("Best fit values {0}".format(list(res)))
+        logging.info("Reference best fit {0}".format(true_parameters))
 
 
 if __name__ == '__main__':

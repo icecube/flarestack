@@ -76,8 +76,8 @@ class TestTimeIntegrated(unittest.TestCase):
             res = ub.res_dict[key]
             self.assertEqual(list(res["x"]), true_parameters[i])
 
-            logging.info("Best fit values", list(res["x"]))
-            logging.info("Reference best fit", true_parameters)
+            logging.info("Best fit values {0}".format(list(res["x"])))
+            logging.info("Reference best fit {0}".format(true_parameters[i]))
 
 
 if __name__ == '__main__':
