@@ -1,6 +1,4 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import input
+import logging
 import sys
 import os
 import numpy as np
@@ -26,9 +24,7 @@ def confirm():
         x = input("")
 
     if x == "n":
-        print("\n")
-        print("Please check carefully before unblinding!")
-        print("\n")
+        logging.warning("Please check carefully before unblinding!")
         sys.exit()
 
 
@@ -106,16 +102,14 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             # Minimise likelihood and produce likelihood scans
             self.res_dict = self.simulate_and_run(0, seed)
 
-            print("\n")
-            print(self.res_dict)
-            print("\n")
+            logging.info(self.res_dict)
 
             # Quantify the TS value significance
             # print type(np.array([self.res_dict["TS"]]))
             self.ts = np.array([self.res_dict["TS"]])[0]
             self.sigma = np.nan
 
-            print("Test Statistic of:", self.ts)
+            logging.info("Test Statistic of:", self.ts)
 
             try:
                 path = self.unblind_dict["background TS"]
@@ -123,8 +117,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 self.output_file = self.plot_dir + "TS.pdf"
                 self.compare_to_background_TS()
             except KeyError:
-                print("No Background TS Distribution specified.", end=' ')
-                print("Cannot assess significance of TS value.")
+                logging.warning("No Background TS Distribution specified. "
+                                "Cannot assess significance of TS value.")
 
             if full_plots:
 
@@ -233,7 +227,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     os.makedirs(os.path.dirname(self.limit_path))
                 except OSError:
                     pass
-                print("Saving limits to", self.limit_path)
+                logging.info("Saving limits to", self.limit_path)
 
                 res_dict = {
                     "x": x_axis,
@@ -246,10 +240,10 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     Pickle.dump(res_dict, f)
 
             except OSError:
-                print("Unable to set limits. No TS distributions found.")
+                logging.warning("Unable to set limits. No TS distributions found.")
 
         def compare_to_background_TS(self):
-            print("Retrieving Background TS Distribution from", self.pickle_dir)
+            logging.debug("Retrieving Background TS Distribution from {0}".format(self.pickle_dir))
 
             try:
 
@@ -258,7 +252,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 for subdir in os.listdir(self.pickle_dir):
                     merged_pkl = self.pickle_dir + subdir + "/merged/0.pkl"
 
-                    print("Loading", merged_pkl)
+                    logging.debug("Loading {0}".format(merged_pkl))
 
                     with open(merged_pkl) as mp:
 
@@ -272,7 +266,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     ts_array, self.output_file, self.ts_type, self.ts)
 
             except (IOError, OSError):
-                print("No Background TS Distribution found")
+                logging.warning("No Background TS Distribution found")
                 pass
 
         def check_unblind(self):
