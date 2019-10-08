@@ -14,17 +14,17 @@ from flarestack.core.unblinding import create_unblinder
 # Shared
 
 llh_energy = {
-    "energy_pdf_name": "PowerLaw",
+    "energy_pdf_name": "power_law",
     "gamma": 2.0,
 }
 
 llh_time = {
-    "time_pdf_name": "FixedEndBox"
+    "time_pdf_name": "custom_source_box"
 }
 
 unblind_llh = {
-    "name": "standard",
-    "llh_time_pdf": llh_time,
+    "llh_name": "standard",
+    "llh_sig_time_pdf": llh_time,
     "llh_energy_pdf": llh_energy
 }
 
@@ -33,7 +33,7 @@ cat_path = ps_catalogue_name(-0.1)
 
 unblind_dict = {
     "mh_name": "flare",
-    "datasets": ps_v002_p01.get_seasons("IC79", "IC86_1"),
+    "dataset": ps_v002_p01.get_seasons("IC79", "IC86_1"),
     "catalogue": cat_path,
     "llh_dict": unblind_llh
 }
@@ -44,8 +44,8 @@ unblind_dict = {
 # deterministic, these values should be returned every time this test is run.
 
 true_parameters = [
-    4.097463623488054,
-    2.533607219963012,
+    4.097462956856254,
+    2.533607210908644,
     55876.89316064464,
     55892.569503379375,
     14.084548753227864
