@@ -1129,7 +1129,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
         livetime_calcs = dict()
 
         time_dict = {
-            "Name": "FixedEndBox"
+            "time_pdf_name": "custom_source_box"
         }
 
         results = {
@@ -1147,7 +1147,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             data = full_dataset[name]
             llh = self.get_likelihood(name)
 
-            livetime_calcs[name] = TimePDF.create(time_dict, season)
+            livetime_calcs[name] = TimePDF.create(time_dict, season.get_time_pdf())
 
             # Loops over each source in catalogue
 
@@ -1226,8 +1226,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # Length of search window in livetime
 
             search_window = np.sum([
-                llh.sig_time_pdf.effective_injection_time(src)
-                for llh in self.llhs.values()]
+                self.get_likelihood(x).sig_time_pdf.effective_injection_time(src)
+                for x in self.seasons.keys()]
             )
 
             # If a maximum flare length is specified, sets that here
@@ -1319,7 +1319,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                 for (name, season_dict) in sorted(source_dict.items()):
 
-                    llh = self.llhs[season_dict["season_name"]]
+                    llh = self.get_likelihood(name)
 
                     # Check that flare overlaps with season
 
