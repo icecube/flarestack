@@ -1,9 +1,10 @@
-from flarestack.data.public import ps_3_year
-from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.data.simulate import SimSeason, SimDataset
 import numpy as np
 import random
 from scipy.interpolate import interp1d
+import logging
+from flarestack.data.public import ps_3_year
+from flarestack.core.energy_pdf import EnergyPDF
+from flarestack.data.simulate import SimSeason, SimDataset
 
 
 class IceCubeBackgroundFluxModel:
@@ -15,7 +16,7 @@ class IceCubeBackgroundFluxModel:
     @staticmethod
     def atmo_flux():
         e_pdf_dict = {
-            "energy_pdf_name": "PowerLaw",
+            "energy_pdf_name": "power_law",
             "gamma": 3.7,
         }
         return EnergyPDF.create(e_pdf_dict)
@@ -23,7 +24,7 @@ class IceCubeBackgroundFluxModel:
     @staticmethod
     def muon_bundle_flux():
         e_pdf_dict = {
-            "energy_pdf_name": "PowerLaw",
+            "energy_pdf_name": "power_law",
             "gamma": 3.0,
         }
         return EnergyPDF.create(e_pdf_dict)
@@ -73,11 +74,9 @@ class IceCubeBackgroundFluxModel:
 # input("?")
 
 bkg_e_pdf_dict = {
-    "energy_pdf_name": "PowerLaw",
+    "energy_pdf_name": "power_law",
     "gamma": 3.7
 }
-
-
 
 
 
@@ -99,7 +98,7 @@ class SimCubeSeason(SimSeason):
         )
 
     def generate_sim_data(self, fluence):
-        print("Simulating events:")
+        logging.info("Simulating events:")
         sim_events = np.empty((0,),
                               dtype=self.event_dtype)
 
@@ -108,7 +107,7 @@ class SimCubeSeason(SimSeason):
             new_events = self.simulate_dec_range(
                 fluence,lower_sin_dec, upper_sin_dec)
 
-            print("Simulated {0} events between sin(dec)={1} and "
+            logging.info("Simulated {0} events between sin(dec)={1} and "
                   "sin(dec)={2}".format(
                 len(new_events), lower_sin_dec, upper_sin_dec))
 
@@ -117,7 +116,7 @@ class SimCubeSeason(SimSeason):
 
         sim_events = np.array(sim_events)
 
-        print("Simulated {0} events in total".format(len(sim_events)))
+        logging.info("Simulated {0} events in total".format(len(sim_events)))
 
         return sim_events
 
@@ -221,9 +220,10 @@ for (name, season) in ps_3_year.get_seasons().items():
     simcube_dataset.add_sim_season(name, wrapper_f)
 
 bkg_time_pdf_dict = {
-    "time_pdf_name": "fixed_end_box",
-    "start_time_mjd": 50000,
-    "end_time_mjd": 55000
+    "time_pdf_name": "fixed_ref_box",
+    "fixed_ref_time_mjd": 50000,
+    "pre_window": 0.,
+    "post_window": 500.
 }
 
 simcube_season = simcube_dataset.set_sim_params(

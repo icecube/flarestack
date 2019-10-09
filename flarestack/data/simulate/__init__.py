@@ -2,7 +2,6 @@ from flarestack.data import SeasonWithoutMC, Dataset
 import os
 import numpy as np
 from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.core.time_pdf import TimePDF, FixedEndBox, FixedRefBox, OnOffList
 from flarestack.shared import sim_dataset_dir_path, k_to_flux
 
 

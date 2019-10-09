@@ -70,7 +70,10 @@ class TimePDF(object):
 
         else:
             self.livetime_pdf = None
-
+            self.t0 = -np.inf
+            self.t1 = np.inf
+            self.mjd_to_livetime = lambda x: x
+            self.livetime_to_mjd = lambda x: x
 
     @classmethod
     def register_subclass(cls, time_pdf_name):
