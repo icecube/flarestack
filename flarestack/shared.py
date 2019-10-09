@@ -55,6 +55,7 @@ illustration_dir = plots_dir + "illustrations/"
 
 acc_f_dir = input_dir + "acceptance_functions/"
 SoB_spline_dir = input_dir + "SoB_splines/"
+energy_spline_dir = input_dir + "energy_pdf_splines/"
 bkg_spline_dir = input_dir + "bkg_splines/"
 energy_proxy_dir = input_dir + "energy_proxy_weighting/"
 med_ang_res_dir = input_dir + "median_angular_resolution/"
@@ -64,7 +65,7 @@ floor_dir = pc_dir + "floors/"
 
 all_dirs = [
     fs_scratch_dir, input_dir, storage_dir, output_dir, cluster_dir, pc_dir,
-    log_dir, catalogue_dir, acc_f_dir, pickle_dir, plots_dir,
+    log_dir, catalogue_dir, acc_f_dir, energy_spline_dir, pickle_dir, plots_dir,
     SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
     bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir,
     cache_dir, cat_cache_dir, public_dataset_dir, energy_proxy_dir,
