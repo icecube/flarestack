@@ -335,7 +335,7 @@ class Spline(EnergyPDF):
         """
         EnergyPDF.__init__(self, e_pdf_dict)
 
-        with open(e_pdf_dict["spline_path"], "r") as g:
+        with open(e_pdf_dict["spline_path"], "rb") as g:
             f = Pickle.load(g)
             self.f = lambda x: np.exp(f(x))
 
