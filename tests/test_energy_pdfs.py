@@ -83,7 +83,8 @@ class TestTimeIntegrated(unittest.TestCase):
             key = [x for x in ub.res_dict.keys() if x != "TS"][0]
             res = ub.res_dict[key]
 
-            self.assertAlmostEqual(list(res["x"]), true_parameters[i], delta=5)
+            for j, x in enumerate(list(res["x"])):
+                self.assertAlmostEqual(x, true_parameters[i][j], delta=5)
 
             logging.info("Best fit values {0}".format(list(res["x"])))
             logging.info("Reference best fit {0}".format(true_parameters[i]))

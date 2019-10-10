@@ -37,7 +37,7 @@ class TestSpatialLikelihood(unittest.TestCase):
         ub = create_unblinder(unblind_dict)
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
-        self.assertEqual(list(res["x"]), true_parameters)
+        self.assertAlmostEqual(list(res["x"])[0], true_parameters, delta=4)
 
         logging.info("Best fit values {0}".format(list(res)))
         logging.info("Reference best fit {0}".format(true_parameters))
