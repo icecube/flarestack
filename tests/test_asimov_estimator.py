@@ -1,7 +1,6 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
-from __future__ import print_function
 import unittest
 import numpy as np
 from flarestack.data.icecube import ps_v002_p01
@@ -12,11 +11,11 @@ from flarestack.utils.asimov_estimator import AsimovEstimator
 
 llh_dict = {
     "name": "standard",
-    "llh_time_pdf": {
-        "time_pdf_name": "Steady"
+    "llh_sig_time_pdf": {
+        "time_pdf_name": "steady"
     },
     "llh_energy_pdf": {
-        "energy_pdf_name": "PowerLaw"
+        "energy_pdf_name": "power_Law"
     }
 }
 
@@ -55,15 +54,15 @@ class TestTimeIntegrated(unittest.TestCase):
         }
 
         injection_time = {
-            "time_pdf_name": "Steady",
+            "time_pdf_name": "steady",
         }
 
         inj_dict = {
             "injection_energy_pdf": injection_energy,
-            "injection_time_pdf": injection_time,
+            "injection_sig_time_pdf": injection_time,
         }
 
-        ae = AsimovEstimator(ps_v002_p01.get_seasons("IC86_1"), inj_dict)
+        ae = AsimovEstimator(ps_v002_p01.get_seasons("IC86_1"), inj_dict, llh_dict)
 
         for i, sindec in enumerate(sindecs):
             cat_path = ps_catalogue_name(sindec)

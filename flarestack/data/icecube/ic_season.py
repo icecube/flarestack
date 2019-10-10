@@ -24,7 +24,8 @@ if icecube_dataset_dir is None:
         skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
         logging.info("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
     else:
-        icecube_dataset_dir = None
+        raise ImportError("No IceCube data directory found. Run: \n"
+                          "export FLARESTACK_DATA_DIR=/path/to/IceCube/data")
 
 
 # # Dataset directory can be changed if needed
