@@ -3,7 +3,7 @@ IceCube data (IC86_1).
 """
 import logging
 import unittest
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 
@@ -31,7 +31,7 @@ catalogue = tde_catalogue_name("jetted")
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
 
-true_parameters = [2.3300332566811863, 1.8385541332476598]
+true_parameters = [3.642652892484948, 4.0]
 
 
 class TestTimeIntegrated(unittest.TestCase):
@@ -47,7 +47,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         unblind_dict = {
             "mh_name": "fixed_weights",
-            "dataset": ps_v002_p01.get_seasons("IC86_1"),
+            "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
         }
@@ -56,7 +56,6 @@ class TestTimeIntegrated(unittest.TestCase):
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
         self.assertEqual(list(res["x"]), true_parameters)
-
         logging.info("Best fit values {0}".format(list(res)))
         logging.info("Reference best fit {0}".format(true_parameters))
 

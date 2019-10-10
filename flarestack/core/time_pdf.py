@@ -65,15 +65,13 @@ class TimePDF(object):
             self.livetime_pdf = livetime_pdf
             self.t0 = livetime_pdf.sig_t0()
             self.t1 = livetime_pdf.sig_t1()
-            self.mjd_to_livetime = self.livetime_pdf.mjd_to_livetime
-            self.livetime_to_mjd = self.livetime_pdf.livetime_to_mjd
+            self.mjd_to_livetime, self.livetime_to_mjd = self.livetime_pdf.get_mjd_conversion()
 
         else:
             self.livetime_pdf = None
             self.t0 = -np.inf
             self.t1 = np.inf
-            self.mjd_to_livetime = lambda x: x
-            self.livetime_to_mjd = lambda x: x
+            self.livetime = None
 
     @classmethod
     def register_subclass(cls, time_pdf_name):
@@ -201,6 +199,12 @@ class TimePDF(object):
     def effective_injection_time(self, source=None):
         raise NotImplementedError
 
+    def get_livetime(self):
+        raise NotImplementedError
+
+    def get_mjd_conversion(self):
+        raise NotImplementedError
+
 @TimePDF.register_subclass('steady')
 class Steady(TimePDF):
     """The time-independent case for a Time PDF. Requires no additional
@@ -218,7 +222,7 @@ class Steady(TimePDF):
                              "provide a livetime_pdf, or use a different Time "
                              "PDF class such as FixedEndBox.")
         else:
-            self.livetime = livetime_pdf.livetime
+            self.livetime = livetime_pdf.get_livetime()
 
     def f(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
@@ -415,7 +419,6 @@ class Box(TimePDF):
         diff = max(self.sig_t1(source) - self.sig_t0(source), 0)
         return diff * (60 * 60 * 24)
 
-
 @TimePDF.register_subclass('fixed_ref_box')
 class FixedRefBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
@@ -493,6 +496,19 @@ class FixedEndBox(Box):
 
         return min(t1, self.t1)
 
+    def get_livetime(self):
+        if self.livetime_pdf is not None:
+            raise Exception("Livetime PDF already provided.")
+        else:
+            return self.sig_t1() - self.sig_t0()
+
+    def get_mjd_conversion(self):
+        if self.livetime_pdf is not None:
+            raise Exception("Livetime PDF already provided.")
+        else:
+            mjd_to_l = lambda x: x - self.sig_t0()
+            l_to_mjd = lambda x: x + self.sig_t0()
+            return mjd_to_l, l_to_mjd
 
 @TimePDF.register_subclass('custom_source_box')
 class CustomSourceBox(Box):
@@ -554,7 +570,7 @@ class DetectorOnOffList(TimePDF):
                            "following fields were provided: {0}".format(
                 t_pdf_dict.keys()
             ))
-        self.t0, self.t1, self.livetime, self.season_f, self.mjd_to_livetime, self.livetime_to_mjd = self.parse_list()
+        self.t0, self.t1, self._livetime, self.season_f, self.mjd_to_livetime, self.livetime_to_mjd = self.parse_list()
 
     def parse_list(self):
         t0 = min(self.on_off_list["start"])
@@ -576,6 +592,12 @@ class DetectorOnOffList(TimePDF):
 
     def parse_list(self):
         raise NotImplementedError
+
+    def get_livetime(self):
+        return self._livetime
+
+    def get_mjd_conversion(self):
+        return self.mjd_to_livetime, self.livetime_to_mjd
 
 
 

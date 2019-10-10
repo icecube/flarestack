@@ -4,7 +4,7 @@ IceCube data (IC86_1).
 import logging
 import unittest
 import numpy as np
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.unblinding import create_unblinder
 
@@ -17,7 +17,7 @@ llh_dict = {
     },
     "llh_energy_pdf": {
         "energy_pdf_name": "power_law",
-        "gamma": 2.0
+        "gamma": 3.0
     }
 }
 
@@ -33,7 +33,7 @@ sindecs = np.linspace(0.5, -0.5, 3)
 true_parameters = [
     [0.0],
     [0.0],
-    [1.4251542909119426]
+    [2.0817298059169915]
 ]
 
 
@@ -51,7 +51,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
             unblind_dict = {
                 "mh_name": "fixed_weights",
-                "dataset": ps_v002_p01.get_seasons("IC86_1"),
+                "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
                 "catalogue": ps_catalogue_name(sindec),
                 "llh_dict": llh_dict,
             }

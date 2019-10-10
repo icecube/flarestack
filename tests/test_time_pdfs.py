@@ -3,6 +3,7 @@ IceCube data (IC86_1).
 """
 import logging
 import unittest
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.data.icecube import ps_v002_p01
 from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
@@ -30,10 +31,10 @@ time_pdfs = [
 ]
 
 true_parameters = [
-    [8.302537737393378, 2.0749999999312245],
-    [2.6097792634284898, 2.099999997928826],
-    [2.994109963445442, 2.099999998213144],
-    [0.0, 1.9380505347476888]
+    [1.877671588900102, 3.4651997149577394],
+    [0.0, 2.111438613892292],
+    [0.0, 2.110474052128495],
+    [0.0, 2.0993342075261676]
 ]
 
 catalogue = tde_catalogue_name("jetted")
@@ -66,7 +67,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
             unblind_dict = {
                 "mh_name": "fixed_weights",
-                "dataset": ps_v002_p01.get_seasons("IC79", "IC86_1"),
+                "dataset": icecube_ps_3_year.get_seasons('IC79-2010', 'IC86-2011'),
                 "catalogue": catalogue,
                 "llh_dict": llh_dict,
             }

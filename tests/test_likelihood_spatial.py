@@ -1,5 +1,5 @@
 import logging
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.unblinding import create_unblinder
 import unittest
@@ -18,12 +18,12 @@ source = ps_catalogue_name(0.0)
 
 unblind_dict = {
     "mh_name": "fixed_weights",
-    "dataset": ps_v002_p01.get_seasons("IC86_1"),
+    "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
     "catalogue": ps_catalogue_name(0.5),
     "llh_dict": llh_dict
 }
 
-true_parameters = [2.1292922213980687]
+true_parameters = [1.9587621795637824]
 
 
 class TestSpatialLikelihood(unittest.TestCase):

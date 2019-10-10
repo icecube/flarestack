@@ -4,7 +4,7 @@ IceCube data (IC86_1).
 import logging
 import unittest
 import numpy as np
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.unblinding import create_unblinder
 
@@ -33,9 +33,9 @@ sindecs = np.linspace(0.5, -0.5, 3)
 # compared to these values.
 
 true_parameters = [
-    [2.8524121731705296, 4.0],
-    [0.0, 3.012888497161147],
-    [2.611394680431712, 2.7978753815656057]
+    [0.0, 2.3746234433776863],
+    [0.0, 2.1278706029950163],
+    [3.118277154641447, 4.0]
 ]
 
 
@@ -54,7 +54,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
             unblind_dict = {
                 "mh_name": "fixed_weights",
-                "dataset": ps_v002_p01.get_seasons("IC86_1"),
+                "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
                 "catalogue": ps_catalogue_name(sindec),
                 "llh_dict": llh_dict,
             }

@@ -6,7 +6,7 @@ import unittest
 import pickle
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.core.unblinding import create_unblinder
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
@@ -43,11 +43,11 @@ energy_pdfs = [
 ]
 
 true_parameters = [
-    [1.8538431668730444],
-    [1.8033620932638081]
+    [1.370075823476683],
+    [1.3598168141987206]
 ]
 
-catalogue = ps_catalogue_name(0.4)
+catalogue = ps_catalogue_name(-0.5)
 
 
 class TestTimeIntegrated(unittest.TestCase):
@@ -74,8 +74,8 @@ class TestTimeIntegrated(unittest.TestCase):
 
             unblind_dict = {
                 "mh_name": "fixed_weights",
-                "dataset": ps_v002_p01.get_seasons("IC86_1"),
-                "catalogue": ps_catalogue_name(0.6),
+                "dataset": icecube_ps_3_year.get_seasons('IC79-2010', 'IC86-2011'),
+                "catalogue": catalogue,
                 "llh_dict": llh_dict,
             }
 

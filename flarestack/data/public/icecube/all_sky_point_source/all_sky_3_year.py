@@ -92,7 +92,7 @@ def parse_numpy_dataset():
 
 sample_name = "all_sky_3_year"
 
-ps_3_year = Dataset()
+icecube_ps_3_year = Dataset()
 
 
 def make_season(season_name):
@@ -105,7 +105,7 @@ def make_season(season_name):
         log_e_bins=np.arange(2., 9. + 0.01, 0.25),
         a_eff_path=data_dir + season_name + "-TabulatedAeff.txt"
     )
-    ps_3_year.add_season(season)
+    icecube_ps_3_year.add_season(season)
 
 
 for season_name in datasets:
@@ -182,7 +182,7 @@ def parse_angular_resolution():
         plt.ylim(ymin=0)
         plt.legend()
 
-        save_path = ang_res_plot_path(ps_3_year.seasons[dataset])
+        save_path = ang_res_plot_path(icecube_ps_3_year.seasons[dataset])
 
         try:
             os.makedirs(os.path.dirname(save_path))
@@ -192,7 +192,7 @@ def parse_angular_resolution():
         plt.savefig(save_path)
         plt.close()
 
-        ar_path = med_ang_res_path(ps_3_year.seasons[dataset])
+        ar_path = med_ang_res_path(icecube_ps_3_year.seasons[dataset])
 
         try:
             os.makedirs(os.path.dirname(ar_path))
@@ -208,7 +208,7 @@ def run_all():
     parse_numpy_dataset()
     parse_angular_resolution()
 
-    for season in ps_3_year.get_seasons().values():
+    for season in icecube_ps_3_year.get_seasons().values():
         season.map_energy_proxy()
         season.plot_effective_area()
         make_individual_spline_set(season, SoB_spline_path(season))

@@ -1,4 +1,4 @@
-from flarestack.data.public import ps_3_year
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.data.simulate import SimSeason, SimDataset
 import numpy as np

@@ -2,7 +2,8 @@
 process is deterministic, so the same flare should be found each time.
 """
 import logging
-from flarestack.data.icecube import ps_v002_p01
+import numpy as np
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 import unittest
 from flarestack.core.unblinding import create_unblinder
@@ -28,11 +29,11 @@ unblind_llh = {
 }
 
 
-cat_path = ps_catalogue_name(-0.1)
+cat_path = ps_catalogue_name(0.5)
 
 unblind_dict = {
     "mh_name": "flare",
-    "dataset": ps_v002_p01.get_seasons("IC79", "IC86_1"),
+    "dataset": icecube_ps_3_year.get_seasons("IC79-2010", "IC86-2011"),
     "catalogue": cat_path,
     "llh_dict": unblind_llh
 }
@@ -43,11 +44,11 @@ unblind_dict = {
 # deterministic, these values should be returned every time this test is run.
 
 true_parameters = [
-    4.097462956856254,
-    2.533607210908644,
-    55876.89316064464,
-    55892.569503379375,
-    14.084548753227864
+    2.455898474578693,
+    3.764204148466931,
+    55761.7435891,
+    55764.59807937,
+    2.8544902700014063
 ]
 
 
@@ -58,6 +59,7 @@ class TestFlareSearch(unittest.TestCase):
 
     def test_flare(self):
         logging.info("Testing 'flare' LLH class")
+
         ub = create_unblinder(unblind_dict)
         res = [x for x in ub.res_dict["Parameters"].values()]
         self.assertEqual(res, true_parameters)
