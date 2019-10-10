@@ -1,5 +1,5 @@
 # flarestack
-[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack)[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
+[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
 
 Code for unbinned likelihood analysis of astroparticle physics data, created by [@robertdstein](https://github.com/robertdstein).
 
