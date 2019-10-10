@@ -50,19 +50,19 @@ class TestSimcube(unittest.TestCase):
         print("\n")
         print("\n")
 
-        from flarestack.data.simulate.simcube import simcube_dataset
-
-        # Initialise Injectors/LLHs
-
-        llh_dict = {
-            "name": "standard",
-            "llh_time_pdf": {
-                "time_pdf_name": "Steady"
-            },
-            "llh_energy_pdf": {
-                "energy_pdf_name": "PowerLaw"
-            }
-        }
+        # from flarestack.data.simulate.simcube import simcube_dataset
+        #
+        # # Initialise Injectors/LLHs
+        #
+        # llh_dict = {
+        #     "name": "standard",
+        #     "llh_time_pdf": {
+        #         "time_pdf_name": "Steady"
+        #     },
+        #     "llh_energy_pdf": {
+        #         "energy_pdf_name": "PowerLaw"
+        #     }
+        # }
 
         # Test three declinations
 
