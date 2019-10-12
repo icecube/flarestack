@@ -1,6 +1,6 @@
 import logging
 import os
-from flarestack.shared import fs_dir, log_dir
+from flarestack.shared import fs_dir, log_dir, fs_scratch_dir
 
 username = os.path.basename(os.environ['HOME'])
 
@@ -39,7 +39,8 @@ def make_desy_submit_file(ram_per_core="6.0G"):
            'exec > "$TMPDIR"/${JOB_ID}_stdout.txt ' \
            '2>"$TMPDIR"/${JOB_ID}_stderr.txt \n' \
            'eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4/setup.sh) \n' \
-           'export PYTHONPATH=' + root_dir + "/ \n" \
+           'export PYTHONPATH=' + root_dir + '/ \n' \
+           'export FLARESTACK_SCRATCH_DIR=' + fs_scratch_dir + " \n" \
            'python ' + fs_dir + 'core/multiprocess_wrapper.py -f $1 -n $2 \n' \
            'cp $TMPDIR/${JOB_ID}_stdout.txt ' + log_dir + '\n'\
            'cp $TMPDIR/${JOB_ID}_stderr.txt ' + log_dir + '\n '
