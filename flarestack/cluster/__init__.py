@@ -17,11 +17,8 @@ else:
         raise Exception("No cluster submission script recognised!")
 
 
-if not os.path.isfile(local_submit_file):
-    make_local_submit_file()
-
-
 def submit_local(path, n_cpu):
+    make_local_submit_file()
 
     bashfile = local_submit_file
 
