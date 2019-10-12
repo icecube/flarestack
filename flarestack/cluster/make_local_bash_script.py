@@ -16,8 +16,7 @@ def make_local_submit_file():
 
     text = "#!/bin/zsh \n" \
            "## \n" \
-           'eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4/setup.sh) \n' \
-           'export PYTHONPATH=' + root_dir + "/ \n" \
+           'export PYTHONPATH=`which python`:' + root_dir + "/ \n" \
            'python ' + fs_dir + 'core/multiprocess_wrapper.py -f $1 -n $2'
 
     print("Creating file at", local_submit_file)
