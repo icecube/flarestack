@@ -52,8 +52,8 @@ class TestTimeIntegrated(unittest.TestCase):
         ub = create_unblinder(unblind_dict)
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
-        self.assertEqual(list(res["x"]), true_parameters)
-
+        for i, x in enumerate(res["x"]):
+            self.assertAlmostEqual(x, true_parameters[i], delta=5)
         logging.info("Best fit values {0}".format(list(res)))
         logging.info("Reference best fit {0}".format(true_parameters))
 
