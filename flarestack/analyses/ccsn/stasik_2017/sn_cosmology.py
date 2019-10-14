@@ -39,7 +39,7 @@ def get_sn_fraction(sn_type):
     """
     if sn_type == "IIn":
         return 0.064
-    elif sn_type == "IIP":
+    elif sn_type == "IIp":
         return 0.52
     elif sn_type == "Ib":
         return 0.069
@@ -78,14 +78,14 @@ def get_sn_type_rate(fraction=1.0, sn_type=None, rate=ccsn_clash_candels):
 if __name__ == "__main__":
 
     e_pdf_dict_template = {
-        "Name": "Power Law",
-        "E Min": 10 ** 2,
-        "E Max": 10 ** 7,
+        "energy_pdf_name": "power_law",
+        "e_min_gev": 10 ** 2,
+        "e_max_gev": 10 ** 7,
     }
 
     results = [
         ["IIn", 1.0],
-        # ["IIP", 1.0],
+        # ["IIp", 1.0],
         # ["Ibc", 1.0]
     ]
 

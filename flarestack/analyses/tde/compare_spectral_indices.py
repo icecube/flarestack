@@ -13,7 +13,7 @@ from flarestack.analyses.tde.shared_TDE import tde_catalogues, \
     tde_catalogue_name
 import math
 import matplotlib.pyplot as plt
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.utils.catalogue_loader import load_catalogue
 
 analyses = dict()

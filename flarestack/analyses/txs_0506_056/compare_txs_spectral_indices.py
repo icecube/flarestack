@@ -7,7 +7,7 @@ from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 import matplotlib.pyplot as plt
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.analyses.txs_0506_056.make_txs_catalogue import txs_cat_path
 
 catalogue = np.load(txs_cat_path)

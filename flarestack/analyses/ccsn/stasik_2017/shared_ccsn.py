@@ -35,18 +35,18 @@ def sn_time_pdfs(sn_type):
     for i in sn_times:
         time_pdfs.append(
             {
-                "Name": "Box",
-                "Pre-Window": 20,
-                "Post-Window": i
+                "time_pdf_name": "box",
+                "pre_window": 20,
+                "post_window": i
             }
         )
 
     if sn_type == "Ibc":
         time_pdfs.append(
             {
-                "Name": "Box",
-                "Pre-Window": 20,
-                "Post-Window": 0
+                "time_pdf_name": "box",
+                "pre_window": 20,
+                "post_window": 0
             }
         )
 

@@ -8,7 +8,7 @@ from builtins import input
 import numpy as np
 from flarestack.core.unblinding import create_unblinder
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name, \
     tde_catalogues
 

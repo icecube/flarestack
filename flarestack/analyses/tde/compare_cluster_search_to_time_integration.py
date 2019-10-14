@@ -10,7 +10,7 @@ from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
 from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 import matplotlib.pyplot as plt
 from flarestack.analyses.tde.shared_TDE import individual_tdes, \
     individual_tde_cat

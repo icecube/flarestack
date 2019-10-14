@@ -84,7 +84,7 @@ raw_mh_dict = {
     "dataset": ps_7_year.get_seasons("IC86_1"),
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
-    "n_trials": 50,
+    "n_trials": 100,
     "n_steps": 10
 }
 
@@ -115,7 +115,7 @@ for sn in sn_types:
 
         sky_name = base_name + sky + "/"
 
-        for i, cat_name in enumerate(cat_names[:4]):
+        for i, cat_name in enumerate(cat_names[:6]):
 
             n_cat = float(len(np.load(cat_name)))
 
@@ -137,8 +137,9 @@ for sn in sn_types:
             mh_dict["catalogue"] = cat_name
             mh = MinimisationHandler.create(mh_dict)
             mh_dict["scale"] = mh.guess_scale()
+            input("?xvc?")
 
-            analyse(mh_dict, cluster=False, n_cpu=3)
+            # analyse(mh_dict, cluster=False, n_cpu=32)
             sky_dict[n_cat] = mh_dict
 
         sn_dict[sky] = sky_dict
@@ -181,35 +182,35 @@ for (sn, sn_dict) in res_dict.items():
 
                 e_key = "Mean Luminosity (erg/s)"
 
-                try:
 
-                    rh = ResultsHandler(rh_dict)
-                    #
-                    # #
-                    astro_sens, astro_disc = rh.astro_values(
-                        rh_dict["inj_dict"]["injection_energy_pdf"])
-                    #
-                    # energy_pdf = EnergyPDF.create(
-                    #     rh_dict["inj_dict"]["injection_energy_pdf"])
-                    #
-                    # raw_input("prompt")
+                rh = ResultsHandler(rh_dict)
+                #
+                # #
+                astro_sens, astro_disc = rh.astro_values(
+                    rh_dict["inj_dict"]["injection_energy_pdf"])
+                #
+                # energy_pdf = EnergyPDF.create(
+                #     rh_dict["inj_dict"]["injection_energy_pdf"])
+                #
+                # raw_input("prompt")
 
-                    disc_convert = rh.disc_potential_25/rh.disc_potential
-                    #
-                    sens.append(astro_sens[key] * inj_time)
-                    disc.append(astro_disc[key] * inj_time)
-                    #
-                    # # print astro_disc[key], rh.disc_potential, guess_disc
-                    # # raw_input("prompt")
-                    #
-                    disc_25.append(astro_disc[key] * inj_time * disc_convert)
-                    #
-                    sens_e.append(astro_sens[e_key] * inj_time)
-                    disc_e.append(astro_disc[e_key] * inj_time)
-                    disc_25_e.append(astro_disc[e_key] * inj_time * disc_convert)
+                disc_convert = rh.disc_potential_25/rh.disc_potential
+                #
+                sens.append(astro_sens[key] * inj_time)
+                disc.append(astro_disc[key] * inj_time)
 
-                except:
-                    pass
+                guess_convert = k_to_flux(
+                    rh_dict["scale"] / 1.5
+                )/rh.disc_potential
+                #
+                # # print astro_disc[key], rh.disc_potential, guess_disc
+                # # raw_input("prompt")
+                #
+                disc_25.append(astro_disc[key] * inj_time * disc_convert)
+                #
+                sens_e.append(astro_sens[e_key] * inj_time)
+                disc_e.append(astro_disc[e_key] * inj_time)
+                disc_25_e.append(astro_disc[e_key] * inj_time * disc_convert)
 
                 cat = load_catalogue(rh_dict["catalogue"])
 
@@ -217,12 +218,12 @@ for (sn, sn_dict) in res_dict.items():
                     rh_dict["scale"] / 1.5
                 )
 
-                astro_guess = calculate_astronomy(
-                    guess, rh_dict["inj_dict"]["injection_energy_pdf"], cat
-                )
+                # astro_guess = calculate_astronomy(
+                #     guess, rh_dict["inj_dict"]["injection_energy_pdf"], cat
+                # )
 
-                guess_disc.append(astro_guess[key] * inj_time)
-                guess_disc_e.append(astro_guess[e_key] * inj_time)
+                guess_disc.append(astro_disc[key] * inj_time * guess_convert)
+                guess_disc_e.append(astro_disc[e_key] * inj_time * guess_convert)
 
                 dist.append(max(cat["distance_mpc"]))
                 n.append(float(len(cat)))
@@ -234,8 +235,8 @@ for (sn, sn_dict) in res_dict.items():
 
             pairs = [
                 (guess_disc, guess_disc_e),
-                # (sens, sens_e),
-                # (disc, disc_e),
+                (sens, sens_e),
+                (disc, disc_e),
                 # (disc_25, disc_25_e)
             ]
 
@@ -261,8 +262,6 @@ for (sn, sn_dict) in res_dict.items():
 
                 dists = np.array(np.log(dist))[base_mask][mask]
                 log_e = np.log(vals_e[base_mask][mask])
-
-                print(dists, log_e)
 
                 z = np.polyfit(dists, log_e, 1)
 

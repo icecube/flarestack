@@ -9,7 +9,7 @@ from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 from flarestack.analyses.tde.shared_TDE import individual_tde_cat, \
     individual_tdes
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 
 analyses = dict()
 

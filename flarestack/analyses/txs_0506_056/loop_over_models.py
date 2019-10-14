@@ -15,7 +15,7 @@ from flarestack.analyses.txs_0506_056.make_txs_catalogue import \
     txs_catalogue, txs_cat_path
 from flarestack.analyses.txs_0506_056.load_gao_spectral_models import \
     spline_name
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 
 base_dir = "analyses/txs_0506_056/loop_gao_models/"
 

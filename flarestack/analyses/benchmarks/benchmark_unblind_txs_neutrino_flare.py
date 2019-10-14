@@ -5,7 +5,7 @@ from flarestack.core.unblinding import create_unblinder
 from flarestack.data.icecube import txs_sample_v1
 from flarestack.analyses.txs_0506_056.make_txs_catalogue import txs_cat_path,\
     txs_catalogue
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.analyses.txs_0506_056.load_gao_spectral_models import \
     spline_name
 

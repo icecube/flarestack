@@ -10,7 +10,7 @@ from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import sn_cats, sn_catalog
 from flarestack.cluster import analyse, wait_for_cluster
 import math
 import matplotlib.pyplot as plt
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 import os
 
 analyses = dict()
@@ -57,7 +57,7 @@ for cat in sn_cats:
 
             l_name = time_name + mh_name + "/"
 
-            llh_kwargs = {
+            llh_dict = {
                 "llh_name": "standard",
                 "llh_sig_energy_pdf": llh_energy,
                 "llh_sig_time_pdf": llh_time
@@ -72,13 +72,13 @@ for cat in sn_cats:
                 length = float(time_key)
 
                 scale = (flux_to_k(reference_sensitivity(
-                    np.sin(closest_src["dec"]), gamma=gamma
+                    np.sin(closest_src["dec_rad"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * 200.) / length
 
                 injection_energy = dict(llh_energy)
-                injection_energy["Gamma"] = gamma
+                injection_energy["gamma"] = gamma
 
-                inj_kwargs = {
+                inj_dict = {
                     "injection_sig_energy_pdf": injection_energy,
                     "injection_sig_time_pdf": injection_time,
                     "poisson_smear_bool": True,
@@ -88,10 +88,10 @@ for cat in sn_cats:
                     "name": full_name,
                     "mh_name": "standard",
                     "dataset": custom_dataset(ps_v002_p01, catalogue,
-                                               llh_kwargs["LLH Time PDF"]),
+                                              llh_dict["llh_sig_time_pdf"]),
                     "catalogue": cat_path,
-                    "inj_dict": inj_kwargs,
-                    "llh_dict": llh_kwargs,
+                    "inj_dict": inj_dict,
+                    "llh_dict": llh_dict,
                     "scale": scale,
                     "n_trials": 5,
                     "n_steps": 20
@@ -133,7 +133,7 @@ for b, (cat_name, cat_res) in enumerate(full_res.items()):
                 inj_time = injection_length * 60 * 60 * 24
 
                 astro_sens, astro_disc = rh.astro_values(
-                    rh_dict["inj kwargs"]["Injection Energy PDF"])
+                    rh_dict["inj_dict"]["injection_energy_pdf"])
 
                 key = "Total Fluence (GeV cm^{-2} s^{-1})"
 

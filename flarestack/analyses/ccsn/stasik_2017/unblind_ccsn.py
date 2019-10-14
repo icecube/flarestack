@@ -3,7 +3,7 @@ from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import sn_cats, sn_catalogue_name, \
     sn_time_pdfs
 from flarestack.core.unblinding import create_unblinder
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 
 
 name_root = "analyses/ccsn/stasik_2017/unblind_ccsn/"

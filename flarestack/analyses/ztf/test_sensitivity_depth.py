@@ -137,7 +137,7 @@ for sn in sn_types:
             mh = MinimisationHandler.create(mh_dict)
             mh_dict["scale"] = mh.guess_scale()
 
-            # analyse(mh_dict, cluster=False, n_cpu=3)
+            analyse(mh_dict, cluster=False, n_cpu=23)
             sky_dict[n_cat] = mh_dict
 
         sn_dict[sky] = sky_dict

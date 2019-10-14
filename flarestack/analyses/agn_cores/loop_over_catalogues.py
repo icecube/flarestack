@@ -14,7 +14,7 @@ from flarestack.analyses.tde.shared_TDE import tde_catalogues, \
 from flarestack.cluster import run_desy_cluster as rd
 import math
 import matplotlib.pyplot as plt
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 
 analyses = dict()
 

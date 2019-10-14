@@ -10,7 +10,7 @@ from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 
 analyses = dict()
 

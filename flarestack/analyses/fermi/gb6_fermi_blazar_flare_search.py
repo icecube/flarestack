@@ -11,7 +11,7 @@ from builtins import str
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube import txs_sample_v1
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.shared import plot_output_dir, flux_to_k, transients_dir
 from flarestack.utils.prepare_catalogue import custom_sources
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity

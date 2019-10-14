@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 from flarestack.shared import catalogue_dir
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1, ps_v002_p01
-from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.utils.neutrino_astronomy import calculate_neutrinos
 from astropy import units as u
 

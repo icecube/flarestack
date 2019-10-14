@@ -12,6 +12,7 @@ from flarestack.utils.neutrino_astronomy import calculate_astronomy
 from flarestack.utils.asimov_estimator import AsimovEstimator
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
+from astropy.cosmology import WMAP9 as cosmo
 
 logging.getLogger().setLevel("INFO")
 
@@ -29,7 +30,7 @@ post_window = 5.
 # Use a source that is constant in time
 
 injection_time = {
-    "time_pdf_name": "FixedRefBox",
+    "time_pdf_name": "Box",
     "pre_window": 0.,
     "post_window": post_window,
     "fixed_ref_time_mjd": 55695.
@@ -41,7 +42,7 @@ injection_time = {
 # Use a source with a spectral index of -2, with an energy range between
 # 100 GeV and 10 Pev (10**7 GeV).
 
-injection_gamma = 2.0
+injection_gamma = 2.5
 
 injection_energy = {
     "energy_pdf_name": "PowerLaw",
@@ -79,13 +80,13 @@ llh_kwargs = {
     "llh_sig_time_pdf": llh_time,
 }
 
-raw_mh_dict = {
+root_mh_dict = {
     "mh_name": "large_catalogue",
-    "datasets": gfu_8_year.get_seasons("IC86_2011"),
+    "datasets": gfu_8_year.get_seasons(),
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
     "n_trials": 10,
-    "n_steps": 5
+    "n_steps": 10
 }
 
 # Now simulate catalogue
@@ -94,209 +95,306 @@ sn_types = ["Ibc"]
 
 res_dict = dict()
 
+seasons = list(gfu_8_year.subseasons.keys())
 
 for sn in sn_types:
-
     sn_dict = dict()
 
-    base_name = name_root + sn + "/"
+    core_name = name_root + sn + "/"
+
+
     rate = get_sn_type_rate(sn_type=sn)
-    all_cat_names = simulate_transient_catalogue(raw_mh_dict, rate,
-                                                 cat_name="random_" + sn,
+    all_cat_names = simulate_transient_catalogue(root_mh_dict, rate,
+                                                 cat_name="random_{0}".format(sn),
                                                  n_entries=10,
                                                  )
 
     cats_to_test = list(all_cat_names.items())
 
+    for j, _ in enumerate(seasons[:3]):
 
-    for (sky, cat_names) in cats_to_test:
+        raw_mh_dict = dict(root_mh_dict)
+        raw_mh_dict["datasets"] = gfu_8_year.get_seasons(*seasons[:j + 1])
 
-        sky_dict = dict()
+        season_dict = dict()
 
-        sky_name = base_name + sky + "/"
+        base_name = "{0}{1}/".format(core_name, j + 1)
 
-        for i, cat_name in enumerate(cat_names[:4]):
 
-            n_cat = float(len(np.load(cat_name)))
+        for (sky, cat_names) in cats_to_test:
 
-            name = sky_name + os.path.basename(cat_name)[:-4] + "/"
+            sky_dict = dict()
 
-            if sky not in ["Northern"]:
-                continue
+            sky_name = base_name + sky + "/"
 
-            # Skip if catalogue is empty
-            if n_cat == 0:
-                continue
+            for i, cat_name in enumerate(cat_names[1:5]):
 
-            # Skips if already tested:
-            if n_cat in list(sky_dict.keys()):
-                continue
+                n_cat = float(len(np.load(cat_name)))
 
-            mh_dict = dict(raw_mh_dict)
-            mh_dict["name"] = name
-            mh_dict["catalogue"] = cat_name
-            mh = MinimisationHandler.create(mh_dict)
-            mh_dict["scale"] = mh.guess_scale()
+                name = sky_name + os.path.basename(cat_name)[:-4] + "/"
 
-            analyse(mh_dict, cluster=False, n_cpu=3)
-            sky_dict[n_cat] = mh_dict
+                if sky not in ["Northern"]:
+                    continue
 
-        sn_dict[sky] = sky_dict
+                # Skip if catalogue is empty
+                if n_cat == 0:
+                    continue
+
+                # Skips if already tested:
+                if n_cat in list(sky_dict.keys()):
+                    continue
+
+                mh_dict = dict(raw_mh_dict)
+                mh_dict["name"] = name
+                mh_dict["catalogue"] = cat_name
+                mh = MinimisationHandler.create(mh_dict)
+                mh_dict["scale"] = mh.guess_scale()
+
+                del mh
+
+                # analyse(mh_dict, cluster=False, n_cpu=36)
+                sky_dict[n_cat] = mh_dict
+
+            season_dict[sky] = sky_dict
+
+        sn_dict[j+1] = season_dict
 
     res_dict[sn] = sn_dict
 
-# raw_input("prompt")
-
 wait_for_cluster()
 
-# dem = AsimovEstimator(ps_7_year.get_seasons("IC86_1"), inj_kwargs)
+all_res = dict()
 
 for (sn, sn_dict) in res_dict.items():
 
     savedir_sn = plot_output_dir(name_root) + sn + "/"
-    for (sky, sky_dict) in sn_dict.items():
 
-        if sky == "Northern":
-        # if True:
+    sn_res = dict()
 
-            savedir = savedir_sn + sky + "/"
+    for (years, season_dict) in sn_dict.items():
 
-            sens = []
-            sens_e = []
-            disc = []
-            disc_e = []
-            disc_25 = []
-            disc_25_e = []
-            guess_disc = []
-            guess_disc_e = []
-            n = []
+        season_res = dict()
 
-            dist = []
+        season_savedir = savedir_sn + str(years) + "/"
 
-            for (n_cat, rh_dict) in sorted(sky_dict.items()):
+        for (sky, sky_dict) in season_dict.items():
 
-                inj_time = post_window * 60 * 60 * 24
+            if sky == "Northern":
 
-                key = "Energy Flux (GeV cm^{-2} s^{-1})"
+                sky_res = dict()
+            # if True:
 
-                e_key = "Mean Luminosity (erg/s)"
+                savedir = season_savedir + sky + "/"
 
-                rh = ResultsHandler(rh_dict)
-                #
-                # #
-                astro_sens, astro_disc = rh.astro_values(
-                    rh_dict["inj_dict"]["injection_energy_pdf"])
-                #
-                # energy_pdf = EnergyPDF.create(
-                #     rh_dict["inj_dict"]["injection_energy_pdf"])
-                #
-                # raw_input("prompt")
+                sens = []
+                sens_e = []
+                disc = []
+                disc_e = []
+                disc_25 = []
+                disc_25_e = []
+                guess_disc = []
+                guess_disc_e = []
+                n = []
 
-                disc_convert = rh.disc_potential_25/rh.disc_potential
-                #
-                sens.append(astro_sens[key] * inj_time)
-                disc.append(astro_disc[key] * inj_time)
-                #
-                # # print astro_disc[key], rh.disc_potential, guess_disc
-                # # raw_input("prompt")
-                #
-                disc_25.append(astro_disc[key] * inj_time * disc_convert)
-                #
-                sens_e.append(astro_sens[e_key] * inj_time)
-                disc_e.append(astro_disc[e_key] * inj_time)
-                disc_25_e.append(astro_disc[e_key] * inj_time * disc_convert)
+                dist = []
 
-                cat = load_catalogue(rh_dict["catalogue"])
+                for (n_cat, rh_dict) in sorted(sky_dict.items()):
 
-                guess = k_to_flux(
-                    rh_dict["scale"] / 1.5
-                )
+                    inj_time = post_window * 60 * 60 * 24
 
-                astro_guess = calculate_astronomy(
-                    guess, rh_dict["inj_dict"]["injection_energy_pdf"], cat
-                )
+                    key = "Energy Flux (GeV cm^{-2} s^{-1})"
 
-                guess_disc.append(astro_guess[key] * inj_time)
-                guess_disc_e.append(astro_guess[e_key] * inj_time)
+                    e_key = "Mean Luminosity (erg/s)"
 
-                dist.append(max(cat["distance_mpc"]))
-                n.append(float(len(cat)))
+                    # rh = ResultsHandler(rh_dict)
+                    # #
+                    # # #
+                    # astro_sens, astro_disc = rh.astro_values(
+                    #     rh_dict["inj_dict"]["injection_energy_pdf"])
+                    #
+                    # energy_pdf = EnergyPDF.create(
+                    #     rh_dict["inj_dict"]["injection_energy_pdf"])
+                    #
+                    # raw_input("prompt")
 
-            try:
-                os.makedirs(os.path.dirname(savedir))
-            except OSError:
-                pass
+                    # disc_convert = rh.disc_potential_25/rh.disc_potential
+                    # #
+                    # sens.append(astro_sens[key] * inj_time)
+                    # disc.append(astro_disc[key] * inj_time)
+                    # #
+                    # # # print astro_disc[key], rh.disc_potential, guess_disc
+                    # # # raw_input("prompt")
+                    # #
+                    # disc_25.append(astro_disc[key] * inj_time * disc_convert)
+                    # #
+                    # sens_e.append(astro_sens[e_key] * inj_time)
+                    # disc_e.append(astro_disc[e_key] * inj_time)
+                    # disc_25_e.append(astro_disc[e_key] * inj_time * disc_convert)
 
-            pairs = [
-                (guess_disc, guess_disc_e),
-                # (sens, sens_e),
-                # (disc, disc_e),
-                # (disc_25, disc_25_e)
-            ]
+                    cat = load_catalogue(rh_dict["catalogue"])
 
-            for j, (vals, vals_e) in enumerate(pairs):
+                    try:
 
-                label = ["guess_disc", "sensitivity", "disc", "disc_25"][j]
+                        guess = k_to_flux(
+                            rh_dict["scale"] / 1.5
+                        )
 
-                plt.figure()
-                ax1 = plt.subplot(111)
-                # ax2 = ax1.twinx()
-                ax1.plot(dist, vals)
-                # ax1.plot(av_dist, av_sens, linestyle=":", label=label)
-                # plt.legend()
-                plt.xlabel("Maximum Distance (Mpc)")
-                ax1.set_ylabel(r"Time-Integrated Flux [ GeV$^{-1}$ cm$^{-2}$]")
-                plt.savefig(savedir + label + "_detected_flux.pdf")
-                plt.close()
+                    except KeyError:
+                        guess = np.nan
 
-                vals_e = np.array(vals_e)
+                    astro_guess = calculate_astronomy(
+                        guess, rh_dict["inj_dict"]["injection_energy_pdf"], cat
+                    )
 
-                base_mask = ~np.isnan(vals_e)
-                mask = vals_e[base_mask] > 0.
+                    guess_disc.append(astro_guess[key] * inj_time)
+                    guess_disc_e.append(astro_guess[e_key] * inj_time)
 
-                dists = np.array(np.log(dist))[base_mask][mask]
-                log_e = np.log(vals_e[base_mask][mask])
+                    dist.append(max(cat["distance_mpc"]))
+                    n.append(float(len(cat)))
 
-                print(dists, log_e)
+                try:
+                    os.makedirs(os.path.dirname(savedir))
+                except OSError:
+                    pass
 
-                z = np.polyfit(dists, log_e, 1)
+                pairs = [
+                    (guess_disc, guess_disc_e),
+                    # (sens, sens_e),
+                    # (disc, disc_e),
+                    # (disc_25, disc_25_e)
+                ]
 
-                def f(x):
-                    return np.exp(z[1] + (z[0] * np.log(x)))
+                for j, (vals, vals_e) in enumerate(pairs):
 
-                dist_range = np.linspace(min(dist), max(dist), 1e3)
+                    label = ["guess_disc", "sensitivity", "disc", "disc_25"][j]
 
-                plt.figure()
-                ax1 = plt.subplot(111)
-                ax1.scatter(np.exp(dists), vals_e[base_mask][mask])
-                ax1.plot(dist_range, f(dist_range))
-                # ax1.plot(av_dist, av_sens_e, linestyle=":", label=label)
-                # ax1.plot(dist, disc_e)
-                # plt.legend()
-                plt.xlabel("Maximum Distance (Mpc)")
-                ax1.set_ylabel(r"Energy per source (erg)")
-                plt.savefig(savedir + label + "_e_per_source.pdf")
-                plt.close()
+                    plt.figure()
+                    ax1 = plt.subplot(111)
+                    # ax2 = ax1.twinx()
+                    ax1.plot(dist, vals)
+                    # ax1.plot(av_dist, av_sens, linestyle=":", label=label)
+                    # plt.legend()
+                    plt.xlabel("Maximum Distance (Mpc)")
+                    ax1.set_ylabel(r"Time-Integrated Flux [ GeV$^{-1}$ cm$^{-2}$]")
+                    plt.savefig(savedir + label + "_detected_flux.pdf")
+                    plt.close()
 
-                plt.figure()
-                ax1 = plt.subplot(111)
-                ax1.scatter(np.exp(dists), vals_e[base_mask][mask])
-                # ax1.plot(dist_range, f(dist_range))
-                # ax1.plot(av_dist, av_sens_e, linestyle=":", label=label)
-                # ax1.plot(dist, disc_e)
-                # plt.legend()
-                plt.xlabel("Maximum Distance (Mpc)")
-                ax1.set_ylabel(r"Energy per source (erg)")
-                plt.yscale("log")
-                plt.xscale("log")
-                plt.savefig(savedir + label + "_log_e_per_source.pdf")
-                plt.close()
+                    vals_e = np.array(vals_e)
 
-                plt.figure()
-                ax1 = plt.subplot(111)
-                ax1.plot(dist, n)
-                plt.yscale("log")
-                plt.xlabel("Maximum  Distance (Mpc)")
-                ax1.set_ylabel("Cumulative Sources")
-                plt.savefig(savedir + label + "_n_source.pdf")
-                plt.close()
+                    base_mask = ~np.isnan(vals_e)
+                    mask = vals_e[base_mask] > 0.
+
+                    try:
+
+                        dists = np.array(np.log(dist))[base_mask][mask]
+                        log_e = np.log(vals_e[base_mask][mask])
+
+                        z = np.polyfit(dists, log_e, 1)
+
+                        sky_res[label] = z
+
+                        def f(x):
+                            return np.exp(z[1] + (z[0] * np.log(x)))
+
+                    except TypeError:
+                        base_mask = np.array([True for x in dist])
+                        dists = np.array(np.log(dist)[mask])
+                        log_e = np.log(vals_e[mask])
+
+                        sky_res[label] = [np.nan, np.nan]
+
+                        def f(x):
+                            return np.nan * x
+
+                    dist_range = np.linspace(min(dist), max(dist), 1e3)
+
+                    plt.figure()
+                    ax1 = plt.subplot(111)
+                    ax1.scatter(np.exp(dists), vals_e[base_mask][mask])
+                    ax1.plot(dist_range, f(dist_range))
+                    # ax1.plot(av_dist, av_sens_e, linestyle=":", label=label)
+                    # ax1.plot(dist, disc_e)
+                    # plt.legend()
+                    plt.xlabel("Maximum Distance (Mpc)")
+                    ax1.set_ylabel(r"Energy per source (erg)")
+                    plt.savefig(savedir + label + "_e_per_source.pdf")
+                    plt.close()
+
+                    plt.figure()
+                    ax1 = plt.subplot(111)
+                    ax1.scatter(np.exp(dists), vals_e[base_mask][mask])
+                    # ax1.plot(dist_range, f(dist_range))
+                    # ax1.plot(av_dist, av_sens_e, linestyle=":", label=label)
+                    # ax1.plot(dist, disc_e)
+                    # plt.legend()
+                    plt.xlabel("Maximum Distance (Mpc)")
+                    ax1.set_ylabel(r"Energy per source (erg)")
+                    plt.yscale("log")
+                    plt.xscale("log")
+                    plt.savefig(savedir + label + "_log_e_per_source.pdf")
+                    plt.close()
+
+                    plt.figure()
+                    ax1 = plt.subplot(111)
+                    ax1.plot(dist, n)
+                    plt.yscale("log")
+                    plt.xlabel("Maximum  Distance (Mpc)")
+                    ax1.set_ylabel("Cumulative Sources")
+                    plt.savefig(savedir + label + "_n_source.pdf")
+                    plt.close()
+
+                try:
+
+                    ratio = np.array(disc_e)/np.array(guess_disc_e)
+
+                    plt.figure()
+                    ax1 = plt.subplot(111)
+                    ax1.plot(dist, ratio)
+                    plt.yscale("log")
+                    plt.xlabel("Maximum  Distance (Mpc)")
+                    ax1.set_ylabel(r"Ratio $\frac{True}{Guess}$")
+                    plt.savefig(savedir + "ae_bias.pdf")
+                    plt.close()
+
+                except ValueError:
+                    pass
+
+                season_res[sky] = sky_res
+        sn_res[years] = season_res
+    all_res[sn] = sn_res
+
+benchmark_z = [0.05, 0.1]
+dists = [cosmo.luminosity_distance(x).value for x in benchmark_z]
+
+for (sn, sn_res) in all_res.items():
+
+    discs = [[] for _ in dists]
+    yrs = []
+
+    for (years, season_res) in sorted(sn_res.items()):
+        print("Years", years)
+
+        z = season_res["Northern"]["guess_disc"]
+
+        def f(x):
+            return np.exp(z[1] + (z[0] * np.log(x)))
+
+        for j, d in enumerate(dists):
+            discs[j].append(f(d))
+
+        yrs.append(years)
+
+    plt.figure()
+    for j, z in enumerate(benchmark_z):
+        plt.plot(yrs, discs[j], label="z < {0}".format(z))
+
+    plt.legend()
+    plt.xlabel("Livetime (Years)")
+    plt.yscale("Log")
+
+    plt.savefig(plot_output_dir(name_root) + str(sn) + "disc_livetime_depth.pdf")
+    plt.close()
+
+
+
+

@@ -14,12 +14,12 @@ true_keys = ['IC79-2010', 'IC86-2011']
 catalogue = tde_catalogue_name("jetted")
 
 
-class TestTimeIntegrated(unittest.TestCase):
+class TestUtilCustomDataset(unittest.TestCase):
 
     def setUp(self):
         pass
 
-    def test_declination_sensitivity(self):
+    def test_custom_dataset(self):
 
         logging.info("Testing custom_dataset util function.")
 
