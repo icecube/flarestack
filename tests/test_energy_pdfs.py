@@ -12,6 +12,9 @@ from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.shared import energy_spline_dir
 
+logger = logging.getLogger()
+logger.setLevel("ERROR")
+
 base_energy_pdf =     {
         "energy_pdf_name": "power_law",
         "gamma": 3.0
@@ -40,11 +43,22 @@ energy_pdfs = [
         "energy_pdf_name": "spline",
         "spline_path": spline_save_path
     },
+    # Outdated style, test for backwards-compatibility
+    {
+        "Name": "PowerLaw",
+        "Gamma": 3.0
+    },
+    {
+        "Name": "Spline",
+        "Spline Path": spline_save_path
+    }
 ]
 
 true_parameters = [
-    [1.370075823476683],
-    [1.3598168141987206]
+    [1.35150508],
+    [1.34119769],
+    [1.35150508],
+    [1.34119769]
 ]
 
 catalogue = ps_catalogue_name(-0.5)
@@ -82,7 +96,6 @@ class TestTimeIntegrated(unittest.TestCase):
             ub = create_unblinder(unblind_dict)
             key = [x for x in ub.res_dict.keys() if x != "TS"][0]
             res = ub.res_dict[key]
-
             for j, x in enumerate(list(res["x"])):
                 self.assertAlmostEqual(x, true_parameters[i][j], delta=5)
 
