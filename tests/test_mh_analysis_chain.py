@@ -56,7 +56,7 @@ class TestTimeIntegrated(unittest.TestCase):
             "catalogue": catalogue,
             "inj_dict": inj_dict,
             "llh_dict": llh_dict,
-            "n_steps": 3,
+            "n_steps": 5,
             "n_trials": 10,
             "scale": 1.
         }

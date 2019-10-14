@@ -24,7 +24,7 @@ def submit_local(path, n_cpu):
 
     submit_cmd = bashfile + " " + path + " " + str(n_cpu)
 
-    print(submit_cmd)
+    logging.info(submit_cmd)
 
     os.system(submit_cmd)
 
