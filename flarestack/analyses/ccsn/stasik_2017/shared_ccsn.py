@@ -10,7 +10,7 @@ ccsn_dir = os.path.abspath(os.path.dirname(__file__))
 ccsn_cat_dir = ccsn_dir + "/catalogues/"
 raw_cat_dir = ccsn_cat_dir + "raw/"
 
-# sn_cats = ["IIn", "IIP", "Ibc"]
+# sn_cats = ["IIn", "IIp", "Ibc"]
 sn_cats = ["IIn"]
 
 sn_times = [100., 300., 1000.]

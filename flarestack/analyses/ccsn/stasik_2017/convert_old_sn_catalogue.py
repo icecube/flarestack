@@ -11,9 +11,10 @@ from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import raw_cat_dir, sn_cat
 from flarestack.utils.prepare_catalogue import cat_dtype
 import numpy as np
 import os
+import logging
 
 mask = ["ra", "dec", "distance", "discoverydate_mjd", "name", 'weight']
-new_names = ["ra", "dec", "Distance (Mpc)", "Ref Date (MJD)", "Name", "weight"]
+new_names = ["ra", "dec", "distance_mpc", "ref_time_mjd", "source_name", "weight"]
 
 raw_cats = [x for x in os.listdir(raw_cat_dir) if x[0] != "."]
 
@@ -21,7 +22,7 @@ threshold = 0.7
 
 for sn_cat in raw_cats:
 
-    print("Converting", sn_cat)
+    logging.info("Converting {0}".format(sn_cat))
 
     cat = np.load(raw_cat_dir + sn_cat)
 
@@ -30,7 +31,7 @@ for sn_cat in raw_cats:
     if sn_type == "Ib":
         sn_type = "Ibc"
     elif sn_type == "IIp":
-        sn_type = "IIP"
+        sn_type = "IIp"
 
     cat = cat[mask]
     cat = np.array(sorted(cat, key=lambda x: x["weight"], reverse=True))
@@ -55,15 +56,16 @@ for sn_cat in raw_cats:
     for i, subcat in enumerate([close, far]):
 
         new_cat = np.empty(len(subcat), dtype=cat_dtype)
-        new_cat["ra"] = subcat["ra"]
-        new_cat["dec"] = subcat["dec"]
-        new_cat["Distance (Mpc)"] = subcat["distance"]
-        new_cat["Ref Time (MJD)"] = subcat["discoverydate_mjd"]
-        new_cat["Name"] = subcat["name"]
-        new_cat["Relative Injection Weight"] = np.ones_like(subcat["weight"])
+        new_cat["ra_rad"] = subcat["ra"]
+        new_cat["dec_rad"] = subcat["dec"]
+        new_cat["distance_mpc"] = subcat["distance"]
+        new_cat["ref_time_mjd"] = subcat["discoverydate_mjd"]
+        new_cat["source_name"] = subcat["name"]
+        new_cat["base_weight"] = np.ones_like(subcat["weight"])
+        new_cat['injection_weight_modifier'] = np.ones_like(subcat["weight"])
 
         save_path = sn_catalogue_name(sn_type, nearby=[True, False][i])
 
-        print("Saving to", save_path)
+        logging.info("Saving to {0}".format(save_path))
 
         np.save(save_path, new_cat)
