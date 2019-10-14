@@ -2,7 +2,7 @@ import numpy as np
 import os
 from flarestack.data import Dataset, SeasonWithMC
 from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader, \
-    convert_grl, verify_grl_with_data
+    verify_grl_with_data
 from flarestack.shared import host_server
 from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
 from scipy.interpolate import interp1d
@@ -10,6 +10,9 @@ import logging
 
 try:
     icecube_dataset_dir = os.environ['FLARESTACK_DATASET_DIR']
+
+    if os.path.isdir(icecube_dataset_dir + "mirror-7year-PS-sens/"):
+        published_sens_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
     logging.info("Loading datasets from", icecube_dataset_dir, "(local)")
 except KeyError:
     icecube_dataset_dir = None
@@ -17,16 +20,26 @@ except KeyError:
 if icecube_dataset_dir is None:
     if host_server == "DESY":
         icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
-        skylab_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
+        published_sens_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
         logging.info("Loading datasets from", icecube_dataset_dir, "(DESY)")
     elif host_server == "WIPAC":
         icecube_dataset_dir = "/data/ana/analyses/"
-        skylab_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
+        published_sens_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
         logging.info("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
     else:
         raise ImportError("No IceCube data directory found. Run: \n"
                           "export FLARESTACK_DATA_DIR=/path/to/IceCube/data")
 
+def get_published_sens_ref_dir():
+    try:
+        return published_sens_ref_dir
+    except NameError:
+        logging.error(
+            "No reference sensitivity directory found. "
+            "Please create one at {0}".format(
+            icecube_dataset_dir + "mirror-7year-PS-sens/"
+            ))
+        raise
 
 # # Dataset directory can be changed if needed
 #

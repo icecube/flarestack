@@ -2,8 +2,9 @@ from builtins import range
 import os
 import numpy as np
 from scipy.interpolate import interp1d, interp2d
-from flarestack.data.icecube import skylab_ref_dir
+from flarestack.data.icecube.ic_season import get_published_sens_ref_dir
 
+published_sens_ref_dir = get_published_sens_ref_dir()
 
 def reference_sensitivity(sindec=np.array(0.0), gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
@@ -14,7 +15,7 @@ def reference_sensitivity(sindec=np.array(0.0), gamma=2.0):
     :param sindec: Sin(declination)
     :return: 7 year PS sensitivity at sindec
     """
-    skylab_sens_path = skylab_ref_dir + "sens.npy"
+    skylab_sens_path = published_sens_ref_dir + "sens.npy"
     data = np.load(skylab_sens_path)
     sindecs = np.sin(np.array([x[0] for x in data]))
     gammas = [1.0, 2.0, 3.0]
@@ -50,7 +51,7 @@ def reference_7year_discovery_potential(sindec=0.0, gamma=2.0):
     :param sindec: Sin(declination)
     :return: 7 year PS discovery potential at sindec
     """
-    skylab_disc_path = skylab_ref_dir + "disc.npy"
+    skylab_disc_path = published_sens_ref_dir + "disc.npy"
     data = np.load(skylab_disc_path)
     sindecs = np.sin(np.array([x[0] for x in data]))
     gammas = [1.0, 2.0, 3.0]
