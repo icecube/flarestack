@@ -83,10 +83,10 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             try:
                 if self.mock_unblind:
                     self.limit_path = limit_output_path(
-                        self.unblind_dict["background TS"] + "mock_unblind/")
+                        self.unblind_dict["background_ts"] + "mock_unblind/")
                 else:
                     self.limit_path = limit_output_path(
-                        self.unblind_dict["background TS"] + "real_unblind/")
+                        self.unblind_dict["background_ts"] + "real_unblind/")
             except KeyError:
                 self.limit_path = np.nan
 
@@ -112,7 +112,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             logging.info("Test Statistic of:", self.ts)
 
             try:
-                path = self.unblind_dict["background TS"]
+                path = self.unblind_dict["background_ts"]
                 self.pickle_dir = name_pickle_output_dir(path)
                 self.output_file = self.plot_dir + "TS.pdf"
                 self.compare_to_background_TS()
@@ -154,11 +154,11 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 x_axis = []
 
                 for subdir in os.listdir(self.pickle_dir):
-                    new_path = self.unblind_dict["background TS"] + subdir + "/"
+                    new_path = self.unblind_dict["background_ts"] + subdir + "/"
 
                     with open(analysis_pickle_path(new_path), "r") as f:
                         mh_dict = Pickle.load(f)
-                        e_pdf_dict = mh_dict["inj_dict"]["injection_energy_pdf"]
+                        e_pdf_dict = mh_dict["inj_dict"]["injection_sig_energy_pdf"]
 
                     rh = ResultsHandler(self.unblind_dict)
 
@@ -173,10 +173,10 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     inj_time = 0.
 
-                    for season in mh_dict["datasets"]:
+                    for season in mh_dict["dataset"]:
 
                         t_pdf = TimePDF.create(
-                            mh_dict["inj_dict"]["injection_time_pdf"], season
+                            mh_dict["inj_dict"]["injection_sig_time_pdf"], season
                         )
 
                         for src in self.sources:
@@ -293,7 +293,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             print("\n")
             print("The following datasets will be used:")
             print("\n")
-            for x in self.unblind_dict["datasets"].values():
+            for x in self.unblind_dict["dataset"].values():
                 print(x.sample_name, x.season_name)
                 print("\n")
                 print(x.exp_path)
