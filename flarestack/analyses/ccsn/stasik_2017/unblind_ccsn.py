@@ -10,7 +10,7 @@ name_root = "analyses/ccsn/stasik_2017/unblind_ccsn/"
 bkg_ts_root = "analyses/ccsn/stasik_2017/calculate_sensitivity/"
 
 llh_energy = {
-    "Name": "Power Law",
+    "energy_pdf_name": "power_law",
 }
 
 res_dict = dict()
@@ -26,19 +26,19 @@ for cat in sn_cats:
 
     for llh_time in llh_times:
         unblind_llh = {
-            "name": "standard",
-            "LLH Energy PDF": llh_energy,
-            "LLH Time PDF": llh_time,
+            "llh_name": "standard",
+            "llh_energy_pdf": llh_energy,
+            "llh_time_pdf": llh_time,
         }
 
         unblind_dict = {
             "name": name,
             "mh_name": "fit_weights",
-            "datasets": custom_dataset(ps_v002_p01, catalogue,
+            "dataset": custom_dataset(ps_v002_p01, catalogue,
                                        llh_time),
             "catalogue": cat_path,
             "llh_dict": unblind_llh,
-            "background TS": bkg_ts
+            "background_ts": bkg_ts
         }
 
         ub = create_unblinder(unblind_dict, mock_unblind=False)
