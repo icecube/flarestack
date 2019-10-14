@@ -2,9 +2,8 @@ from __future__ import division
 from builtins import str
 from flarestack.utils.neutrino_cosmology import calculate_transient, \
     sfr_madau, sfr_clash_candels, get_diffuse_flux_at_1GeV
-from flarestack.analyses.ccsn.ccsn_limits import limits
+from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits
 from flarestack.core.energy_pdf import EnergyPDF
-from astropy import units as u
 from astropy.cosmology import Planck15 as cosmo
 import numpy as np
 from flarestack.misc.convert_diffuse_flux_contour import contour_95, \

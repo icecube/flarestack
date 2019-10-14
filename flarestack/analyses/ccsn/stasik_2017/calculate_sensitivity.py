@@ -1,33 +1,30 @@
-"""Script to calculate the sensitivity and discovery potential for different
-
+"""Script to calculate the sensitivity and discovery potential for CCSNe.
 """
-from builtins import str
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube import ps_v002_p01
-from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
+from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.analyses.ccsn.shared_ccsn import sn_cats, sn_catalogue_name, \
+from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import sn_cats, sn_catalogue_name, \
     sn_time_pdfs
-from flarestack.cluster import run_desy_cluster as rd
+from flarestack.cluster import analyse, wait_for_cluster
 import math
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_seasons import custom_dataset
 import os
-from flarestack.core.minimisation import MinimisationHandler
 
 analyses = dict()
 
 # Initialise Injectors/LLHs
 
 llh_energy = {
-    "Name": "Power Law",
+    "Name": "power_law",
 }
 
-gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
+# gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 # gammas = [1.8, 2.0, 2.5]
-# gamma = [2.0]
-raw = "analyses/ccsn/calculate_sensitivity/"
+gammas = [2.0]
+raw = "analyses/ccsn/stasik_2017/calculate_sensitivity/"
 
 full_res = dict()
 
@@ -38,7 +35,7 @@ for cat in sn_cats:
     cat_path = sn_catalogue_name(cat)
     catalogue = np.load(cat_path)
 
-    closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
+    closest_src = np.sort(catalogue, order="distance_mpc")[0]
 
     cat_res = dict()
 
@@ -46,7 +43,7 @@ for cat in sn_cats:
 
     for llh_time in time_pdfs:
 
-        time_key = str(llh_time["Post-Window"] + llh_time["Pre-Window"])
+        time_key = str(llh_time["post_window"] + llh_time["pre_window"])
 
         time_name = name + time_key + "/"
 
@@ -61,9 +58,9 @@ for cat in sn_cats:
             l_name = time_name + mh_name + "/"
 
             llh_kwargs = {
-                "name": "standard",
-                "LLH Energy PDF": llh_energy,
-                "LLH Time PDF": llh_time,
+                "llh_name": "standard",
+                "llh_sig_energy_pdf": llh_energy,
+                "llh_sig_time_pdf": llh_time
             }
 
             injection_time = llh_time
@@ -82,31 +79,25 @@ for cat in sn_cats:
                 injection_energy["Gamma"] = gamma
 
                 inj_kwargs = {
-                    "Injection Energy PDF": injection_energy,
-                    "Injection Time PDF": injection_time,
-                    "Poisson Smear?": True,
+                    "injection_sig_energy_pdf": injection_energy,
+                    "injection_sig_time_pdf": injection_time,
+                    "poisson_smear_bool": True,
                 }
 
                 mh_dict = {
                     "name": full_name,
                     "mh_name": "standard",
-                    "datasets": custom_dataset(ps_v002_p01, catalogue,
+                    "dataset": custom_dataset(ps_v002_p01, catalogue,
                                                llh_kwargs["LLH Time PDF"]),
                     "catalogue": cat_path,
-                    "inj kwargs": inj_kwargs,
+                    "inj_dict": inj_kwargs,
                     "llh_dict": llh_kwargs,
                     "scale": scale,
                     "n_trials": 5,
                     "n_steps": 20
                 }
 
-                pkl_file = make_analysis_pickle(mh_dict)
-
-                # rd.submit_to_cluster(pkl_file, n_jobs=50)
-
-                mh = MinimisationHandler(mh_dict)
-                mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
-                               n_trials=1)
+                analyse(mh_dict, cluster=False, n_cpu=3)
 
                 res[gamma] = mh_dict
 
@@ -116,7 +107,7 @@ for cat in sn_cats:
 
     full_res[cat] = cat_res
 
-rd.wait_for_cluster()
+wait_for_cluster()
 
 for b, (cat_name, cat_res) in enumerate(full_res.items()):
 

@@ -1,13 +1,13 @@
 import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
-from flarestack.analyses.ccsn.shared_ccsn import sn_cats, sn_catalogue_name, \
+from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import sn_cats, sn_catalogue_name, \
     sn_time_pdfs
 from flarestack.core.unblinding import create_unblinder
 from flarestack.utils.custom_seasons import custom_dataset
 
 
-name_root = "analyses/ccsn/unblind_ccsn/"
-bkg_ts_root = "analyses/ccsn/calculate_sensitivity/"
+name_root = "analyses/ccsn/stasik_2017/unblind_ccsn/"
+bkg_ts_root = "analyses/ccsn/stasik_2017/calculate_sensitivity/"
 
 llh_energy = {
     "Name": "Power Law",

@@ -55,7 +55,7 @@ def sn_time_pdfs(sn_type):
 
 def ccsn_limits(sn_type):
 
-    base = "analyses/ccsn/calculate_sensitivity/"
+    base = "analyses/ccsn/stasik_2017/calculate_sensitivity/"
     path = base + sn_type + "/real_unblind/"
 
     savepath = limit_output_path(path)
