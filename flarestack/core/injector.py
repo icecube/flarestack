@@ -26,8 +26,10 @@ def read_injector_dict(inj_dict):
             ("Injection Time PDF", "injection_sig_time_pdf"),
             ("Injection Energy PDF", "injection_energy_pdf"),
             ("injection_sig_energy_pdf", "injection_energy_pdf"),
+            ("inj_energy_pdf", "injection_energy_pdf"),
             ("Poisson Smear?", "poisson_smear_bool"),
-            ("injection_time_pdf", "injection_sig_time_pdf")
+            ("injection_time_pdf", "injection_sig_time_pdf"),
+            ("inj_sig_time_pdf", "injection_sig_time_pdf")
         ]
 
         for (old_key, new_key) in maps:
