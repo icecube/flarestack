@@ -52,7 +52,7 @@ class Dataset:
     def add_subseason(self, season):
         self.subseasons[season.season_name] = season
 
-    def get_seasons(self, *args):
+    def get_seasons(self, *args, **kwargs):
         season_names = list(args)
         if len(season_names) == 0:
             return copy.copy(self)
@@ -71,6 +71,17 @@ class Dataset:
                         "Available seasons are: {1} \n"
                         "Available subseasons are: {2}".format(
                             name, self.seasons.keys(), self.subseasons.keys()))
+
+            if "subselection_fraction" in kwargs.keys():
+
+                subselection_fraction = kwargs["subselection_fraction"]
+
+                if float(subselection_fraction) > 1.:
+                    raise ValueError("Subselection {0} is greater than 1."
+                                     "Please specify a different subselection value")
+
+                for season in cd.values():
+                    season.set_subselection_fraction(subselection_fraction)
             return cd
 
     def get_single_season(self, name):
@@ -78,7 +89,7 @@ class Dataset:
 
     def __iter__(self):
         return self.seasons.__iter__()
-    
+
     def items(self):
         return self.seasons.items()
 
@@ -110,11 +121,19 @@ class Season:
         self.background_dtype = None
         self._time_pdf = None
         self.all_paths = [self.exp_path]
+        self._subselection_fraction = None
 
     def load_background_model(self):
         """Generic function to load background data to memory. It is useful
         for Injector, but does not always need to be used."""
         self.loaded_background = self.get_background_model()
+
+    def set_subselection_fraction(self, subselection_fraction):
+        if float(subselection_fraction) > 1.:
+            raise ValueError("Subselection {0} is greater than 1."
+                             "Please specify a subselection value <=1. ")
+
+        self._subselection_fraction = subselection_fraction
 
     def get_background_dtype(self):
         if self.background_dtype is None:
@@ -151,7 +170,10 @@ class Season:
         return np.array(data[list(self.get_background_dtype().names)].copy())[:,]
 
     def simulate_background(self):
-        return self.pseudo_background()
+        data = self.pseudo_background()
+        if self._subselection_fraction is not None:
+            data = np.random.choice(data, int(len(data) * self._subselection_fraction))
+        return data
 
     def get_exp_data(self, **kwargs):
         return np.array(self.load_data(self.exp_path, **kwargs))
