@@ -32,6 +32,7 @@ def read_llh_dict(llh_dict):
         ("name", "llh_name"),
         ("LLH Time PDF", "llh_sig_time_pdf"),
         ("LLH Energy PDF", "llh_energy_pdf"),
+        ("llh_sig_energy_pdf", "llh_energy_pdf"),
         ("Fit Negative n_s?", "negative_ns_bool"),
         ("llh_time_pdf", "llh_sig_time_pdf")
     ]

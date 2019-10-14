@@ -25,6 +25,7 @@ def read_injector_dict(inj_dict):
         maps = [
             ("Injection Time PDF", "injection_sig_time_pdf"),
             ("Injection Energy PDF", "injection_energy_pdf"),
+            ("injection_sig_energy_pdf", "injection_energy_pdf"),
             ("Poisson Smear?", "poisson_smear_bool"),
             ("injection_time_pdf", "injection_sig_time_pdf")
         ]
@@ -234,8 +235,6 @@ class MCInjector(BaseInjector):
         dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
 
         band_mask = self.get_band_mask(source, min_dec, max_dec)
-
-        # print(band_mask)
 
         return np.copy(self._mc[band_mask]), omega, band_mask
 
