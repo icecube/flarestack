@@ -1,4 +1,4 @@
-from __future__ import print_function
+import logging
 import os
 
 from flarestack.shared import fs_dir, log_dir
@@ -19,19 +19,19 @@ def make_local_submit_file():
            'export PYTHONPATH=`which python`:' + root_dir + "/ \n" \
            'python ' + fs_dir + 'core/multiprocess_wrapper.py -f $1 -n $2'
 
-    print("Creating file at", local_submit_file)
+    logging.info("Creating file at {0}".format(local_submit_file))
 
     with open(local_submit_file, "w") as f:
         f.write(text)
 
-    print("Bash file created: \n")
-    print(text)
+    logging.info("Bash file created:")
+    logging.info(text)
 
     cmd = "chmod +x " + local_submit_file
 
     os.system(cmd)
 
-    print("CMD:", cmd)
+    logging.info("CMD: {0}".format(cmd))
 
 
 if __name__ == "__main__":
