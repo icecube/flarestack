@@ -61,14 +61,14 @@ class EnergyPDF(object):
 
         if "e_min_gev" in list(e_pdf_dict.keys()):
             self.e_min = e_pdf_dict["e_min_gev"]
-            print("Minimum Energy is", self.e_min, "GeV.")
+            logging.info("Minimum Energy is {0} GeV.".format(self.e_min))
             self.integral_e_min = self.e_min
         else:
             self.integral_e_min = default_emin
 
         if "e_max_gev" in list(e_pdf_dict.keys()):
             self.e_max = e_pdf_dict["e_max_gev"]
-            print("Maximum Energy is", self.e_max, "GeV.")
+            logging.info("Maximum Energy is {0}".format(self.e_max))
             self.integral_e_max = self.e_max
         else:
             self.integral_e_max = default_emax
