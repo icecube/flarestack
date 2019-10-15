@@ -93,6 +93,6 @@ Is flarestack actually working? If you've already run the precomputation, you ca
 
 If you want to contribute to flarestack, please remember to add new tests!
 
-Flarestack runs with Travic CI, a Continuous Integration Service. After each commit, the suite of tests is run, to ensure that the commit did not break anything. You can see the results of these tests at:
+Flarestack runs with Travis CI, a Continuous Integration Service (https://travis-ci.org/). After each commit, the suite of tests is run, to ensure that the commit did not break anything. You can see the results of these tests at:
 
 [![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack)
