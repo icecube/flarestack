@@ -1,2 +1,3 @@
 from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.utils.catalogue_loader import load_catalogue
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
