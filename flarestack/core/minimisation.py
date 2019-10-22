@@ -667,7 +667,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         :param scale: Flux scale to inject
         """
 
-        res_dict = self.run_trial(scale)
+        res_dict = self.simulate_and_run(scale)
 
         res = res_dict["res"]
         g = res_dict["f"]
@@ -752,7 +752,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             ax.set_ylim(bottom=0.0)
 
         path = plot_output_dir(self.name) + "llh_scan.pdf"
-
+        
         title = os.path.basename(
                     os.path.dirname(self.name[:-1])
                 ).replace("_", " ") + " Likelihood Scans"
