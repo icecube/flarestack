@@ -46,7 +46,7 @@ This will give you the very latest copy of the code, update the installed versio
 
 ### What actually are the dependencies, by the way?
 
-Flarestack uses python 3.7, and requires the following packages:
+Flarestack is compatible with python 3.6, 3.7 and 3.8, and requires the following packages:
 
 * numpy
 * scipy
