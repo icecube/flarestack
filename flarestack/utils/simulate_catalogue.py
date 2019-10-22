@@ -1,23 +1,11 @@
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import Distance
-import datetime
 import os
-import cPickle as Pickle
-from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
-    catalogue_dir
-from flarestack.utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import run_desy_cluster as rd
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.core.injector import Injector
-import matplotlib.pyplot as plt
-import math
+from flarestack.shared import catalogue_dir
 from flarestack.utils.prepare_catalogue import cat_dtype
 from flarestack.utils.neutrino_cosmology import define_cosmology_functions, \
     integrate_over_z, cumulative_z
-from flarestack.analyses.ztf.sn_cosmology import ccsn_clash_candels, ccsn_madau
 from scipy.interpolate import interp1d
 from flarestack.core.time_PDFs import TimePDF
 
@@ -65,8 +53,13 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
     print "of all the flux from this source class"
 
     n_catalogue = sorted(list(set(
-        [int(x) for x in np.logspace(0, 3.0, n_entries)]
+        [int(x) for x in np.logspace(-4, 0, n_entries) * n_local
+         if int(x) > 0]
     )))
+
+    # Clip catalogue at 1000 sources if it exceeds this
+
+    n_catalogue = [n for n in n_catalogue if n < 1e3]
 
     cat_names_north = [catalogue_dir + cat_name + "/" + str(n) +
                        "_cat_northern.npy" for n in n_catalogue]
@@ -77,8 +70,8 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
 
     all_cat_names = {
         "Northern": cat_names_north,
-        "Southern": cat_names_south,
-        "Full": cat_names
+        # "Southern": cat_names_south,
+        # "Full": cat_names
     }
 
     if not np.logical_and(
@@ -113,8 +106,8 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
 
         dec_ranges = [
             ("Northern", 0., 1.),
-            ("Southern", -1, 0.),
-            ("Full", -1., 1.)
+            # ("Southern", -1, 0.),
+            # ("Full", -1., 1.)
         ]
 
         for i, n in enumerate(n_catalogue):

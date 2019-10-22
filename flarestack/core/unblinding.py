@@ -79,9 +79,9 @@ class Unblinder(MinimisationHandler):
             print "No Background TS Distribution specified.",
             print "Cannot assess significance of TS value."
 
-        if full_plots:
+        self.calculate_upper_limits()
 
-            self.calculate_upper_limits()
+        if full_plots:
 
             if self.flare:
                 self.neutrino_lightcurve()
@@ -104,7 +104,7 @@ class Unblinder(MinimisationHandler):
             e_per_source_uls = []
             x_axis = []
 
-            for subdir in os.listdir(self.pickle_dir):
+            for subdir in sorted(os.listdir(self.pickle_dir)):
                 new_path = self.unblind_dict["background TS"] + subdir + "/"
 
                 with open(analysis_pickle_path(new_path), "r") as f:
@@ -118,6 +118,11 @@ class Unblinder(MinimisationHandler):
 
                 ul, extrapolated = rh.set_upper_limit(float(self.ts), savepath)
                 flux_uls.append(ul)
+
+                # Conservatively assume at 11% systematic uncertainty,
+                # following procedure in https://arxiv.org/pdf/1609.04981
+
+                ul *= 1.11
 
                 # Calculate mean injection time per source
 
@@ -168,6 +173,10 @@ class Unblinder(MinimisationHandler):
                 y = [fluence_uls, e_per_source_uls][k]
                 ax.set_ylim(0.95 * min(y), 1.1 * max(y))
 
+            plt.annotate("IceCube \n Preliminary ", (0.05, 0.05), alpha=0.5,
+                         fontsize=15,
+                         xycoords="axes fraction", multialignment="center")
+
             plt.tight_layout()
             plt.savefig(self.plot_dir + "upper_limit_fluence.pdf")
             plt.close()
@@ -187,7 +196,7 @@ class Unblinder(MinimisationHandler):
 
             with open(self.limit_path, "wb") as f:
                 Pickle.dump(res_dict, f)
-                
+
         except OSError:
             print "Unable to set limits. No TS distributions found."
 

@@ -45,9 +45,35 @@ def tde_catalogue_name(name):
     return tde_cat_dir + "TDE_" + name + "_catalogue.npy"
 
 
+def tde_weighted_catalogue_name(name):
+    """Maps the name of a given TDE catalogue to the path of a source
+    catalogue which contains those TDEs in one combined catalogue.
+
+    :param name: Name of TDE catalogue
+    :return: Path to catalogue
+    """
+
+    return tde_cat_dir + "TDE_" + name + "_catalogue_weighted.npy"
+
+
 def tde_cat_limit(name, index):
     path = limits_dir + "analyses/tde/compare_spectral_indices/Emin=100/" +\
         name + "/fit_weights/real_unblind/limit.pkl"
+
+    if not os.path.isfile(path):
+        raise Exception("{0} file not found".format(path))
+
+    with open(path, "r") as f:
+        data = Pickle.load(f)
+
+    f = interp1d(data["x"], data["energy"])
+
+    return f(index)
+
+
+def tde_cat_weight_limit(name, index):
+    path = limits_dir + "analyses/tde/compare_mass_weighting/" +\
+        name + "/real_unblind/limit.pkl"
 
     if not os.path.isfile(path):
         raise Exception("{0} file not found".format(path))
@@ -116,8 +142,8 @@ def make_individual_limit_plot(name):
         plt.savefig(savepath)
         plt.close()
 
-for cat in tde_catalogues:
-    make_limit_plot(cat)
-
-for cat in individual_tdes:
-    make_individual_limit_plot(cat)
+# for cat in tde_catalogues:
+#     make_limit_plot(cat)
+#
+# for cat in individual_tdes:
+#     make_individual_limit_plot(cat)

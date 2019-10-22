@@ -68,7 +68,19 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     # Calculate fluence
 
-    tot_fluence = (flux * e_integral)
+    base_fluence = (flux * e_integral)
+
+    scale = np.sum(
+        [x["Relative Injection Weight"] * x["Distance (Mpc)"]**-2
+         for x in catalogue])/ np.sum(catalogue["Distance (Mpc)"]**-2)
+
+    print "Accounting for injection weight, we have..."
+
+    print "Base fluence {0} multipled by scale {1}".format(
+        base_fluence, scale
+    )
+
+    tot_fluence = base_fluence * scale
 
     astro_res["Total Fluence (GeV cm^{-2} s^{-1})"] = tot_fluence.value
 

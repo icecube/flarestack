@@ -35,15 +35,16 @@ unblind_llh = {
 }
 
 name_root = "analyses/tde/unblind_individual_tdes/"
-bkg_ts_root = "analyses/tde/compare_cluster_search_to_time_integration/"
-
+#bkg_ts_root = "analyses/tde/compare_cluster_search_to_time_integration/"
+bkg_ts_root = "analyses/tde/compare_spectral_indices_individual/AT2018cow/flare_winter/"
 cat_res = dict()
 
-for j, cat in enumerate(individual_tdes):
+for j, cat in enumerate(["AT2018cow"]):
+# for j, cat in enumerate(individual_tdes):
 
     name = name_root + cat.replace(" ", "") + "/"
 
-    bkg_ts = bkg_ts_root + cat.replace(" ", "") + "/flare/"
+    bkg_ts = bkg_ts_root #+ cat.replace(" ", "") + "/flare/"
 
     cat_path = individual_tde_cat(cat)
     catalogue = np.load(cat_path)

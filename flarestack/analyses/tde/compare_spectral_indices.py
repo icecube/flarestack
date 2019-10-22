@@ -55,8 +55,8 @@ gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 # gammas = [1.8, 2.0]
 
 
-power_law_start_energy = [100, 10000, 100000]
-# power_law_start_energy = [100]
+# power_law_start_energy = [100, 10000, 100000]
+power_law_start_energy = [100]
 
 cutoff_dict = dict()
 
@@ -68,7 +68,7 @@ for e_min in power_law_start_energy:
 
     cat_res = dict()
 
-    for cat in tde_catalogues:
+    for cat in ["jetted"]:
 
         name = raw + cat + "/"
 
@@ -133,7 +133,7 @@ for e_min in power_law_start_energy:
 
                 # if label != "Fixed Weights (n_s > 0)":
                 if label == "Fit Weights":
-                #     rd.submit_to_cluster(pkl_file, n_jobs=1000)
+                    rd.submit_to_cluster(pkl_file, n_jobs=100)
 
                     # mh = MinimisationHandler(mh_dict)
                     # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
@@ -148,7 +148,7 @@ for e_min in power_law_start_energy:
 
     cutoff_dict[e_min] = cat_res
 
-# rd.wait_for_cluster()
+rd.wait_for_cluster()
 
 for (e_min, cat_res) in cutoff_dict.iteritems():
 

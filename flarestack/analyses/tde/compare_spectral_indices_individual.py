@@ -4,6 +4,7 @@ import cPickle as Pickle
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
+from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
     catalogue_dir
 from flarestack.utils.reference_sensitivity import reference_sensitivity
@@ -95,9 +96,7 @@ winter_flare_llh = {
 }
 
 winter_flare_inj_time = {
-    "Name": "Box",
-    "Pre-Window": 0,
-    "Post-Window": 10
+    "Name": "FixedEndBox"
 }
 
 winter_flare_injection_time = {
@@ -106,8 +105,8 @@ winter_flare_injection_time = {
     "Poisson Smear?": True,
 }
 
-# gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7, 2.9]
-gammas = [1.8, 2.0]
+gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
+# gammas = [1.8, 2.0]
 # gammas = [2.0, 2.3]
 # gammas = [1.99, 2.0, 2.02]
 # gammas = [2.5, 2.7, 2.9]
@@ -117,11 +116,12 @@ name_root = "analyses/tde/compare_spectral_indices_individual/"
 cat_res = dict()
 
 cats = [
-    "Swift J1644+57",
+    # "Swift J1644+57",
     # "Swift J2058+05",
     # "ASASSN-14li",
     # "XMMSL1 J0740-85"
     # "ASASSN-15lh",
+    "AT2018cow"
 ]
 
 for j, cat in enumerate(cats):
@@ -159,8 +159,8 @@ for j, cat in enumerate(cats):
             scale = flux_to_k(reference_sensitivity(
                 np.sin(catalogue["dec"]), gamma=gamma) * 50)
 
-            if i > 1:
-                scale *= 10**(i-1)
+            # if i > 1:
+            #     scale *= 10**(i-1)
 
             inj = dict(inj_kwargs)
 
@@ -173,13 +173,14 @@ for j, cat in enumerate(cats):
 
             mh_dict = {
                 "name": full_name,
-                "datasets": custom_dataset(txs_sample_v1, catalogue,
-                                           llh_kwargs["LLH Time PDF"]),
+                # "datasets": custom_dataset(txs_sample_v1, catalogue,
+                #                            llh_kwargs["LLH Time PDF"]),
+                "datasets": gfu_v002_p04,
                 "catalogue": cat_path,
                 "inj kwargs": inj,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
-                "n_trials": 5,
+                "n_trials": 1,
                 "n_steps": 10
             }
 
@@ -197,7 +198,7 @@ for j, cat in enumerate(cats):
             with open(pkl_file, "wb") as f:
                 Pickle.dump(mh_dict, f)
 
-            rd.submit_to_cluster(pkl_file, n_jobs=100)
+            # rd.submit_to_cluster(pkl_file, n_jobs=300)
             #
             # mh = MinimisationHandler(mh_dict)
             # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"], n_trials=10)
@@ -235,6 +236,10 @@ for (cat, src_res) in cat_res.iteritems():
                     injection_length = float(inj["Pre-Window"]) + \
                                        float(inj["Post-Window"])
 
+                elif inj["Name"] == "FixedEndBox":
+                    source = np.load(rh_dict["catalogue"])
+                    injection_length = float(source["End Time (MJD)"]) - \
+                                       float(source["Start Time (MJD)"])
                 else:
                     raise Exception("Unrecognised Time PDF calculation")
 
