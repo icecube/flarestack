@@ -1,8 +1,4 @@
 language: python
-python:
-- '3.6'
-- '3.7'
-- '3.8'
 install:
 - pip install -e .
 matrix:
@@ -11,10 +7,8 @@ matrix:
     - python: 3.7
     - python: 3.8
       dist: xenial
-      env:
-       - BLAS=None
-       - LAPACK=None
-      
+      install:
+       - sudo apt-get install gcc gfortran python-dev libopenblas-dev liblapack-dev cython
 script: python -m unittest discover tests/
 notifications:
   email: false
