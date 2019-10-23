@@ -16,7 +16,7 @@ true_res_astro = {
 catalogue = tde_catalogue_name("jetted")
 
 
-class TestUtilAstroCosmo(unittest.TestCase):
+class TestUtilAstro(unittest.TestCase):
 
     def setUp(self):
         pass
@@ -38,9 +38,6 @@ class TestUtilAstroCosmo(unittest.TestCase):
 
         logging.info("Calculated values {0}".format(res_astro))
         logging.info("Reference  values {0}".format(true_res_astro))
-
-    def test_neutrino_cosmology(self):
-        pass
 
 
 if __name__ == '__main__':
