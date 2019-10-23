@@ -3,7 +3,6 @@ import astropy
 from astropy import units as u
 import numpy as np
 import math
-from flarestack.shared import catalogue_dir
 from astropy.coordinates import Distance
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.catalogue_loader import calculate_source_weight
@@ -27,32 +26,6 @@ def find_zfactor(distance):
     redshift = astropy.coordinates.Distance(distance).compute_z()
     zfactor = 1 + redshift
     return zfactor
-
-
-# def fluence_integral(gamma, e_min=100*u.GeV, e_max=10*u.PeV):
-#     """Performs an integral for fluence over a given energy range. This is
-#     the integral of E*
-#
-#     :param gamma:
-#     :param e_min:
-#     :param e_max:
-#     :return:
-#     """
-#     e_min = e_min.to(u.GeV)
-#     e_max = e_max.to(u.GeV)
-#     if gamma == 2:
-#         e_integral = np.log(e_max / e_min) * (u.GeV ** 2)
-#     else:
-#         power = 2 - gamma
-#
-#         # Get around astropy power rounding error (does not give
-#         # EXACTLY 2)
-#
-#         e_integral = ((1. / power) * (e_0 ** gamma) * (
-#                 (e_max ** power) - (e_min ** power))
-#                       ).value * u.GeV ** 2
-#
-#     return e_integral
 
 
 def calculate_astronomy(flux, e_pdf_dict, catalogue):
@@ -174,49 +147,49 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 #     return n_inj
 
 
-def calculate_neutrinos(source, season, inj_kwargs):
-
-    inj = season.make_injector([source], **inj_kwargs)
-    energy_pdf = inj_kwargs["Injection Energy PDF"]
-
-    print("\n")
-    print(source["Name"], season["Name"])
-    print("\n")
-
-    if "Flux at 1GeV" not in list(energy_pdf.keys()):
-        # if "Source Energy (erg)" in energy_pdf.keys():
-        energy_pdf["Flux at 1GeV"] = \
-            energy_pdf["Source Energy (erg)"] / energy_pdf.fluence_integral()
-
-    flux_1_gev = energy_pdf["Flux at 1GeV"] * \
-                inj.time_pdf.effective_injection_time(source) * u.s
-
-    print(energy_pdf["Flux at 1GeV"])
-
-    print("Flux at 1GeV would be", flux_1_gev, "\n")
-    print(
-        "Time is {0} years".format(
-            inj.time_pdf.effective_injection_time(source) / (60*60*24*365))
-    )
-    print("Raw Flux is", energy_pdf["Flux at 1GeV"])
-
-    source_mc, omega, band_mask = inj.select_mc_band(inj._mc, source)
-
-    # northern_mask = inj._mc["sinDec"] > 0.0
-
-    # print "OneWights:", np.sum(inj._mc["ow"])
-    # print np.sum(inj._mc["ow"] * inj._mc["trueE"]**-energy_pdf["Gamma"])
-    # print np.sum(inj.mc_weights * flux_1_gev)
-    #
-    # print "Now Ludwig-style:",
-    #
-    # print np.sum(flux_1_gev * inj.mc_weights[northern_mask])
-
-    source_mc["ow"] = flux_1_gev * inj.mc_weights[band_mask] / omega
-    n_inj = np.sum(source_mc["ow"])
-
-    print("")
-
-    print("This corresponds to", n_inj, "neutrinos")
-
-    return n_inj
+# def calculate_neutrinos(source, season, inj_kwargs):
+#
+#     inj = season.make_injector([source], **inj_kwargs)
+#     energy_pdf = inj_kwargs["Injection Energy PDF"]
+#
+#     print("\n")
+#     print(source["Name"], season["Name"])
+#     print("\n")
+#
+#     if "Flux at 1GeV" not in list(energy_pdf.keys()):
+#         # if "Source Energy (erg)" in energy_pdf.keys():
+#         energy_pdf["Flux at 1GeV"] = \
+#             energy_pdf["Source Energy (erg)"] / energy_pdf.fluence_integral()
+#
+#     flux_1_gev = energy_pdf["Flux at 1GeV"] * \
+#                 inj.time_pdf.effective_injection_time(source) * u.s
+#
+#     print(energy_pdf["Flux at 1GeV"])
+#
+#     print("Flux at 1GeV would be", flux_1_gev, "\n")
+#     print(
+#         "Time is {0} years".format(
+#             inj.time_pdf.effective_injection_time(source) / (60*60*24*365))
+#     )
+#     print("Raw Flux is", energy_pdf["Flux at 1GeV"])
+#
+#     source_mc, omega, band_mask = inj.select_mc_band(inj._mc, source)
+#
+#     # northern_mask = inj._mc["sinDec"] > 0.0
+#
+#     # print "OneWights:", np.sum(inj._mc["ow"])
+#     # print np.sum(inj._mc["ow"] * inj._mc["trueE"]**-energy_pdf["Gamma"])
+#     # print np.sum(inj.mc_weights * flux_1_gev)
+#     #
+#     # print "Now Ludwig-style:",
+#     #
+#     # print np.sum(flux_1_gev * inj.mc_weights[northern_mask])
+#
+#     source_mc["ow"] = flux_1_gev * inj.mc_weights[band_mask] / omega
+#     n_inj = np.sum(source_mc["ow"])
+#
+#     print("")
+#
+#     print("This corresponds to", n_inj, "neutrinos")
+#
+#     return n_inj

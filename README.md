@@ -46,7 +46,7 @@ This will give you the very latest copy of the code, update the installed versio
 
 ### What actually are the dependencies, by the way?
 
-Flarestack uses python 3.7, and requires the following packages:
+Flarestack is compatible with python 3.6, 3.7 and 3.8, and requires the following packages:
 
 * numpy
 * scipy
@@ -93,3 +93,11 @@ Is flarestack actually working? If you've already run the precomputation, you ca
 
 If you want to contribute to flarestack, please remember to add new tests!
 
+Flarestack runs with Travis CI, a Continuous Integration Service (https://travis-ci.org/). After each commit, the suite of tests is run, to ensure that the commit did not break anything. You can see the results of these tests at:
+
+[![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack)
+
+# Contributors
+
+* Federica Bradascio [@fbradascio](https://github.com/fbradascio)
+* Robert Stein [@robertdstein](https://github.com/robertdstein)
