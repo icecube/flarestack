@@ -1,4 +1,4 @@
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.icecube import gfu_v002_p04
 from flarestack.utils import ps_catalogue_name, load_catalogue
 import logging
 
@@ -38,7 +38,7 @@ inj_dict = {
 
 # Uses this season to create dataset
 
-season = ps_v002_p01.get_single_season("IC86_234")
+season = gfu_v002_p04.get_single_season("gfu_8_year")
 
 # Creates a dummy source at sin(dec)=0.1
 # The source is saved in .npy format
