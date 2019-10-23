@@ -27,7 +27,9 @@ def read_e_pdf_dict(e_pdf_dict):
             ("E Max", "e_max_gev"),
             ("Name", "energy_pdf_name"),
             ("Gamma", "gamma"),
-            ("Spline Path", "spline_path")
+            ("Spline Path", "spline_path"),
+            ("Source Energy (erg)", "source_energy_erg"),
+
         ]
 
         for (old_key, new_key) in maps:

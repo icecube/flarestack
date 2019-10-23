@@ -105,7 +105,7 @@ def integrate_over_z(f, zmin=0.0, zmax=8.0):
 
     nsteps = 1e3
 
-    zrange, step = np.linspace(zmin, zmax, nsteps + 1, retstep=True)
+    zrange, step = np.linspace(zmin, zmax, int(nsteps + 1), retstep=True)
     int_sum = 0.0
 
     for i, z in enumerate(zrange[1:-1]):
@@ -123,7 +123,7 @@ def cumulative_z(f, zrange):
     if isinstance(zrange, np.ndarray):
         step = zrange[1] - zrange[0]
     else:
-        zrange, step = np.linspace(0.0, zrange, nsteps + 1, retstep=True)
+        zrange, step = np.linspace(0.0, zrange, int(nsteps + 1), retstep=True)
 
     int_sum = 0.0
 
@@ -197,7 +197,7 @@ def define_cosmology_functions(rate, nu_e_flux_1GeV, gamma,
 def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
                                   nu_bright_fraction=1.0,
                                   diffuse_fraction=None,
-                                  diffuse_fit="joint"):
+                                  diffuse_fit="joint_15"):
 
     e_pdf_dict = read_e_pdf_dict(e_pdf_dict)
 
@@ -209,12 +209,12 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
     logging.info("Diffuse Spectral Index is {0}".format(diffuse_gamma))
 
     if "gamma" not in e_pdf_dict:
-        logging.warning("No spectral index has been specified."
+        logging.warning("No spectral index has been specified. "
                         "Assuming source has spectral index matching diffuse flux")
         e_pdf_dict["gamma"] = diffuse_gamma
 
     energy_pdf = EnergyPDF.create(e_pdf_dict)
-    nu_e = e_pdf_dict["Source Energy (erg)"]
+    nu_e = e_pdf_dict["source_energy_erg"]
     gamma = e_pdf_dict["gamma"]
 
     logging.info(name)
@@ -232,7 +232,7 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
 
     nu_e = nu_e.to("GeV") / fluence_conversion
 
-    zrange, step = np.linspace(0.0, zmax, 1 + 1e3, retstep=True)
+    zrange, step = np.linspace(0.0, zmax, int(1 + 1e3), retstep=True)
 
     rate_per_z, nu_flux_per_z, nu_flux_per_source, cumulative_nu_flux = \
         define_cosmology_functions(rate, nu_e, gamma, nu_bright_fraction)
@@ -281,9 +281,11 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
             z, Distance(z=z).to("Mpc"), cumulative_z(rate_per_z, z)[-1])
         )
 
-    logging.debug(
-        "Fraction from nearby sources {0}".format(
-            cumulative_nu_flux(0.3)[-1] / nu_at_horizon
+    nearby = 0.3
+
+    logging.info(
+        "Fraction from nearby (z<{0}) sources: {1}".format(
+            nearby, cumulative_nu_flux(nearby)[-1] / nu_at_horizon
         )
     )
 
@@ -306,7 +308,7 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
     plt.close()
 
     plt.figure()
-    plt.plot(zrange, nu_flux_per_z(zrange))
+    plt.plot(zrange[1:-1], nu_flux_per_z(zrange[1:-1]))
     plt.yscale("log")
     plt.xlabel("Redshift")
     plt.tight_layout()
@@ -344,7 +346,6 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
     plt.xlabel("Redshift")
     plt.ylabel(
         r"Time-Integrated Flux per Source [ GeV$^{-1}$ cm$^{-2}$]")
-    plt.legend()
     plt.tight_layout()
     plt.savefig(savedir + 'nu_flux_per_source_contribution.pdf')
     plt.close()
