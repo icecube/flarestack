@@ -59,7 +59,7 @@ def get_diffuse_flux_at_100TeV(fit="joint_15"):
     return diffuse_flux, diffuse_gamma
 
 
-def get_diffuse_flux_at_1GeV(fit="joint"):
+def get_diffuse_flux_at_1GeV(fit="joint_15"):
     """Returns the IceCube diffuse flux at 1GeV, to match flarestack
     convention for flux measurements.
 
