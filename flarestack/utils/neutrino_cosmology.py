@@ -194,10 +194,10 @@ def define_cosmology_functions(rate, nu_e_flux_1GeV, gamma,
     return rate_per_z, nu_flux_per_z, nu_flux_per_source, cumulative_nu_flux
 
 
-def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
-                        nu_bright_fraction=1.0,
-                        diffuse_fraction=None,
-                        diffuse_fit="joint"):
+def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
+                                  nu_bright_fraction=1.0,
+                                  diffuse_fraction=None,
+                                  diffuse_fit="joint"):
 
     e_pdf_dict = read_e_pdf_dict(e_pdf_dict)
 

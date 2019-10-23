@@ -1,6 +1,6 @@
 from __future__ import division
 from builtins import str
-from flarestack.utils.neutrino_cosmology import calculate_transient, \
+from flarestack.utils.neutrino_cosmology import calculate_transient_cosmology, \
     sfr_madau, sfr_clash_candels, get_diffuse_flux_at_1GeV
 from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits
 from flarestack.core.energy_pdf import EnergyPDF
@@ -103,9 +103,9 @@ if __name__ == "__main__":
         e_pdf_dict["Source Energy (erg)"] = limits[name]["Fixed Energy (erg)"]
         # e_pdf_dict["Source Energy (erg)"] = ccsn_energy_limit(name,
         # diffuse_gamma)
-        norms[name] = calculate_transient(e_pdf_dict, f, name, zmax=6.0,
-                                          nu_bright_fraction=nu_bright,
-                                          diffuse_fit="joint")
+        norms[name] = calculate_transient_cosmology(e_pdf_dict, f, name, zmax=6.0,
+                                                    nu_bright_fraction=nu_bright,
+                                                    diffuse_fit="joint")
 
     base_dir = plot_output_dir("analyses/ccsn/")
 
