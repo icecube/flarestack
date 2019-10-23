@@ -1,5 +1,4 @@
-from __future__ import print_function
-from __future__ import division
+import logging
 from astropy import units as u
 import astropy
 from astropy.cosmology import Planck15 as cosmo
@@ -8,10 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from flarestack.shared import plots_dir
-from flarestack.utils.neutrino_astronomy import calculate_neutrinos
-from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
-
+from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 
 def get_diffuse_flux_at_100TeV(fit="joint"):
     """Returns value for the diffuse neutrino flux, based on IceCube's data.
@@ -186,26 +182,27 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
                         diffuse_fraction=None,
                         diffuse_fit="joint"):
 
+    e_pdf_dict = read_e_pdf_dict(e_pdf_dict)
+
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
 
-    print("Using the", diffuse_fit, "best fit values of the diffuse flux.")
+    logging.info("Using the {0} best fit values of the diffuse flux.".format(diffuse_fit))
     # print "Raw Diffuse Flux at 1 GeV:", diffuse_flux / (4 * np.pi * u.sr)
-    print("Diffuse Flux at 1 GeV:", diffuse_flux)
-    print("Diffuse Spectral Index is", diffuse_gamma)
+    logging.info("Diffuse Flux at 1 GeV: {0}".format(diffuse_flux))
+    logging.info("Diffuse Spectral Index is {0}".format(diffuse_gamma))
 
-    if "Gamma" not in e_pdf_dict:
-        print("Assuming source has spectral index matching diffuse flux")
+    if "gamma" not in e_pdf_dict:
+        logging.warning("No spectral index has been specified."
+                        "Assuming source has spectral index matching diffuse flux")
         e_pdf_dict["gamma"] = diffuse_gamma
 
     energy_pdf = EnergyPDF.create(e_pdf_dict)
     nu_e = e_pdf_dict["Source Energy (erg)"]
     gamma = e_pdf_dict["gamma"]
 
-    print("\n")
-    print(name)
-    print("\n")
-    print("Neutrino Energy is", nu_e)
-    print("Rate is", rate(0.0))
+    logging.info(name)
+    logging.info("Neutrino Energy is {0}".format(nu_e))
+    logging.info("Rate is {0}".format(rate(0.0)))
 
     savedir = plots_dir + "cosmology/" + name + "/"
 
@@ -223,26 +220,23 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     rate_per_z, nu_flux_per_z, nu_flux_per_source, cumulative_nu_flux = \
         define_cosmology_functions(rate, nu_e, gamma, nu_bright_fraction)
 
-    print("Cumulative sources at z=8.0:", end=' ')
-    print("{:.3E}".format(cumulative_z(rate_per_z, 8.0)[-1].value))
+    logging.info("Cumulative sources at z=8.0: {:.3E}".format(cumulative_z(rate_per_z, 8.0)[-1].value))
 
     nu_at_horizon = cumulative_nu_flux(8)[-1]
 
-    print("Cumulative flux at z=8.0 (1 GeV):", "{:.3E}".format(nu_at_horizon))
-    print("Cumulative annual flux at z=8.0 (1 GeV):", "{:.3E}".format((
+    logging.info("Cumulative flux at z=8.0 (1 GeV): {:.3E}".format(nu_at_horizon))
+    logging.info("Cumulative annual flux at z=8.0 (1 GeV): {:.3E}".format((
         nu_at_horizon * u.yr).to("GeV-1 cm-2 sr-1")))
 
     ratio = nu_at_horizon.value / diffuse_flux.value
-    print("Fraction of diffuse flux", ratio)
-    print("Cumulative neutrino flux", nu_at_horizon, end=' ')
-    print("Diffuse neutrino flux", diffuse_flux)
+    logging.info("Fraction of diffuse flux {0}".format(ratio))
+    logging.info("Cumulative neutrino flux {0}".format(nu_at_horizon))
+    logging.debug("Diffuse neutrino flux {0}".format(diffuse_flux))
 
     if diffuse_fraction is not None:
-        print("Scaling flux so that, at z=8, the contribution is equal to", \
-            diffuse_fraction)
+        logging.info("Scaling flux so that, at z=8, the contribution is equal to {0}".format(diffuse_fraction))
         nu_e *= diffuse_fraction / ratio
-        print("Neutrino Energy rescaled to", \
-            (nu_e * fluence_conversion).to("erg"))
+        logging.info("Neutrino Energy rescaled to {0}".format((nu_e * fluence_conversion).to("erg")))
 
     plt.figure()
     plt.plot(zrange, rate(zrange))
@@ -262,14 +256,19 @@ def calculate_transient(e_pdf_dict, rate, name, zmax=8.,
     plt.savefig(savedir + 'comoving_volume.pdf')
     plt.close()
 
-    print("Sanity Check:")
-    print("Integrated Source Counts \n")
+    logging.debug("Sanity Check:")
+    logging.debug("Integrated Source Counts \n")
 
     for z in [0.01, 0.08, 0.1, 0.2, 0.3, 0.7,  8]:
-        print(z, Distance(z=z).to("Mpc"), cumulative_z(rate_per_z, z)[-1])
+        logging.debug("{0}, {1}, {2}".format(
+            z, Distance(z=z).to("Mpc"), cumulative_z(rate_per_z, z)[-1])
+        )
 
-    print("Fraction from nearby sources",
-          cumulative_nu_flux(0.3)[-1] / nu_at_horizon)
+    logging.debug(
+        "Fraction from nearby sources {0}".format(
+            cumulative_nu_flux(0.3)[-1] / nu_at_horizon
+        )
+    )
 
     plt.figure()
     plt.plot(zrange, rate_per_z(zrange))
