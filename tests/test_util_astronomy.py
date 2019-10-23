@@ -3,10 +3,8 @@ IceCube data (IC86_1).
 """
 import logging
 import unittest
-from flarestack.data.public import icecube_ps_3_year
-from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
-from flarestack.utils import custom_dataset, load_catalogue, calculate_astronomy
+from flarestack.utils import load_catalogue, calculate_astronomy
 from astropy import units as u
 
 true_res_astro = {
@@ -16,8 +14,6 @@ true_res_astro = {
 }
 
 catalogue = tde_catalogue_name("jetted")
-
-
 
 
 class TestUtilAstroCosmo(unittest.TestCase):
@@ -40,8 +36,11 @@ class TestUtilAstroCosmo(unittest.TestCase):
 
         self.assertEqual(res_astro, true_res_astro)
 
-        logging.info("Calculated values {0}".format((res_astro)))
+        logging.info("Calculated values {0}".format(res_astro))
         logging.info("Reference  values {0}".format(true_res_astro))
+
+    def test_neutrino_cosmology(self):
+        pass
 
 
 if __name__ == '__main__':
