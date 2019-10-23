@@ -9,7 +9,7 @@ import os
 from flarestack.shared import plots_dir
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 
-def get_diffuse_flux_at_100TeV(fit="joint"):
+def get_diffuse_flux_at_100TeV(fit="joint_15"):
     """Returns value for the diffuse neutrino flux, based on IceCube's data.
     The fit can be specified (either 'Joint' or 'Northern Tracks') to get
     corresponding values from different analyses
@@ -18,7 +18,7 @@ def get_diffuse_flux_at_100TeV(fit="joint"):
     :return: Best fit diffuse flux at 100 TeV, and best fit spectral index
     """
 
-    if fit == "joint":
+    if fit in ["joint_15", "joint"]:
         # IceCube Joint Best Fit
         # (https://arxiv.org/abs/1507.03991)
         all_flavour_diffuse_flux = 6.7 * 10 ** -18 * (
@@ -27,17 +27,34 @@ def get_diffuse_flux_at_100TeV(fit="joint"):
         diffuse_flux = all_flavour_diffuse_flux / 3.
         diffuse_gamma = 2.5
 
-    elif fit == "northern_tracks":
+        if fit == "joint":
+            logging.warning("Fit 'joint' was used, without a specified year."
+                            "Assuming 'joint_15', from https://arxiv.org/abs/1507.03991.")
+
+    elif fit in ["northern_tracks_17"]:
         # Best fit from the Northern Tracks 'Diffuse Sample'
+        # https://pos.sissa.it/301/1005/pdf
         diffuse_flux = 1.01 * 10 ** -18 * (
                 u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
         )
         diffuse_gamma = 2.19
 
+    elif fit in ["northern_tracks_19", "northern_tracks"]:
+        # Best fit from the Northern Tracks 'Diffuse Sample'
+        # https://arxiv.org/abs/1908.09551
+        diffuse_flux = 1.44 * 10 ** -18 * (
+                u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
+        )
+        diffuse_gamma = 2.29
+
+        if fit == "northern_tracks":
+            logging.warning("Fit 'northern_tracks' was used, without a specified year."
+                            "Assuming 'northern_tracks_19', from https://arxiv.org/abs/1908.09551.")
+
     else:
         raise Exception("Fit '{0}' not recognised! \n"
                         "The following fits are available: \n"
-                        "'joint', 'northern_tracks'".format(fit, ))
+                        "'joint_15', 'northern_tracks_17', 'northern_tracks_19'".format(fit, ))
 
     return diffuse_flux, diffuse_gamma
 
