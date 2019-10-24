@@ -9,10 +9,9 @@ from flarestack.utils.neutrino_cosmology import define_cosmology_functions, \
     integrate_over_z, cumulative_z
 from scipy.interpolate import interp1d
 
-
 def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
                                  cat_name="random", n_entries=30,
-                                 local_z=0.1):
+                                 local_z=0.1, seed=None):
 
     tpdfs = [season.get_time_pdf() for season in mh_dict["dataset"].values()]
 
@@ -66,6 +65,9 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
         "Full": cat_names
     }
 
+    if seed is not None:
+        np.random.seed(seed)
+
     if not np.logical_and(
             np.sum([os.path.isfile(x) for x in cat_names]) == len(cat_names),
             not resimulate
@@ -83,7 +85,7 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
 
         # Define conversion fraction to sample redshift distribution
 
-        zrange = np.linspace(0, local_z, 1e3)
+        zrange = np.linspace(0, local_z, int(1e3))
 
         count_ints = [(x * sim_length).value
                       for x in cumulative_z(rate_per_z, zrange)]
