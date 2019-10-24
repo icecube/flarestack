@@ -135,12 +135,13 @@ class BaseInjector:
                 self.sources["base_weight"] * self.sources["distance_mpc"]**-2)
         self.n_exp = self.calculate_n_exp()
 
-    def create_dataset(self, scale, pull_corrector):
+    def create_dataset(self, scale, angular_error_modifier=None):
         """Create a dataset based on scrambled data for background, and Monte
         Carlo simulation for signal. Returns the composite dataset. The source
         flux can be scaled by the scale parameter.
 
         :param scale: Ratio of Injected Flux to source flux
+        :param angular_error_modifier: AngularErrorModifier to change angular errors
         :return: Simulated dataset
         """
         bkg_events = self.season.simulate_background()
@@ -155,7 +156,9 @@ class BaseInjector:
         else:
             simulated_data = bkg_events
 
-        simulated_data = pull_corrector.pull_correct_static(simulated_data)
+        if angular_error_modifier is not None:
+
+            simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
 
         return simulated_data
 
@@ -623,7 +626,7 @@ class MockUnblindedInjector:
         self.season = season
         self._raw_data = season.get_exp_data()
 
-    def create_dataset(self, scale, pull_corrector):
+    def create_dataset(self, scale, angular_error_modifier=None):
         """Returns a background scramble
 
         :return: Scrambled data
@@ -631,8 +634,9 @@ class MockUnblindedInjector:
         seed = int(123456)
         np.random.seed(seed)
 
-        simulated_data = self.season.pseudo_background()
-        simulated_data = pull_corrector.pull_correct_static(simulated_data)
+        simulated_data = self.season.simulate_background()
+        if angular_error_modifier is not None:
+            simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
 
         return simulated_data
 
@@ -644,8 +648,14 @@ class TrueUnblindedInjector:
     def __init__(self, season, sources, **kwargs):
         self.season = season
 
-    def create_dataset(self, scale, pull_corrector):
-        return pull_corrector.pull_correct_static(self.season.get_exp_data())
+    def create_dataset(self, scale, angular_error_modifier=None):
+
+        exp_data = self.season.get_exp_data()
+
+        if angular_error_modifier is not None:
+            exp_data = angular_error_modifier.pull_correct_static(exp_data)
+
+        return exp_data
 
 
 # if __name__ == "__main__":

@@ -27,7 +27,9 @@ def read_e_pdf_dict(e_pdf_dict):
             ("E Max", "e_max_gev"),
             ("Name", "energy_pdf_name"),
             ("Gamma", "gamma"),
-            ("Spline Path", "spline_path")
+            ("Spline Path", "spline_path"),
+            ("Source Energy (erg)", "source_energy_erg"),
+
         ]
 
         for (old_key, new_key) in maps:
@@ -61,14 +63,14 @@ class EnergyPDF(object):
 
         if "e_min_gev" in list(e_pdf_dict.keys()):
             self.e_min = e_pdf_dict["e_min_gev"]
-            print("Minimum Energy is", self.e_min, "GeV.")
+            logging.info("Minimum Energy is {0} GeV.".format(self.e_min))
             self.integral_e_min = self.e_min
         else:
             self.integral_e_min = default_emin
 
         if "e_max_gev" in list(e_pdf_dict.keys()):
             self.e_max = e_pdf_dict["e_max_gev"]
-            print("Maximum Energy is", self.e_max, "GeV.")
+            logging.info("Maximum Energy is {0}".format(self.e_max))
             self.integral_e_max = self.e_max
         else:
             self.integral_e_max = default_emax

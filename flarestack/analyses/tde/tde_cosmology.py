@@ -1,5 +1,5 @@
 from __future__ import division
-from flarestack.utils.neutrino_cosmology import calculate_transient
+from flarestack.utils.neutrino_cosmology import calculate_transient_cosmology
 from astropy import units as u
 import matplotlib.pyplot as plt
 from flarestack.shared import plot_output_dir
@@ -85,9 +85,9 @@ for (name, energy, key) in res:
 
         rate_key = ["(Observed Rate)", "(Theoretical Rate)"][i]
 
-        class_dict[rate_key] = calculate_transient(e_pdf_dict, rate,
-                                              name + "TDEs",
-                                              zmax=6.0, diffuse_fit="Joint")
+        class_dict[rate_key] = calculate_transient_cosmology(e_pdf_dict, rate,
+                                                             name + "TDEs",
+                                                             zmax=6.0, diffuse_fit="Joint")
 
     norms[key] = class_dict
 
@@ -120,10 +120,10 @@ e_pdf_dict["Source Energy (erg)"] = tde_cat_limit("jetted", 2.5) * u.erg
 # for i, rate in enumerate([standard_jetted_rate, biehl_jetted_rate]):
 for i, rate in enumerate([standard_jetted_rate]):
     rate_key = ["(Observed Rate)", "(Theoretical Rate)"][i]
-    norms["Jetted TDEs"][rate_key] = calculate_transient(e_pdf_dict,
-                                               rate,
+    norms["Jetted TDEs"][rate_key] = calculate_transient_cosmology(e_pdf_dict,
+                                                                   rate,
                                                "jetted TDEs", zmax=2.5,
-                                               diffuse_fit="Joint")
+                                                                   diffuse_fit="Joint")
 
 
 base_dir = plot_output_dir("analyses/tde/")
