@@ -660,7 +660,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return f_final
 
-    def scan_likelihood(self, scale=1.):
+    def scan_likelihood(self, scale=1., scan_2d = False):
         """Generic wrapper to perform a likelihood scan a background scramble
         with an injection of signal given by scale.
 
@@ -673,6 +673,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         g = res_dict["f"]
 
         bounds = list(self.bounds)
+
         if self.negative_n_s:
             bounds[0] = (-30, 30)
 
@@ -689,12 +690,18 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             min_llh = np.sum(float(g(best)))
 
             factor = 0.9
-            best[i] = bound[1]
 
-            while (g(best) > (min_llh + 5.0)):
-                best[i] *= factor
+            if "n_s" in self.param_names[i]:
 
-            ur = min(bound[1], max(best[i], 0))
+                best[i] = bound[1]
+
+                while (g(best) > (min_llh + 5.0)):
+                    best[i] *= factor
+
+                ur = min(bound[1], max(best[i], 0))
+
+            else:
+                ur = bound[1]
 
             u_ranges.append(ur)
 
@@ -752,12 +759,12 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             ax.set_ylim(bottom=0.0)
 
         path = plot_output_dir(self.name) + "llh_scan.pdf"
-        
+
         title = os.path.basename(
                     os.path.dirname(self.name[:-1])
                 ).replace("_", " ") + " Likelihood Scans"
 
-        plt.suptitle(title)
+        plt.suptitle(title, y=1.02)
 
         try:
             os.makedirs(os.path.dirname(path))
@@ -771,9 +778,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         # Scan 2D likelihood
 
-        if "Gamma" in self.param_names:
+        if np.logical_and(scan_2d, "gamma" in self.param_names):
 
-            gamma_index = self.param_names.index("Gamma")
+            gamma_index = self.param_names.index("gamma")
 
             gamma_bounds = bounds[gamma_index]
 
