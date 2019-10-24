@@ -20,6 +20,8 @@ from flarestack.utils.make_SoB_splines import create_2d_ratio_hist, \
     make_2d_spline_from_hist, \
     make_background_spline, make_individual_spline_set
 
+spatial_mask_threshold = 1e-21
+
 
 def read_llh_dict(llh_dict):
     """Ensures that llh dictionaries remain backwards-compatible
@@ -810,7 +812,7 @@ class StandardLLH(FixedEnergyLLH):
                 # likelihood!)
 
                 sig = self.signal_pdf(source, coincident_data)
-                nonzero_mask = (sig > 1e-21)
+                nonzero_mask = (sig > spatial_mask_threshold)
 
                 s_mask[s_mask] *= nonzero_mask
 
@@ -1027,7 +1029,7 @@ class StandardOverlappingLLH(StandardLLH):
                 # likelihood!)
 
                 sig = self.signal_pdf(source, coincident_data)
-                nonzero_mask = (sig > 1e-21)
+                nonzero_mask = (sig > spatial_mask_threshold)
                 s_mask[s_mask] *= nonzero_mask
 
                 assumed_background_mask *= ~s_mask
@@ -1128,7 +1130,7 @@ class StandardMatrixLLH(StandardOverlappingLLH):
                 # likelihood!)
 
                 sig = self.signal_pdf(source, coincident_data)
-                nonzero_mask = (sig > 1e-21)
+                nonzero_mask = (sig > spatial_mask_threshold)
                 s_mask[s_mask] *= nonzero_mask
 
                 coincidence_matrix[i] = s_mask
