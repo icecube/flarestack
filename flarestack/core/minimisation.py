@@ -21,7 +21,6 @@ from flarestack.utils.catalogue_loader import load_catalogue, \
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
 
 
-
 def time_smear(inj):
     inj_time = inj["injection_sig_time_pdf"]
     max_length = inj_time["max_offset"] - inj_time["min_offset"]
