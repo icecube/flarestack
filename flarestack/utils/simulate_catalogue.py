@@ -82,7 +82,8 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
         catalogue["ref_time_mjd"] = np.random.uniform(
             data_start, data_end, n_local
         )
-
+        catalogue["start_time_mjd"] = 0.0
+        catalogue["end_time_mjd"] = 0.0
         # Define conversion fraction to sample redshift distribution
 
         zrange = np.linspace(0, local_z, int(1e3))
