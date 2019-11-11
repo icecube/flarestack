@@ -54,7 +54,7 @@ class TestSimulateCatalogue(unittest.TestCase):
         cat = load_catalogue(all_cat_names["Northern"][0])
 
         for i, x in enumerate(cat):
-            for j, y in tuple(x):
+            for j, y in enumerate(tuple(x)):
                 self.assertAlmostEqual(y, tuple(default_cat[i])[j])
 
         # self.assertEqual(res_100_tev[1], res_1_gev[1])
