@@ -17,8 +17,9 @@ sn_times = {'IIn': sn_times_dict, 'IIP': sn_times_dict,
             'Ibc': {'box': sn_times_box + [-20]}}
 
 
-def updated_sn_catalogue_name(sn_type, pdf_name, nearby=True):
-    sn_name = sn_type + "_" + pdf_name + '.npy'
+def updated_sn_catalogue_name(sn_type, pdf_name='', nearby=True):
+    if pdf_name: pdf_name = '_' + pdf_name
+    sn_name = sn_type + pdf_name + '.npy'
 
     # if nearby:
     #     sn_name += "nearby.npy"
@@ -28,7 +29,7 @@ def updated_sn_catalogue_name(sn_type, pdf_name, nearby=True):
     return ccsn_cat_dir + sn_name
 
 
-def raw_sn_catalogue_name(sn_type, person = "necker"):
+def raw_sn_catalogue_name(sn_type, person="necker"):
 
     if person == 'necker':
 
@@ -50,20 +51,36 @@ def raw_sn_catalogue_name(sn_type, person = "necker"):
         raise ValueError(f'input for person: {person} not understood')
 
 
-def sn_time_pdfs(sn_type, pdf_type = 'box'):
+def sn_time_pdfs(sn_type, pdf_type='box'):
 
     # TODO: implement decay function
 
     time_pdfs = []
 
-    for i in sn_times[sn_type][pdf_type]:
-        time_pdfs.append(
-            {
-                "time_pdf_name": "box",
+    if pdf_type == 'box':
+
+        for i in sn_times[sn_type][pdf_type]:
+
+            pdf_dict = {
+                "time_pdf_name": pdf_type,
                 "pre_window": 0,
-                "post_window": i
+                "post_window": 0
             }
-        )
+
+            if i > 0:
+                pdf_dict['post_window'] = i
+            elif i < 0:
+                pdf_dict['pre_window'] = abs(i)
+            else:
+                raise ValueError(f'time for PDF type {pdf_type} has to be bigger or smaller than zero, not {i}')
+
+            time_pdfs.append(pdf_dict)
+
+    elif pdf_type == 'decay':
+        raise NotImplementedError
+
+    else:
+        raise ValueError(f'Input {pdf_type} for PDF type not understood!')
 
     return time_pdfs
 
@@ -71,12 +88,3 @@ def sn_time_pdfs(sn_type, pdf_type = 'box'):
 def pdf_names(pdf_type, pdf_time):
     if pdf_time < 0: pdf_time = f'Pre{abs(pdf_time)}'
     return f'{pdf_type}{pdf_time}'
-
-
-# def pdf_names_for_filenames(pdf_name):
-#
-#     if "box" in pdf_name: kind = 'box'
-#     elif 'decay' in pdf_name: kind = 'decay'
-#     else: raise ValueError(f'kind of PDF {pdf_name} not know')
-#
-#

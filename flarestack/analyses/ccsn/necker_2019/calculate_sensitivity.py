@@ -5,8 +5,8 @@ from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube import ps_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.analyses.ccsn.necker_2019 import sn_cats, updated_sn_catalogue_name, \
-    sn_time_pdfs, sn_catalogue_name
+from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import sn_cats, updated_sn_catalogue_name, \
+    sn_time_pdfs
 from flarestack.cluster import analyse, wait_for_cluster
 import math
 import matplotlib.pyplot as plt
@@ -27,8 +27,8 @@ llh_energy = {
 # Spectral indices to loop over
 
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
-gammas = [1.8, 2.0, 2.5]
-# gammas = [2.0]
+# gammas = [1.8, 2.0, 2.5]
+gammas = [2.0]
 
 # Base name
 
@@ -42,7 +42,7 @@ for cat in sn_cats:
 
     name = raw + cat + "/"
 
-    cat_path = sn_catalogue_name(cat)
+    cat_path = updated_sn_catalogue_name(cat)
     catalogue = np.load(cat_path)
 
     closest_src = np.sort(catalogue, order="distance_mpc")[0]
@@ -102,8 +102,8 @@ for cat in sn_cats:
                 "inj_dict": inj_dict,
                 "llh_dict": llh_dict,
                 "scale": scale,
-                "n_trials": 20,
-                "n_steps": 20
+                "n_trials": 2,
+                "n_steps": 2
             }
 
             analyse(mh_dict, cluster=False, n_cpu=32)
