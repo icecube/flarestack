@@ -6,6 +6,7 @@ import unittest
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack.utils import load_catalogue, calculate_astronomy
 from astropy import units as u
+import numpy as np
 
 true_res_astro = {
     'Energy Flux (GeV cm^{-2} s^{-1})': 1.151292546497023e-08,
@@ -36,12 +37,12 @@ class TestUtilAstro(unittest.TestCase):
 
         for key in ['Energy Flux (GeV cm^{-2} s^{-1})', 'Mean Luminosity (erg/s)']:
 
-            self.assertAlmostEqual(res_astro[key], true_res_astro[key], delta=0)
+            self.assertAlmostEqual(np.log(res_astro[key]), np.log(true_res_astro[key]), places=2)
 
         self.assertAlmostEqual(
-            res_astro['Flux from nearest source'].value,
-            true_res_astro['Flux from nearest source'].value,
-            delta=2
+            np.log(res_astro['Flux from nearest source'].value),
+            np.log(true_res_astro['Flux from nearest source'].value),
+            places = 2
         )
 
         logging.info("Calculated values {0}".format(res_astro))
