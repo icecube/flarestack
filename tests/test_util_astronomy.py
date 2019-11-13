@@ -36,7 +36,7 @@ class TestUtilAstro(unittest.TestCase):
 
         for key in ['Energy Flux (GeV cm^{-2} s^{-1})', 'Mean Luminosity (erg/s)']:
 
-            self.assertAlmostEqual(res_astro[key], true_res_astro[key], delta=1)
+            self.assertAlmostEqual(res_astro[key], true_res_astro[key], delta=0)
 
         self.assertAlmostEqual(
             res_astro['Flux from nearest source'].value,
