@@ -61,9 +61,8 @@ class TestUtilCosmo(unittest.TestCase):
          e_pdf_dict, ccsn_clash_candels, "test_CCSN", zmax=8.0,
          diffuse_fit=fit
         )
-        print(res)
 
-        self.assertEqual(res, true_cosmology)
+        self.assertAlmostEqual(res, true_cosmology, delta=5)
 
 if __name__ == '__main__':
     unittest.main()

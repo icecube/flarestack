@@ -34,7 +34,7 @@ class TestUtilAstro(unittest.TestCase):
 
         res_astro = calculate_astronomy(1.e-9, injection_energy_pdf, cat)
 
-        self.assertEqual(res_astro, true_res_astro)
+        self.assertAlmostEqual(res_astro, true_res_astro, delta=2)
 
         logging.info("Calculated values {0}".format(res_astro))
         logging.info("Reference  values {0}".format(true_res_astro))
