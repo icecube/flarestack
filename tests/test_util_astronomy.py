@@ -10,7 +10,7 @@ from astropy import units as u
 true_res_astro = {
     'Energy Flux (GeV cm^{-2} s^{-1})': 1.151292546497023e-08,
     'Flux from nearest source':   8.61854306789315e-10 / (u.cm**2 * u.GeV * u.s),
-    'Mean Luminosity (erg/s)': 9.34797120080954e+45
+    'Mean Luminosity (erg/s)': 9.384215679708581e+45
 }
 
 catalogue = tde_catalogue_name("jetted")

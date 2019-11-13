@@ -268,7 +268,7 @@ class Steady(TimePDF):
         :param source: Source to be considered
         :return: Effective Livetime in seconds
         """
-        season_length = self.integral_to_infinity(source)
+        season_length = self.integral_to_infinity(source) * self.livetime
 
         return season_length * (60 * 60 * 24)
 
