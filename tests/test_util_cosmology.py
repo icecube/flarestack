@@ -62,7 +62,7 @@ class TestUtilCosmo(unittest.TestCase):
          diffuse_fit=fit
         )
 
-        self.assertAlmostEqual(res, true_cosmology, delta=5)
+        self.assertAlmostEqual(res.value, true_cosmology.value, delta=2)
 
 if __name__ == '__main__':
     unittest.main()
