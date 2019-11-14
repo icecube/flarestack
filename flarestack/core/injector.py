@@ -123,7 +123,7 @@ class BaseInjector:
 
     def get_n_exp_single(self, source):
 
-        if type(source['source_name']) is not bytes:
+        if not isinstance(source['source_name'], bytes):
             name = bytes(source['source_name'], encoding='utf8')
         else:
             name = source['source_name']
