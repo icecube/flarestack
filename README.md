@@ -100,4 +100,5 @@ Flarestack runs with Travis CI, a Continuous Integration Service (https://travis
 # Contributors
 
 * Federica Bradascio [@fbradascio](https://github.com/fbradascio)
+* Jannis Necker [@JannisNe](https://github.com/jannisne)
 * Robert Stein [@robertdstein](https://github.com/robertdstein)
