@@ -588,8 +588,6 @@ class FixedEnergyLLH(LLH):
         with open(SoB_path, "wb") as f:
             pickle.dump([dec_range, ratio_hist], f)
 
-        return f
-
     def create_kwargs(self, data, pull_corrector, weight_f=None):
         """Creates a likelihood function to minimise, based on the dataset.
 
