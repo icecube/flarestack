@@ -1086,9 +1086,9 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             name = source["source_name"]
             key = self.source_param_name(source)
             n_inj = 0
-            for inj in self.injectors.values():
+            for season_name in self.seasons.keys():
                 try:
-                    n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
+                    n_inj += np.sum(self.get_injector(season_name).n_exp["n_exp"] * scale)
 
                 # If source not overlapping season, will not be in dict
                 except KeyError:
