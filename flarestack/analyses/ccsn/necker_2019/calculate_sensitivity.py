@@ -16,8 +16,9 @@ import logging
 
 # Set Logger Level
 
-logging.getLogger().setLevel("INFO")
+logging.getLogger().setLevel("DEBUG")
 
+logging.debug('logging level is DEBUG')
 # LLH Energy PDF
 
 llh_energy = {
@@ -29,6 +30,7 @@ llh_energy = {
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 # gammas = [1.8, 2.0, 2.5]
 gammas = [2.0]
+sn_cats = ['Ibc']
 
 # Base name
 
@@ -106,7 +108,7 @@ for cat in sn_cats:
                 "n_steps": 2
             }
 
-            analyse(mh_dict, cluster=False, n_cpu=32)
+            analyse(mh_dict, cluster=False, n_cpu=3)
 
             time_res[gamma] = mh_dict
 

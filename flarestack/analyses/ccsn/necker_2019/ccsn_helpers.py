@@ -7,7 +7,7 @@ ccsn_cat_dir = ccsn_dir + "/catalogues/"
 raw_necker_cat_dir = ccsn_cat_dir + "raw_necker/"
 stasik_cat_dir = ccsn_cat_dir + 'raw_stasik/'
 
-sn_cats = ["IIn", "IIp", "Ibc"]
+sn_cats = ["IIn", "IIP", "Ibc"]
 
 sn_times_box = [100, 300, 1000]
 sn_times_decay = [0.02, 0.2, 2]
@@ -17,16 +17,15 @@ sn_times = {'IIn': sn_times_dict, 'IIP': sn_times_dict,
             'Ibc': {'box': sn_times_box + [-20]}}
 
 
-def updated_sn_catalogue_name(sn_type, pdf_name='', nearby=True):
+def updated_sn_catalogue_name(sn_type, pdf_name='', flagged=False, nearby=True):
     if pdf_name: pdf_name = '_' + pdf_name
     sn_name = sn_type + pdf_name + '.npy'
+    if flagged: sn_name = 'flagged/' + sn_name
 
-    # if nearby:
-    #     sn_name += "nearby.npy"
-    # else:
-    #     sn_name += "distant.npy"
-
-    return ccsn_cat_dir + sn_name
+    if pdf_name or flagged:
+        return raw_necker_cat_dir + sn_name
+    else:
+        return ccsn_cat_dir + sn_name
 
 
 def raw_sn_catalogue_name(sn_type, person="necker"):

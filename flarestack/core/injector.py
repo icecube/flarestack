@@ -13,6 +13,9 @@ from scipy import sparse, interpolate
 from flarestack.shared import k_to_flux
 
 
+logging.basicConfig(level=logging.DEBUG)
+
+
 def read_injector_dict(inj_dict):
     """Ensures that injection dictionaries remain backwards-compatible
 
@@ -119,7 +122,13 @@ class BaseInjector:
         raise NotImplementedError
 
     def get_n_exp_single(self, source):
-        return np.copy(self.n_exp[self.n_exp["source_name"] == source["source_name"]])
+
+        if type(source['source_name']) is not bytes:
+            name = bytes(source['source_name'], encoding='utf8')
+        else:
+            name = source['source_name']
+
+        return np.copy(self.n_exp[self.n_exp["source_name"] == name])
 
     def get_expectation(self, source, scale):
         return float(self.get_n_exp_single(source)["n_exp"]) * scale
