@@ -4,8 +4,9 @@ IceCube data (IC86_1).
 import logging
 import unittest
 from flarestack.data.public import icecube_ps_3_year
-from flarestack.core.unblinding import create_unblinder
+from flarestack import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
+from flarestack import MinimisationHandler
 
 # Initialise Injectors/LLHs
 
@@ -66,6 +67,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
             unblind_dict = {
                 "mh_name": "fixed_weights",
+                "name": "tests/time_pdf",
                 "dataset": icecube_ps_3_year.get_seasons('IC79-2010', 'IC86-2011'),
                 "catalogue": catalogue,
                 "llh_dict": llh_dict,
@@ -75,10 +77,28 @@ class TestTimeIntegrated(unittest.TestCase):
             key = [x for x in ub.res_dict.keys() if x != "TS"][0]
             res = ub.res_dict[key]
             for j, x in enumerate(res["x"]):
-                self.assertAlmostEqual(x, true_parameters[i][j], delta=5)
+                self.assertAlmostEqual(x, true_parameters[i][j], places=1)
 
             logging.info("Best fit values {0}".format(list(res["x"])))
             logging.info("Reference best fit {0}".format(true_parameters[i]))
+
+            # inj_dict = {
+            #     "injection_sig_time_pdf": t_pdf_dict,
+            #     "injection_bkg_time_pdf": {
+            #         "time_pdf_name": "steady",
+            #     },
+            #     "injection_energy_pdf": {
+            #         "energy_pdf_name": "power_law",
+            #         "gamma": 2.0
+            #     }
+            # }
+            #
+            # mh_dict = dict(unblind_dict)
+            # mh_dict["inj_dict"] = inj_dict
+            #
+            # mh = MinimisationHandler.create(mh_dict)
+            # res = mh.simulate_and_run(5.)
+            # print(res)
 
 
 if __name__ == '__main__':

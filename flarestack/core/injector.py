@@ -113,7 +113,6 @@ class BaseInjector:
         for i, source in enumerate(self.sources):
             all_n_exp[i]["source_name"] = source["source_name"]
             all_n_exp[i]["n_exp"] = self.calculate_n_exp_single(source)
-
         return all_n_exp
 
     def calculate_n_exp_single(self, source):
@@ -123,7 +122,7 @@ class BaseInjector:
         return np.copy(self.n_exp[self.n_exp["source_name"] == source["source_name"]])
 
     def get_expectation(self, source, scale):
-        return self.get_n_exp_single(source)["n_exp"] * scale
+        return float(self.get_n_exp_single(source)["n_exp"]) * scale
 
     def update_sources(self, sources):
         """Reuses an injector with new sources

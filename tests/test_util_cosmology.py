@@ -13,7 +13,7 @@ default_flux_100TeV = [
     (1.44e-18/(u.cm ** 2 * u.GeV * u.s * u.sr), 2.29)
 ]
 
-true_cosmology = 8.717500868599021e-07 / (u.cm ** 2 * u.GeV * u.s * u.sr)
+true_cosmology = 8.966193871269827e-07 / (u.cm ** 2 * u.GeV * u.s * u.sr)
 
 class TestUtilCosmo(unittest.TestCase):
 
@@ -62,7 +62,7 @@ class TestUtilCosmo(unittest.TestCase):
          diffuse_fit=fit
         )
 
-        self.assertEqual(res, true_cosmology)
+        self.assertAlmostEqual(res.value, true_cosmology.value, delta=2)
 
 if __name__ == '__main__':
     unittest.main()

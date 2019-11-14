@@ -521,7 +521,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             flags.append(res_dict["Flag"])
 
         n_inj = 0
-        for inj in self.injectors.values():
+        for season in self.seasons.keys():
+            inj = self.get_injector(season)
             for val in inj.ref_fluxes[scale_shortener(scale)].values():
                 n_inj += val
 
