@@ -2,8 +2,10 @@ import numpy as np
 import os
 import pickle as Pickle
 import logging
-from flarestack.shared import acceptance_path
+from flarestack.shared import acceptance_path, get_base_sob_plot_dir
 from flarestack.core.energy_pdf import PowerLaw
+from flarestack.utils.make_SoB_splines import make_plot
+import matplotlib.pyplot as plt
 
 sin_dec_range = np.linspace(-1, 1, 101)
 sin_edges = np.append(-1., (sin_dec_range[1:] + sin_dec_range[:-1])/ 2.)
@@ -60,3 +62,11 @@ def make_acceptance_season(season, acc_path):
 
     del mc
 
+    savepath = get_base_sob_plot_dir(season) + "acceptance_f.pdf"
+
+    try:
+        os.makedirs(os.path.dirname(savepath))
+    except OSError:
+        pass
+
+    make_plot(acc.T, savepath, dec_range, gamma_vals, label_y=r"$\gamma$")
