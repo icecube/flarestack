@@ -200,6 +200,10 @@ def sim_dataset_dir_path(sample_name, season_name, flux, e_pdf_dict):
            season_name + '/' + str(deterministic_hash(e_pdf_dict)) + \
            "/" + str(flux)
 
+def get_base_sob_plot_dir(season):
+    return dataset_plot_dir + "Signal_over_background/" + \
+                         season.sample_name + "/" + season.season_name + "/"
+
 
 def acceptance_path(season):
     return acc_f_dir + season.sample_name + "/" + \

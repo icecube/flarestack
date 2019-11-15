@@ -4,7 +4,7 @@ import os
 import scipy.interpolate
 import pickle as Pickle
 from flarestack.shared import gamma_precision, SoB_spline_path, \
-    bkg_spline_path, dataset_plot_dir
+    bkg_spline_path, dataset_plot_dir, get_base_sob_plot_dir
 from flarestack.core.energy_pdf import PowerLaw
 from flarestack.icecube_utils.dataset_loader import data_loader
 import matplotlib.pyplot as plt
@@ -296,8 +296,7 @@ def make_individual_spline_set(season, SoB_path):
         with open(SoB_path, "wb") as f:
             Pickle.dump(splines, f)
 
-        base_plot_path = dataset_plot_dir + "Signal_over_background/" + \
-                         season.sample_name + "/" + season.season_name + "/"
+        base_plot_path = get_base_sob_plot_dir(season)
 
         def make_plot(hist, savepath, normed=True):
             if normed:
@@ -394,6 +393,15 @@ def make_background_spline(season):
 
     with open(bkg_path, "wb") as f:
         Pickle.dump(bkg_spline, f)
+
+    x_range = np.linspace(sin_dec_bins[0], sin_dec_bins[-1], 101)
+    plt.figure()
+    plt.plot(x_range, bkg_spline(x_range))
+    plt.ylabel(r"$\frac{S}{B}$ (spatial)")
+    plt.xlabel(r"$\sin(\delta)$")
+    savepath = get_base_sob_plot_dir(season)
+    plt.savefig(savepath)
+    plt.close()
 
 
 def load_spline(season):
