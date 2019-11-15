@@ -8,40 +8,42 @@ from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
     reference_7year_discovery_potential
 import flarestack.cluster.run_desy_cluster as rd
 import matplotlib.pyplot as plt
+from flarestack import analyse
+from flarestack.core.minimisation import MinimisationHandler
 
 # Initialise Injectors/LLHs
 
 injection_energy = {
-    "Name": "Power Law",
-    "Gamma": 2.0,
+    "energy_pdf_name": "power_law",
+    "gamma": 2.0,
 }
 
 injection_time = {
-    "Name": "Steady",
+    "time_pdf_name": "steady",
 }
 
 llh_time = {
-    "Name": "Steady",
+    "time_pdf_name": "steady",
 }
 
 inj_kwargs = {
-    "Injection Energy PDF": injection_energy,
-    "Injection Time PDF": injection_time,
-    "Poisson Smear?": True,
+    "injection_energy_pdf": injection_energy,
+    "injection_sig_time_pdf": injection_time,
 }
 
 llh_energy = injection_energy
 
 llh_kwargs = {
-    "name": "standard",
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
+    "llh_name": "standard",
+    "llh_energy_pdf": llh_energy,
+    "llh_sig_time_pdf": llh_time,
+    "llh_bkg_time_pdf": {"time_pdf_name": "steady"}
 }
 
 name = "analyses/benchmarks/ps_sens"
 
-sindecs = np.linspace(0.90, -0.90, 37)
-# sindecs = np.linspace(0.75, -0.75, 7)
+# sindecs = np.linspace(0.90, -0.90, 3)
+sindecs = np.linspace(0.90, -0.90, 9)
 # sindecs = np.linspace(0.5, -0.5, 3)
 
 analyses = []
@@ -56,16 +58,16 @@ for sindec in sindecs:
     mh_dict = {
         "name": subname,
         "mh_name": "fixed_weights",
-        "datasets": ps_v002_p01,
+        "dataset": ps_v002_p01,
         "catalogue": cat_path,
-        "inj kwargs": inj_kwargs,
+        "inj_dict": inj_kwargs,
         "llh_dict": llh_kwargs,
         "scale": scale,
         "n_trials": 50,
-        "n_steps": 15
+        "n_steps": 10
     }
 
-    pkl_file = make_analysis_pickle(mh_dict)
+    analyse(mh_dict, cluster=False, n_cpu=24)
 
     # rd.submit_to_cluster(pkl_file, n_jobs=100)
 
@@ -77,7 +79,7 @@ for sindec in sindecs:
 
     analyses.append(mh_dict)
 
-rd.wait_for_cluster()
+# rd.wait_for_cluster()
 
 sens = []
 disc_pots = []
