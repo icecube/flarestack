@@ -396,11 +396,11 @@ def make_background_spline(season):
 
     x_range = np.linspace(sin_dec_bins[0], sin_dec_bins[-1], 101)
     plt.figure()
-    plt.plot(x_range, bkg_spline(x_range))
-    plt.ylabel(r"$\frac{S}{B}$ (spatial)")
+    plt.plot(x_range, np.exp(bkg_spline(x_range)))
+    plt.ylabel(r"$P_{bkg}$ (spatial)")
     plt.xlabel(r"$\sin(\delta)$")
     savepath = get_base_sob_plot_dir(season)
-    plt.savefig(savepath + "spatial.pdf")
+    plt.savefig(savepath + "bkg_spatial.pdf")
     plt.close()
 
 
