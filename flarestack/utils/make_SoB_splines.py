@@ -273,7 +273,7 @@ def make_spline(seasons):
         make_background_spline(season)
 
 
-def make_plot(hist, savepath, sin_dec_bins, log_e_bins, normed=True,
+def make_plot(hist, savepath, x_bins, y_bins, normed=True, log_min=5,
               label_x=r"$\sin(\delta)$", label_y="log(Energy)"):
     if normed:
         norms = np.sum(hist, axis=hist.ndim - 2)
@@ -283,7 +283,7 @@ def make_plot(hist, savepath, sin_dec_bins, log_e_bins, normed=True,
         hist = np.log(np.array(hist))
     plt.figure()
     ax = plt.subplot(111)
-    X, Y = np.meshgrid(sin_dec_bins, log_e_bins)
+    X, Y = np.meshgrid(x_bins, y_bins)
     if not normed:
         max_col = min(abs(min([min(row) for row in hist.T])),
                       max([max(row) for row in hist.T]))
@@ -371,7 +371,7 @@ def make_individual_spline_set(season, SoB_path):
             plt.close()
 
         make_plot(exp_hist,
-                  savepath=base_plot_path + "bkg.pdf")
+                  savepath=base_plot_path + "bkg.pdf", x_bins=sin_dec_bins, y_bins=log_e_bins)
 
         del mc
 

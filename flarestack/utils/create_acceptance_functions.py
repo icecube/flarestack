@@ -69,4 +69,4 @@ def make_acceptance_season(season, acc_path):
     except OSError:
         pass
 
-    make_plot(acc.T, savepath, dec_range, gamma_vals, label_y=r"$\gamma$")
+    make_plot(acc, savepath, gamma_vals, np.sin(dec_range), label_x=r"$\gamma$", label_y=r"$\sin(\delta)$")
