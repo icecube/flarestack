@@ -523,8 +523,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         n_inj = 0
         for season in self.seasons.keys():
             inj = self.get_injector(season)
-            for val in inj.ref_fluxes[scale_shortener(scale)].values():
-                n_inj += val
+            n_inj += np.sum(inj.n_exp["n_exp"] * scale)
 
         logging.info("Injected with an expectation of {0} events.".format(n_inj))
 

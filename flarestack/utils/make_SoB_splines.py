@@ -4,7 +4,7 @@ import os
 import scipy.interpolate
 import pickle as Pickle
 from flarestack.shared import gamma_precision, SoB_spline_path, \
-    bkg_spline_path, dataset_plot_dir
+    bkg_spline_path, dataset_plot_dir, get_base_sob_plot_dir
 from flarestack.core.energy_pdf import PowerLaw
 from flarestack.icecube_utils.dataset_loader import data_loader
 import matplotlib.pyplot as plt
@@ -273,6 +273,32 @@ def make_spline(seasons):
         make_background_spline(season)
 
 
+def make_plot(hist, savepath, x_bins, y_bins, normed=True, log_min=5,
+              label_x=r"$\sin(\delta)$", label_y="log(Energy)"):
+    if normed:
+        norms = np.sum(hist, axis=hist.ndim - 2)
+        norms[norms == 0.] = 1.
+        hist /= norms
+    else:
+        hist = np.log(np.array(hist))
+    plt.figure()
+    ax = plt.subplot(111)
+    X, Y = np.meshgrid(x_bins, y_bins)
+    if not normed:
+        max_col = min(abs(min([min(row) for row in hist.T])),
+                      max([max(row) for row in hist.T]))
+        cbar = ax.pcolormesh(X, Y, hist, cmap="seismic",
+                             vmin=-5, vmax=5)
+        plt.colorbar(cbar, label="Log(Signal/Background)")
+    else:
+        hist[hist == 0.] = np.nan
+        cbar = ax.pcolormesh(X, Y, hist)
+        plt.colorbar(cbar, label="Column-normalised density")
+    plt.xlabel(label_x)
+    plt.ylabel(label_y)
+    plt.savefig(savepath)
+    plt.close()
+
 def make_individual_spline_set(season, SoB_path):
     try:
         logging.info("Making splines for {0}".format(season.season_name))
@@ -296,33 +322,7 @@ def make_individual_spline_set(season, SoB_path):
         with open(SoB_path, "wb") as f:
             Pickle.dump(splines, f)
 
-        base_plot_path = dataset_plot_dir + "Signal_over_background/" + \
-                         season.sample_name + "/" + season.season_name + "/"
-
-        def make_plot(hist, savepath, normed=True):
-            if normed:
-                norms = np.sum(hist, axis=hist.ndim - 2)
-                norms[norms == 0.] = 1.
-                hist /= norms
-            else:
-                hist = np.log(np.array(hist))
-            plt.figure()
-            ax = plt.subplot(111)
-            X, Y = np.meshgrid(sin_dec_bins, log_e_bins)
-            if not normed:
-                max_col = min(abs(min([min(row) for row in hist.T])),
-                              max([max(row) for row in hist.T]))
-                cbar = ax.pcolormesh(X, Y, hist, cmap="seismic",
-                                     vmin=-5, vmax=5)
-                plt.colorbar(cbar, label="Log(Signal/Background)")
-            else:
-                hist[hist == 0.] = np.nan
-                cbar = ax.pcolormesh(X, Y, hist)
-                plt.colorbar(cbar, label="Column-normalised density")
-            plt.xlabel(r"$\sin(\delta)$")
-            plt.ylabel("log(Energy)")
-            plt.savefig(savepath)
-            plt.close()
+        base_plot_path = get_base_sob_plot_dir(season)
 
         exp_hist = create_bkg_2d_hist(exp, sin_dec_bins, log_e_bins)
 
@@ -342,10 +342,10 @@ def make_individual_spline_set(season, SoB_path):
             mc_hist = create_sig_2d_hist(mc, sin_dec_bins, log_e_bins,
                                          weight_function)
 
-            make_plot(mc_hist, savepath=plot_path + "sig.pdf")
+            make_plot(mc_hist, plot_path + "sig.pdf", sin_dec_bins, log_e_bins)
             make_plot(create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins,
                                            weight_function),
-                      savepath=plot_path + "SoB.pdf", normed=False)
+                      plot_path + "SoB.pdf", sin_dec_bins, log_e_bins, normed=False)
 
             Z = []
             for s in sin_dec_bins:
@@ -371,7 +371,7 @@ def make_individual_spline_set(season, SoB_path):
             plt.close()
 
         make_plot(exp_hist,
-                  savepath=base_plot_path + "bkg.pdf")
+                  savepath=base_plot_path + "bkg.pdf", x_bins=sin_dec_bins, y_bins=log_e_bins)
 
         del mc
 
@@ -394,6 +394,15 @@ def make_background_spline(season):
 
     with open(bkg_path, "wb") as f:
         Pickle.dump(bkg_spline, f)
+
+    x_range = np.linspace(sin_dec_bins[0], sin_dec_bins[-1], 101)
+    plt.figure()
+    plt.plot(x_range, np.exp(bkg_spline(x_range)))
+    plt.ylabel(r"$P_{bkg}$ (spatial)")
+    plt.xlabel(r"$\sin(\delta)$")
+    savepath = get_base_sob_plot_dir(season)
+    plt.savefig(savepath + "bkg_spatial.pdf")
+    plt.close()
 
 
 def load_spline(season):
