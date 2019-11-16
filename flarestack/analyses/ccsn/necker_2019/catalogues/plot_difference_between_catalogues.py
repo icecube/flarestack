@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers \
-    import updated_sn_catalogue_name, sn_cats, ccsn_cat_dir, sn_times, pdf_names
+    import updated_sn_catalogue_name, sn_cats, sn_times, pdf_names
 import logging
+from flarestack.shared import plot_output_dir
 
-plot_dir = ccsn_cat_dir + 'difference_plots/'
+plot_dir = plot_output_dir('/catalogue_visualization/')
 
 
 def autolabel(rects, axis):
@@ -16,7 +17,6 @@ def autolabel(rects, axis):
                     xytext=(0, 2),  # 3 points vertical offset
                     textcoords="offset points",
                     ha='center', va='bottom')
-
 
 
 def plot_difference_tot(filename):
