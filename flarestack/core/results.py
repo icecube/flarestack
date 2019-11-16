@@ -224,7 +224,10 @@ class ResultsHandler(object):
                             merged_data[key] += info
                         else:
                             for (param_name, params) in info.items():
-                                merged_data[key][param_name] += params
+                                try: merged_data[key][param_name] += params
+                                except KeyError as m:
+                                    logging.warning(f'Keys [{key}][{param_name}] not found in \n {merged_data}')
+                                    raise KeyError(m)
 
             with open(merged_path, "wb") as mp:
                 Pickle.dump(merged_data, mp)
