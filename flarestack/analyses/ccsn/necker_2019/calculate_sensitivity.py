@@ -9,6 +9,8 @@ from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import sn_cats, updated_s
     sn_time_pdfs
 from flarestack.cluster import analyse, wait_for_cluster
 import math
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_dataset import custom_dataset
 import os
@@ -16,9 +18,10 @@ import logging
 
 # Set Logger Level
 
-logging.getLogger().setLevel("DEBUG")
+logging.getLogger().setLevel("INFO")
 
 logging.debug('logging level is DEBUG')
+
 # LLH Energy PDF
 
 llh_energy = {
@@ -27,10 +30,9 @@ llh_energy = {
 
 # Spectral indices to loop over
 
-# gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
+gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 # gammas = [1.8, 2.0, 2.5]
-gammas = [2.0]
-sn_cats = ['Ibc']
+
 
 # Base name
 
@@ -104,11 +106,11 @@ for cat in sn_cats:
                 "inj_dict": inj_dict,
                 "llh_dict": llh_dict,
                 "scale": scale,
-                "n_trials": 2,
-                "n_steps": 2
+                "n_trials": 100,
+                "n_steps": 100
             }
 
-            analyse(mh_dict, cluster=False, n_cpu=3)
+            analyse(mh_dict, cluster=False, n_cpu=32)
 
             time_res[gamma] = mh_dict
 
