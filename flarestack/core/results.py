@@ -527,12 +527,8 @@ class ResultsHandler(object):
     def plot_bias(self):
         x = sorted(self.results.keys())
         raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
-        try:
-            x = [self.inj[j]["n_s"] for j in raw_x]
-            x_label = r"$n_{injected}$"
-        except KeyError:
-            x = [k_to_flux(float(j)) for j in raw_x]
-            x_label = r"$\Phi_{1GeV}$ (GeV$^{-1}$ cm$^{-2}$)"
+        base_x = [k_to_flux(float(j)) for j in raw_x]
+        base_x_label = r"$\Phi_{1GeV}$ (GeV$^{-1}$ cm$^{-2}$)"
 
         for i, param in enumerate(self.param_names):
 
@@ -555,6 +551,13 @@ class ResultsHandler(object):
 
                 true = self.inj[scale][param]
                 trues.append(true)
+
+            if "n_s" in param:
+                x = trues
+                x_label = r"$n_{injected}$" + param.replace("n_s", "")
+            else:
+                x = base_x
+                x_label = base_x_label
 
             plt.scatter(x, meds, color="orange")
             plt.plot(x, meds, color="black")
