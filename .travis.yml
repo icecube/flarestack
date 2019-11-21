@@ -3,26 +3,31 @@ install:
 - pip install -e .
 matrix:
   include:
-    - python: 3.6
-    - python: 3.7
-    - python: 3.8
-      dist: xenial
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-             # compilers
-            - g++
-            - gfortran
-              # math libraries
-            - libblas-dev
-            - liblapack-dev
-            - libatlas-base-dev
-            - libopenblas-base
-            - libopenblas-dev
+  - python: 3.6
+  - python: 3.7
+  - python: 3.8
+    dist: xenial
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++
+        - gfortran
+        - libblas-dev
+        - liblapack-dev
+        - libatlas-base-dev
+        - libopenblas-base
+        - libopenblas-dev
 script: python -m unittest discover tests/
 notifications:
   email: false
   slack:
     secure: AHDGwVG1cdOyixIlDzq8jGH1ScYC40mVwSwyJWfR9+0oSOklna2GuRot++03IXrpx6DLEwWWw9c3d2YB2SVu2820PdhRPAox4gfarVUK1JKOpOEDScLUAZ4dkdG+ZYtptfqW5wdy+TSVX+FXFgJBAb8lZV9ffvwsKq8kfCD8rVFR+dBw86o17AMbltG1wWnUVyVCG/qJpnq6Ri58u5xTWoxbSD+LKKTBY8G+aqofuX1Ic2X55DddYcgKDWqHyZC93qpbhbzfSX/UGxGuJEnndVlylP+CyTOYe0uozQYDT3suM9kd76XxzkKxAFcKZJb+veTNegiDep6Fdu5SvGC2Hn6zATvVzWZFN3575Ax7yST6IrDMskSa671SopmbfYQplZkvlinXKcXzkEia3HnVWA+Bi33zvkZXkaGVPotauV4t8vG26zNNkZ4vejlRa7KKxnvxCu+QrvggrEYlzB1SJHCNk7diMA6Q6GPEE9MO9wMl8kxw19d9CwqLmfYrw8P5jwirvn2OilnLXfuXQk9DHckrSrNtQ+zeL3+QrbJDqvJCZNwjDltD+8+E0ZjQp9uXaeCTzx8qnsGWGa6H1J7IXLuQcKLLieBMMSRl/ZupCsCZpb/wV3HmxaGDZF6V3Q5igFH8iQnoWlzHvqpVD0st+jhAq8MveIXKh2A0cIorat8=
+deploy:
+  provider: pypi
+  user: "__token__"
+  password:
+    secure: VVb4oa/qlcNBmoFbSi+3zmybU+chhCDPVq0HgGYA3Af+IijFNENdC+nsPQtYtS0dcamT4wtTBjWAQVFshdDPQa+lP9iL7P43Onautl7JcSNsIXDA7RouaBhyrC9zTnh8vKTzp5gRLnIz3FknEG344KYP3nRNXP9GkMiTcYNUFAKMXvUbigyrlkNb/w1lQGr6Tc66DqQGB58+VyMq2V4KOpdasq73t5l2g/m4C2rWfwaBU91xSxLxhdM/vaaVjSfvaO3XVocXBoptcS6LXKs4hDMIjD9WKFqUUMPd8nXToR14lLQ5/JxjoIFrVI95nDQaAFuIHiU6AJrrXHq9vfK75oaVjVb3+D7g7zcHXhMEFNH+vizQ4nP3boPGJFzgpMiQQH9XkUH524oXftgsMKL01OMa7ieYUmZUcQMkuGpdqoRcrIrVaB9PEamJRUcIrcvI5z3OQpIydFKbXT7FRiDDFHJ763UG0cOsJCMCZQdHQeKjDa4KDHMfWLqYrl1zb97fhUFw1Tes6T9rsGOPOKb9lAtcn2mnW3qkJrdd9qRHyG+Hwh/qbT8FqEBeO8bcQXS7rpTDeb+dRs5i6BtN5LkJ0ogH1hQr2K+iSybbbmBPLOS9XmEUxHXAGUuehSxlpdN/hvyOiqwwnYAqF0xfg7RIFWXKHZIWH2OmW6gD2vOlbkE=
+  on:
+    tags: true
