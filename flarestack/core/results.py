@@ -226,7 +226,7 @@ class ResultsHandler(object):
                             for (param_name, params) in info.items():
                                 try: merged_data[key][param_name] += params
                                 except KeyError as m:
-                                    logging.warning(f'Keys [{key}][{param_name}] not found in \n {merged_data}')
+                                    logging.warning('Keys [{key}][{param_name}] not found in \n {merged_data}')
                                     raise KeyError(m)
 
             with open(merged_path, "wb") as mp:
