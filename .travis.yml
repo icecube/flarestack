@@ -3,6 +3,10 @@ install:
 - pip install -e .
 matrix:
   include:
+  - python: 2.7
+    install:
+    - conda install -c conda-forge healpy
+    - pip install -e .
   - python: 3.6
   - python: 3.7
   - python: 3.8
