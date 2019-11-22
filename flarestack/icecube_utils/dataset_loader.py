@@ -1,10 +1,7 @@
-from __future__ import print_function
-from builtins import str
 import numpy as np
 from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
 from scipy.interpolate import interp1d
-
 
 def data_loader(data_path, floor=True, cut_fields=True):
     """Helper function to load data for a given season/set of season.
