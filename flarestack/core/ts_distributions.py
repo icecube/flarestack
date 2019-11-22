@@ -1,7 +1,3 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import str
-from builtins import object
 import numpy as np
 import os
 from flarestack.shared import plots_dir

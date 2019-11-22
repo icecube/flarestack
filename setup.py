@@ -28,7 +28,8 @@ setuptools.setup(
         "matplotlib",
         "astropy",
         "sphinx",
-        "jupyter"
+        "jupyter",
+        "pathlib"
     ],
     package_data={'flarestack': [
         'data/icecube/public/all_sky_point_source/raw_data/*.zip']},

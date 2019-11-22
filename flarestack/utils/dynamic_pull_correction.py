@@ -1,6 +1,3 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import str
 import numpy as np
 import pickle as Pickle
 from flarestack.icecube_utils.dataset_loader import data_loader

@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy as np
 from numpy.lib.recfunctions import append_fields, rename_fields
 

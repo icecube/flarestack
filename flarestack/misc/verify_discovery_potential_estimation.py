@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy as np
 import os
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01

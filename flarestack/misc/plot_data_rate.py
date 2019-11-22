@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import matplotlib.pyplot as plt
 from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year

@@ -1,7 +1,3 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import input
-from builtins import str
 import numpy as np
 import scipy.interpolate
 import os
