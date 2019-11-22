@@ -16,10 +16,14 @@ setuptools.setup(
     url="https://github.com/IceCubeOpenSource/flarestack",
     packages=setuptools.find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
+    python_requires='>=3.6',
     install_requires=[
         "numpy",
         "numexpr",
@@ -29,7 +33,6 @@ setuptools.setup(
         "astropy",
         "sphinx",
         "jupyter",
-        "pathlib"
     ],
     package_data={'flarestack': [
         'data/icecube/public/all_sky_point_source/raw_data/*.zip']},
