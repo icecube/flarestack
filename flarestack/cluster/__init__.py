@@ -7,6 +7,7 @@ from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file
 from flarestack.cluster.make_local_bash_script import local_submit_file,\
     make_local_submit_file
 import logging
+import multiprocessing
 
 if host_server == "DESY":
     submit_cluster = submit_to_cluster
@@ -27,7 +28,6 @@ def submit_local(path, n_cpu):
     logging.info(submit_cmd)
 
     os.system(submit_cmd)
-
 
 def analyse(mh_dict, cluster=False, n_cpu=min(os.cpu_count()-1, 32), **kwargs):
     """Generic function to run an analysis on a given MinimisationHandler
