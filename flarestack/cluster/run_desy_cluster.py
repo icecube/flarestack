@@ -60,8 +60,8 @@ def wait_for_cluster():
             else:
                 n_running = 0
 
-            print(time.asctime(time.localtime()), n_total, "entries in queue. ", end=' ')
-            print("Of these,", n_running, "are running tasks, and", end=' ')
+            print(time.asctime(time.localtime()), n_total, "entries in queue.")
+            print("Of these,", n_running, "are running tasks, and")
             print(n_total-n_running, "are jobs still waiting to be executed.")
             print(time.asctime(time.localtime()), "Waiting for Cluster")
             i = 0
