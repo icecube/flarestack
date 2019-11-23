@@ -20,7 +20,7 @@ matrix:
         - libopenblas-base
         - libopenblas-dev
 script:
-  - coverage run --source flarestack/ --omit flarestack/analyses/* --omit flarestack/misc/* --omit flarestack/misc/* --omit flarestack/data/icecube/* -m unittest discover tests/
+  - coverage run --source flarestack/ --omit flarestack/analyses --omit flarestack/misc --omit flarestack/data/icecube --omit flarestack/cluster/make_desy_cluster_script.py -m unittest discover tests/
 after_success:
   - coveralls
 notifications:
