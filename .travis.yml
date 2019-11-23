@@ -19,7 +19,10 @@ matrix:
         - libatlas-base-dev
         - libopenblas-base
         - libopenblas-dev
-script: python -m unittest discover tests/
+script:
+  - coverage run -m unittest discover tests/
+after_success:
+  - coveralls
 notifications:
   email: false
   slack:

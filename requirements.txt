@@ -6,4 +6,4 @@ matplotlib
 astropy
 sphinx
 jupyter
-pathlib
+python-coveralls
