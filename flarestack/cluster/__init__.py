@@ -29,23 +29,27 @@ def submit_local(path, n_cpu):
 
     os.system(submit_cmd)
 
+
 def analyse(mh_dict, cluster=False, n_cpu=min(os.cpu_count()-1, 32), **kwargs):
     """Generic function to run an analysis on a given MinimisationHandler
-    dictionary. Can either run on cluster, or locally, based on the bolean
+    dictionary. Can either run on cluster, or locally, based on the boolean
     cluster arg. The number of cpus can be specified, as well as specific
     kwargs such as number of jobs to run.
 
     :param mh_dict: MinimisationHandler dictionary
     :param cluster: Boolean flag for whether to run on cluster or locally.
     Default is False (i.e locally)
-    :param n_cpu: Number of CPUs to run with. Default is 2.
+    :param n_cpu: Number of CPUs to run with. Should be 1 for submit to cluster
     :param kwargs: Optional kwargs
     """
 
     path = make_analysis_pickle(mh_dict)
 
+    job_id = None
+
     if cluster:
-        submit_cluster(path, n_cpu=n_cpu, **kwargs)
+        job_id = submit_cluster(path, n_cpu=n_cpu, **kwargs)
     else:
         submit_local(path, n_cpu=n_cpu)
 
+    return job_id

@@ -23,7 +23,9 @@ import subprocess
 import time
 import os
 import os.path
+import logging
 import argparse
+import numpy as np
 from flarestack.shared import log_dir, fs_dir
 from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file, submit_file
 
@@ -32,8 +34,20 @@ username = os.path.basename(os.environ['HOME'])
 cmd = 'qstat -u ' + username
 
 
-def wait_for_cluster():
-    """Runs the command cmd, which queries the status of the job on the
+def wait_for_cluster(job_ids=None):
+    if not job_ids:
+        wait_for_job()
+    else:
+        for i, job_id in enumerate(job_ids):
+
+            logging.debug(f'waiting for job {job_id}')
+            prog_str = f'{i}/{len(job_ids)}'
+            wait_for_job(job_id, prog_str)
+
+
+def wait_for_job(job_id=None, progress_str=None):
+    """
+    Runs the command cmd, which queries the status of the job on the
     cluster, and reads the output. While the output is not an empty
     string (indicating job completion), the cluster is re-queried
     every 30 seconds. Occasionally outputs the number of remaining sub-tasks
@@ -41,36 +55,51 @@ def wait_for_cluster():
     completion of job, terminates function process and allows the script to
     continue.
     """
+
+    if not job_id:
+        job_id_str = 's'
+    else:
+        if progress_str:
+            job_id_str = f' {progress_str} {job_id}'
+        else:
+            job_id_str = ' ' + str(job_id)
+
     time.sleep(10)
+
+    cmd = f'qstat -u {username}'
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     tmp = process.stdout.read().decode()
+    n_total = n_tasks(tmp, job_id)
     i = 31
     j = 6
-    while tmp != '':
+    while n_total != 0:
         if i > 3:
-
-            n_total = len(str(tmp).split('\n')) - 3
 
             running_process = subprocess.Popen(
                 cmd + " -s r", stdout=subprocess.PIPE, shell=True)
             running_tmp = running_process.stdout.read().decode()
 
             if running_tmp != '':
-                n_running = len(running_tmp.split('\n')) - 3
+                n_running = n_tasks(running_tmp, job_id)
             else:
                 n_running = 0
 
-            print(time.asctime(time.localtime()), n_total, "entries in queue.")
-            print("Of these,", n_running, "are running tasks, and")
-            print(n_total-n_running, "are jobs still waiting to be executed.")
-            print(time.asctime(time.localtime()), "Waiting for Cluster")
+            logging.info(f'{time.asctime(time.localtime())} - Job{job_id_str}:'
+                         f' {n_total} entries in queue. '
+                         f'Of these, {n_running} are running tasks, and '
+                         f'{n_total-n_running} are tasks still waiting to be executed.')
             i = 0
             j += 1
+
+        if j > 7:
+            logging.info(str(tmp))
+            j = 0
 
         time.sleep(30)
         i += 1
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         tmp = process.stdout.read().decode()
+        n_total = n_tasks(tmp, job_id)
 
 
 def submit_to_cluster(path, n_cpu=2, n_jobs=10):
@@ -95,7 +124,29 @@ def submit_to_cluster(path, n_cpu=2, n_jobs=10):
     make_desy_submit_file(ram_per_core)
 
     print(time.asctime(time.localtime()), submit_cmd, "\n")
-    os.system(submit_cmd)
+
+    process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
+    msg = process.stdout.read().decode()
+    print(msg)
+    job_id = int(str(msg).split('job-array')[1].split('.')[0])
+
+    return job_id
+
+
+def n_tasks(tmp, job_id):
+    """
+    Returns the number of tasks given the output of qsub
+    :param tmp: output of qsub
+    :param job_id: int, optional, if given only tasks belonging to this job will we counted
+    :return: int
+    """
+    st = str(tmp)
+    ids = np.array([int(s.split(' ')[2]) for s in st.split('\n')[2:-1]])
+
+    if job_id:
+        return len(ids[ids == job_id])
+    else:
+        return len(ids)
 
 
 if not os.path.isfile(submit_file):
