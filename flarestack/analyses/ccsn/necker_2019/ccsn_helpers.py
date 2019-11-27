@@ -1,6 +1,7 @@
 import os
 # from flarestack.analyses.ccsn.necker2019.ccsn_helpers import sn_catalogue_name
 
+raw_output_dir = 'analyses/ccsn/necker_2019'
 
 ccsn_dir = os.path.abspath(os.path.dirname(__file__))
 ccsn_cat_dir = ccsn_dir + "/catalogues/"

@@ -6,11 +6,12 @@ from flarestack.data.icecube import ps_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import sn_cats, updated_sn_catalogue_name, \
-    sn_time_pdfs
-from flarestack.cluster import analyse, wait_for_cluster
+    sn_time_pdfs, raw_output_dir
+from flarestack.cluster import analyse
+from flarestack.cluster.run_desy_cluster import wait_for_cluster
 import math
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_dataset import custom_dataset
 import os
@@ -18,7 +19,7 @@ import logging
 
 # Set Logger Level
 
-logging.getLogger().setLevel("INFO")
+logging.getLogger().setLevel("DEBUG")
 
 logging.debug('logging level is DEBUG')
 
@@ -30,19 +31,20 @@ llh_energy = {
 
 # Spectral indices to loop over
 
-gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
-# gammas = [1.8, 2.0, 2.5]
+# gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
+gammas = [1.8, 2.0, 2.5]
 
 
 # Base name
 
-raw = "analyses/ccsn/necker_2019/calculate_sensitivity/"
+raw = raw_output_dir + "/calculate_sensitivity/"
 
 full_res = dict()
 
+job_ids = []
 # Loop over SN catalogues
 
-for cat in sn_cats:
+for cat in sn_cats[:1]:
 
     name = raw + cat + "/"
 
@@ -57,7 +59,7 @@ for cat in sn_cats:
 
     # Loop over time PDFs
 
-    for llh_time in time_pdfs:
+    for llh_time in time_pdfs[:1]:
 
         time_key = str(llh_time["post_window"] + llh_time["pre_window"])
 
@@ -106,11 +108,12 @@ for cat in sn_cats:
                 "inj_dict": inj_dict,
                 "llh_dict": llh_dict,
                 "scale": scale,
-                "n_trials": 100,
-                "n_steps": 100
+                "n_trials": 50,
+                "n_steps": 10
             }
 
-            analyse(mh_dict, cluster=False, n_cpu=32)
+            job_id = analyse(mh_dict, cluster=True, n_cpu=1)
+            job_ids.append(job_id)
 
             time_res[gamma] = mh_dict
 
@@ -120,7 +123,9 @@ for cat in sn_cats:
 
 # Wait for cluster. If there are no cluster jobs, this just runs
 
-wait_for_cluster()
+logging.info(f'waiting for jobs {job_ids}')
+
+wait_for_cluster(job_ids)
 
 for b, (cat_name, cat_res) in enumerate(full_res.items()):
 

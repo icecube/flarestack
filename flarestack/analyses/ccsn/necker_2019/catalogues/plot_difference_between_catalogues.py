@@ -1,11 +1,14 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers \
-    import updated_sn_catalogue_name, sn_cats, sn_times, pdf_names
+    import updated_sn_catalogue_name, sn_cats, sn_times, pdf_names, raw_output_dir
 import logging
 from flarestack.shared import plot_output_dir
 
-plot_dir = plot_output_dir('/catalogue_visualization/')
+
+plot_dir = plot_output_dir(raw_output_dir+'/catalogue_visualization/difference_stasik/')
 
 
 def autolabel(rects, axis):
