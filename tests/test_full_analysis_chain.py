@@ -61,7 +61,7 @@ class TestTimeIntegrated(unittest.TestCase):
             "scale": 1.
         }
 
-        # analyse(mh_dict, cluster=False)
+        analyse(mh_dict, cluster=False)
 
         rh = ResultsHandler(mh_dict)
 
