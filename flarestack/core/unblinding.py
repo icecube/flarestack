@@ -9,7 +9,7 @@ from flarestack.core.results import ResultsHandler
 from flarestack.core.time_pdf import TimePDF
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
     analysis_pickle_path, limit_output_path
-import pickle as Pickle
+import pickle
 from flarestack.core.ts_distributions import plot_background_ts_distribution
 import matplotlib.pyplot as plt
 from flarestack.utils.catalogue_loader import load_catalogue
@@ -157,7 +157,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     new_path = self.unblind_dict["background_ts"] + subdir + "/"
 
                     with open(analysis_pickle_path(new_path), "r") as f:
-                        mh_dict = Pickle.load(f)
+                        mh_dict = pickle.load(f)
                         e_pdf_dict = mh_dict["inj_dict"]["injection_sig_energy_pdf"]
 
                     rh = ResultsHandler(self.unblind_dict)
@@ -237,7 +237,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 }
 
                 with open(self.limit_path, "wb") as f:
-                    Pickle.dump(res_dict, f)
+                    pickle.dump(res_dict, f)
 
             except OSError:
                 logging.warning("Unable to set limits. No TS distributions found.")
@@ -256,7 +256,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     with open(merged_pkl) as mp:
 
-                        merged_data = Pickle.load(mp)
+                        merged_data = pickle.load(mp)
 
                     ts_array += list(merged_data["TS"])
 
