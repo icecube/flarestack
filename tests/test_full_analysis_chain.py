@@ -58,7 +58,7 @@ class TestTimeIntegrated(unittest.TestCase):
             "llh_dict": llh_dict,
             "n_steps": 5,
             "n_trials": 10,
-            "scale": 1.
+            "scale": 50.
         }
 
         analyse(mh_dict, cluster=False)
