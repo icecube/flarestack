@@ -7,7 +7,7 @@ from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file
 from flarestack.cluster.make_local_bash_script import local_submit_file,\
     make_local_submit_file
 import logging
-import multiprocessing
+from flarestack.core.multiprocess_wrapper import run_multiprocess
 
 if host_server == "DESY":
     submit_cluster = submit_to_cluster
@@ -18,16 +18,18 @@ else:
         raise Exception("No cluster submission script recognised!")
 
 
-def submit_local(path, n_cpu):
-    make_local_submit_file()
+def submit_local(mh_dict, n_cpu):
 
-    bashfile = local_submit_file
+    run_multiprocess(n_cpu=n_cpu, mh_dict=mh_dict)
+    # make_local_submit_file()
 
-    submit_cmd = bashfile + " " + path + " " + str(n_cpu)
+    # bashfile = local_submit_file
 
-    logging.info(submit_cmd)
+    # submit_cmd = bashfile + " " + path + " " + str(n_cpu)
 
-    os.system(submit_cmd)
+    # logging.info(submit_cmd)
+
+    # os.system(submit_cmd)
 
 
 def analyse(mh_dict, cluster=False, n_cpu=min(os.cpu_count()-1, 32), **kwargs):
@@ -50,6 +52,6 @@ def analyse(mh_dict, cluster=False, n_cpu=min(os.cpu_count()-1, 32), **kwargs):
     if cluster:
         job_id = submit_cluster(path, n_cpu=n_cpu, **kwargs)
     else:
-        submit_local(path, n_cpu=n_cpu)
+        submit_local(mh_dict, n_cpu=n_cpu)
 
     return job_id

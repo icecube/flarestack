@@ -58,10 +58,10 @@ class MultiProcessor:
         # ql gets records from the queue and sends them to the handler
         ql = QueueListener(self.log_queue, handler)
         ql.start()
-        logger = logging.getLogger()
-        logging.getLogger().setLevel("INFO")
-        # add the handler to the logger so records from this process are handled
-        logger.addHandler(handler)
+        # logger = logging.getLogger()
+        # logging.getLogger().setLevel("DEBUG")
+        # # add the handler to the logger so records from this process are handled
+        # logger.addHandler(handler)
 
         # self.results = dict()
 
@@ -79,7 +79,7 @@ class MultiProcessor:
 
         qh = QueueHandler(self.log_queue)
         logger = logging.getLogger()
-        logger.setLevel("WARN")
+        logger.setLevel("INFO")
         logger.addHandler(qh)
 
         mh_dict = kwargs["mh_dict"]
@@ -109,16 +109,16 @@ class MultiProcessor:
 
         for scale in scale_range:
             for _ in range(n_trials):
-                r.add_to_queue((scale, int(random.random() * 10 ** 8)))
+                self.add_to_queue((scale, int(random.random() * 10 ** 8)))
 
         n_tasks = (len(scale_range) * n_trials)
-        with r.n_tasks.get_lock():
-            r.n_tasks.value += n_tasks
+        with self.n_tasks.get_lock():
+            self.n_tasks.value += n_tasks
 
         logging.info("Added {0} trials to queue. Now processing.".format(n_tasks))
 
-        while r.n_tasks.value > 0.:
-            logging.info("{0} tasks remaining.".format(r.n_tasks.value))
+        while self.n_tasks.value > 0.:
+            logging.info("{0} tasks remaining.".format(self.n_tasks.value))
             time.sleep(30)
         logging.info("Finished processing {0} tasks.".format(n_tasks))
 
@@ -130,6 +130,17 @@ class MultiProcessor:
 
         self.dump_all_injection_values()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.terminate()
+
+def run_multiprocess(n_cpu, mh_dict):
+    with MultiProcessor(n_cpu=n_cpu, mh_dict=mh_dict) as r:
+        r.fill_queue()
+        r.terminate()
+        del r
 
 if __name__ == '__main__':
     import os
@@ -144,7 +155,4 @@ if __name__ == '__main__':
     with open(cfg.file, "rb") as f:
         mh_dict = pickle.load(f)
 
-    r = MultiProcessor(n_cpu=cfg.n_cpu, mh_dict=mh_dict)
-    r.fill_queue()
-    r.terminate()
-    del r
+    run_multiprocess(n_cpu=cfg.n_cpu, mh_dict=mh_dict)

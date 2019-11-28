@@ -109,7 +109,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             self.ts = np.array([self.res_dict["TS"]])[0]
             self.sigma = np.nan
 
-            logging.info("Test Statistic of:", self.ts)
+            logging.info("Test Statistic of: {0}".format(self.ts))
 
             try:
                 path = self.unblind_dict["background_ts"]
@@ -227,7 +227,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     os.makedirs(os.path.dirname(self.limit_path))
                 except OSError:
                     pass
-                logging.info("Saving limits to", self.limit_path)
+                logging.info("Saving limits to {0}".format(self.limit_path))
 
                 res_dict = {
                     "x": x_axis,
