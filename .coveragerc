@@ -6,6 +6,7 @@ omit =
     flarestack/misc/*
     flarestack/data/icecube/*
     flarestack/cluster/make_desy_cluster_script.py
+    flarestack/cluster/run_desy_cluster.py
     flarestack/icecube_utils/reference_sensitivity.py
 
 [report]
