@@ -179,7 +179,7 @@ def band_mask_cache_name(season, catalogue):
 
 
 def name_pickle_output_dir(name):
-    return pickle_dir + name
+    return os.path.join(pickle_dir, name)
 
 
 def inj_dir_name(name):
