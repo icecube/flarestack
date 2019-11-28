@@ -355,7 +355,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         else:
 
-            write_dir = self.pickle_output_dir + scale_shortener(scale) + "/"
+            write_dir = os.path.join(self.pickle_output_dir, scale_shortener(scale))
 
             # Tries to create the parent directory, unless it already exists
             try:
@@ -363,7 +363,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             except OSError:
                 pass
 
-            file_name = write_dir + str(seed) + ".pkl"
+            file_name = os.path.join(write_dir, str(seed) + ".pkl")
 
             logging.info("Saving to {0}".format(file_name))
 
@@ -390,7 +390,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             except OSError:
                 pass
 
-            file_name = inj_dir + scale_shortener(scale) + ".pkl"
+            file_name = os.path.join(inj_dir, scale_shortener(scale) + ".pkl")
             with open(file_name, "wb") as f:
                 Pickle.dump(inj_dict, f)
 
