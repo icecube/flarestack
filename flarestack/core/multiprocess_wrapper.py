@@ -79,7 +79,7 @@ class MultiProcessor:
 
         qh = QueueHandler(self.log_queue)
         logger = logging.getLogger()
-        logger.setLevel("INFO")
+        logger.setLevel("WARN")
         logger.addHandler(qh)
 
         mh_dict = kwargs["mh_dict"]
