@@ -220,7 +220,7 @@ class MinimisationHandler(object):
     def trial_params(mh_dict):
 
         scale = mh_dict["scale"]
-        steps = mh_dict["n_steps"]
+        steps = int(mh_dict["n_steps"])
 
         if "fixed_scale" in list(mh_dict.keys()):
             scale_range = [mh_dict["fixed_scale"]]
