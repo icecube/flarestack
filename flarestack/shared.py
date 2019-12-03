@@ -179,19 +179,19 @@ def band_mask_cache_name(season, catalogue):
 
 
 def name_pickle_output_dir(name):
-    return pickle_dir + name
+    return os.path.join(pickle_dir, name)
 
 
 def inj_dir_name(name):
-    return inj_param_dir + name
+    return os.path.join(inj_param_dir, name)
 
 
 def plot_output_dir(name):
-    return plots_dir + name
+    return os.path.join(plots_dir, name)
 
 
 def limit_output_path(name):
-    path = limits_dir + name + "limit.pkl"
+    path = os.path.join(limits_dir, name + "limit.pkl")
     return path
 
 

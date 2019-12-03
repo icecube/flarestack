@@ -6,7 +6,7 @@ import unittest
 from flarestack.data.public import icecube_ps_3_year
 from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
-from flarestack import analyse
+from flarestack import analyse, ResultsHandler
 
 # Initialise Injectors/LLHs
 
@@ -58,10 +58,12 @@ class TestTimeIntegrated(unittest.TestCase):
             "llh_dict": llh_dict,
             "n_steps": 5,
             "n_trials": 10,
-            "scale": 1.
+            "scale": 50.
         }
 
-        analyse(mh_dict, cluster=False)
+        analyse(mh_dict, n_cpu=2, cluster=False)
+
+        rh = ResultsHandler(mh_dict)
 
 
 if __name__ == '__main__':

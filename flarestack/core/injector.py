@@ -609,8 +609,12 @@ class EffectiveAreaInjector(BaseInjector):
                    self.energy_pdf.f(log_e) * \
                    self.energy_proxy_mapping(log_e)
 
+        start_x = np.log(self.energy_pdf.integral_e_min)
+
+
+
         x_vals = np.linspace(
-            np.log(self.energy_pdf.integral_e_min),
+            start_x + 1e-7,
             np.log(self.energy_pdf.integral_e_max),
             100
         )[1:]
@@ -621,7 +625,7 @@ class EffectiveAreaInjector(BaseInjector):
         ])
         y_vals /= max(y_vals)
 
-        f = interpolate.interp1d(y_vals, x_vals)
+        f = interpolate.interp1d([0.0] + list(y_vals), [start_x] + list(x_vals))
         self.conversion_cache[source["source_name"]] = f
 
 

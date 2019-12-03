@@ -27,7 +27,7 @@ class ResultsHandler(object):
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(self.name)
         self.plot_dir = plot_output_dir(self.name)
-        self.merged_dir = self.pickle_output_dir + "merged/"
+        self.merged_dir = os.path.join(self.pickle_output_dir, "merged")
 
         # Checks if the code should search for flares. By default, this is
         # not done.
@@ -175,7 +175,7 @@ class ResultsHandler(object):
         inj_values = dict()
 
         for file in os.listdir(load_dir):
-            path = load_dir + file
+            path = os.path.join(load_dir, file)
 
             with open(path, "rb") as f:
                 inj_values[os.path.splitext(file)[0]] = Pickle.load(f)
@@ -193,11 +193,11 @@ class ResultsHandler(object):
             pass
 
         for sub_dir_name in all_sub_dirs:
-            sub_dir = self.pickle_output_dir + sub_dir_name + "/"
+            sub_dir = os.path.join(self.pickle_output_dir,  sub_dir_name)
 
             files = os.listdir(sub_dir)
 
-            merged_path = self.merged_dir + sub_dir_name + ".pkl"
+            merged_path = os.path.join(self.merged_dir, sub_dir_name + ".pkl")
 
             if os.path.isfile(merged_path):
                 with open(merged_path, "rb") as mp:
@@ -206,7 +206,7 @@ class ResultsHandler(object):
                 merged_data = {}
 
             for filename in files:
-                path = sub_dir + filename
+                path = os.path.join(sub_dir, filename)
 
                 try:
                     with open(path, "rb") as f:
@@ -258,7 +258,7 @@ class ResultsHandler(object):
         bkg_median = np.median(bkg_ts)
         self.bkg_median = bkg_median
 
-        savepath = self.plot_dir + "sensitivity.pdf"
+        savepath = os.path.join(self.plot_dir, "sensitivity.pdf")
 
         self.sensitivity, self.extrapolated_sens = self.find_overfluctuations(
             bkg_median, savepath)
@@ -384,7 +384,7 @@ class ResultsHandler(object):
 
     def find_disc_potential(self):
 
-        ts_path = self.plot_dir + "ts_distributions/0.pdf"
+        ts_path = os.path.join(self.plot_dir, "ts_distributions/0.pdf")
 
         try:
             bkg_dict = self.results[scale_shortener(0.0)]
@@ -487,12 +487,12 @@ class ResultsHandler(object):
 
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
-        ts_path = self.plot_dir + "ts_distributions/" + str(scale) + ".pdf"
+        ts_path = os.path.join(self.plot_dir, "ts_distributions/" + str(scale) + ".pdf")
 
         plot_background_ts_distribution(ts_array, ts_path,
                                         ts_type=self.ts_type)
 
-        param_path = self.plot_dir + "params/" + str(scale) + ".pdf"
+        param_path = os.path.join(self.plot_dir, "params/" + str(scale) + ".pdf")
 
         # if self.show_inj:
         inj = self.inj[str(scale)]
@@ -572,7 +572,7 @@ class ResultsHandler(object):
             plt.ylabel(param)
             plt.title("Bias (" + param + ")")
 
-            savepath = self.plot_dir + "bias_" + param + ".pdf"
+            savepath = os.path.join(self.plot_dir, "bias_" + param + ".pdf")
             logging.info("Saving bias plot to {0}".format(savepath))
             plt.savefig(savepath)
             plt.close()

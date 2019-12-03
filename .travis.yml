@@ -20,7 +20,8 @@ matrix:
         - libopenblas-base
         - libopenblas-dev
 script:
-  - coverage run -m unittest discover tests/
+  - coverage run --concurrency=multiprocessing -m unittest discover tests/
+  - coverage combine
 after_success:
   - coveralls
 notifications:

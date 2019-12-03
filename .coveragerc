@@ -5,8 +5,14 @@ omit =
     flarestack/analyses/*
     flarestack/misc/*
     flarestack/data/icecube/*
+    flarestack/data/simulate/*
     flarestack/cluster/make_desy_cluster_script.py
+    flarestack/cluster/run_desy_cluster.py
+    flarestack/cluster/run_desy_cluster_job_id.py
     flarestack/icecube_utils/reference_sensitivity.py
+    flarestack/utils/percentile_SoB.py
+    flarestack/utils/asimov_estimator.py
+    flarestack/utils/dynamic_pull_corrector.py
 
 [report]
 # Regexes for lines to exclude from consideration
