@@ -46,7 +46,7 @@ def make_desy_submit_file(ram_per_core="6.0G"):
            'cp $TMPDIR/${JOB_ID}_stdout.txt ' + log_dir + '\n'\
            'cp $TMPDIR/${JOB_ID}_stderr.txt ' + log_dir + '\n '
 
-    logging.info("Creating file at", submit_file)
+    logging.info("Creating file at {0}".format(submit_file))
 
     with open(submit_file, "w") as f:
         f.write(text)
