@@ -33,7 +33,7 @@ setuptools.setup(
         "astropy",
         "sphinx",
         "jupyter",
-        "python-coveralls"
+        "coveralls"
     ],
     package_data={'flarestack': [
         'data/icecube/public/all_sky_point_source/raw_data/*.zip']},
