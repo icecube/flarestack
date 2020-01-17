@@ -1,5 +1,6 @@
-numpy
+numpy>=1.16.0
 numexpr
+healpy
 scipy
 matplotlib
 astropy

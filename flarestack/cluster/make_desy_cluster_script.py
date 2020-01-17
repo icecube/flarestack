@@ -39,7 +39,7 @@ def make_desy_submit_file(ram_per_core="6.0G"):
            "sleep $(( ( RANDOM % 60 )  + 1 )) \n" \
            'exec > "$TMPDIR"/${JOB_ID}_stdout.txt ' \
            '2>"$TMPDIR"/${JOB_ID}_stderr.txt \n' \
-           'eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4/setup.sh) \n' \
+           'eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/setup.sh) \n' \
            'export PYTHONPATH=' + root_dir + '/ \n' \
            'export FLARESTACK_SCRATCH_DIR=' + flarestack_scratch_dir + " \n" \
            'python ' + fs_dir + 'core/multiprocess_wrapper.py -f $1 -n $2 \n' \
