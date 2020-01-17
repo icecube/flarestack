@@ -1,6 +1,5 @@
 numpy
 numexpr
-healpy
 scipy
 matplotlib
 astropy

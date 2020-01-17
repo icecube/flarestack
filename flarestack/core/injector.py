@@ -1,7 +1,6 @@
 import logging
 import os
 import numpy as np
-import healpy as hp
 import random
 from flarestack.shared import k_to_flux, scale_shortener, band_mask_cache_name
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
