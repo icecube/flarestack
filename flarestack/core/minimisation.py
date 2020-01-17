@@ -1088,11 +1088,14 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             for season_name in self.seasons.keys():
                 try:
                     names = [x[0] for x in self.get_injector(season_name).n_exp["source_name"]]
-
                     if isinstance(names[0], bytes):
                         names = [x.decode() for x in names]
 
+                    if isinstance(name, bytes):
+                        name = name.decode()
+
                     mask = np.array([x == name for x in names])
+
                     n_inj += np.sum(self.get_injector(season_name).n_exp["n_exp"][mask] * scale)
 
                 # If source not overlapping season, will not be in dict
