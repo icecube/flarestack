@@ -386,7 +386,10 @@ class MCInjector(BaseInjector):
                 (sig_events,
                  sim_ev[list(self.season.get_background_dtype().names)])
             )
-            logging.info("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj[0]))
+            try:
+                logging.info("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj[0]))
+            except IndexError:
+                logging.info("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj))
 
         return sig_events
 
