@@ -24,7 +24,7 @@ g = EnergyPDF.create(base_energy_pdf)
 
 n_steps = 1e3
 
-e_range = np.logspace(0, 7, n_steps)
+e_range = np.logspace(0, 7, int(n_steps))
 
 f = InterpolatedUnivariateSpline(e_range, np.log(g.f(e_range)))
 
