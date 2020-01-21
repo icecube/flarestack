@@ -97,6 +97,10 @@ Flarestack runs with Travis CI, a Continuous Integration Service (https://travis
 
 [![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack)
 
+# Using Flarestack for IceCube analysis
+
+Flarestack is currently used for internal IceCube analysis based on MC-based methods, as outlined in analysis READMEs. Additional analysis of public IceCube data using effective areas would be possible with this code, but this feature **has not been tested or fully developed**. Any use of this code for public data is done without the endorsement of the IceCube collaboration.
+
 # Contributors
 
 * Federica Bradascio [@fbradascio](https://github.com/fbradascio)
