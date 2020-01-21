@@ -1,5 +1,6 @@
 # flarestack
-[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/IceCubeOpenSource/flarestack/badge.svg?branch=master)](https://coveralls.io/github/IceCubeOpenSource/flarestack?branch=master) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
+[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/IceCubeOpenSource/flarestack/badge.svg?branch=master)](https://coveralls.io/github/IceCubeOpenSource/flarestack?branch=master) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master) [![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
+
 
 Code for unbinned likelihood analysis of astroparticle physics data, created by [@robertdstein](https://github.com/robertdstein).
 
@@ -100,6 +101,12 @@ Flarestack runs with Travis CI, a Continuous Integration Service (https://travis
 # Using Flarestack for IceCube analysis
 
 Flarestack is currently used for internal IceCube analysis based on MC-based methods, as outlined in analysis READMEs. Additional analysis of public IceCube data using effective areas would be possible with this code, but this feature **has not been tested or fully developed**. Any use of this code for public data is done without the endorsement of the IceCube collaboration.
+
+# Citing Flarestack
+
+If you use Flarestack for analysis, please cite it! A DOI is provided by Zenodo, which can reference both the code repository, or specific releases of Flarestack.
+
+[![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
 
 # Contributors
 
