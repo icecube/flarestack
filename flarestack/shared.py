@@ -277,23 +277,46 @@ def scale_shortener(scale):
     return '{0:.4G}'.format(float(scale))
 
 
-def analysis_pickle_path(name):
-    """Converts a unique Minimisation Handler name to a corresponding analysis
+def analysis_pickle_path(mh_dict=None, name=None):
+    """Converts a Minimisation Handler dictionary to a corresponding analysis
     config pickle. This pickle can be used to run a Minimisation Handler.
 
+    :param mh_dict: Minimisation Handler dictionary
     :param name: unique Minimisation Handler name
     :return: Path to analysis pickle
     """
-    analysis_path = analysis_dir + name
+
+    dict_name = "dict.pkl"
+
+    if mh_dict is not None:
+
+        try:
+
+            if np.logical_and(name is not None, name != mh_dict["name"]):
+                raise Exception(f"Both name and mh_dict arguments provided. "
+                                f"There is a conflict between: \n"
+                                f"'name' parameter: {name} \n"
+                                f"'mh_dict'-derived name: {mh_dict['name']} \n"
+                                f"Please resolve this conflict, by specifying the correct name.")
+
+            name = mh_dict["name"]
+        except KeyError:
+            raise Exception("No field 'name' was specified in mh_dict object. "
+                            "Cannot save results without a unique directory"
+                            " name being specified.")
+
+        if "fixed_scale" in mh_dict.keys():
+            dict_name = f"fixed_scale_{mh_dict['fixed_scale']}_dict.pkl"
+
+    analysis_path = os.path.join(analysis_dir, name)
 
     try:
         os.makedirs(analysis_path)
     except OSError:
         pass
 
-    pkl_file = analysis_path + "dict.pkl"
+    pkl_file = os.path.join(analysis_path, dict_name)
     return pkl_file
-
 
 def make_analysis_pickle(mh_dict):
     """Takes a Minimisation Handler Dictionary, finds the corresponding
@@ -301,17 +324,11 @@ def make_analysis_pickle(mh_dict):
 
     :param mh_dict: Minimisation Handler dictionary
     """
-    try:
-        name = mh_dict["name"]
-    except KeyError:
-        raise Exception("No field 'name' was specified in mh_dict object. "
-                        "Cannot save results without a unique directory"
-                        " name being specified.")
 
     for season in mh_dict["dataset"].values():
         season.clean_season_cache()
 
-    pkl_file = analysis_pickle_path(name)
+    pkl_file = analysis_pickle_path(mh_dict)
 
     with open(pkl_file, "wb") as f:
         pickle.dump(mh_dict, f)
