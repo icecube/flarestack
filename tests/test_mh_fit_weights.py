@@ -11,7 +11,7 @@ from flarestack import MinimisationHandler, analyse
 # Initialise Injectors/LLHs
 
 llh_dict = {
-    "llh_name": "standard",
+    "llh_name": "standard_nonoverlapping",
     "llh_sig_time_pdf": {
         "time_pdf_name": "steady"
     },
@@ -55,7 +55,7 @@ class TestTimeIntegrated(unittest.TestCase):
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
         for i, x in enumerate(res["x"]):
-            self.assertAlmostEqual(x, true_parameters[i], delta=5)
+            self.assertAlmostEqual(x, true_parameters[i], delta=0.1)
         logging.info("Best fit values {0}".format(list(res)))
         logging.info("Reference best fit {0}".format(true_parameters))
 
