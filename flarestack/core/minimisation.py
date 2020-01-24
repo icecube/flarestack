@@ -65,6 +65,11 @@ def read_mh_dict(mh_dict):
         if key in list(mh_dict.keys()):
             mh_dict[key] = f(mh_dict[key])
 
+    if np.logical_and("fixed_scale" in mh_dict.keys(), "n_steps" in mh_dict.keys()):
+        raise Exception(f"MinimisationHandler dictionary contained both 'fixed_scale' key for "
+                        f"set injection flux, and 'n_steps' key for stepped injection flux."
+                        f"Please use only one of these options. \n  mh_dict: \n {mh_dict}")
+
     return mh_dict
 
 
@@ -219,12 +224,11 @@ class MinimisationHandler(object):
     @staticmethod
     def trial_params(mh_dict):
 
-        scale = mh_dict["scale"]
-        steps = int(mh_dict["n_steps"])
-
         if "fixed_scale" in list(mh_dict.keys()):
             scale_range = [mh_dict["fixed_scale"]]
         else:
+            scale = mh_dict["scale"]
+            steps = int(mh_dict["n_steps"])
             scale_range = np.array(
                 [0. for _ in range(10)] +
                 list(np.linspace(0., scale, steps)[1:])
