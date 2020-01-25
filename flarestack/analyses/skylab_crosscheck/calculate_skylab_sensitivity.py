@@ -75,11 +75,11 @@ for sindec in same_sindecs:
     for i, n in enumerate(nsources[:-1]):
 
         logging.info(f'stacking {n} sources')
-        logging.info(f'cat path is {fs_sources(i)}')
+        logging.info(f'cat path is {fs_sources(i, sindec)}')
 
         name = raw + '{:.4f}/'.format(sindec) + str(n) + 'sources' if sindec is not None \
             else raw + 'None/' + str(n) + 'sources'
-        catalogue = np.load(fs_sources(i))
+        catalogue = np.load(fs_sources(i, sindec))
         closest_src = np.sort(catalogue, order="distance_mpc")[0]
 
         scale = (flux_to_k(reference_sensitivity(
@@ -91,7 +91,7 @@ for sindec in same_sindecs:
             "mh_name": mh_name,
             "dataset": custom_dataset(ps_v002_p01, catalogue,
                                       llh_dict["llh_sig_time_pdf"]),
-            "catalogue": fs_sources(i),
+            "catalogue": fs_sources(i, sindec),
             "inj_dict": inj_dict,
             "llh_dict": llh_dict,
             "scale": scale,
@@ -100,10 +100,10 @@ for sindec in same_sindecs:
         }
 
         job_id = None
-        # job_id = analyse(mh_dict,
-        #                  cluster=cluster,
-        #                  n_cpu=1 if cluster and n < 200 else 4 if cluster and n > 200 else 32,
-        #                  n_jobs=100 if n < 200 else 500)
+        job_id = analyse(mh_dict,
+                         cluster=cluster,
+                         n_cpu=1 if cluster and n < 200 else 4 if cluster and n > 200 else 32,
+                         n_jobs=100 if n < 200 else 500)
         job_ids.append(job_id)
 
         full_res[str(n)] = mh_dict
