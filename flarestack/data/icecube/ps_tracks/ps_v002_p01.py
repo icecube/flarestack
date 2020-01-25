@@ -122,7 +122,7 @@ ps_v002_p01.add_season(ic86_1)
 # Add optional subseasons for IC86 2, 3, and 4, that can be called instead of
 # the combined season
 
-for i in range(2, 4):
+for i in range(2, 5):
     ic86_i = IceCubeSeason(
         season_name="IC86_{0}".format(i),
         sample_name=sample_name,
