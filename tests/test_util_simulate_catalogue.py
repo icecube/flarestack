@@ -56,7 +56,7 @@ class TestSimulateCatalogue(unittest.TestCase):
         for i, x in enumerate(cat):
 
             for j, y in enumerate(list(tuple(x))):
-                self.assertAlmostEqual(y, list(default_cat[i])[j], delta=0.2)
+                self.assertAlmostEqual(y, list(default_cat[i])[j], delta=0.3)
 
         logging.info("Calculated values {0}".format(cat))
         logging.info("Reference  values {0}".format(default_cat))
