@@ -20,7 +20,6 @@ from flarestack.utils.catalogue_loader import load_catalogue, \
     calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
 
-
 def time_smear(inj):
     inj_time = inj["injection_sig_time_pdf"]
     max_length = inj_time["max_offset"] - inj_time["min_offset"]
@@ -369,7 +368,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             file_name = os.path.join(write_dir, str(seed) + ".pkl")
 
-            logging.info("Saving to {0}".format(file_name))
+            logging.debug("Saving to {0}".format(file_name))
 
             with open(file_name, "wb") as f:
                 Pickle.dump(results, f)
@@ -481,7 +480,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        logging.info('Memory usage max: {0} (Gb)'.format(mem_use))
+        logging.debug('Memory usage max: {0} (Gb)'.format(mem_use))
 
         results = {
             "TS": ts_vals,

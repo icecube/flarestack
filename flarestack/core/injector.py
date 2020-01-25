@@ -354,6 +354,7 @@ class MCInjector(BaseInjector):
 
             #  If n_s = 0, skips simulation step.
             if n_s < 1:
+                logging.debug("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj))
                 continue
 
             source_mc = self.calculate_single_source(source, scale)
@@ -385,10 +386,7 @@ class MCInjector(BaseInjector):
                 (sig_events,
                  sim_ev[list(self.season.get_background_dtype().names)])
             )
-            try:
-                logging.info("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj[0]))
-            except IndexError:
-                logging.info("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj))
+            logging.debug("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj))
 
         return sig_events
 
