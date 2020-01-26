@@ -1,12 +1,14 @@
 import numpy as np
 import os
-from flarestack.shared import plots_dir
 import matplotlib.pyplot as plt
 import scipy.optimize, scipy.stats
 from scipy.stats import norm
+import logging
 
 raw_five_sigma = norm.cdf(5)
 n_bins = 100
+
+# Taken via Alex Stasik from Thomas Kintscher
 
 class Chi2(object):
 
@@ -43,7 +45,7 @@ class Chi2(object):
         res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
 
         if not res.success:
-            print('Chi2 fit did not converge! Result is likely garbage.')
+            logging.warning('Chi2 fit did not converge! Result is likely garbage.')
 
         # self._q_left = N_left / float(N_all)
         self._cut = 0.
@@ -52,7 +54,6 @@ class Chi2(object):
         self.ndof = res.x[0]
         self.loc = min(data)
         self.scale = res.x[1]
-
 
 
 class Chi2_LeftTruncated(object):
@@ -376,7 +377,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     ts_array = ts_array[~np.isnan(ts_array)]
 
     if np.sum(np.isnan(ts_array)) > 0:
-        print("TS distribution has", np.sum(np.isnan(ts_array)), "nan entries.")
+        logging.warning("TS distribution has", np.sum(np.isnan(ts_array)), "nan entries.")
 
     if np.median(ts_array) < 0.:
         plot_expanded_negative(ts_array, path)
