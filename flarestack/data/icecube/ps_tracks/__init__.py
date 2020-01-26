@@ -6,12 +6,19 @@ from flarestack.data.icecube.ic_season import IceCubeDataset, IceCubeSeason
 boundary = np.sin(np.radians(-5.))
 
 ps_binning = {
+    # "IC40": (
+    #     np.unique(np.concatenate([
+    #         np.linspace(-1., -0.25, 10 + 1),
+    #         np.linspace(-0.25, 0.0, 10 + 1),
+    #         np.linspace(0.0, 1., 10 + 1),])),
+    #     np.arange(2., 9. + 0.01, 0.125)
+    # ),
     "IC40": (
         np.unique(np.concatenate([
-            np.linspace(-1., -0.25, 10 + 1),
-            np.linspace(-0.25, 0.0, 10 + 1),
-            np.linspace(0.0, 1., 10 + 1),])),
-        np.arange(2., 9. + 0.01, 0.125)
+            np.linspace(-1., -0.25, 5 + 1),
+            np.linspace(-0.25, 0.0, 5 + 1),
+            np.linspace(0.0, 1., 5 + 1), ])),
+        np.arange(2., 9. + 0.01, 0.25)
     ),
     "IC59": (
         np.unique(np.concatenate([
