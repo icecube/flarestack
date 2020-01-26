@@ -77,9 +77,11 @@ class ResultsHandler(object):
         #     self.clean_merged_data()
 
         self.sensitivity = np.nan
+        self.sensitivity_err = np.nan
         self.bkg_median = np.nan
         self.frac_over = np.nan
         self.disc_potential = np.nan
+        self.disc_err = np.nan
         self.disc_potential_25 = np.nan
         self.disc_ts_threshold = np.nan
         self.extrapolated_sens = False
@@ -260,7 +262,7 @@ class ResultsHandler(object):
 
         savepath = os.path.join(self.plot_dir, "sensitivity.pdf")
 
-        self.sensitivity, self.extrapolated_sens = self.find_overfluctuations(
+        self.sensitivity, self.extrapolated_sens, self.sensitivity_err = self.find_overfluctuations(
             bkg_median, savepath)
 
         msg = ""
@@ -319,6 +321,8 @@ class ResultsHandler(object):
 
         x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
 
+        yerr = []
+
         for scale in x:
             ts_array = np.array(self.results[scale]["TS"])
             frac = float(len(ts_array[ts_array > ts_val])) / (float(len(
@@ -336,10 +340,9 @@ class ResultsHandler(object):
             if len(ts_array) > 1:
                 y.append(frac)
                 x_acc.append(float(scale))
+                yerr.append(1./np.sqrt(float(len(ts_array))))
 
                 self.make_plots(scale)
-
-            # raw_input("prompt")
 
         x = np.array(x_acc)
 
@@ -353,26 +356,39 @@ class ResultsHandler(object):
             value = (1 - b * np.exp(-a * x))
             return value
 
-        best_a = scipy.optimize.curve_fit(
-            f, x, y,  p0=[1./max(x)])[0][0]
+        popt, pcov = scipy.optimize.curve_fit(
+            f, x, y,  sigma=yerr, absolute_sigma=True, p0=[1./max(x)])
 
-        def best_f(x):
-            return f(x, best_a)
+        perr = np.sqrt(np.diag(pcov))
+
+        best_a = popt[0]
+
+        def best_f(x, sd=0.):
+            a = best_a + perr*sd
+            return f(x, a)
 
         fit = k_to_flux((1./best_a) * np.log(b / (1 - threshold)))
 
         if fit > max(x_flux):
+            logging.warning("The sensitivity is beyond the range of the tested scales."
+                            "The numnber is probably not good.")
             extrapolated = True
         else:
             extrapolated = False
 
         xrange = np.linspace(0.0, 1.1 * max(x), 1000)
 
+        lower = k_to_flux((1./(best_a + perr)) * np.log(b / (1 - threshold)))
+        upper = k_to_flux((1./(best_a - perr)) * np.log(b / (1 - threshold)))
+
         plt.figure()
-        plt.scatter(x_flux, y, color="black")
+        plt.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
         plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
+        plt.fill_between(k_to_flux(xrange), best_f(xrange, 1), best_f(xrange, -1), color="blue", alpha=0.1)
         plt.axhline(threshold, lw=1, color="red", linestyle="--")
         plt.axvline(fit, lw=2, color="red")
+        plt.axvline(lower, lw=2, color="red", linestyle=":")
+        plt.axvline(upper, lw=2, color="red", linestyle=":")
         plt.ylim(0., 1.)
         plt.xlim(0., k_to_flux(max(xrange)))
         plt.ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
@@ -380,7 +396,9 @@ class ResultsHandler(object):
         plt.savefig(savepath)
         plt.close()
 
-        return fit, extrapolated
+        sens_err = np.array([fit - lower, upper - fit]).T[0]
+
+        return fit, extrapolated, sens_err
 
     def find_disc_potential(self):
 
