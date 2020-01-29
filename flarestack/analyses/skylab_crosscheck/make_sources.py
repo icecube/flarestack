@@ -11,7 +11,7 @@ output_dir_for_sl_raw = home_dir + '/skylab/skylab/fs_crosscheck/data/'
 output_dir_for_fs_raw = os.path.dirname(os.path.realpath(__file__)) + '/data/'
 
 np.random.seed(1)
-nsources = [1, 3, 9, 27, 81, 243]
+nsources = [1, 3, 9, 27, 81]
 Nsources = max(nsources)
 same_sindecs = np.linspace(-1, 1, 9)
 
