@@ -10,20 +10,34 @@ ccsn_dir = os.path.abspath(os.path.dirname(__file__))
 ccsn_cat_dir = ccsn_dir + "/catalogues/"
 raw_cat_dir = ccsn_cat_dir + "raw/"
 
-# sn_cats = ["IIn", "IIp", "Ibc"]
-sn_cats = ["IIn"]
+sn_cats = ["IIn", "IIp", "Ibc"]
 
 sn_times = [100., 300., 1000.]
-sn_times = [300.]
 
 
-def sn_catalogue_name(sn_type, nearby=True):
-    sn_name = sn_type + "_"
+def sn_catalogue_name(sn_type, nearby=True, raw=False):
 
-    if nearby:
-        sn_name += "nearby.npy"
+    if raw:
+        sn_name = 'raw/'
+
+        if 'Ib' in sn_type:
+            sn_name += 'Ib_BoxPre20.0'
+        elif 'IIn' in sn_type:
+            sn_name += 'IIn_Box300.0'
+        elif ('IIp' in sn_type) or ('IIP' in sn_type):
+            sn_name += 'IIp_Box300.0'
+        else:
+            raise Exception
+
+        sn_name += '_New_fs_readable.npy'
+
     else:
-        sn_name += "distant.npy"
+
+        sn_name = sn_type + "_"
+        if nearby:
+            sn_name += "nearby.npy"
+        else:
+            sn_name += "distant.npy"
 
     return ccsn_cat_dir + sn_name
 
@@ -36,7 +50,7 @@ def sn_time_pdfs(sn_type):
         time_pdfs.append(
             {
                 "time_pdf_name": "box",
-                "pre_window": 20,
+                "pre_window": 0,
                 "post_window": i
             }
         )
