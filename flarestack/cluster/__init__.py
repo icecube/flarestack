@@ -15,12 +15,15 @@ else:
     def submit_cluster(path, **kwargs):
         raise Exception("No cluster submission script recognised!")
 
+    def wait_cluster(*args, **kwargs):
+        raise Exception("No cluster waiting script recognised!")
+
 
 def submit_local(mh_dict, n_cpu):
     run_multiprocess(n_cpu=n_cpu, mh_dict=mh_dict)
 
 
-def analyse(mh_dict, cluster=False, n_cpu=min(os.cpu_count()-1, 32), **kwargs):
+def analyse(mh_dict, cluster=False, n_cpu=None, **kwargs):
     """Generic function to run an analysis on a given MinimisationHandler
     dictionary. Can either run on cluster, or locally, based on the boolean
     cluster arg. The number of cpus can be specified, as well as specific
@@ -38,8 +41,14 @@ def analyse(mh_dict, cluster=False, n_cpu=min(os.cpu_count()-1, 32), **kwargs):
     job_id = None
 
     if cluster:
+
+        if n_cpu is None:
+            n_cpu = 1
+
         job_id = submit_cluster(path, n_cpu=n_cpu, **kwargs)
     else:
+        if n_cpu is None:
+            n_cpu = min(os.cpu_count() - 1, 32)
         submit_local(mh_dict, n_cpu=n_cpu)
 
     return job_id

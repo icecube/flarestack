@@ -13,7 +13,7 @@ try:
 
     if os.path.isdir(icecube_dataset_dir + "mirror-7year-PS-sens/"):
         published_sens_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
-    logging.info("Loading datasets from", icecube_dataset_dir, "(local)")
+    logging.info(f"Loading datasets from {icecube_dataset_dir} (local)")
 except KeyError:
     icecube_dataset_dir = None
 
@@ -21,11 +21,11 @@ if icecube_dataset_dir is None:
     if host_server == "DESY":
         icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
         published_sens_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
-        logging.info("Loading datasets from", icecube_dataset_dir, "(DESY)")
+        logging.info(f"Loading datasets from {icecube_dataset_dir} (DESY)")
     elif host_server == "WIPAC":
         icecube_dataset_dir = "/data/ana/analyses/"
         published_sens_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
-        logging.info("Loading datasets from", icecube_dataset_dir, "(WIPAC)")
+        logging.info(f"Loading datasets from {icecube_dataset_dir} (WIPAC)")
     else:
         raise ImportError("No IceCube data directory found. Run: \n"
                           "export FLARESTACK_DATA_DIR=/path/to/IceCube/data")

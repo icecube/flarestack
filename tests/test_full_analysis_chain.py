@@ -33,8 +33,6 @@ llh_dict = {
     }
 }
 
-true_parameters = [3.70369960756338, 4.0]
-
 catalogue = tde_catalogue_name("jetted")
 
 

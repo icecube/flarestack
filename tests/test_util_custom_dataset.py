@@ -63,7 +63,7 @@ class TestUtilCustomDataset(unittest.TestCase):
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
         for j, x in enumerate(res["x"]):
-            self.assertAlmostEqual(x, true_parameters[j], delta=5)
+            self.assertAlmostEqual(x, true_parameters[j], delta=0.1)
 
         logging.info("Best fit values {0}".format(list(res["x"])))
         logging.info("Reference best fit {0}".format(true_parameters))

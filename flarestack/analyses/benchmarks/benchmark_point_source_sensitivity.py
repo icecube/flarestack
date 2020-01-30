@@ -1,15 +1,15 @@
-from __future__ import division
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube import ps_v002_p01
-from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
+from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity,\
     reference_7year_discovery_potential
-import flarestack.cluster.run_desy_cluster as rd
 import matplotlib.pyplot as plt
 from flarestack import analyse
-from flarestack.core.minimisation import MinimisationHandler
+import logging
+
+logging.getLogger().setLevel("INFO")
 
 # Initialise Injectors/LLHs
 
@@ -43,8 +43,8 @@ llh_kwargs = {
 name = "analyses/benchmarks/ps_sens"
 
 # sindecs = np.linspace(0.90, -0.90, 3)
-sindecs = np.linspace(0.90, -0.90, 9)
-# sindecs = np.linspace(0.5, -0.5, 3)
+# sindecs = np.linspace(0.90, -0.90, 9)
+sindecs = np.linspace(0.5, -0.5, 3)
 
 analyses = []
 
@@ -63,31 +63,25 @@ for sindec in sindecs:
         "inj_dict": inj_kwargs,
         "llh_dict": llh_kwargs,
         "scale": scale,
-        "n_trials": 50,
+        "n_trials": 100,
         "n_steps": 10
     }
 
-    analyse(mh_dict, cluster=False, n_cpu=24)
-
-    # rd.submit_to_cluster(pkl_file, n_jobs=100)
-
-    # mh = MinimisationHandler.create(mh_dict)
-    # mh.iterate_run(mh_dict["scale"], n_steps=10, n_trials=mh_dict["n_trials"])
-
-    # raw_input("prompt")
-    # mh.clear()
+    # analyse(mh_dict, cluster=False, n_cpu=32)
 
     analyses.append(mh_dict)
 
-# rd.wait_for_cluster()
-
 sens = []
+sens_err = []
 disc_pots = []
 
 for rh_dict in analyses:
     rh = ResultsHandler(rh_dict)
     sens.append(rh.sensitivity)
+    sens_err.append(rh.sensitivity_err)
     disc_pots.append(rh.disc_potential)
+
+sens_err = np.array(sens_err).T
 
 plot_range = np.linspace(-0.99, 0.99, 1000)
 
@@ -96,7 +90,8 @@ ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
 ax1.plot(sindecs, reference_sensitivity(sindecs), color="blue",
          label=r"7-year Point Source analysis")
 
-ax1.plot(sindecs, sens, color='orange', label="Flarestack")
+# ax1.plot(sindecs, sens, color='orange', label="Flarestack")
+ax1.errorbar(sindecs, sens, yerr=sens_err, color='orange', label="Flarestack", marker="o")
 
 ax1.plot(sindecs, reference_7year_discovery_potential(sindecs), color="blue", linestyle="--")
 
@@ -115,11 +110,11 @@ plt.title('7-year Point Source Sensitivity')
 ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
 sens_ratios = np.array(sens) / reference_sensitivity(sindecs)
+sens_ratio_errs = sens_err / reference_sensitivity(sindecs)
 
 disc_ratios = np.array(disc_pots) / reference_7year_discovery_potential(sindecs)
 
-ax2.scatter(sindecs, sens_ratios, color="red")
-ax2.plot(sindecs, sens_ratios, color="red")
+ax2.errorbar(sindecs, sens_ratios, yerr=sens_ratio_errs, color="red", marker="o")
 ax2.scatter(sindecs, disc_ratios, color="k")
 ax2.plot(sindecs, disc_ratios, color="k", linestyle="--")
 ax2.set_ylabel(r"ratio", fontsize=12)
