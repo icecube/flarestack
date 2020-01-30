@@ -4,6 +4,7 @@ Two methods were used, both a traditional fixed-weight analysis and a
 fixed-weight analysis.
 """
 from astropy import units as u
+from astropy.table import Table
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
 from flarestack.core.energy_pdf import EnergyPDF
 import numpy as np
@@ -49,8 +50,29 @@ for (sn, sn_dict) in limits.items():
                   area * e_integral).to("erg")
         sn_dict[llh_type + " Energy (erg)"] = energy
 
+dt = {'names': ['t', 'E'], 'formats': ['<f8', '<f8']}
+limits_figure_paper = {
+    "Ibc": np.array([
+        (20, 1.5e48), (100, 1.8e48), (300, 2.6e48), (1000, 4.1e48)
+    ], dtype=dt),
+    "IIp": np.array([
+        (100, 3.3e48), (300, 4e48), (1000, 6e48)
+    ], dtype=dt),
+    "IIn": np.array([
+        (100, 1.3e49), (300, 1.4e49), (1000, 1.3e49)
+    ], dtype=dt)
+}
+
+
+def get_figure_limits(type):
+    if type == 'IIP':
+        return limits_figure_paper['IIp']
+    else:
+        return limits_figure_paper[type]
+
 
 if __name__ == "__main__":
     print("Limits", limits)
+    print("limits from figure", limits_figure_paper)
 
 

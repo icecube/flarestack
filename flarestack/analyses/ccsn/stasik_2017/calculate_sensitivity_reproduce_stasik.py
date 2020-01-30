@@ -6,7 +6,9 @@ from flarestack.data.icecube import ps_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import sn_catalogue_name, sn_cats, sn_time_pdfs
+from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits, get_figure_limits
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import sn_time_pdfs
+from flarestack.analyses.ccsn import get_sn_color
 from flarestack.cluster import analyse
 from flarestack.cluster.run_desy_cluster import wait_for_cluster
 import math
@@ -40,21 +42,23 @@ cluster = 100
 
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 # gammas = [1.8, 2.0, 2.5]
-gammas = [2.5]
+gammas = [2]
 
 # Base name
 
-weights = 'fixed'
+mh_name = 'fit_weights'
 pdf_type = 'box'
 
-raw = f"analyses/ccsn/stasik_2017/calculate_sensitivity/{weights}_weights/{pdf_type}/"
+raw = f"analyses/ccsn/stasik_2017/calculate_sensitivity/{mh_name}/{pdf_type}/"
 
 full_res = dict()
 
 job_ids = []
 # Loop over SN catalogues
 
-for cat in sn_cats[:1]:
+plot_results = '_tableresults'
+
+for cat in sn_cats:
 
     name = raw + cat + "/"
 
@@ -72,7 +76,7 @@ for cat in sn_cats[:1]:
 
     # Loop over time PDFs
 
-    for llh_time in time_pdfs[:1]:
+    for llh_time in time_pdfs:
 
         logging.debug(f'time_pdf is {llh_time}')
 
@@ -120,21 +124,20 @@ for cat in sn_cats[:1]:
 
             mh_dict = {
                 "name": full_name,
-                "mh_name": f"{weights}_weights",
+                "mh_name": mh_name,
                 "dataset": custom_dataset(ps_v002_p01, catalogue,
                                           llh_dict["llh_sig_time_pdf"]),
                 "catalogue": cat_path,
                 "inj_dict": inj_dict,
                 "llh_dict": llh_dict,
                 "scale": scale,
-                # "n_trials": 1000/cluster if cluster else 1000,
-                "n_trials": 20,
+                "n_trials": 2000/cluster if cluster else 1000,
                 "n_steps": 10
             }
             # !!! number of total trial is ntrials * n_jobs !!!
 
             job_id = None
-            job_id = analyse(mh_dict, cluster=True if cluster else False, n_cpu=1 if cluster else 32, n_jobs=cluster)
+            # job_id = analyse(mh_dict, cluster=True if cluster else False, n_cpu=1 if cluster else 32, n_jobs=cluster)
             job_ids.append(job_id)
 
             time_res[gamma] = mh_dict
@@ -144,7 +147,7 @@ for cat in sn_cats[:1]:
     full_res[cat] = cat_res
 
 # Wait for cluster. If there are no cluster jobs, this just runs
-if cluster:
+if cluster and np.any(job_ids):
     logging.info(f'waiting for jobs {job_ids}')
     wait_for_cluster(job_ids)
 
@@ -197,9 +200,6 @@ for b, (cat_name, cat_res) in enumerate(full_res.items()):
             else:
                 stacked_sens[cat_name].append([astro_sens[e_key] * inj_time, time_key])
 
-
-            # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
-
         name = "{0}/{1}/{2}".format(raw, cat_name, time_key)
 
         for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
@@ -251,7 +251,27 @@ fig, ax = plt.subplots()
 for cat_name in stacked_sens:
     plot_arr = np.array(stacked_sens[cat_name], dtype='<f8')
     logging.debug(f'plot array: \n {plot_arr}')
-    ax.plot(plot_arr[:,1], plot_arr[:,0], 'x', label=cat_name)
+
+    yerr = plot_arr[:,0]*0.1
+    patch = ax.errorbar(plot_arr[:,1], plot_arr[:,0], xerr=plot_arr[:,1]*0.05,
+                        yerr=yerr, uplims=True, ls='', markersize=1, capsize=0.5, color=get_sn_color(cat_name))
+
+    ax.plot(plot_arr[:,1], plot_arr[:,0] - yerr, marker='v', color=patch.lines[0].get_c(),
+            label=cat_name, ls='')
+
+    if plot_results == '_figureresults':
+        res = get_figure_limits(cat_name)
+        ax.errorbar(res['t'], res['E'], xerr=res['t'] * 0.05, yerr=res['E']*0.1,
+                    uplims=True, ls='', markersize=1, capsize=0.5, color=patch.lines[0].get_c(), alpha=0.5)
+        ax.plot(res['t'], res['E'] - res['E']*0.1, marker='d', color=patch.lines[0].get_c(),
+                label=cat_name + ' previous limit', ls='', alpha=0.5)
+
+    if plot_results == '_tableresults':
+        cat_key = cat_name if not 'p' in cat_name else 'IIP'
+        ekey = 'Fit' if 'fit' or 'Fit' in mh_name else 'Fix'
+        ekey += " Energy (erg)"
+        ax.axhline(limits[cat_key][ekey].value,
+                   ls='--', color=patch.lines[0].get_c(), label=cat_name + ' previous limit')
 
 ax.set_ylabel('$E^{\\nu}_{tot}$ [erg]')
 ax.set_xlabel('Box function $\Delta T$ [d]')
@@ -263,7 +283,7 @@ plt.grid()
 plt.title(f'Stacked sensitivity for $\gamma = {gammas[0]}$')
 plt.tight_layout()
 
-plt.savefig(plot_output_dir(raw + f'stacked_sensitivity_gamma{gammas[0]}_{weights}.pdf'))
+plt.savefig(plot_output_dir(raw + f'stacked_sensitivity_gamma{gammas[0]}_{mh_name}{plot_results}.pdf'))
 
 end = time.time()
 

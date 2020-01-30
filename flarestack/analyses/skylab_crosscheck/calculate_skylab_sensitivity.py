@@ -25,7 +25,7 @@ mh_name = 'large_catalogue'
 raw = "analyses/skylab_crosscheck/" + mh_name + '/'
 data_dir = os.environ['HOME'] + '/flarestack_cc/'
 
-same_sindecs = [0.5]
+same_sindecs = [0.25, 0.5, 0.75]
 
 cluster = 100
 
@@ -72,7 +72,7 @@ for sindec in same_sindecs:
 
     full_res = dict()
 
-    for i, n in enumerate(nsources[:-1]):
+    for i, n in enumerate(nsources):
 
         logging.info(f'stacking {n} sources')
         logging.info(f'cat path is {fs_sources(i, sindec)}')
@@ -100,10 +100,10 @@ for sindec in same_sindecs:
         }
 
         job_id = None
-        job_id = analyse(mh_dict,
-                         cluster=cluster,
-                         n_cpu=1 if cluster and n < 200 else 4 if cluster and n > 200 else 32,
-                         n_jobs=100 if n < 200 else 500)
+        # job_id = analyse(mh_dict,
+        #                  cluster=cluster,
+        #                  n_cpu=1 if cluster and n < 200 else 4 if cluster and n > 200 else 32,
+        #                  n_jobs=100 if n < 200 else 500)
         job_ids.append(job_id)
 
         full_res[str(n)] = mh_dict
@@ -120,7 +120,7 @@ for sindec in same_sindecs:
 
     sens = [[], []]
 
-    for i, n in enumerate(nsources[:-1]):
+    for i, n in enumerate(nsources):
 
         rh_dict = full_res[str(n)]
         rh = ResultsHandler(rh_dict)
@@ -131,29 +131,32 @@ for sindec in same_sindecs:
     # load results from skylab if they exist
     skylab_result_path = sl_data_dir(sindec) + '/nsources_gamma{:.1f}.npy'.format(gamma)
     skylab_results = np.load(skylab_result_path) if os.path.isfile(skylab_result_path) else None
+    skylab_results = skylab_results[[n in nsources for n in skylab_results['nsources']]]
 
     # normalize all points to
-    norm_to = skylab_results['sensitivity'][0]
+    norm_to = reference_sensitivity(sindec, gamma=gamma)
 
     fig, ax = plt.subplots()
 
     Nsqrt = np.sqrt(sens[0])
     Nflat = [1.] * len(sens[0])
 
-    ax.plot(sens[0], np.array(sens[1])/norm_to, 'o-', label='flarestack')
     ax.plot(sens[0], Nsqrt, 'k--', label=r'$F \sim \sqrt{N}$')
     ax.plot(sens[0], Nflat, 'k-.', label=r'$F = const$')
+    ax.plot(sens[0], np.array(sens[1])/sens[1][0], 'o-', label='flarestack')
 
     if skylab_results is not None:
         logging.info('drawing skylab results')
-        ax.plot(skylab_results['nsources'][:-1], skylab_results['sensitivity'][:-1]/norm_to, 'o-', label='skylab')
+        ax.plot(skylab_results['nsources'],
+                skylab_results['sensitivity']/skylab_results['sensitivity'][0],
+                'o-', label='skylab')
     else:
         logging.info('no skylab results')
 
     ax.set_xlabel('$N$')
-    ax.set_ylabel(r"$F$ in [GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+    ax.set_ylabel(r"$F/F_{single \, source}$")
     ax.set_xscale('log')
-    ax.set_title('stacked sensitivity')
+    ax.set_title('stacked sensitivity \n' + r'$\sin(\delta)=${:.2f}'.format(sindec))
     ax.legend()
 
     plt.tight_layout()
@@ -166,21 +169,22 @@ for sindec in same_sindecs:
     Nsqrt = 1/np.sqrt(sens[0])
     Nrez = 1/np.array(sens[0])
 
-    ax2.plot(sens[0], np.array(sens[1]) / norm_to / np.array(sens[0]), 'o-', label='flarestack')
     ax2.plot(sens[0], Nsqrt, 'k--', label=r'$F \sim \sqrt{N}$')
     ax2.plot(sens[0], Nrez, 'k-.', label=r'$F = const$')
+    ax2.plot(sens[0], np.array(sens[1]) / sens[1][0] / np.array(sens[0]), 'o-', label='flarestack')
 
     if skylab_results is not None:
         logging.info('drawing skylab results')
-        ax2.plot(skylab_results['nsources'][:-1], skylab_results['sensitivity'][:-1] / norm_to / np.array(sens[0])
+        ax2.plot(skylab_results['nsources'], skylab_results['sensitivity'] / skylab_results['sensitivity'][0]\
+                 / np.array(sens[0])
                 , 'o-', label='skylab')
     else:
         logging.info('no skylab results')
 
     ax2.set_xlabel('$N$')
-    ax2.set_ylabel(r"$F/N$ in [GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+    ax2.set_ylabel(r"$F/F_{single \, source}/N$")
     ax2.set_xscale('log')
-    ax2.set_title('stacked sensitivity per source')
+    ax2.set_title('stacked sensitivity per source\n' + r'$\sin(\delta)=${:.2f}'.format(sindec))
     ax2.legend()
 
     plt.tight_layout()
