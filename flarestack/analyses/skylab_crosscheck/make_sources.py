@@ -50,7 +50,7 @@ if __name__ == '__main__':
     for sindec in sindecs[1:]:
         j = len(sources)
         new_source =  single_source(sindec)
-        new_source['ra_rad'] = float(np.random.uniform(0, np.pi, 1))
+        new_source['ra_rad'] = float(np.random.uniform(0, 2*np.pi, 1))
         sources = np.append(sources, new_source)
         if len(sources) != j+1:
             raise Exception('j={0} and len(sources)={1}'.format(j, len(sources)))
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         sources = single_source(sindec)
         for i in range(Nsources-1):
             new_source = single_source(sindec)
-            new_source['ra_rad'] = float(np.random.uniform(0, np.pi, 1))
+            new_source['ra_rad'] = float(np.random.uniform(0, 2*np.pi, 1))
             sources = np.append(sources, new_source)
 
         for dir in [output_dir_for_fs(sindec), output_dir_for_sl(sindec)]:
