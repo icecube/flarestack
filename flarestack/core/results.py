@@ -86,6 +86,7 @@ class ResultsHandler(object):
         self.disc_ts_threshold = np.nan
         self.extrapolated_sens = False
         self.extrapolated_disc = False
+        self.flux_to_ns = np.nan
 
         # if self.show_inj:
         self.inj = self.load_injection_values()
@@ -96,6 +97,11 @@ class ResultsHandler(object):
             self.merge_pickle_data()
         except FileNotFoundError:
             logging.warning("No files found at {0}".format(self.pickle_output_dir))
+
+        try:
+            self.find_ns_scale()
+        except ValueError as e:
+            logging.warning("RuntimeError for ns scale factor: \n {0}".format(e))
 
         try:
             self.find_sensitivity()
@@ -112,6 +118,7 @@ class ResultsHandler(object):
             logging.warning("TypeError for discovery potential: \n {0}".format(e))
 
         self.plot_bias()
+
 
     def astro_values(self, e_pdf_dict):
         """Function to convert the values calculated for sensitivity and
@@ -241,6 +248,17 @@ class ResultsHandler(object):
             logging.warning("No data was found by ResultsHandler object! \n")
             logging.warning("Tried root directory: \n {0} \n ".format(self.pickle_output_dir))
             sys.exit()
+
+    def find_ns_scale(self):
+        """Find the number of neturinos corresponding to flux
+        """
+        x = sorted(self.results.keys())
+        raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
+        try:
+            self.flux_to_ns = self.inj[raw_x[1]]["n_s"]/k_to_flux(float(x[1]))
+            logging.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
+        except KeyError:
+            logging.warning("KeyError: no key found")
 
     def find_sensitivity(self):
         """Uses the results of the background trials to find the median TS
@@ -381,19 +399,40 @@ class ResultsHandler(object):
         lower = k_to_flux((1./(best_a + perr)) * np.log(b / (1 - threshold)))
         upper = k_to_flux((1./(best_a - perr)) * np.log(b / (1 - threshold)))
 
-        plt.figure()
-        plt.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
-        plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
-        plt.fill_between(k_to_flux(xrange), best_f(xrange, 1), best_f(xrange, -1), color="blue", alpha=0.1)
-        plt.axhline(threshold, lw=1, color="red", linestyle="--")
-        plt.axvline(fit, lw=2, color="red")
-        plt.axvline(lower, lw=2, color="red", linestyle=":")
-        plt.axvline(upper, lw=2, color="red", linestyle=":")
-        plt.ylim(0., 1.)
-        plt.xlim(0., k_to_flux(max(xrange)))
-        plt.ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
-        plt.xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-        plt.savefig(savepath)
+        # plt.figure()
+        # plt.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
+        # plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
+        # plt.fill_between(k_to_flux(xrange), best_f(xrange, 1), best_f(xrange, -1), color="blue", alpha=0.1)
+        # plt.axhline(threshold, lw=1, color="red", linestyle="--")
+        # plt.axvline(fit, lw=2, color="red")
+        # plt.axvline(lower, lw=2, color="red", linestyle=":")
+        # plt.axvline(upper, lw=2, color="red", linestyle=":")
+        # plt.ylim(0., 1.)
+        # plt.xlim(0., k_to_flux(max(xrange)))
+        # plt.ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
+        # plt.xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+        # plt.savefig(savepath)
+        # plt.close()
+
+
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111)
+        ax1.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
+        ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")
+        ax1.fill_between(k_to_flux(xrange), best_f(xrange, 1), best_f(xrange, -1), color="blue", alpha=0.1)
+        ax1.axhline(threshold, lw=1, color="red", linestyle="--")
+        ax1.axvline(fit, lw=2, color="red")
+        ax1.axvline(lower, lw=2, color="red", linestyle=":")
+        ax1.axvline(upper, lw=2, color="red", linestyle=":")
+        ax1.set_ylim(0., 1.)
+        ax1.set_xlim(0., k_to_flux(max(xrange)))
+        ax1.set_ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
+        ax1.set_xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+        ax2 = ax1.twiny()
+        ax2.grid(0)
+        ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
+        ax2.set_xlabel(r"Number of neutrinos")
+        fig.savefig(savepath)
         plt.close()
 
         sens_err = np.array([fit - lower, upper - fit]).T[0]
@@ -479,17 +518,22 @@ class ResultsHandler(object):
 
             savepath = self.plot_dir + "disc" + ["", "_25"][i] + ".pdf"
 
-            plt.figure()
-            plt.scatter(x_flux, y_val, color="black")
-            plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
-            plt.axhline(threshold, lw=1, color="red", linestyle="--")
-            plt.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
-            plt.axvline(self.disc_potential, lw=2, color="red")
-            plt.ylim(0., 1.)
-            plt.xlim(0., k_to_flux(max(xrange)))
-            plt.ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
-            plt.xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-            plt.savefig(savepath)
+            fig = plt.figure()
+            ax1 = fig.add_subplot(111)
+            ax1.scatter(x_flux, y_val, color="black")
+            ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")
+            ax1.axhline(threshold, lw=1, color="red", linestyle="--")
+            ax1.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
+            ax1.axvline(self.disc_potential, lw=2, color="red")
+            ax1.set_ylim(0., 1.)
+            ax1.set_xlim(0., k_to_flux(max(xrange)))
+            ax1.set_ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
+            ax1.set_xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+            ax2 = ax1.twiny()
+            ax2.grid(0)
+            ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
+            ax2.set_xlabel(r"Number of neutrinos")
+            fig.savefig(savepath)
             plt.close()
 
         if self.disc_potential > max(x_flux):
