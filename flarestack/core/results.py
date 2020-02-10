@@ -633,58 +633,6 @@ class ResultsHandler(object):
         sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
         disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
 
-        for j, scale in enumerate([sens_scale, disc_scale]):
-
-            scales = [all_scales[0], scale]
-            ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
-            ns_arrays = np.array([
-                np.array(
-                        [np.median(self.results[scale]['Parameters'][key])
-                         for key in self.results[scale]['Parameters']
-                         if 'n_s' in key]
-                )
-                for scale in scales
-            ])
-
-            n_s = [sum(a) for a in ns_arrays]
-            logging.debug('numbers of injected neutrinos: ' + str(n_s))
-
-            fig, ax = plt.subplots()
-
-            ax.hist(ts_arrays[0], histtype='stepfilled', label='background', density=True, alpha=0.6, color='blue')
-            ax.axvline(self.bkg_median, ls='--', label='background median', color='blue')
-
-            ax.hist(ts_arrays[1], histtype='step', density=True, color='orange',
-                    label='signal: {:.2} signal neutrinos'.format(n_s[1]))
-            ax.axvline(np.median(ts_arrays[1]), ls='--', label=['discovery potential', 'sensitivity'][j] + ' threshold',
-                       color='orange')
-
-            ax.set_xlabel('Test Statistic')
-            ax.set_ylabel('a.u.')
-            ax.legend()
-            ax.set_yscale('log')
-
-            plt.tight_layout()
-
-            sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_" + ['sens', 'disc'][j] + ".pdf")
-            logging.debug('saving plot to ' + sn)
-            fig.savefig(sn)
-
-            plt.close()
-
-    def ts_distribution_evolution_2(self):
-
-        logging.debug('plotting evolution of TS distribution')
-
-        all_scales = np.array(list(self.results.keys()))
-        all_scales_floats = [float(sc) for sc in all_scales]
-
-        logging.debug('all scales: ' + str(all_scales_floats))
-        logging.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
-
-        sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
-        disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
-
 
         scales = [all_scales[0], sens_scale, disc_scale]
         ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
