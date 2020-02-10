@@ -4,9 +4,12 @@ import numpy as np
 import math
 import scipy
 import scipy.stats
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
-    k_to_flux, inj_dir_name, scale_shortener
+    k_to_flux, inj_dir_name, scale_shortener, flux_to_k
 from flarestack.core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
@@ -517,6 +520,168 @@ class ResultsHandler(object):
 
         plot_fit_results(self.results[scale]["Parameters"], param_path,
                          inj=inj)
+
+    def ts_evolution_gif(self, n_scale_steps=None, cmap_name='winter'):
+
+        logging.debug('making animation')
+
+        all_scales_list = list(self.results.keys())
+        n_scales_all = len(all_scales_list)
+
+        n_scale_steps = n_scales_all - 1 if not n_scale_steps else n_scale_steps
+
+        scale_step_length = int(round(n_scales_all / (n_scale_steps)))
+        scales = [all_scales_list[min([i * scale_step_length, n_scales_all - 1])]
+                  for i in range(n_scale_steps + 1)]
+
+        ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
+
+        ns_arrays = np.array([
+            np.array(
+                [np.median(self.results[scale]['Parameters'][key])
+                 for key in self.results[scale]['Parameters']
+                 if 'n_s' in key]
+            )
+            for scale in scales
+        ])
+
+        n_s = [sum(a) for a in ns_arrays]
+        logging.debug('numbers of injected neutrinos: ' + str(n_s))
+
+        norm = colors.Normalize(vmin=0, vmax=max(n_s))
+        mappable = cm.ScalarMappable(norm=norm, cmap=cmap_name)
+        cmap = mappable.get_cmap()
+
+        sq_fig, sq_ax = plt.subplots()
+        sq_fig.set_tight_layout(True)
+        sq_ax.set_xlim([-5, max(ts_arrays[-1]) + 10])
+        sq_ax.set_yscale('log')
+        sq_ax.set_xlabel('Test Statistic')
+        sq_ax.set_ylabel('a.u.')
+
+        sqbar = sq_fig.colorbar(mappable, ax=sq_ax)
+        sqbar.set_label(r'n$_{\mathrm{injected}}$')
+
+        def update(i):
+            its = ts_arrays[i]
+            ins = n_s[i]
+            sq_ax.hist(its, histtype='stepfilled', density=True, color=cmap(ins / max(n_s)))
+            sq_ax.set_title(r'n$_{\mathrm{injected}}=$' + '{:.2f}'.format(ins))
+
+        anim = animation.FuncAnimation(
+            sq_fig, update, frames=np.arange(0, n_scale_steps), interval=500
+        )
+
+        anim_name = os.path.join(self.plot_dir, "ts_distributions/ts_distributions_evolution.gif")
+        logging.debug('saving animation under ' + anim_name)
+        anim.save(anim_name, dpi=80, writer='imagemagick')
+
+    def ts_distribution_evolution(self):
+
+        logging.debug('plotting evolution of TS distribution')
+
+        all_scales = np.array(list(self.results.keys()))
+        all_scales_floats = [float(sc) for sc in all_scales]
+
+        logging.debug('all scales: ' + str(all_scales_floats))
+        logging.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
+
+        sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
+        disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
+
+        for j, scale in enumerate([sens_scale, disc_scale]):
+
+            scales = [all_scales[0], scale]
+            ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
+            ns_arrays = np.array([
+                np.array(
+                        [np.median(self.results[scale]['Parameters'][key])
+                         for key in self.results[scale]['Parameters']
+                         if 'n_s' in key]
+                )
+                for scale in scales
+            ])
+
+            n_s = [sum(a) for a in ns_arrays]
+            logging.debug('numbers of injected neutrinos: ' + str(n_s))
+
+            fig, ax = plt.subplots()
+
+            ax.hist(ts_arrays[0], histtype='stepfilled', label='background', density=True, alpha=0.6, color='blue')
+            ax.axvline(self.bkg_median, ls='--', label='background median', color='blue')
+
+            ax.hist(ts_arrays[1], histtype='step', density=True, color='orange',
+                    label='signal: {:.2} signal neutrinos'.format(n_s[1]))
+            ax.axvline(np.median(ts_arrays[1]), ls='--', label=['discovery potential', 'sensitivity'][j] + ' threshold',
+                       color='orange')
+
+            ax.set_xlabel('Test Statistic')
+            ax.set_ylabel('a.u.')
+            ax.legend()
+            ax.set_yscale('log')
+
+            plt.tight_layout()
+
+            sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_" + ['sens', 'disc'][j] + ".pdf")
+            logging.debug('saving plot to ' + sn)
+            fig.savefig(sn)
+
+            plt.close()
+
+    def ts_distribution_evolution_2(self):
+
+        logging.debug('plotting evolution of TS distribution')
+
+        all_scales = np.array(list(self.results.keys()))
+        all_scales_floats = [float(sc) for sc in all_scales]
+
+        logging.debug('all scales: ' + str(all_scales_floats))
+        logging.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
+
+        sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
+        disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
+
+
+        scales = [all_scales[0], sens_scale, disc_scale]
+        ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
+        ns_arrays = np.array([
+            np.array(
+                    [np.median(self.results[scale]['Parameters'][key])
+                     for key in self.results[scale]['Parameters']
+                     if 'n_s' in key]
+            )
+            for scale in scales
+        ])
+
+        n_s = [sum(a) for a in ns_arrays]
+        logging.debug('numbers of injected neutrinos: ' + str(n_s))
+
+        fig, ax = plt.subplots()
+
+        ax.hist(ts_arrays[0], histtype='stepfilled', label='background', density=True, alpha=0.6, color='blue')
+
+
+        ax.hist(ts_arrays[1], histtype='step', density=True, color='orange',
+                label='signal: {:.2} signal neutrinos'.format(n_s[1]))
+        ax.axvline(self.bkg_median, ls='--', label='sensitivity threshold', color='orange')
+
+        ax.hist(ts_arrays[2], histtype='step', density=True, color='red',
+                label='signal: {:.2} signal neutrinos'.format(n_s[2]))
+        ax.axvline(self.disc_ts_threshold, ls='--', label='discovery potential threshold',
+                   color='red')
+
+        ax.set_xlabel('Test Statistic')
+        ax.set_ylabel('a.u.')
+        ax.legend()
+        ax.set_yscale('log')
+
+        plt.tight_layout()
+
+        sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_.pdf")
+        logging.debug('saving plot to ' + sn)
+        fig.savefig(sn)
+
+        plt.close()
 
     # def flare_plots(self, scale):
     #
