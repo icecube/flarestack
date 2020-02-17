@@ -145,11 +145,11 @@ class EnergyPDF(object):
 
         return diff_sum, e_range
 
-    def flux_integral(self):
+    def flux_integral(self, lower=None, upper=None):
         """Integrates over energy PDF to give integrated flux (dN/dT)"""
-        return self.integrate_over_E(self.f)
+        return self.integrate_over_E(self.f, lower, upper)
 
-    def fluence_integral(self):
+    def fluence_integral(self, lower=None, upper=None):
         """Performs an integral for fluence over a given energy range. This is
         gives the total energy per unit area per second that is radiated.
         """
@@ -157,7 +157,7 @@ class EnergyPDF(object):
         def g(energy):
             return energy * self.f(energy)
 
-        return self.integrate_over_E(g)
+        return self.integrate_over_E(g, lower, upper)
 
     def return_energy_parameters(self):
         default = []
