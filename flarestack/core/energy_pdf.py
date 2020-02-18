@@ -70,11 +70,10 @@ class EnergyPDF(object):
 
         if "e_max_gev" in list(e_pdf_dict.keys()):
             self.e_max = e_pdf_dict["e_max_gev"]
-            logging.info("Maximum Energy is {0}".format(self.e_max))
+            logging.info("Maximum Energy is {0} GeV".format(self.e_max))
             self.integral_e_max = self.e_max
         else:
             self.integral_e_max = default_emax
-
 
     @classmethod
     def register_subclass(cls, energy_pdf_name):
