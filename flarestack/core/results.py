@@ -26,6 +26,7 @@ class ResultsHandler(object):
         self.sources = load_catalogue(rh_dict["catalogue"])
 
         self.name = rh_dict["name"]
+        self.mh_name = rh_dict['mh_name']
 
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(self.name)
@@ -261,7 +262,11 @@ class ResultsHandler(object):
             self.flux_to_ns = self.inj[raw_x[1]]["n_s"]/k_to_flux(float(x[1]))
             logging.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
         except KeyError:
-            logging.warning("KeyError: no key found")
+            if 'fit' in self.mh_name:
+                logging.info(f"KeyError: key \"n_s\" not found. "
+                             f"Not necessary because the minimizer {self.mh_name} is used.")
+            else:
+                logging.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!")
 
     def find_sensitivity(self):
         """Uses the results of the background trials to find the median TS
@@ -431,10 +436,13 @@ class ResultsHandler(object):
         ax1.set_xlim(0., k_to_flux(max(xrange)))
         ax1.set_ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
         ax1.set_xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-        ax2 = ax1.twiny()
-        ax2.grid(0)
-        ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
-        ax2.set_xlabel(r"Number of neutrinos")
+
+        if not np.isnan(self.flux_to_ns):
+            ax2 = ax1.twiny()
+            ax2.grid(0)
+            ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
+            ax2.set_xlabel(r"Number of neutrinos")
+
         fig.savefig(savepath)
         plt.close()
 
@@ -532,10 +540,13 @@ class ResultsHandler(object):
             ax1.set_xlim(0., k_to_flux(max(xrange)))
             ax1.set_ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
             ax1.set_xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-            ax2 = ax1.twiny()
-            ax2.grid(0)
-            ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
-            ax2.set_xlabel(r"Number of neutrinos")
+
+            if not np.isnan(self.flux_to_ns):
+                ax2 = ax1.twiny()
+                ax2.grid(0)
+                ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
+                ax2.set_xlabel(r"Number of neutrinos")
+
             fig.savefig(savepath)
             plt.close()
 
