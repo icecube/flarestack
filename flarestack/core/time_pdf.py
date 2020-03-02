@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.integrate import quad
 from flarestack.icecube_utils.dataset_loader import data_loader
 
 
@@ -14,6 +15,34 @@ def box_func(t, t0, t1):
     :return: Value of Box function at t
     """
     val = 0.5 * ((np.sign(t - t0)) - (np.sign(t - t1)))
+    return val
+
+
+def decay_fct(t, t0, decay_time, truncation=np.inf):
+    """
+    Decay function that is equal to 0 before t0, equal to 1 at t0 and then decays with a decay time
+    :param t: time to be evaluated
+    :param t0: start time of the function
+    :param decay_time: decay time
+    :param truncation: truncation time, function will give zero for t < truncation
+    :return: value at t
+    """
+    val = np.heaviside(t - t0, 1) * (1 / (1 + (t - t0) / decay_time)) * np.heaviside(t0 + truncation - t, 1)
+    return val
+
+
+def decay_fct_integral(tstart, tend, t0, decay_time, truncation=np.inf):
+    """
+    The integral function of decay_function based on the analytical form
+    :param tstart: float, integrating from
+    :param tend: float, integrating to
+    :param t0: float, parameter t0 in decay_function, start time of the decay function
+    :param decay_time: float, decay time
+    :param truncation: float, truncation time, decay function will be 0 for t < truncation
+    :return: float
+    """
+    val = decay_time * \
+          np.log((decay_time + np.minimum(tend - t0, truncation)) / (decay_time + np.maximum(tstart - t0, 0)))
     return val
 
 
@@ -204,6 +233,7 @@ class TimePDF(object):
 
     def get_mjd_conversion(self):
         raise NotImplementedError
+
 
 @TimePDF.register_subclass('steady')
 class Steady(TimePDF):
@@ -419,6 +449,7 @@ class Box(TimePDF):
         diff = max(self.sig_t1(source) - self.sig_t0(source), 0)
         return diff * (60 * 60 * 24)
 
+
 @TimePDF.register_subclass('fixed_ref_box')
 class FixedRefBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
@@ -469,7 +500,6 @@ class FixedEndBox(Box):
             self.offset = 0
         TimePDF.__init__(self, t_pdf_dict, season)
 
-
     def sig_t0(self, source=None):
         """Calculates the starting time for the window, equal to the
         source reference time in MJD minus the length of the pre-reference-time
@@ -509,6 +539,7 @@ class FixedEndBox(Box):
             mjd_to_l = lambda x: x - self.sig_t0()
             l_to_mjd = lambda x: x + self.sig_t0()
             return mjd_to_l, l_to_mjd
+
 
 @TimePDF.register_subclass('custom_source_box')
 class CustomSourceBox(Box):
@@ -599,6 +630,110 @@ class DetectorOnOffList(TimePDF):
     def get_mjd_conversion(self):
         return self.mjd_to_livetime, self.livetime_to_mjd
 
+
+@TimePDF.register_subclass('decay')
+class DecayPDF(TimePDF):
+
+    def __init__(self, t_pdf_dict, season):
+        TimePDF.__init__(self, t_pdf_dict, season)
+
+        if not 'decay_time' in self.t_dict:
+            raise KeyError('In order to use a Decay PDF, a decay time has to be included in the time pdf dictionary!')
+
+        self.decay_time = self.t_dict['decay_time']
+        self.decay_length = self.t_dict['decay_length'] if 'decay_time' in self.t_dict else np.inf
+        if not 'decay_time' in self.t_dict:
+            logging.warning('No decay length given! Assuming endless decay')
+
+    def sig_t0(self, source):
+        """
+        Gives the start time of the signal from a source. If the start time lies within the season,
+        the start time is the source's "ref_time_mjd". If not it"s the start of the season.
+        :param source: source to be considered
+        :return: time of signal start
+        """
+        return max(self.t0, source["ref_time_mjd"])
+
+    def sig_t1(self, source):
+        """
+        Gives the end time of a signal.
+        For an endless decay, that's just the end of the season.
+        If the decay length is not infinite, the signal might end before the season ends.
+        :param source: source to be considered
+        :return: end time of signal
+        """
+        return min((self.t1, source['ref_time_mjd'] + self.decay_length))
+
+    def signal_integral(self, t, source):
+        """
+        Gives the integrated signal using decay_fct_integral()
+        :param t: float or array like
+        :param source: the sources to be considered
+        :return: float
+        """
+
+        integration_result = decay_fct_integral(self.t0, t, self.sig_t0(source), self.decay_time, self.decay_length)
+        normalization_factor = decay_fct_integral(
+            self.t0, self.t1, self.sig_t0(source), self.decay_time, self.decay_length
+        )
+        return integration_result / normalization_factor
+
+    def effective_injection_time(self, source=None):
+        """Calculates the effective injection time for the given PDF.
+        The livetime is measured in days, but here is converted to seconds.
+
+        :param source: Source to be considered
+        :return: Effective Livetime in seconds
+        """
+        t0 = self.mjd_to_livetime(self.sig_t0(source))
+        t1 = self.mjd_to_livetime(self.sig_t1(source))
+        time = (t1 - t0) * 60 * 60 * 24
+
+        return max(time, 0.)
+
+    def raw_injection_time(self, source):
+        """Calculates the 'raw injection time' which is the injection time
+        assuming a detector with 100% uptime. Useful for calculating source
+        emission times for source-frame energy estimation.
+
+        :param source: Source to be considered
+        :return: Time in seconds for 100% uptime
+        """
+
+        diff = max(self.sig_t1(source) - self.sig_t0(source), 0)
+        return diff * (60 * 60 * 24)
+
+    def f(self, t, source=None):
+        """
+        In this case the PDF is the decay function, normalized to the integral over livetime
+        :param t: float or array_like, Time
+        :param source: Source to be considered
+        :return: Value of normalised box function at t
+        """
+        t0 = self.sig_t0(source)
+        t1 = self.sig_t1(source)
+
+        if t0 >= t1:
+            return np.zeros_like(t)
+
+        # to normalize the function, integrate over the whole livetime
+        a, b = self.mjd_to_livetime(t0), self.mjd_to_livetime(t1)
+        normalization_factor = decay_fct_integral(
+            a, b, self.mjd_to_livetime(t0), self.decay_time, self.decay_length
+        )
+
+        if normalization_factor > 0.:
+            return decay_fct(
+                self.mjd_to_livetime(t), self.mjd_to_livetime(t0), self.decay_time, self.decay_length
+            ) / normalization_factor
+
+        else:
+            logging.error(f'\nintegrating from {a:.2f} to {b:.2f}. \n'
+                          f't = {t} \n'
+                          f't0 = {t0:.2f} \n'
+                          f't_pp={self.decay_time:.2f} \n'
+                          f'trunc={self.decay_length:.2f}')
+            raise ValueError('Normalization factor <= 0!')
 
 
 # from data.icecube_pointsource_7_year import ps_v002_p01
