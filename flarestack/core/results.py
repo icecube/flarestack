@@ -259,8 +259,16 @@ class ResultsHandler(object):
         x = sorted(self.results.keys())
         raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
         try:
-            self.flux_to_ns = self.inj[raw_x[1]]["n_s"]/k_to_flux(float(x[1]))
+            # if weights were not fitted, number of neutrinos is stored in just one parameter
+            if not 'fit' in self.mh_name:
+                self.flux_to_ns = self.inj[raw_x[1]]["n_s"] / k_to_flux(float(x[1]))
+            # if weights were fitted, there is one n_s for each fitted source
+            else:
+                sc_dict = self.inj[raw_x[1]]
+                self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(float(x[1]))
+
             logging.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
+
         except KeyError:
             if 'fit' in self.mh_name:
                 logging.info(f"KeyError: key \"n_s\" not found. "
