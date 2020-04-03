@@ -12,7 +12,8 @@ submit_file = cluster_dir + "SubmitDESY.sh"
 
 flarestack_scratch_dir = os.path.dirname(fs_scratch_dir[:-1]) + "/"
 
-def make_desy_submit_file(ram_per_core="6.0G"):
+
+def make_desy_submit_file(ram_per_core="6.0G", h_cpu='23:59:00'):
 
     text = "#!/bin/zsh \n" \
            "## \n" \
@@ -20,7 +21,7 @@ def make_desy_submit_file(ram_per_core="6.0G"):
            "#$ -S /bin/zsh \n" \
            "## \n" \
            "##(the running time for this job) \n" \
-           "#$ -l h_cpu=23:59:00 \n" \
+          f"#$ -l h_cpu={h_cpu} \n" \
            "#$ -l h_rss=" + str(ram_per_core) + "\n" \
            "## \n" \
            "## \n" \
