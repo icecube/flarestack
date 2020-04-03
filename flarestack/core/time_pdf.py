@@ -645,6 +645,12 @@ class DecayPDF(TimePDF):
         if not 'decay_time' in self.t_dict:
             logging.warning('No decay length given! Assuming endless decay')
 
+    def decay_function(self, t, t0):
+        return decay_fct(t, t0, self.decay_time, self.decay_length)
+
+    def decay_integral(self, a, b, t0):
+        return decay_fct_integral(a, b, t0, self.decay_time, self.decay_length)
+
     def sig_t0(self, source):
         """
         Gives the start time of the signal from a source. If the start time lies within the season,
@@ -672,10 +678,8 @@ class DecayPDF(TimePDF):
         :return: float
         """
 
-        integration_result = decay_fct_integral(self.t0, t, self.sig_t0(source), self.decay_time, self.decay_length)
-        normalization_factor = decay_fct_integral(
-            self.t0, self.t1, self.sig_t0(source), self.decay_time, self.decay_length
-        )
+        integration_result = self.decay_integral(self.t0, t, self.sig_t0(source))
+        normalization_factor = self.decay_integral(self.t0, self.t1, self.sig_t0(source))
         return integration_result / normalization_factor
 
     def effective_injection_time(self, source=None):
@@ -714,20 +718,20 @@ class DecayPDF(TimePDF):
         t1 = self.sig_t1(source)
 
         if t0 >= t1:
+            # in this case the source emission ends before the start of the season so the pdf is zero everywhere
             return np.zeros_like(t)
 
         # to normalize the function, integrate over the whole livetime
         a, b = self.mjd_to_livetime(t0), self.mjd_to_livetime(t1)
-        normalization_factor = decay_fct_integral(
-            a, b, self.mjd_to_livetime(t0), self.decay_time, self.decay_length
-        )
+        normalization_factor = self.decay_integral(a, b, self.mjd_to_livetime(t0))
 
         if normalization_factor > 0.:
-            return decay_fct(
-                self.mjd_to_livetime(t), self.mjd_to_livetime(t0), self.decay_time, self.decay_length
-            ) / normalization_factor
+            r = self.decay_function(self.mjd_to_livetime(t), self.mjd_to_livetime(t0))
+            return r / normalization_factor
 
         else:
+            # the normalization factor should always be greater than zero,
+            # so here something went wrong.
             logging.error(f'\nintegrating from {a:.2f} to {b:.2f}. \n'
                           f't = {t} \n'
                           f't0 = {t0:.2f} \n'
