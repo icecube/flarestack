@@ -1,4 +1,6 @@
 import os
+import logging
+from flarestack.shared import limits_dir, limit_output_path
 # from flarestack.analyses.ccsn.necker2019.ccsn_helpers import sn_catalogue_name
 
 raw_output_dir = 'analyses/ccsn/necker_2019'
@@ -10,26 +12,44 @@ stasik_cat_dir = ccsn_cat_dir + 'raw_stasik/'
 
 sn_cats = ["IIn", "IIP", "Ibc"]
 
-sn_times_box = [100, 300, 1000]
-sn_times_decay = [0.02, 0.2, 2]
+sn_times_box = [100, 300, 1000]  # in days
+sn_times_decay = [0.02, 0.2, 2]  # in years
 sn_times_dict = {'box': sn_times_box, 'decay': sn_times_decay}
 
 sn_times = {'IIn': sn_times_dict, 'IIP': sn_times_dict,
             'Ibc': {'box': sn_times_box + [-20]}}
 
+conservative_redshift_addition = 0.001
 
-def updated_sn_catalogue_name(sn_type, pdf_name='', flagged=False, nearby=True):
-    if pdf_name: pdf_name = '_' + pdf_name
-    sn_name = sn_type + pdf_name + '.npy'
-    if flagged: sn_name = 'flagged/' + sn_name
+
+def updated_sn_catalogue_name(sn_type, pdf_name='', flagged=False, z_conservative=conservative_redshift_addition):
+
+    if pdf_name:
+        pdf_name = '_' + pdf_name
+
+    sn_name = sn_type + pdf_name
 
     if pdf_name or flagged:
-        return raw_necker_cat_dir + sn_name
+        directory = raw_necker_cat_dir
     else:
-        return ccsn_cat_dir + sn_name
+        directory = ccsn_cat_dir
+
+    if z_conservative != conservative_redshift_addition:
+        directory += f'zplus{z_conservative}/'
+        if not os.path.exists(directory):
+            logging.debug(f'making directory {directory}')
+            os.mkdir(directory)
+
+    if flagged:
+        directory += 'flagged/'
+        if not os.path.exists(directory):
+            logging.debug(f'making directory {directory}')
+            os.mkdir(directory)
+
+    return directory + sn_name + '.npy'
 
 
-def raw_sn_catalogue_name(sn_type, person="necker"):
+def raw_sn_catalogue_name(sn_type, person="necker", fs_readable=True):
 
     if person == 'necker':
 
@@ -38,13 +58,20 @@ def raw_sn_catalogue_name(sn_type, person="necker"):
     elif person == 'stasik':
 
         if 'Ib' in sn_type:
-            return stasik_cat_dir + 'Ib_BoxPre20.0_New.npy'
+            res =  stasik_cat_dir + 'Ib_BoxPre20.0_New'
         elif sn_type == 'IIn':
-            return stasik_cat_dir + 'IIn_Box300.0_New.npy'
+            res = stasik_cat_dir + 'IIn_Box300.0_New'
         elif sn_type in ('IIP', 'IIp'):
-            return stasik_cat_dir + 'IIp_Box300.0_New.npy'
+            res = stasik_cat_dir + 'IIp_Box300.0_New'
         else:
             raise ValueError(f'input for sn_type: {sn_type} not understood')
+
+        if fs_readable:
+            res += '_fs_readable'
+
+        res += '.npy'
+
+        return res
 
     else:
 
@@ -53,9 +80,10 @@ def raw_sn_catalogue_name(sn_type, person="necker"):
 
 def sn_time_pdfs(sn_type, pdf_type='box'):
 
-    # TODO: implement decay function
-
     time_pdfs = []
+
+    # to ensure combatipility with stasik stuff where it's IIp and not IIP
+    sn_type = sn_type if sn_type != 'IIp' else 'IIP'
 
     if pdf_type == 'box':
 
@@ -77,7 +105,16 @@ def sn_time_pdfs(sn_type, pdf_type='box'):
             time_pdfs.append(pdf_dict)
 
     elif pdf_type == 'decay':
-        raise NotImplementedError
+
+        for i in sn_times[sn_type][pdf_type]:
+
+            pdf_dict = {
+                'time_pdf_name': pdf_type,
+                'decay_time': i * 364.25,  # convert to days
+                'decay_length': (10 - 1) * i * 364.25
+            }
+
+            time_pdfs.append(pdf_dict)
 
     else:
         raise ValueError(f'Input {pdf_type} for PDF type not understood!')
@@ -86,5 +123,24 @@ def sn_time_pdfs(sn_type, pdf_type='box'):
 
 
 def pdf_names(pdf_type, pdf_time):
-    if pdf_time < 0: pdf_time = f'Pre{abs(pdf_time)}'
+    if pdf_time < 0: pdf_time = f'Pre{abs(pdf_time):.0f}'
+    elif pdf_time == 2: pdf_time = f'{pdf_time:.0f}'
+    elif abs(pdf_time) >= 100: pdf_time = f'{pdf_time:.0f}'
     return f'{pdf_type}{pdf_time}'
+
+
+def limit_sens(mh_name, pdf_type):
+
+    base = f'{raw_output_dir}/calculate_sensitivity/{mh_name}/{pdf_type}/'
+    sub_base = base.split(os.sep)
+
+    for i, _ in enumerate(sub_base):
+        p = sub_base[0]
+        for d in range(1, i):
+            p += f'{os.sep}{sub_base[d]}'
+        p = limits_dir + p
+        if not os.path.isdir(p):
+            logging.debug(f'making directory {p}')
+            os.mkdir(p)
+
+    return limit_output_path(base)
