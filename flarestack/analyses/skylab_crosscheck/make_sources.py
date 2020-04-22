@@ -16,7 +16,6 @@ Nsources = max(nsources)
 same_sindecs = np.linspace(-1, 1, 9)
 
 
-
 def output_dir_for_sl(sindec=None):
     if not sindec:
         return output_dir_for_sl_raw
@@ -31,8 +30,8 @@ def output_dir_for_fs(sindec=None):
         return output_dir_for_fs_raw + '{:.4f}/'.format(sindec)
 
 
-def fs_sources(i, sindec=None):
-    return output_dir_for_fs(sindec) + str(nsources[i]) + 'sources.npy'
+def fs_sources(nsources, sindec=None):
+    return output_dir_for_fs(sindec) + str(nsources) + 'sources.npy'
 
 
 def sl_sources(i):
@@ -49,7 +48,7 @@ if __name__ == '__main__':
 
     for sindec in sindecs[1:]:
         j = len(sources)
-        new_source =  single_source(sindec)
+        new_source = single_source(sindec)
         new_source['ra_rad'] = float(np.random.uniform(0, 2*np.pi, 1))
         sources = np.append(sources, new_source)
         if len(sources) != j+1:
