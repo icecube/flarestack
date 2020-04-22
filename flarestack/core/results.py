@@ -378,6 +378,9 @@ class ResultsHandler(object):
 
                 self.make_plots(scale)
 
+        if len(np.where(np.array(y) < 0.99)[0]) < 3:
+            raise Exception(f"Not enough points with overfluctuations under 99%, lower injection scale!")
+
         x = np.array(x_acc)
 
         x_flux = k_to_flux(x)
