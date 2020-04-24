@@ -1,5 +1,5 @@
 Name: Core Collapse Supernova Analysis
-Analyser: Alex Stasik (original) Robert Stein (reproduced) (robert.stein@desy.de)
+Analyser: Alex Stasik (original) Robert Stein (reproduced) (robert.stein@desy.de) Jannis Necker (reproduced) (jannis.necker@desy.de)
 Wiki Page: https://wiki.icecube.wisc.edu/index.php/Point_Source_Supernova_Stacking_Analysis
 Datasets: ps_tracks (v002_p01)
 
@@ -18,3 +18,20 @@ calculated using calculate_sensitivity.py, and the results were unblinded.
 As in the original analysis, no significant excess was found, and resulting
 upper limits were calculated accordingly.
 
+After the results of Alex Stasik and Flarestack were found to not agree, I (Jannis Necker), did a thorough investigation.
+I copied the original catalogue from the wiki page on order to be able to also reproduce
+the sensitivities for the decay model. A link to the catalogue file I used can be found on the Wiki of the Update
+(https://wiki.icecube.wisc.edu/index.php/Point_Source_Supernova_Stacking_Analysis/Update)
+The results of the sensitivity calculation and a comparison to Alex Stasik's results can be found on the wiki.
+
+REPRODUCICIBILITY GUIDE
+
+If the .npy catalogue files are not present, download the original catalogues as .csv from the file referenced in the
+update wiki. Copy them to /path/to/flarestack/analyses/ccsn/stasik2017/catalogues/raw and execute
+build_catalogues_from_raw.py in the same directory.
+
+For the sensitivity calculation run calculate_sensitivity_reproduce_stasik.py
+(calculate_sensitivity_reproduce_stasik_decay.py respectively for the decay model sensitivities)
+
+All plots can be found under
+/path/to/scratch/flarestack_data/output/plots/analyses/ccsn/stasik2107/fit_weights/
