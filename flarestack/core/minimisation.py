@@ -214,7 +214,7 @@ class MinimisationHandler(object):
 
         return cls.subclasses[mh_name].return_parameter_info(mh_dict)
 
-    def run_trial(self, scale):
+    def run_trial(self, full_dataset):
         pass
 
     def run(self, n_trials, scale=1., seed=None):
