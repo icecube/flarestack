@@ -87,7 +87,8 @@ def grl_loader(season):
             logging.error(grl[~grl["good_i3"]])
             raise Exception("Runs marked as 'bad' are found in Good Run List")
     except ValueError:
-        logging.warning("No field called 'good_i3'. Cannot check GoodRunList.")
+        logging.warning("No field called 'good_i3' found in GoodRunList. "
+                        "Cannot check if all runs in GoodRunList are actually good.")
 
     if "length" not in grl.dtype.names:
 
