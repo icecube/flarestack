@@ -1,0 +1,127 @@
+catalogue,name,alias,discovery,ra,dec,lum dist [Mpc],redshift,type ref,weight,reference(s)
+box100,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2008S,,,,,,,,,
+,PSN J14041297-0938168,,,,,,,,,
+,SN2011ht,,,,,,,,,
+,iPTF13cjz,,,,,,,,,
+,PSN J13522411+3941286,SN2015da,,,,,,,,
+,PTF10fqs,,,,,,,,,
+,SN2009kr,,,,,,,,,
+,PTF10aaxf,SN2010jl,,,,,,,,
+,SN2013gc,,,,,,,,,
+,CSS140111:060437-123740,"TCP J06043671-1237406, SNhunt223",,,,,,,,
+,SN2012ab,,55957,"185,698","5,607",81,"0,019",x,,Bilinski et al. (2017)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,CBET 3022; Shetrone & Caldwell (2012)
+,SN2011an,,55621,"119,852","16,419",73,"0,0173",x,,CBET 2668; Marion & Calkins (2011)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,x,,Hicken et al. (2017)
+,MASTER OT J044212.20+230616.7,,56921,"70,551","23,105",76,"0,018",,,ATel 6484; Tiurina et al. (2014)
+,,,,,,,,x,,ATel 6488; Ochner et al. (2014)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,
+,,,,,,,,,,
+box300,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2008S,,54497,"308,689","60,099","5,6","0,0012",,,CBET 1234; Arbour & Boles (2008)
+,,,,,,,,,,Botticella et al. (2009)
+,,,,,,,,IIn?,,"Asiago Supernova Catalogue 
+Barbon, Cappellaro, & Turatto (1989)"
+,,,,,,,,LBV,,Smith et al. (2011)
+,PSN J14041297-0938168,,56646,"211,054","-9,638","12,55","0,0038",x,,ATEL 5700; Challis
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,Rochester Astronomy SN List 2013
+,SN2011ht,,55833,"152,044","51,849","19,2","0,0046",x,,CBET 2903; Prieto et a. (2011)
+,,,,,,,,,,CBET 2851; Boles et al. (2011)
+,,,,,,,,,,Rochester Astronomy SN List 2013
+,iPTF13cjz,PSN J01591443+1901339,56506,"29,81","19,03","30,30","0,0093",LBV / LRN,,ATel 5272; Yaron et al. (2013)
+,,,,,,,,LRN,,Rochester Astronomy SN List 2013
+,,,,,,,,LRN,,Open Supernova Catalog; Guillochon et al. (2017)
+,PTF10fqs,,55302,"184,709","14,444","38,85","0,009",LRN,,"Kasliwal, Mansi M. et al. Astrophys.J. 730 (2011)"
+,,,,,,,,LRN,,ATel 2590; Kasliwal & Kulkarni (2010)
+,SN2009kr,,55141,"78,014","-15,698",16,"0,0073",,,"CBET 2006 Nakano, Yusa, & Kadota (2009)"
+,,,,,,,,II-L,,Elias-Rosa et al. (2009)
+,,,,,,,,x,,Rochester Astronomy SN List 2013
+,,,,,,,,,,"Lennarz, Altmann, & Wiebusch (2012)"
+,PTF10aaxf,PSN J01591443+1901339,55503,"145,722","9,495","50,61","0,0117",,,CBET 2532 Newton & Puckett (2010)
+,,,,,,,,x,,Ofek et al. (2014)
+,SN2013gc,,56603,"121,8","-28,057","15,1","0,0044",,,CBET 3699; Antezana et al. (2013)
+,,,,,,,,x,,Rochester Astronomy SN List 2013
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,PSN J13522411+3941286,PSN J01591443+1901339,57031,"208,1","39,691","32,14","0,0082",,,CBAT TOCP
+,,,,,,,,x,,"Zhang, Wang (2019)"
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,CSS140111:060437-123740,PSN J01591443+1901339,56650,"91,153","-12,628","32,88","0,0084",x,,ATEL 5700; Challis
+,,,,,,,,,,"CRTS SNhunt, CRTS SNhunt
+Howerton (2017)"
+,,,,,,,,,,Rochester Astronomy SN List 2013
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,
+,,,,,,,,,,
+box1000,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2008S,,,,,,,,,
+,SN2011ht,,,,,,,,,
+,PSN J14041297-0938168,,,,,,,,,
+,iPTF13cjz,,,,,,,,,
+,PTF10fqs,,,,,,,,,
+,SN2009kr,,,,,,,,,
+,PTF10aaxf,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+decay0.02,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2008S,,,,,,,,,
+,SN2002kg,,52573,"114,258","65,575",4,"0,0018",x,,IAUC 8051; Filippenko & Chornock (2003)
+,,,,,,,,,,Rochester Astronomy SN List 2013
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,LBV,,"Kochanek, Szczygieł & Stanek (2012)"
+,SN2011ht,,,,,,,,,
+,PSN J14041297-0938168,,,,,,,,,
+,SN2000ch,,51667,"163,17","36,67","7,50","0,0027",LBV,,Wagner et al. (2004)
+,SN1997bs,,50553,"170,06","12,97","8,55","0,0029",LBV,,Van Dyk et al. (2000)
+,SN2002bu,,52361,"184,405","45,647",9,"0,003",SN2008S like,,"Szczygieł, Kochanek, & Dai (2012)"
+,,,,,,,,SN2008S like,,Smith et al. (2011)
+,,,,,,,,,,IAUC 7863; Sarneczky & Bebesi (2002)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,Rochester Astronomy SN List 2013
+,iPTF13cjz,,,,,,,,,
+,SN1999bw,,51288,"154,945","45,526","9,84","0,0032",SN2008S like,,"Kochanek, Szczygieł & Stanek (2012)"
+,,,,,,,,,,IAUC; Qiu et al. (1999)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,PTF10fqs,,,,,,,,,
+,SN2009kr,,,,,,,,,
+,PSN J13522411+3941286,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+decay0.2,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2008S,,,,,,,,,
+,SN2002kg,,,,,,,,,
+,SN2000ch,,,,,,,,,
+,SN1997bs,,,,,,,,,
+,SN2011ht,,,,,,,,,
+,SN2002bu,,,,,,,,,
+,PSN J14041297-0938168,,,,,,,,,
+,SN1999bw,,,,,,,,,
+,iPTF13cjz,,,,,,,,,
+,PTF10fqs,,,,,,,,,
+,SN2009kr,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+decay2.0,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2008S,,,,,,,,,
+,SN2002kg,,,,,,,,,
+,SN2000ch,,,,,,,,,
+,SN1997bs,,,,,,,,,
+,SN2002bu,,,,,,,,,
+,SN1999bw,,,,,,,,,
+,SN2011ht,,,,,,,,,

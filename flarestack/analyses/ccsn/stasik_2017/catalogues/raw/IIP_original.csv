@@ -1,0 +1,115 @@
+catalogue,name,alias,discovery,ra,dec,lum dist [Mpc],redshift,type ref,weight,reference(s)
+box100,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2014bc,,,,,,,,,
+,SN2012A,,,,,,,,,
+,SN2012aw,,,,,,,,,
+,iPTF13aaz,,,,,,,,,
+,SN2009js,,,,,,,,,
+,SN2012ec,,,,,,,,,
+,iPTF13ut,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+box300,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2014bc,,56796,"184,547","47,304","7,6","0,0025",x,,Wright et al. (2015)
+,,,,,,,,,,ATel 6156; Smartt et al. (2014)
+,,,,,,,,x,,CBET 3877; Cortini et al. (2014)
+,,,,,,,,,,Polshaw et al. (2015)
+,SN2012A,,55933,"156,281","17,154","9,1","0,0035",,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,x,,Silverman et al. (2017)
+,,,,,,,,x,,CBET 2974; Stanishev & Pursimo (2012)
+,,,,,,,,,,Tomasella et al. (2013)
+,SN2012aw,,56002,"160,974","11,672","9,6","0,0036",x,,CBET 3054 ; Siviero et al. (2012)
+,,,,,,,,,,Bose et al. (2013)
+,iPTF13aaz,SN2013am,56372,"169,737","13,064","15,87","0,0037",,,Silverman et al. (2017)
+,,,,,,,,,,Zhang et al. (2014)
+,,,,,,,,x,,Tomasella et al. (2017) 
+,,,,,,,,,,CBET 3440
+,SN2009js,,55115,"36,451","6,491",16,"0,006",x,,Gandhi et al. (2013)
+,,,,,,,,,,"CBET 1969; Silverman, Kandrashoff, & Filippenko (2009)"
+,,,,,,,,,,"Lennarz, Altmann, & Wiebusch (2012)"
+,,,,,,,,,,"Asiago Supernova Catalogue 
+Barbon, Cappellaro, & Turatto (1989)"
+,SN2012ec,,56150,"41,458","-7,574","16,74","0,0057",x,,CBET 3201; Monard et al. (2012)
+,,,,,,,,x,,Silverman et al. (2017)
+,,,,,,,,,,Ramya et al. (2007)
+,iPTF13ut,SN2013ab,56340,"218,185","9,887","24,11","0,0056",x,,Silverman et al. (2017)
+,,,,,,,,x,,Bose et al. (2015)
+,,,,,,,,,,ATel 4823; Zheng et al. (2013)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,
+,,,,,,,,,,
+box1000,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2012A,,,,,,,,,
+,SN2012aw,,,,,,,,,
+,SN2014bc,,,,,,,,,
+,SN2009js,,,,,,,,,
+,iPTF13aaz,,,,,,,,,
+,SN2008bk,,,,,,,,,
+,SN2012ec,,,,,,,,,
+,SN2006ov,,,,,,,,,
+,iPTF13ut,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+decay0.02,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2012A,,,,,,,,,
+,SN2012aw,,,,,,,,,
+,SN2014bc,,,,,,,,,
+,SN2004dj,,53217,"114,321","65,56","3,5","0,0014",,,IAUC 8377; Riello et al. (2004)
+,,,,,,,,x,,Vinkó et al. (2006)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,SN2004et,,53275,"308,856","60,122","3,5","0,0012",x,,Eldridge & Xiao (2019)
+,,,,,,,,,,IAUC 8413; Li et al. (2004)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,SN2009js,,,,,,,,,
+,SN2005cs,,53549,"202,47","47,177","6,1","0,003",x,,Takáts & Vinkó (2012)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,IAUC 8553; Modjaz et al. (2005)
+,iPTF13aaz,,,,,,,,,
+,SN2008bk,,54550,"359,448","-32,557",4,"0,0018",,,CBET 1315; Monard (2008)
+,,,,,,,,x,,Van Dyk et al. (2010)
+,,,,,,,,,,"Lennarz, Altmann, & Wiebusch (2012)"
+,SN2012ec,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+decay0.2,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2004dj,,,,,,,,,
+,SN2012A,,,,,,,,,
+,SN2012aw,,,,,,,,,
+,SN2004et,,,,,,,,,
+,SN2014bc,,,,,,,,,
+,SN2005cs,,,,,,,,,
+,SN2009js,,,,,,,,,
+,iPTF13aaz,,,,,,,,,
+,SN2008bk,,,,,,,,,
+,SN1999em,,51480,"70,36","-2,863","7,7","0,0034",,,IAUC 7294; Li et al. (1999)
+,,,,,,,,,,Galbany et al. (2016)
+,,,,,,,,x,,Hamuy et al. (2001)
+,,,,,,,,,,
+,,,,,,,,,,
+decay2.0,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2004dj,,,,,,,,,
+,SN2004et,,,,,,,,,
+,SN2005cs,,,,,,,,,
+,SN2012A,,,,,,,,,
+,SN2012aw,,,,,,,,,
+,SN1999em,,,,,,,,,
+,SN2006ov,,54063,"185,48","4,488",14,"0,006",,,Hicken et al. (2017)
+,,,,,,,,,,CBET 756; Nakano & Sumoto (2006)
+,,,,,,,,,,"Lennarz, Altmann, & Wiebusch (2012)"
+,,,,,,,,x,,Szalai & Vinkó (2013)
+,SN2014bc,,,,,,,,,
+,SN2009js,,,,,,,,,
+,SN2008bk,,,,,,,,,
+,iPTF13aaz,,,,,,,,,
