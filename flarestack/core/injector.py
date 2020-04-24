@@ -391,7 +391,7 @@ class MCInjector(BaseInjector):
                  sim_ev[list(self.season.get_background_dtype().names)])
             )
             logging.debug("Injected {0} events with an expectation of {1:.2f} events".format(
-                n_s, n_inj if n_inj is float else float(n_inj[0])
+                n_s, n_inj if isinstance(n_inj, float) else float(n_inj[0])
             ))
 
         return sig_events
