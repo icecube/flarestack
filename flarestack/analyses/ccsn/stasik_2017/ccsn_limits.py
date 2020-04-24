@@ -51,24 +51,93 @@ for (sn, sn_dict) in limits.items():
         sn_dict[llh_type + " Energy (erg)"] = energy
 
 dt = {'names': ['t', 'E'], 'formats': ['<f8', '<f8']}
+dt_pvals = {'names': ['t', 'pval'], 'formats': ['<f8', '<f8']}
+
+
+p_vals = {
+    'box': {
+        'Ibc': np.array([
+            (20, 0.5), (100, 0.5), (300, 0.5), (1000, 0.348)
+        ], dtype=dt_pvals),
+        "IIp": np.array([
+            (100, 0.317), (300, 0.5), (1000, 0.5)
+        ], dtype=dt_pvals),
+        "IIn": np.array([
+            (100, 0.064), (300, 0.473), (1000, 0.5)
+        ], dtype=dt_pvals)
+    },
+
+    'decay': {
+        'IIn': np.array([
+            (0.02, 0.016), (0.2, 0.426), (2., 0.5)
+        ], dtype=dt_pvals),
+        'IIp': np.array([
+            (0.02, 0.5), (0.2, 0.5), (2., 0.5)
+        ], dtype=dt_pvals)
+    }
+}
+
 limits_figure_paper = {
-    "Ibc": np.array([
-        (20, 1.5e48), (100, 1.8e48), (300, 2.6e48), (1000, 4.1e48)
-    ], dtype=dt),
-    "IIp": np.array([
-        (100, 3.3e48), (300, 4e48), (1000, 6e48)
-    ], dtype=dt),
-    "IIn": np.array([
-        (100, 1.3e49), (300, 1.4e49), (1000, 1.3e49)
-    ], dtype=dt)
+
+    'box':{
+        "Ibc": np.array([
+            (20, 1.5e48), (100, 1.8e48), (300, 2.6e48), (1000, 4.1e48)
+        ], dtype=dt),
+        "IIp": np.array([
+            (100, 0.363e49), (300, 0.284e49), (1000, 0.401e49)
+        ], dtype=dt),
+        "IIn": np.array([
+            (100, 1.55e49), (300, 1.6e49), (1000, 1.53e49)
+        ], dtype=dt)
+    },
+
+    'decay': {
+        'IIn': np.array([
+            (0.02, 2.45e49), (0.2, 1.96e49), (2., 3.1e49)
+        ], dtype=dt),
+        'IIp': np.array([
+            (0.02, 0.355e49), (0.2, 0.263e49), (2., 1.38e49)
+        ], dtype=dt)
+    }
 }
 
 
-def get_figure_limits(type):
-    if type == 'IIP':
-        return limits_figure_paper['IIp']
+limits_figure_sens = {
+
+    'box':{
+        'Ibc': np.array([
+            (20, 8e47), (100, 1e48), (300, 1.4e48), (1000, 1.7e48)
+        ], dtype=dt),
+        'IIp': np.array([
+            (100, 2e48), (300, 1.8e48), (1000, 3e48)
+        ], dtype=dt),
+        'IIn': np.array([
+            (100,6e48), (300, 7e48), (1000, 8e48)
+        ], dtype=dt)
+    },
+
+    'decay': {
+        'IIn': np.array([
+            (0.02, 1.1e49), (0.2, 1e49), (2., 9e48)
+        ], dtype=dt),
+        'IIp': np.array([
+            (0.02, 2.2e48), (0.2, 3e48), (2., 3.2e48)
+        ], dtype=dt)
+    }
+
+}
+
+
+def get_figure_limits(sn_type, pdf_type, sens=False):
+    if not sens:
+        dictionary = limits_figure_paper
     else:
-        return limits_figure_paper[type]
+        dictionary = limits_figure_sens
+
+    if sn_type == 'IIP':
+        return dictionary[pdf_type]['IIp']
+    else:
+        return dictionary[pdf_type][sn_type]
 
 
 if __name__ == "__main__":
