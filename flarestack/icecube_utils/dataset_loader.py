@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
 from scipy.interpolate import interp1d
@@ -81,12 +82,12 @@ def grl_loader(season):
         if np.sum(~grl["good_i3"]) == 0:
             pass
         else:
-            print("Trying to load", season)
-            print("The following runs are included:")
-            print(grl[~grl["good_i3"]])
+            logging.error("Trying to load", season)
+            logging.error("The following runs are included:")
+            logging.error(grl[~grl["good_i3"]])
             raise Exception("Runs marked as 'bad' are found in Good Run List")
     except ValueError:
-        print("No field called 'good_i3'. Cannot check GoodRunList.")
+        logging.warning("No field called 'good_i3'. Cannot check GoodRunList.")
 
     if "length" not in grl.dtype.names:
 
@@ -162,8 +163,8 @@ def convert_grl(season):
             stitch_f.append(f[i])
 
     if stitch_t != sorted(stitch_t):
-        print("Error in ordering GoodRunList!")
-        print("Runs are out of order!")
+        logging.error("Error in ordering GoodRunList!")
+        logging.error("Runs are out of order!")
 
         print(grl[:5])
         input("prompt")
@@ -185,7 +186,7 @@ def convert_grl(season):
 
 def verify_grl_with_data(seasons):
 
-    print("Verifying that, for each dataset, all events are in runs that \n" \
+    logging.info("Verifying that, for each dataset, all events are in runs that \n" \
           "are on the GRL, and not outside the period marked as good in the " \
           "GRL.")
 
