@@ -34,13 +34,11 @@ def plot_dec_sens(dec, sens, fname):
     plt.savefig(fname)
 
 
-sn_colors = {'IIp': 'gold', 'IIn': 'red', 'Ibc': 'blue'}
+sn_colors = {'IIp': 'orange', 'IIn': 'red', 'Ibc': 'blue'}
 
 
 def get_sn_color(type):
-    color = sn_colors.get(type, None)
-    if not color and type == 'IIP':
-        sn_colors.get('IIp', None)
-    if not color:
-        raise Exception('SN type {0} not in dictionary!'.format(type))
-    return color
+    if type == 'IIP':
+        return sn_colors['IIp']
+    else:
+        return sn_colors[type]
