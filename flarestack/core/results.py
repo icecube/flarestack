@@ -418,22 +418,6 @@ class ResultsHandler(object):
         lower = k_to_flux((1./(best_a + perr)) * np.log(b / (1 - threshold)))
         upper = k_to_flux((1./(best_a - perr)) * np.log(b / (1 - threshold)))
 
-        # plt.figure()
-        # plt.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
-        # plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
-        # plt.fill_between(k_to_flux(xrange), best_f(xrange, 1), best_f(xrange, -1), color="blue", alpha=0.1)
-        # plt.axhline(threshold, lw=1, color="red", linestyle="--")
-        # plt.axvline(fit, lw=2, color="red")
-        # plt.axvline(lower, lw=2, color="red", linestyle=":")
-        # plt.axvline(upper, lw=2, color="red", linestyle=":")
-        # plt.ylim(0., 1.)
-        # plt.xlim(0., k_to_flux(max(xrange)))
-        # plt.ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
-        # plt.xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-        # plt.savefig(savepath)
-        # plt.close()
-
-
         fig = plt.figure()
         ax1 = fig.add_subplot(111)
         ax1.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
@@ -446,7 +430,7 @@ class ResultsHandler(object):
         ax1.set_ylim(0., 1.)
         ax1.set_xlim(0., k_to_flux(max(xrange)))
         ax1.set_ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
-        ax1.set_xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+        plt.xlabel(r"Flux Normalisation @ 1GeV [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
 
         if not np.isnan(self.flux_to_ns):
             ax2 = ax1.twiny()
@@ -550,7 +534,7 @@ class ResultsHandler(object):
             ax1.set_ylim(0., 1.)
             ax1.set_xlim(0., k_to_flux(max(xrange)))
             ax1.set_ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
-            ax1.set_xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+            plt.xlabel(r"Flux Normalisation @ 1GeV [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
 
             if not np.isnan(self.flux_to_ns):
                 ax2 = ax1.twiny()
