@@ -1,6 +1,9 @@
 **Name**: Stacking behavior crosscheck with SkyLab
+
 **Analyser**: Jannis Necker (jannis.necker@desy.de)
+
 **Flarestack version**: v2.0.2 (Titan)
+
 **Wiki Page**: https://wiki.icecube.wisc.edu/index.php/Flarestack/Skylab_crosscheck
 
 
@@ -14,4 +17,5 @@ Note that when running `make_sources.py` new sources will be created and
 therefore the SkyLab results have to be re-calculated as well!
 
 **Reproducibility guide:** 
+
 run `calculate_skylab_sensitivity.py`.
