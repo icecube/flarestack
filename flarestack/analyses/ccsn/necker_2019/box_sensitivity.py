@@ -43,10 +43,10 @@ cluster = 500
 
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 # gammas = [1.8, 2.0, 2.5]
-gammas = [2., 2.5]
+# gammas = [2., 2.5]
+gammas = [2.]
 
 # Base name
-
 mh_name = 'fit_weights'
 pdf_type = 'box'
 
@@ -125,8 +125,8 @@ if __name__ == '__main__':
                     np.sin(closest_src["dec_rad"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * 200.) / length
 
-                if cat == 'IIP' and pdf_type != 100:
-                    scale *= 0.4
+                if cat == 'IIP':# and pdf_type != 100:
+                    scale *= 0.2
                 if cat == 'Ibc':
                     scale *= 0.5
                 if cat == 'IIn' and gamma == 2.5 and pdf_time == 1000:

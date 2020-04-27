@@ -37,14 +37,14 @@ llh_energy = {
     "energy_pdf_name": "power_law",
 }
 
-cluster = 50
+cluster = 500
 
 # Spectral indices to loop over
 
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 # gammas = [1.8, 2.0, 2.5]
-gammas = [2., 2.5]
-
+# gammas = [2., 2.5]
+gammas = [2.]
 # Base name
 
 mh_name = 'fit_weights'
@@ -121,12 +121,14 @@ if __name__ == '__main__':
 
                 length = float(time_key)
 
-                scale = 0.5 * (flux_to_k(reference_sensitivity(
+                scale = 0.025 * (flux_to_k(reference_sensitivity(
                     np.sin(closest_src["dec_rad"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * 200.) / length
 
                 if (gamma == 2.5) and (cat == 'IIn'):
                     scale *= 1.8
+                if cat == 'IIn':
+                    scale *= 5
 
                 injection_energy = dict(llh_energy)
                 injection_energy["gamma"] = gamma
@@ -146,17 +148,17 @@ if __name__ == '__main__':
                     "inj_dict": inj_dict,
                     "llh_dict": llh_dict,
                     "scale": scale,
-                    "n_trials": 50/cluster if cluster else 1000,
+                    "n_trials": 500/cluster if cluster else 1000,
                     "n_steps": 10
                 }
                 # !!! number of total trial is ntrials * n_jobs !!!
 
                 job_id = None
-                job_id = analyse(mh_dict,
-                                 cluster=True if cluster else False,
-                                 n_cpu=1 if cluster else 32,
-                                 n_jobs=cluster,
-                                 h_cpu='00:59:59')
+                # job_id = analyse(mh_dict,
+                #                  cluster=True if cluster else False,
+                #                  n_cpu=1 if cluster else 32,
+                #                  n_jobs=cluster,
+                #                  h_cpu='00:59:59')
                 job_ids.append(job_id)
 
                 time_res[gamma] = mh_dict

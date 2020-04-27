@@ -4,7 +4,7 @@ import logging
 import numpy as np
 import pickle as Pickle
 from scipy.interpolate import interp1d
-from flarestack.shared import limit_output_path
+from flarestack.shared import limit_output_path, limits_dir
 from astropy import units as u
 from astropy.table import Table
 
@@ -113,6 +113,23 @@ def sn_time_pdfs(sn_type):
         )
 
     return time_pdfs
+
+
+def limit_sens(mh_name, pdf_type):
+
+    base = f'analyses/ccsn/stasik2017/calculate_sensitivity/{mh_name}/{pdf_type}/'
+    sub_base = base.split(os.sep)
+
+    for i, _ in enumerate(sub_base):
+        p = sub_base[0]
+        for d in range(1, i):
+            p += f'{os.sep}{sub_base[d]}'
+        p = limits_dir + p
+        if not os.path.isdir(p):
+            logging.debug(f'making directory {p}')
+            os.mkdir(p)
+
+    return limit_output_path(base)
 
 
 def ccsn_limits(sn_type):
