@@ -20,3 +20,6 @@ must be run. In all cases, the fit results will be obtained.
 
 To reproduce the sensitivity curves as a function of the minimum energy
 of the injected neutrinos, calculate_energy_range.py must be run.
+
+To reproduce sensitivity and DP plot, the make_plots_all_samples.ipynb
+notebook must be used.
