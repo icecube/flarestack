@@ -206,11 +206,14 @@ class Chi2_one_side(object):
             return -loglh
 
         res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
+        hess_inv = res.hess_inv.todense()
+        sigma = np.sqrt(hess_inv)
 
         self._cut = 0.
         self._f = scipy.stats.chi2(*res.x)
         self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
         self._res = res
+        self.sigma = sigma
 
 
 class Chi2_one_side_free(object):
@@ -247,6 +250,7 @@ def fit_background_ts(ts_array, ts_type):
 
     mask = ts_array > 0.0
     frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
+    threshold_err = 0.0
 
     if ts_type == "Flare":
 
@@ -325,11 +329,12 @@ def fit_background_ts(ts_array, ts_type):
         df = chi2._f.args[0]
         loc = 0.
         scale = 1.
+        threshold_err = float(chi2.sigma)
 
     else:
         raise Exception("ts_type " + str(ts_type) + " not recognised!")
 
-    return df, loc, scale, frac_over
+    return df, loc, scale, frac_over, threshold_err
 
 
 def plot_expanded_negative(ts_array, path):
@@ -366,7 +371,7 @@ def plot_expanded_negative(ts_array, path):
 
 
 def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
-                                    ts_val=None):
+                                    ts_val=None, mock_unblind=False):
 
     try:
         os.makedirs(os.path.dirname(path))
@@ -384,7 +389,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
     fig = plt.figure()
 
-    df, loc, scale, frac_over = fit_background_ts(ts_array, ts_type)
+    df, loc, scale, frac_over, t_err = fit_background_ts(ts_array, ts_type)
 
     frac_under = 1 - frac_over
 
@@ -400,6 +405,14 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
     plt.plot(x_range, frac_over * scipy.stats.chi2.pdf(x_range, df, loc, scale),
              color="blue", label=r"$\chi^{2}$ Distribution")
+    if t_err is not None:
+        plt.fill_between(
+            x_range,
+            frac_over * scipy.stats.chi2.pdf(x_range, df + t_err, loc, scale),
+            frac_over * scipy.stats.chi2.pdf(x_range, df - t_err, loc, scale),
+            alpha=0.1,
+            color="blue"
+        )
 
     def integral(x):
 
@@ -446,7 +459,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
         plt.annotate(
             '{:.1f}'.format(100 * frac_under) + "% of data in delta. \n" +
             r"$\chi^{2}$ Distribution:" + "\n   * d.o.f.=" + \
-            '{:.2f}'.format(df) + ",\n  * loc=" + '{:.2f}'.format(loc) + \
+            '{:.2f} \pm {:.2f}'.format(df, t_err) + ",\n  * loc=" + '{:.2f}'.format(loc) + \
             " \n * scale=" + '{:.2f}'.format(scale),
             xy=(0.1, 0.2), xycoords="axes fraction", fontsize=8)
 
@@ -456,6 +469,10 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     plt.yscale("log")
     plt.xlabel(r"Test Statistic ($\lambda$)")
     plt.legend(loc="upper right")
+
+    if mock_unblind:
+        ax.text(0.2, 0.5, "MOCK DATA", color="grey", alpha=0.5, transform=ax.transAxes)
+    
     plt.savefig(path)
     plt.close()
 
