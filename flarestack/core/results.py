@@ -4,9 +4,12 @@ import numpy as np
 import math
 import scipy
 import scipy.stats
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
-    k_to_flux, inj_dir_name, scale_shortener
+    k_to_flux, inj_dir_name, scale_shortener, flux_to_k
 from flarestack.core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
@@ -23,6 +26,7 @@ class ResultsHandler(object):
         self.sources = load_catalogue(rh_dict["catalogue"])
 
         self.name = rh_dict["name"]
+        self.mh_name = rh_dict['mh_name']
 
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(self.name)
@@ -255,10 +259,22 @@ class ResultsHandler(object):
         x = sorted(self.results.keys())
         raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
         try:
-            self.flux_to_ns = self.inj[raw_x[1]]["n_s"]/k_to_flux(float(x[1]))
+            # if weights were not fitted, number of neutrinos is stored in just one parameter
+            if not 'fit' in self.mh_name:
+                self.flux_to_ns = self.inj[raw_x[1]]["n_s"] / k_to_flux(float(x[1]))
+            # if weights were fitted, there is one n_s for each fitted source
+            else:
+                sc_dict = self.inj[raw_x[1]]
+                self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(float(x[1]))
+
             logging.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
+
         except KeyError:
-            logging.warning("KeyError: no key found")
+            if 'fit' in self.mh_name:
+                logging.info(f"KeyError: key \"n_s\" not found. "
+                             f"Not necessary because the minimizer {self.mh_name} is used.")
+            else:
+                logging.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!")
 
     def find_sensitivity(self):
         """Uses the results of the background trials to find the median TS
@@ -362,6 +378,9 @@ class ResultsHandler(object):
 
                 self.make_plots(scale)
 
+        if len(np.where(np.array(y) < 0.99)[0]) < 3:
+            raise Exception(f"Not enough points with overfluctuations under 99%, lower injection scale!")
+
         x = np.array(x_acc)
 
         x_flux = k_to_flux(x)
@@ -399,22 +418,6 @@ class ResultsHandler(object):
         lower = k_to_flux((1./(best_a + perr)) * np.log(b / (1 - threshold)))
         upper = k_to_flux((1./(best_a - perr)) * np.log(b / (1 - threshold)))
 
-        # plt.figure()
-        # plt.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
-        # plt.plot(k_to_flux(xrange), best_f(xrange), color="blue")
-        # plt.fill_between(k_to_flux(xrange), best_f(xrange, 1), best_f(xrange, -1), color="blue", alpha=0.1)
-        # plt.axhline(threshold, lw=1, color="red", linestyle="--")
-        # plt.axvline(fit, lw=2, color="red")
-        # plt.axvline(lower, lw=2, color="red", linestyle=":")
-        # plt.axvline(upper, lw=2, color="red", linestyle=":")
-        # plt.ylim(0., 1.)
-        # plt.xlim(0., k_to_flux(max(xrange)))
-        # plt.ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
-        # plt.xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-        # plt.savefig(savepath)
-        # plt.close()
-
-
         fig = plt.figure()
         ax1 = fig.add_subplot(111)
         ax1.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
@@ -427,11 +430,14 @@ class ResultsHandler(object):
         ax1.set_ylim(0., 1.)
         ax1.set_xlim(0., k_to_flux(max(xrange)))
         ax1.set_ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
-        ax1.set_xlabel(r"Flux strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-        ax2 = ax1.twiny()
-        ax2.grid(0)
-        ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
-        ax2.set_xlabel(r"Number of neutrinos")
+        plt.xlabel(r"Flux Normalisation @ 1GeV [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+
+        if not np.isnan(self.flux_to_ns):
+            ax2 = ax1.twiny()
+            ax2.grid(0)
+            ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
+            ax2.set_xlabel(r"Number of neutrinos")
+
         fig.savefig(savepath)
         plt.close()
 
@@ -528,11 +534,14 @@ class ResultsHandler(object):
             ax1.set_ylim(0., 1.)
             ax1.set_xlim(0., k_to_flux(max(xrange)))
             ax1.set_ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
-            ax1.set_xlabel(r"Flux [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
-            ax2 = ax1.twiny()
-            ax2.grid(0)
-            ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
-            ax2.set_xlabel(r"Number of neutrinos")
+            plt.xlabel(r"Flux Normalisation @ 1GeV [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
+
+            if not np.isnan(self.flux_to_ns):
+                ax2 = ax1.twiny()
+                ax2.grid(0)
+                ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
+                ax2.set_xlabel(r"Number of neutrinos")
+
             fig.savefig(savepath)
             plt.close()
 
@@ -561,6 +570,116 @@ class ResultsHandler(object):
 
         plot_fit_results(self.results[scale]["Parameters"], param_path,
                          inj=inj)
+
+    def ts_evolution_gif(self, n_scale_steps=None, cmap_name='winter'):
+
+        logging.debug('making animation')
+
+        all_scales_list = list(self.results.keys())
+        n_scales_all = len(all_scales_list)
+
+        n_scale_steps = n_scales_all - 1 if not n_scale_steps else n_scale_steps
+
+        scale_step_length = int(round(n_scales_all / (n_scale_steps)))
+        scales = [all_scales_list[min([i * scale_step_length, n_scales_all - 1])]
+                  for i in range(n_scale_steps + 1)]
+
+        ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
+
+        ns_arrays = np.array([
+            np.array(
+                [np.median(self.results[scale]['Parameters'][key])
+                 for key in self.results[scale]['Parameters']
+                 if 'n_s' in key]
+            )
+            for scale in scales
+        ])
+
+        n_s = [sum(a) for a in ns_arrays]
+        logging.debug('numbers of injected neutrinos: ' + str(n_s))
+
+        norm = colors.Normalize(vmin=0, vmax=max(n_s))
+        mappable = cm.ScalarMappable(norm=norm, cmap=cmap_name)
+        cmap = mappable.get_cmap()
+
+        sq_fig, sq_ax = plt.subplots()
+        sq_fig.set_tight_layout(True)
+        sq_ax.set_xlim([-5, max(ts_arrays[-1]) + 10])
+        sq_ax.set_yscale('log')
+        sq_ax.set_xlabel('Test Statistic')
+        sq_ax.set_ylabel('a.u.')
+
+        sqbar = sq_fig.colorbar(mappable, ax=sq_ax)
+        sqbar.set_label(r'n$_{\mathrm{injected}}$')
+
+        def update(i):
+            its = ts_arrays[i]
+            ins = n_s[i]
+            sq_ax.hist(its, histtype='stepfilled', density=True, color=cmap(ins / max(n_s)))
+            sq_ax.set_title(r'n$_{\mathrm{injected}}=$' + '{:.2f}'.format(ins))
+
+        anim = animation.FuncAnimation(
+            sq_fig, update, frames=np.arange(0, n_scale_steps), interval=500
+        )
+
+        anim_name = os.path.join(self.plot_dir, "ts_distributions/ts_distributions_evolution.gif")
+        logging.debug('saving animation under ' + anim_name)
+        anim.save(anim_name, dpi=80, writer='imagemagick')
+
+    def ts_distribution_evolution(self):
+
+        logging.debug('plotting evolution of TS distribution')
+
+        all_scales = np.array(list(self.results.keys()))
+        all_scales_floats = [float(sc) for sc in all_scales]
+
+        logging.debug('all scales: ' + str(all_scales_floats))
+        logging.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
+
+        sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
+        disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
+
+
+        scales = [all_scales[0], sens_scale, disc_scale]
+        ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
+        ns_arrays = np.array([
+            np.array(
+                    [np.median(self.results[scale]['Parameters'][key])
+                     for key in self.results[scale]['Parameters']
+                     if 'n_s' in key]
+            )
+            for scale in scales
+        ])
+
+        n_s = [sum(a) for a in ns_arrays]
+        logging.debug('numbers of injected neutrinos: ' + str(n_s))
+
+        fig, ax = plt.subplots()
+
+        ax.hist(ts_arrays[0], histtype='stepfilled', label='background', density=True, alpha=0.6, color='blue')
+
+
+        ax.hist(ts_arrays[1], histtype='step', density=True, color='orange',
+                label='signal: {:.2} signal neutrinos'.format(n_s[1]))
+        ax.axvline(self.bkg_median, ls='--', label='sensitivity threshold', color='orange')
+
+        ax.hist(ts_arrays[2], histtype='step', density=True, color='red',
+                label='signal: {:.2} signal neutrinos'.format(n_s[2]))
+        ax.axvline(self.disc_ts_threshold, ls='--', label='discovery potential threshold',
+                   color='red')
+
+        ax.set_xlabel('Test Statistic')
+        ax.set_ylabel('a.u.')
+        ax.legend()
+        ax.set_yscale('log')
+
+        plt.tight_layout()
+
+        sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_.pdf")
+        logging.debug('saving plot to ' + sn)
+        fig.savefig(sn)
+
+        plt.close()
 
     # def flare_plots(self, scale):
     #

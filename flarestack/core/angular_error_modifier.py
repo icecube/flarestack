@@ -51,9 +51,10 @@ class BaseFloorClass(object):
 
     def apply_floor(self, data):
         mask = data["raw_sigma"] < self.floor(data)
-        data["sigma"][mask] = np.sqrt(
-            self.floor(data[mask]) ** 2. + data["raw_sigma"][mask] ** 2.)
-        return data
+        new_data = data.copy()
+        new_data["sigma"][mask] = np.sqrt(
+            self.floor(data[mask].copy()) ** 2. + data["raw_sigma"][mask].copy() ** 2.)
+        return new_data
 
     def apply_dynamic(self, data):
         return data

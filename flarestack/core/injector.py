@@ -2,6 +2,8 @@ import logging
 import os
 import numpy as np
 import random
+import zipfile
+import zlib
 from flarestack.shared import k_to_flux, scale_shortener, band_mask_cache_name
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
@@ -354,7 +356,9 @@ class MCInjector(BaseInjector):
 
             #  If n_s = 0, skips simulation step.
             if n_s < 1:
-                logging.debug("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj))
+                logging.debug("Injected {0} events with an expectation of {1:.2f} events".format(
+                    n_s, n_inj if isinstance(n_inj, float) else float(n_inj[0])
+                ))
                 continue
 
             source_mc = self.calculate_single_source(source, scale)
@@ -386,7 +390,9 @@ class MCInjector(BaseInjector):
                 (sig_events,
                  sim_ev[list(self.season.get_background_dtype().names)])
             )
-            logging.debug("Injected {0} events with an expectation of {1:.2f} events".format(n_s, n_inj))
+            logging.debug("Injected {0} events with an expectation of {1:.2f} events".format(
+                n_s, n_inj if isinstance(n_inj, float) else float(n_inj[0])
+            ))
 
         return sig_events
 
@@ -460,6 +466,7 @@ class LowMemoryInjector(MCInjector):
 
     def load_band_mask(self, index):
         path = self.injection_band_paths[index]
+        # logging.debug(f'type(band_mask_cache) = {type(self.band_mask_cache)}')
         del self.band_mask_cache
         self.band_mask_cache = sparse.load_npz(path)
         self.band_mask_index = index
@@ -472,7 +479,13 @@ class LowMemoryInjector(MCInjector):
 
         if not np.logical_and(self.band_mask_cache is not None,
                               self.band_mask_index == mask_index):
-            self.load_band_mask(mask_index[0])
+            try:
+                self.load_band_mask(mask_index[0])
+            except (zlib.error, zipfile.BadZipFile):
+                self.make_injection_band_mask()
+                self.load_band_mask(mask_index[0])
+
+            # self.load_band_mask(mask_index[0])
 
         # band_mask = self.load_band_mask(mask_index[0])
 

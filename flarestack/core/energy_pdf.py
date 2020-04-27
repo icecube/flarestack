@@ -70,11 +70,10 @@ class EnergyPDF(object):
 
         if "e_max_gev" in list(e_pdf_dict.keys()):
             self.e_max = e_pdf_dict["e_max_gev"]
-            logging.info("Maximum Energy is {0}".format(self.e_max))
+            logging.info("Maximum Energy is {0} GeV".format(self.e_max))
             self.integral_e_max = self.e_max
         else:
             self.integral_e_max = default_emax
-
 
     @classmethod
     def register_subclass(cls, energy_pdf_name):
@@ -145,11 +144,11 @@ class EnergyPDF(object):
 
         return diff_sum, e_range
 
-    def flux_integral(self):
+    def flux_integral(self, lower=None, upper=None):
         """Integrates over energy PDF to give integrated flux (dN/dT)"""
-        return self.integrate_over_E(self.f)
+        return self.integrate_over_E(self.f, lower, upper)
 
-    def fluence_integral(self):
+    def fluence_integral(self, lower=None, upper=None):
         """Performs an integral for fluence over a given energy range. This is
         gives the total energy per unit area per second that is radiated.
         """
@@ -157,7 +156,7 @@ class EnergyPDF(object):
         def g(energy):
             return energy * self.f(energy)
 
-        return self.integrate_over_E(g)
+        return self.integrate_over_E(g, lower, upper)
 
     def return_energy_parameters(self):
         default = []

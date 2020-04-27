@@ -102,7 +102,7 @@ def wait_for_job(job_id=None, progress_str=None):
         n_total = n_tasks(tmp, job_id)
 
 
-def submit_to_cluster(path, n_cpu=2, n_jobs=10):
+def submit_to_cluster(path, n_cpu=2, n_jobs=10, ram_per_core=None, **kwargs):
 
     for file in os.listdir(log_dir):
         os.remove(log_dir + file)
@@ -114,14 +114,14 @@ def submit_to_cluster(path, n_cpu=2, n_jobs=10):
     if n_cpu > 1:
         submit_cmd += " -pe multicore {0} -R y ".format(n_cpu)
 
-    ram_per_core = "{0:.1f}G".format(6./float(n_cpu) + 2.)
+    ram_per_core = "{0:.1f}G".format(6./float(n_cpu) + 2.) if not ram_per_core else ram_per_core
     print("Ram per core:", ram_per_core)
 
     submit_cmd += "-t 1-{0}:1 {1} {2} {3}".format(
         n_jobs, submit_file, path, n_cpu
     )
 
-    make_desy_submit_file(ram_per_core)
+    make_desy_submit_file(ram_per_core, **kwargs)
 
     print(time.asctime(time.localtime()), submit_cmd, "\n")
 

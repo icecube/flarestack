@@ -5,10 +5,9 @@ from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube import ps_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import sn_catalogue_name, sn_cats, sn_time_pdfs, pdf_names, \
-    limit_sens
 from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits, get_figure_limits, p_vals
-from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import sn_time_pdfs
+from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import sn_cats, updated_sn_catalogue_name, \
+    sn_time_pdfs, raw_output_dir, pdf_names, limit_sens
 from flarestack.analyses.ccsn import get_sn_color
 from flarestack.cluster import analyse
 from flarestack.cluster.run_desy_cluster import wait_for_cluster
@@ -38,22 +37,20 @@ llh_energy = {
     "energy_pdf_name": "power_law",
 }
 
-cluster = 50
+cluster = 500
 
 # Spectral indices to loop over
 
 # gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
 # gammas = [1.8, 2.0, 2.5]
+# gammas = [2., 2.5]
 gammas = [2.]
-
-# plot_gamma = 2.
-
 # Base name
 
 mh_name = 'fit_weights'
-pdf_type = 'box'
+pdf_type = 'decay'
 
-raw = f"analyses/ccsn/stasik_2017/calculate_sensitivity/{mh_name}/{pdf_type}/"
+raw = raw_output_dir + f"/calculate_sensitivity/{mh_name}/{pdf_type}/"
 
 full_res = dict()
 
@@ -64,7 +61,7 @@ plot_results = '_figureresults'
 
 if __name__ == '__main__':
 
-    for cat in sn_cats:
+    for cat in ['IIP', 'IIn']:
 
         name = raw + cat + "/"
 
@@ -84,12 +81,11 @@ if __name__ == '__main__':
 
         for llh_time in time_pdfs:
 
-            time_key = str(llh_time["post_window"] + llh_time["pre_window"])
-
-            pdf_time = float(time_key) if llh_time['pre_window'] == 0 else -float(time_key)
+            pdf_time = llh_time['decay_time'] / 364.25
             pdf_name = pdf_names(pdf_type, pdf_time)
-            cat_path = sn_catalogue_name(cat, pdf_name=pdf_name)
+            cat_path = updated_sn_catalogue_name(cat)  # , pdf_name=pdf_name)
             logging.debug('catalogue path: ' + str(cat_path))
+
             catalogue = np.load(cat_path)
 
             logging.debug('catalogue dtype: ' + str(catalogue.dtype))
@@ -97,6 +93,10 @@ if __name__ == '__main__':
             closest_src = np.sort(catalogue, order="distance_mpc")[0]
 
             logging.debug(f'time_pdf is {llh_time}')
+
+            time_key = str(llh_time["post_window"] + llh_time["pre_window"]) \
+                if pdf_type == 'box' \
+                else str(llh_time['decay_time'])
 
             time_name = name + time_key + "/"
 
@@ -121,21 +121,14 @@ if __name__ == '__main__':
 
                 length = float(time_key)
 
-                scale = 0.8 * (flux_to_k(reference_sensitivity(
+                scale = 0.025 * (flux_to_k(reference_sensitivity(
                     np.sin(closest_src["dec_rad"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * 200.) / length
 
-                if ('IIp' in cat) or ('IIP' in cat):
-                    scale *= 0.3
-                    if float(time_key) == 1000:
-                        scale *= 0.8
-                        if gamma == 2.5:
-                            scale *= 1/9
-
-                if 'Ibc' in cat:
-                    scale *= 0.3
-                    if float(time_key) == 20:
-                        scale *= 0.5
+                if (gamma == 2.5) and (cat == 'IIn'):
+                    scale *= 1.8
+                if cat == 'IIn':
+                    scale *= 5
 
                 injection_energy = dict(llh_energy)
                 injection_energy["gamma"] = gamma
@@ -161,13 +154,11 @@ if __name__ == '__main__':
                 # !!! number of total trial is ntrials * n_jobs !!!
 
                 job_id = None
-                # job_id = analyse(
-                #     mh_dict,
-                #     cluster=True if cluster else False,
-                #     n_cpu=1 if cluster else 32,
-                #     n_jobs=cluster,
-                #     h_cpu='01:59:59'
-                # )
+                # job_id = analyse(mh_dict,
+                #                  cluster=True if cluster else False,
+                #                  n_cpu=1 if cluster else 32,
+                #                  n_jobs=cluster,
+                #                  h_cpu='00:59:59')
                 job_ids.append(job_id)
 
                 time_res[gamma] = mh_dict
@@ -181,7 +172,6 @@ if __name__ == '__main__':
         logging.info(f'waiting for jobs {job_ids}')
         wait_for_cluster(job_ids)
 
-    # stacked_sens = {}
     stacked_sens_flux = {}
 
     for b, (cat_name, cat_res) in enumerate(full_res.items()):
@@ -209,16 +199,17 @@ if __name__ == '__main__':
                 rh = ResultsHandler(rh_dict)
 
                 inj = rh_dict["inj_dict"]["injection_sig_time_pdf"]
-                injection_length = inj["pre_window"] + inj["post_window"]
+                injection_length = inj["decay_length"]
 
                 inj_time = injection_length * 60 * 60 * 24
 
                 # Convert IceCube numbers to astrophysical quantities
+
                 astro_sens, astro_disc = rh.astro_values(
-                    rh_dict["inj_dict"]["injection_energy_pdf"]
-                )
+                    rh_dict["inj_dict"]["injection_energy_pdf"])
 
                 key = "Energy Flux (GeV cm^{-2} s^{-1})"
+
                 e_key = "Mean Luminosity (erg/s)"
 
                 sens_livetime.append(astro_sens[key] * inj_time)
@@ -290,12 +281,12 @@ if __name__ == '__main__':
                             ["sens", "disc"][j] + "_" + cat_name + ".pdf")
                 plt.close()
 
-    # ========================      save calculated sensitivities    ======================== #
+    # ================================       save sensitivities        ============================== #
 
     with open(limit_sens(mh_name, pdf_type), 'wb') as f:
         pickle.dump(stacked_sens_flux, f)
 
-    # ========================       make final plots       =============================== #
+    # =================================        make final plots       =============================== #
 
     for gamma in gammas:
 
@@ -304,7 +295,7 @@ if __name__ == '__main__':
         for cat_name, cat_dict in stacked_sens_flux.items():
 
             x_raw = [float(key) for key in cat_dict.keys()]
-            x = np.array(x_raw)[np.argsort(x_raw)]
+            x = np.array(x_raw)[np.argsort(x_raw)] / 364.25
 
             y = [stacked_sens_flux[cat_name][key][gamma][0] for key in cat_dict.keys()]
             y = np.array(y)[np.argsort(x_raw)]
@@ -329,13 +320,11 @@ if __name__ == '__main__':
 
         stacked_sens = {
             cat_name: np.array(
-                [(stacked_sens_flux[cat_name][time_key][gamma][2], time_key)
+                [(stacked_sens_flux[cat_name][time_key][gamma][2], float(time_key) / 364.25)
                  for time_key in stacked_sens_flux[cat_name]], dtype='<f8'
             )
-            for cat_name in sn_cats
+            for cat_name in stacked_sens_flux
         }
-
-        # ------------------------       limits      ------------------------- #
 
         fig, ax = plt.subplots()
 
@@ -350,7 +339,7 @@ if __name__ == '__main__':
             ax.plot(plot_arr[:,1], plot_arr[:,0] - yerr, marker='v', color=patch.lines[0].get_c(),
                     label=cat_name, ls='')
 
-            pval_mask = p_vals[pdf_type][cat_name]['pval'] >= 0.5
+            pval_mask = p_vals[pdf_type][cat_name if not 'P' in cat_name else 'IIp']['pval'] >= 0.5
 
             if plot_results == '_figureresults':
                 res = get_figure_limits(cat_name, pdf_type)
@@ -375,7 +364,7 @@ if __name__ == '__main__':
                            ls='--', color=patch.lines[0].get_c(), label=cat_name + ' previous limit')
 
         ax.set_ylabel('$E^{\\nu}_{tot}$ [erg]')
-        ax.set_xlabel('Box function $\Delta T$ [d]')
+        ax.set_xlabel('t$_{\mathrm{decay}}$  [y]')
         ax.set_xscale('log')
         ax.set_yscale('log')
         ax.legend()
@@ -384,55 +373,7 @@ if __name__ == '__main__':
         plt.title(f'Stacked sensitivity for $\gamma = {gamma}$')
         plt.tight_layout()
 
-        fname = plot_output_dir(raw + f'stacked_sensitivity_gamma{gamma}_{mh_name}{plot_results}.pdf')
-        logging.debug(f'saving figure under {fname}')
-
-        plt.savefig(fname)
-        plt.close()
-
-        # ------------------------       ratios      ------------------------- #
-
-        fig, ax = plt.subplots()
-
-        for cat_name in stacked_sens:
-
-            res_stasik = get_figure_limits(cat_name, pdf_type)
-            plot_arr = np.array(stacked_sens[cat_name], dtype='<f8')
-
-            plot_arr[:, 0][np.argsort(plot_arr[:, 1])] /= res_stasik['E'][np.argsort(res_stasik['t'])]
-
-            logging.debug(f'plot array: \n {plot_arr}')
-
-            # yerr = plot_arr[:, 0] * 0.1
-            pval_mask = p_vals[pdf_type][cat_name]['pval'] >= 0.5
-            sens = plot_arr[pval_mask]
-            no_sens = plot_arr[np.invert(pval_mask)]
-
-            for arr, marker, label in zip(
-                [sens, no_sens],
-                ['d', 'x'],
-                ['sensitivity', 'limit']
-            ):
-                ax.plot(arr[:, 1], arr[:, 0], marker=marker, color=get_sn_color(cat_name),
-                        label=f'{cat_name} {label}', ls='')
-
-        ax.axhline(1, ls='--', color='k', label=f'ratio=1')
-
-        ax.set_ylabel('$E^{\\nu}_{tot, \, Stasik \, reproduced} / E^{\\nu}_{tot, \, Stasik \, original}$')
-        ax.set_xlabel('Box function $\Delta T$ [d]')
-        ax.set_xscale('log')
-        ax.legend()
-
-        plt.grid()
-        plt.title(f'Stacked sensitivity ratio for $\gamma = {gamma}$\n '
-                  f'\"Stasik reproduced with Flaresatck / Stasik original\"')
-        plt.tight_layout()
-
-        fname = plot_output_dir(raw + f'stacked_sensitivity_ratio_gamma{gamma}_{mh_name}.pdf')
-        logging.debug(f'saving figure under {fname}')
-
-        plt.savefig(fname)
-        plt.close()
+        plt.savefig(plot_output_dir(raw + f'stacked_sensitivity_gamma{gamma}_{mh_name}{plot_results}.pdf'))
 
     end = time.time()
 

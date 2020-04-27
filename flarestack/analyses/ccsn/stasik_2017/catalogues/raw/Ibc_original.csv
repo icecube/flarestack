@@ -1,0 +1,99 @@
+catalogue,name,alias,discovery,ra,dec,lum dist [Mpc],redshift,type ref,weight,reference(s)
+boxPre20,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,MASTER OT J120451.50+265946.6,,56598,"181,215","26,996",8.38,"0,0029",,,ATel 6634; Gress et al. (2014)
+,,,,,,,,x,,ATel 6640; Rerreran et al. (2014)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,SN2012fh,,56218,"160,892","24,891","8,58","0,0029",,,CBET 3263; Takaki et al. (2012)
+,,,,,,,,x,,Rochester Astronomy SN List 2013
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,SN2008dv,,54648,"54,464","72,573","4,2","0,0084",x,,"Lennarz, Altmann, & Wiebusch (2012)"
+,PTF11eon,SN2011dh,55713,"202,521","47,169","8,40","0,0026",,,CBET 2736; Griga et al. (2011)
+,,,,,,,,IIb,,Arcavi et al. (2011)
+,,,,,,,,,,Vinkó et al. (2012)
+,,,,,,,,,,Yaron & Gal-Yam (2012)
+,SN2013df,,56450,"186,622","31,227","10,58","0,0034",IIb,,Van Dyk et al. (2014)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,CBET 3557; Ciabattari et al. (2013)
+,SN2011jm,,55919,"193,713","2,654",14,"0,0041",x,,CBET 2962 ; Foley & Fong (2011)
+,,,,,,,,,,Rochester Astronomy SN List 2013
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,SN2014C,,56662,"339,273","34,409","12,07","0,0037",,,CBET 3777; Kim et al. (2014)
+,,,,,,,,x,,Rochester Astronomy SN List 2013
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,x,,Tinyanont et al. (2016)
+,iPTF15afv,SN2014C,56777,"339,273","34,409",16,"0,0037",,,
+,SN2010br,,55296,"180,796","44,529",13,"0,0033",x,,"Lennarz, Altmann, & Wiebusch (2012)"
+,iPTF13bvn,,56460,"225,001","1,881","19,9","0,0055",,,ATel 5137; Cao et al. (2013)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,SN2012cw,,56092,"153,45","3,434","19,92","0,0055",x,,Rochester Astronomy SN List 2013
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,CBET 3148; Wang et al. (2012)
+,SN2013ge,,56604,"158,702","21,662","19,34","0,0054",x,,Drout et al. (2016)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,Rochester Astronomy SN List 2013
+,,,,,,,,,,CBET 3701; Nakano et al. (2013)
+,PTF12os,,55939,"224,996","1,890","23,95","0,0055",x,,CBET 2993; Borsato et al. (2012)
+,,,,,,,,,,Open Supernova Catalog; Guillochon et al. (2017)
+,,,,,,,,,,
+,,,,,,,,,,
+box100,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,MASTER OT J120451.50+265946.6,,,,,,,,,
+,SN2012fh,,,,,,,,,
+,SN2008dv,,,,,,,,,
+,PTF11eon,,,,,,,,,
+,SN2008ax,,54528,"187,670","41,637","5,1","0,0029",x,,Pastorello et al. (2008)
+,,,,,,,,,,"CBET 1280; Mostardi, Li, & Filippenko (2008)"
+,,,,,,,,,,Yaron & Gal-Yam (2012)
+,SN2013df,,,,,,,,,
+,SN2011jm,,,,,,,,,
+,SN2014C,,,,,,,,,
+,SN2010br,,,,,,,,,
+,iPTF15afv,SN2014C,,,,,,,,
+,iPTF13bvn,,,,,,,,,
+,SN2012cw,,,,,,,,,
+,SN2013ge,,,,,,,,,
+,PTF12os,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+box300,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2012fh,,,,,,,,,
+,SN2008ax,,,,,,,,,
+,SN2008dv,,,,,,,,,
+,PTF11eon,,,,,,,,,
+,MASTER OT J120451.50+265946.6,,,,,,,,,
+,SN2013df,,,,,,,,,
+,SN2014C,,,,,,,,,
+,SN2011jm,,,,,,,,,
+,SN2010br,,,,,,,,,
+,iPTF15afv,SN2014C,,,,,,,,
+,iPTF13bvn,,,,,,,,,
+,SN2012cw,,,,,,,,,
+,SN2013ge,,,,,,,,,
+,PTF12os,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+box1000,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,SN2008dv,,,,,,,,,
+,SN2008ax,,,,,,,,,
+,SN2012fh,,,,,,,,,
+,PTF11eon,,,,,,,,,
+,SN2013df,,,,,,,,,
+,SN2011jm,,,,,,,,,
+,SN2010br,,,,,,,,,
+,SN2007gr,,54327,"40,867","37,346",10,"0,0027",,,CBET 1034; Madison & Li (2007)
+,,,,,,,,,,Silbermann et al. 1996
+,,,,,,,,x,,CBET 1036; Chornock et al. (2007)
+,,,,,,,,x,,Modjaz et al. (2016)
+,SN2014C,,,,,,,,,
+,MASTER OT J120451.50+265946.6,,,,,,,,,
+,SN2012cw,,,,,,,,,
+,PTF12os,,,,,,,,,
+,iPTF13bvn,,,,,,,,,
