@@ -59,7 +59,9 @@ def agn_subset_catalogue_north(agn_type, xray_cat, n_sources):
         parent_cat = np.sort(parent_cat, order="base_weight")[::-1]
         new_cat = parent_cat[:n_sources]
         print("Catalogue not found. Creating one at:", subset_path)
+        print (new_cat)
         np.save(subset_path, new_cat)
+        print ("Catalogue length is: ", len(subset_path))
     return subset_path
 
 
@@ -108,11 +110,40 @@ def agn_subset_catalogue_no_pole(agn_type, xray_cat, n_sources):
         np.save(subset_path, new_cat)
     return subset_path
 
+
+def agn_subset_catalogue_name_sindec_cut(agn_type, xray_cat, n_sources, sindec_cut):
+    print ("In agn_subset_catalogue_sindec_cut")
+    return agn_catalogue_name(
+        agn_type, xray_cat + "_" + str(n_sources) + "brightest_srcs_below   _sicdec_" + str(sindec_cut),
+        base_dir=subset_agn_dir
+    )
+
+def agn_subset_catalogue_sindec_cut(agn_type, xray_cat, n_sources, sindec_cut):
+    subset_path = agn_subset_catalogue_name_sindec_cut(agn_type, xray_cat, n_sources, sindec_cut)
+    if not os.path.isfile(subset_path):
+        parent_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
+        print ("Original catalogue (before north + pole + nrsrc selection) is: ", len(parent_cat))
+        print(parent_cat["dec_rad"][:10])
+        parent_cat = parent_cat[np.sin(parent_cat["dec_rad"])<sindec_cut]
+        print("Original catalogue after sindec cut is: ", len(parent_cat))
+        parent_cat = np.sort(parent_cat, order="base_weight")[::-1]
+        new_cat = parent_cat[:n_sources]
+        print("Catalogue not found. Creating one at:", subset_path)
+        np.save(subset_path, new_cat)
+    return subset_path
+
+
 complete_cats = [
     ("radioloud", "radioselected"),
-    ("radioloud", "irselected")
+    ("radioloud", "irselected"),
+    ("lowluminosity", "irselected")
 ]
 
+complete_cats_north = [
+    ("radioloud", "radioselected_north"),
+    ("radioloud", "irselected_north"),
+    ("lowluminosity", "irselected_north")
+]
 
 def create_random_src(min_distance=10, nr_sources=100):
     """Create nr_sources random sources in RA and DEC (in degree)
@@ -228,3 +259,18 @@ def plot_catalogue(src_ra, src_dec, src_weight, radians=False,
 #     with open(savepath, "r") as f:
 #         res_dict = Pickle.load(f)
 #     return res_dict
+
+def scale_factor_correction(nr_srcs, dataset='ps_10_year'):
+    if(dataset=="diffuse_8_year"):
+        a = 0.2714841300703504
+        b = -8.433793994990848
+    else:
+        a = 0.4275890891434705
+        b = -8.532466540532349
+    scale_factor = a*np.log10(nr_srcs)+b
+    scale_factor_final = np.power(10, scale_factor) / 1e-9
+    # if (nr_srcs>90):
+    #     scale_factor_final =  np.power(10, scale_factor) / 1e-9 / 10  # in the same units as sensitivity [GeV*cm-2*s-1] at 1GeV
+    # else:
+    #     scale_factor_final = np.power(10,scale_factor)/1e-9 # in the same units as sensitivity [GeV*cm-2*s-1] at 1GeV
+    return scale_factor_final

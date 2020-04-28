@@ -198,7 +198,12 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     x_axis.append(float(subdir))
 
                 plt.figure()
+                ax = plt.subplot(111)
                 plt.plot(x_axis, flux_uls, label="upper limit")
+
+                if self.mock_unblind:
+                    ax.text(0.2, 0.5, "MOCK DATA", color="grey", alpha=0.5, transform=ax.transAxes)
+
                 plt.yscale("log")
                 plt.savefig(self.plot_dir + "upper_limit_flux.pdf")
                 plt.close()
@@ -209,6 +214,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                 ax1.plot(x_axis, fluence_uls)
                 ax2.plot(x_axis, e_per_source_uls)
+
+                if self.mock_unblind:
+                    ax1.text(0.2, 0.5, "MOCK DATA", color="grey", alpha=0.5, transform=ax1.transAxes)
 
                 ax2.grid(True, which='both')
                 ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$ s$^{-1}$]")
@@ -264,7 +272,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 ts_array = np.array(ts_array)
 
                 self.sigma = plot_background_ts_distribution(
-                    ts_array, self.output_file, self.ts_type, self.ts)
+                    ts_array, self.output_file, self.ts_type, self.ts, self.mock_unblind)
 
             except (IOError, OSError):
                 logging.warning("No Background TS Distribution found")
