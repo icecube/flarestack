@@ -107,7 +107,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             # Quantify the TS value significance
             # print type(np.array([self.res_dict["TS"]]))
             self.ts = np.array([self.res_dict["TS"]])[0]
-            #self.ts_type = unblind_dict['ts_type']
+            self.ts_type = unblind_dict.get('ts_type', 'Standard')
             self.sigma = np.nan
 
             logging.info("Test Statistic of: {0}".format(self.ts))
