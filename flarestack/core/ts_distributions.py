@@ -285,7 +285,7 @@ def fit_background_ts(ts_array, ts_type):
                  bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
                  label=['TS > 0', "TS <= 0"],
-                 dennsity=True,
+                 density=True,
                  stacked=True)
 
         chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
