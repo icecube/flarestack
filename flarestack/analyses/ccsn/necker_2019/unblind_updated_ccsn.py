@@ -5,8 +5,8 @@ from flarestack.core.unblinding import create_unblinder
 from flarestack.utils.custom_dataset import custom_dataset
 
 
-name_root = "analyses/ccsn/stasik_2017/unblind_ccsn"
-bkg_ts_root = "analyses/ccsn/stasik_2017/calculate_sensitivity/fit_weights"
+name_root = "analyses/ccsn/necker_2019/unblind_ccsn"
+bkg_ts_root = "analyses/ccsn/necker_2019/calculate_sensitivity/fit_weights"
 
 llh_energy = {
     "energy_pdf_name": "power_law",
