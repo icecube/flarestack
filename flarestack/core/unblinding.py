@@ -107,6 +107,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             # Quantify the TS value significance
             # print type(np.array([self.res_dict["TS"]]))
             self.ts = np.array([self.res_dict["TS"]])[0]
+            #self.ts_type = unblind_dict['ts_type']
             self.sigma = np.nan
 
             logging.info("Test Statistic of: {0}".format(self.ts))
@@ -254,7 +255,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     logging.debug("Loading {0}".format(merged_pkl))
 
-                    with open(merged_pkl) as mp:
+                    with open(merged_pkl, 'rb') as mp:
 
                         merged_data = pickle.load(mp)
 
