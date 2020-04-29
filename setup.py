@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flarestack",
-    version="2.0.2",
+    version="2.1.0",
     author="Robert Stein",
     author_email="robert.stein@desy.de",
     description="Package for unbinned likelihood analysis of physics data",
