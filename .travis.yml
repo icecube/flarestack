@@ -6,19 +6,6 @@ matrix:
   - python: 3.6
   - python: 3.7
   - python: 3.8
-    dist: xenial
-    addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++
-        - gfortran
-        - libblas-dev
-        - liblapack-dev
-        - libatlas-base-dev
-        - libopenblas-base
-        - libopenblas-dev
 script:
   - coverage run --concurrency=multiprocessing -m unittest discover tests/
   - coverage combine
