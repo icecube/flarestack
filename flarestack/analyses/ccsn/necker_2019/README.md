@@ -6,6 +6,8 @@
 
 **Datasets**: ps_tracks (v002_p01)
 
+**Flaresatck Version** v2.1.0 (Titan)
+
 
 This analysis was originally performed by Alexander Stasik, using three CCSNe
 catalogues with multiple time PDFs. Both fixed weight analyses, as
