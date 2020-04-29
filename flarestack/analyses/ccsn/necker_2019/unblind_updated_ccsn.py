@@ -16,7 +16,6 @@ res_dict = dict()
 
 for cat in sn_cats:
 
-
     cat_path = updated_sn_catalogue_name(cat)
     catalogue = np.load(cat_path)
 
@@ -31,7 +30,6 @@ for cat in sn_cats:
 
             time = llh_time['decay_time'] if 'decay' in pdf_type else \
                 llh_time['pre_window'] + llh_time['post_window']
-
 
             unblind_llh = {
                 "llh_name": "standard",
