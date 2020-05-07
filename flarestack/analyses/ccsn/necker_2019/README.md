@@ -41,3 +41,15 @@ are made with `make_ratio_plots.py`. Note that before that, the analysis scripts
 
 All plots can be seen under 
 /path/to/scratch/flarestack_data/output/plots/analyses/ccsn/stasik2107/fit_weights/
+
+
+**Script Descriptions**
+
+* `box_sensitivity.py`, `decay_sensitivity.py`: calculate the sensitivity for the box PDF and the decay PDF
+* `build_catalogues_from_raw.py`: takes the original catalogue CSV files in `/catalogues` and produces the 
+the `.npy` catalogue files.
+* `calculate_sensitivity.py`: depricted analysis script
+* `ccsn_helpers.py`: helper functions
+* `make_ratio_plots.py`: produces plots of the sensitivity ratios of the results reproduced with _Flarestack_, 
+the original sensitivities and the ones produced with the corrected catalogue.
+* `unblind_updated_ccsn.py`: script to unblind the analysis.
