@@ -389,6 +389,8 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
     fig = plt.figure()
 
+    ax = plt.subplot(1, 1, 1)
+
     df, loc, scale, frac_over, t_err = fit_background_ts(ts_array, ts_type)
 
     frac_under = 1 - frac_over
