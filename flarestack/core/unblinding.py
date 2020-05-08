@@ -69,6 +69,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             unblind_dict["mock_unblind_bool"] = mock_unblind
             unblind_dict["inj_dict"] = {}
 
+
             if np.logical_and(not mock_unblind, not disable_warning):
                 self.check_unblind()
 
@@ -157,9 +158,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 for subdir in os.listdir(self.pickle_dir):
                     new_path = self.unblind_dict["background_ts"] + subdir + "/"
 
-                    with open(analysis_pickle_path(name=new_path), "r") as f:
+                    with open(analysis_pickle_path(name=new_path), "rb") as f:
                         mh_dict = pickle.load(f)
-                        e_pdf_dict = mh_dict["inj_dict"]["injection_sig_energy_pdf"]
+                        e_pdf_dict = mh_dict["inj_dict"]["injection_energy_pdf"]
 
                     rh = ResultsHandler(self.unblind_dict)
 
