@@ -2,7 +2,7 @@ import logging
 import sys
 import os
 import numpy as np
-from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
+from flarestack.core.minimisation import MinimisationHandler, read_mh_dict, FlareMinimisationHandler
 from flarestack.core.injector import MockUnblindedInjector, \
     TrueUnblindedInjector
 from flarestack.core.results import ResultsHandler
@@ -126,7 +126,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                 self.calculate_upper_limits()
 
-                if self.flare:
+                if isinstance(self, FlareMinimisationHandler):
                     self.neutrino_lightcurve()
                 else:
                     self.scan_likelihood()
