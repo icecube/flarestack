@@ -195,10 +195,9 @@ def limit_output_path(name):
     return path
 
 
-def sim_dataset_dir_path(sample_name, season_name, flux, e_pdf_dict):
-    return sim_dataset_dir + sample_name + "/" + \
-           season_name + '/' + str(deterministic_hash(e_pdf_dict)) + \
-           "/" + str(flux)
+def sim_dataset_dir_path(sample_name, season_name, bkg_flux_model):
+    return f"{sim_dataset_dir}{sample_name}/" \
+           f"{season_name}/{bkg_flux_model.unique_name()}/"
 
 def get_base_sob_plot_dir(season):
     return dataset_plot_dir + "Signal_over_background/" + \

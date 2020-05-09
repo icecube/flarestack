@@ -35,8 +35,8 @@ class SimDataset(Dataset):
     def add_sim_season(self, name, sim_season_f):
         self.sim_seasons[name] = sim_season_f
 
-    def set_sim_params(self, name, bkg_time_pdf_dict, bkg_flux_norm,
-                       bkg_e_pdf_dict, **kwargs):
+    def set_sim_params(self, name, bkg_flux_model,
+                       **kwargs):
 
         if name not in self.sim_seasons.keys():
             raise KeyError("SimSeasonClass {0} not found. The following "
@@ -45,35 +45,31 @@ class SimDataset(Dataset):
                            "function.".format(name, self.sim_seasons.keys()))
 
 
-        self.seasons[name] = self.sim_seasons[name](
-            bkg_time_pdf_dict, bkg_flux_norm, bkg_e_pdf_dict, **kwargs)
+        self.seasons[name] = self.sim_seasons[name](bkg_flux_model, **kwargs)
 
 
 class SimSeason(SeasonWithoutMC):
 
     def __init__(self, season_name, sample_name, pseudo_mc_path,
                  event_dtype, effective_area_f, load_angular_resolution,
-                 bkg_t_pdf_dict, bkg_flux_norm, bkg_e_pdf_dict,
+                 bkg_flux_model,
                  energy_proxy_map, **kwargs):
 
-        self.bkg_t_pdf_dict = bkg_t_pdf_dict
         self.event_dtype = event_dtype
 
-        self.bkg_flux_norm = bkg_flux_norm
-        self.bkg_e_pdf_dict = bkg_e_pdf_dict
+        self.bkg_flux_model = bkg_flux_model
 
         self.load_angular_resolution = load_angular_resolution
         self.angular_res_f = self.load_angular_resolution()
 
         self.base_dataset_path = sim_dataset_dir_path(
-            sample_name, season_name, bkg_flux_norm, bkg_e_pdf_dict)
+            sample_name, season_name, bkg_flux_model)
 
         exp_path = self.dataset_path()
 
         SeasonWithoutMC.__init__(
             self, season_name, sample_name, exp_path, pseudo_mc_path, **kwargs
         )
-        self.bkg_energy_pdf = EnergyPDF.create(bkg_e_pdf_dict)
 
         self.energy_proxy_map = energy_proxy_map
 
@@ -85,7 +81,7 @@ class SimSeason(SeasonWithoutMC):
         return self.energy_proxy_map
 
     def build_time_pdf_dict(self):
-        return self.bkg_t_pdf_dict
+        return self.bkg_flux_model.build_time_pdf_dict()
 
     def check_sim(self, resimulate=False, **kwargs):
 
@@ -124,7 +120,8 @@ class SimSeason(SeasonWithoutMC):
         return
 
     def get_time_integrated_flux(self):
+
         return k_to_flux(
-            self.bkg_flux_norm * self.get_time_pdf().effective_injection_time())
+            self.bkg_flux_model.get_norm() * self.get_time_pdf().effective_injection_time())
 
 

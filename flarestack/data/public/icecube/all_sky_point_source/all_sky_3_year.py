@@ -18,6 +18,8 @@ src_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 zip_file = src_dir + "raw_data/3year-data-release.zip"
 
+proxy_map_file = src_dir + "raw_data/Fig_S4_tabulated.txt"
+
 output_base_dir = public_dataset_dir + "all_sky_3_year/"
 extract_dir = output_base_dir + "extracted_data"
 data_dir = extract_dir + "/3year-data-release/"
@@ -222,7 +224,6 @@ if not os.path.isdir(data_dir):
         zip_ref.extractall(extract_dir)
 
     run_all()
-
 
 if __name__ == "__main__":
     run_all()
