@@ -280,8 +280,6 @@ class SeasonWithoutMC(Season):
     def __init__(self, season_name, sample_name, exp_path, pseudo_mc_path,
                  **kwargs):
 
-
-
         Season.__init__(self, season_name, sample_name, exp_path, **kwargs)
         self.pseudo_mc_path = pseudo_mc_path
         self.all_paths.append(self.pseudo_mc_path)
