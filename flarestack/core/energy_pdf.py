@@ -156,8 +156,8 @@ class EnergyPDF(object):
         diff_sum = []
 
         for i, log_e in enumerate(e_range[:-1]):
-            e0 = np.exp(log_e)
-            e1 = np.exp(e_range[i + 1])
+            e0 = 10.**(log_e)
+            e1 = 10.**(e_range[i + 1])
             diff_sum.append(0.5 * (e1 - e0) * (f(e0) + f(e1)))
 
         return diff_sum, e_range
