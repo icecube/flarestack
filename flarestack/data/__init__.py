@@ -3,6 +3,7 @@
 import os
 import numpy as np
 import copy
+import logging
 from numpy.lib.recfunctions import append_fields, drop_fields
 from flarestack.core.injector import MCInjector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
@@ -33,9 +34,9 @@ class DatasetHolder:
         if self.current is not None:
             return self.datasets[self.current]
         else:
-            print("Warning: no file listed as current.")
+            logging.warning("Warning: no file listed as current.")
             key = sorted(list(self.datasets.keys()))
-            print("Using key {0} out of {1}".format(
+            logging.warning("Using key {0} out of {1}".format(
                 key, self.datasets.keys())
             )
             return self.datasets[key]
@@ -82,6 +83,8 @@ class Dataset:
 
                 for season in cd.values():
                     season.set_subselection_fraction(subselection_fraction)
+
+
             return cd
 
     def get_single_season(self, name):
