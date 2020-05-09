@@ -95,6 +95,7 @@ class PotemkinSeason(SimSeason):
 
     def simulate_dec_range(self, fluence, lower_sin_dec, upper_sin_dec):
         mean_sin_dec = 0.5 * (lower_sin_dec + upper_sin_dec)
+
         solid_angle = 2 * np.pi * (upper_sin_dec - lower_sin_dec)
         sim_fluence = fluence * solid_angle # GeV^-1 cm^-2
 
@@ -131,6 +132,7 @@ class PotemkinSeason(SimSeason):
             EnergyPDF.piecewise_integrate(
             source_eff_area, lower, upper
         )
+
         fluence_ints = fluence_ints
 
         fluence_ints = np.array(fluence_ints)
@@ -146,7 +148,7 @@ class PotemkinSeason(SimSeason):
         sim_true_e = interp1d(fluence_cumulative, log_e_range)
 
         true_e_vals = np.array(
-            [10**sim_true_e(random.random()) for _ in range(n_sim)])
+            [10.**sim_true_e(random.random()) for _ in range(n_sim)])
 
         new_events["logE"] = self.energy_proxy_map(true_e_vals)
 
@@ -156,6 +158,8 @@ class PotemkinSeason(SimSeason):
         return new_events
 
 potemkin_dataset = SimDataset()
+
+effective_area_f = lambda x, y: 0.002
 
 for (name, season) in icecube_ps_3_year.get_seasons().items():
 
@@ -182,6 +186,7 @@ for (name, season) in icecube_ps_3_year.get_seasons().items():
             sample_name="SimCube_{0}".format(sim_name),
             pseudo_mc_path=season.pseudo_mc_path,
             effective_area_f=season.load_effective_area(),
+            # effective_area_f=effective_area_f,
             event_dtype=season.get_background_dtype(),
             load_angular_resolution=season.load_angular_resolution,
             bkg_flux_model=bkg_flux_model,

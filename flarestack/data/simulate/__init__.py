@@ -24,10 +24,14 @@ class SimDataset(Dataset):
         self.init_args = dict()
 
     def add_season(self, season):
-        raise Exception("SimDatasets are not compatible add_season function. "
-                        "You must add SimSeason classes using add_sim_season, "
-                        "and then set the simulation period for each season "
-                        "using set_sim_period. ")
+
+        if np.logical_and(season in self.sim_seasons.keys(),
+                          season not in self.seasons.keys()):
+            raise Exception("SimDatasets are not compatible add_season function. "
+                            "You must add SimSeason classes using add_sim_season, "
+                            "and then set the simulation period for each season "
+                            "using set_sim_period. ")
+        Dataset.add_season(self, season)
 
     def add_subseason(self, season):
         self.add_season(season)
@@ -44,9 +48,8 @@ class SimDataset(Dataset):
                            "classes must be added with the add_sim_season "
                            "function.".format(name, self.sim_seasons.keys()))
 
-
         self.seasons[name] = self.sim_seasons[name](bkg_flux_model, **kwargs)
-
+        self.add_season(self.sim_seasons[name](bkg_flux_model, **kwargs))
 
 class SimSeason(SeasonWithoutMC):
 
