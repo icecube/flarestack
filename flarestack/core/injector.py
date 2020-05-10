@@ -462,7 +462,7 @@ class LowMemoryInjector(MCInjector):
 
             del injection_band_mask
 
-            logging.info("Saving to {0}".format(path))
+            logging.info(f"Saving to {path}")
 
     def load_band_mask(self, index):
         path = self.injection_band_paths[index]
