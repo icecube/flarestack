@@ -229,11 +229,12 @@ class TimePDF(object):
         raise NotImplementedError
 
     def get_livetime(self):
+        if self.livetime is not None:
+            return self.livetime
         raise NotImplementedError
 
     def get_mjd_conversion(self):
-        raise NotImplementedError
-
+        return self.mjd_to_livetime, self.livetime_to_mjd
 
 @TimePDF.register_subclass('steady')
 class Steady(TimePDF):
@@ -352,6 +353,16 @@ class Box(TimePDF):
             self.pre_window -= self.offset
             self.post_window += self.offset
 
+        try:
+            if self.t_dict["livetime"] is True:
+                logging.debug("Using time PDF as a detector livetime PDF.")
+                self.mjd_to_livetime = lambda x: x - self.sig_t0([])
+                self.livetime_to_mjd = lambda x: x + self.sig_t0([])
+                self.livetime = self.t_dict["post_window"] + self.t_dict["pre_window"]
+                # print(self.t1, self.t0, self.livetime, self.livetime_to_mjd(7.), self.pre_window, self.sig_t0([]))
+        except KeyError:
+            pass
+
     def sig_t0(self, source):
         """Calculates the starting time for the window, equal to the
         source reference time in MJD minus the length of the pre-reference-time
@@ -434,7 +445,6 @@ class Box(TimePDF):
         t0 = self.mjd_to_livetime(self.sig_t0(source))
         t1 = self.mjd_to_livetime(self.sig_t1(source))
         time = (t1 - t0) * 60 * 60 * 24
-
         return max(time, 0.)
 
     def raw_injection_time(self, source):

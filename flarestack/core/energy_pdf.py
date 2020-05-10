@@ -104,25 +104,37 @@ class EnergyPDF(object):
 
     def integrate_over_E(self, f, lower=None, upper=None):
         """Uses Newton's method to integrate function f over the energy
-        range. By default, uses 100GeV to 10PeV, unless otherwise specified.
+        range. By default, uses 100 GeV to 10 PeV, unless otherwise specified.
         Uses 1000 logarithmically-spaced bins to calculate integral.
 
         :param f: Function to be integrated
+        :param lower: Lower bound for integration
+        :param upper: Upper bound for integration
         :return: Integral of function
         """
 
-        diff_sum, _ = self.piecewise_integrate_over_energy(f, lower, upper)
+        if lower is None:
+            lower = self.integral_e_min
 
+        if upper is None:
+            upper = self.integral_e_max
+
+        return self.integrate(f, lower, upper)
+
+    @staticmethod
+    def integrate(f, lower, upper):
+        diff_sum, _ = EnergyPDF.piecewise_integrate(f, lower, upper)
         int_sum = np.sum(diff_sum)
-
         return int_sum
 
     def piecewise_integrate_over_energy(self, f, lower=None, upper=None):
         """Uses Newton's method to integrate function f over the energy
-        range. By default, uses 100GeV to 10PeV, unless otherwise specified.
+        range. By default, uses 100 GeV to 10 PeV, unless otherwise specified.
         Uses 1000 logarithmically-spaced bins to calculate integral.
 
         :param f: Function to be integrated
+        :param lower: Lower bound for integration
+        :param upper: Upper bound for integration
         :return: Integral of function bins
         """
 
@@ -132,14 +144,20 @@ class EnergyPDF(object):
         if upper is None:
             upper = self.integral_e_max
 
+        diff_sum, e_range = self.piecewise_integrate(f, lower, upper)
+
+        return diff_sum, e_range
+
+    @staticmethod
+    def piecewise_integrate(f, lower, upper):
         nsteps = int(1.e3)
 
         e_range = np.linspace(np.log10(lower), np.log10(upper), nsteps + 1)
         diff_sum = []
 
         for i, log_e in enumerate(e_range[:-1]):
-            e0 = np.exp(log_e)
-            e1 = np.exp(e_range[i + 1])
+            e0 = 10.**(log_e)
+            e1 = 10.**(e_range[i + 1])
             diff_sum.append(0.5 * (e1 - e0) * (f(e0) + f(e1)))
 
         return diff_sum, e_range
@@ -311,7 +329,7 @@ class PowerLaw(EnergyPDF):
 
 
     def return_energy_parameters(self):
-        default = [2.]
+        default = [2.0]
         bounds = [(gamma_range[0], gamma_range[1])]
         name = ["gamma"]
         return default, bounds, name

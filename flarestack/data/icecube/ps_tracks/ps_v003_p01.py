@@ -14,7 +14,6 @@ sample_name = "ps_tracks_v003_p01"
 
 # Add in old seasons before full detector operation, and IC86_1
 
-
 def old_ic_season(season):
     return IceCubeSeason(
         season_name=season,
@@ -26,12 +25,10 @@ def old_ic_season(season):
         log_e_bins=get_ps_binning(season)[1]
     )
 
-
 old_seasons = ["IC40", "IC59", "IC79", "IC86_2011"]
 
 for season in old_seasons:
     ps_v003_p01.add_season(old_ic_season(season))
-
 
 # Add in combined IC86 2012-2017 seasons
 

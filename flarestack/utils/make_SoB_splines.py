@@ -401,6 +401,12 @@ def make_background_spline(season):
     plt.ylabel(r"$P_{bkg}$ (spatial)")
     plt.xlabel(r"$\sin(\delta)$")
     savepath = get_base_sob_plot_dir(season)
+
+    try:
+        os.makedirs(os.path.dirname(savepath))
+    except OSError:
+        pass
+
     plt.savefig(savepath + "bkg_spatial.pdf")
     plt.close()
 

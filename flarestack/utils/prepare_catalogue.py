@@ -8,6 +8,8 @@ arbitrary number of sources.
 import numpy as np
 import os
 import logging
+import random
+import zlib
 from flarestack.shared import catalogue_dir
 
 cat_dtype = [
@@ -21,10 +23,11 @@ cat_dtype = [
 ]
 
 
-def single_source(sindec):
+def single_source(sindec, ra_rad=np.pi):
     """Produces a catalogue with a single source_path.
 
     :param sindec: Sin(Declination) of Source
+    :param ra: Right Ascension in radians
     :return: Source Array
     """
     sources = np.empty(
@@ -32,7 +35,7 @@ def single_source(sindec):
 
     ref_time = 55800.4164699
 
-    sources['ra_rad'] = np.array([np.deg2rad(180.)])
+    sources['ra_rad'] = np.array([ra_rad])
     sources['dec_rad'] = np.arcsin(sindec)
     sources['base_weight'] = np.array([1.])
     sources['injection_weight_modifier'] = np.array([1.])
@@ -48,6 +51,9 @@ def single_source(sindec):
 def build_ps_cat_name(sindec):
     return catalogue_dir + "single_source/sindec_" + '{0:.2f}'.format(sindec)\
            + ".npy"
+
+def build_ps_stack_cat_name(sindecs):
+    return f"{catalogue_dir}multi_source/{zlib.adler32(str(list(sindecs)).encode())}.npy"
 
 def make_single_source(sindec):
     cat = single_source(sindec)
@@ -65,6 +71,37 @@ def ps_catalogue_name(sindec):
     
     if not os.path.isfile(name):
         make_single_source(sindec)
+
+    return name
+
+def make_stacked_source(sindecs):
+    cat = []
+
+    for sindec in sindecs:
+
+        ra_rad = random.random() ** 2 * np.pi
+
+        cat.append(single_source(sindec, ra_rad=ra_rad))
+
+    cat = np.array(cat, dtype=cat[0].dtype).T[0]
+
+    save_path = build_ps_stack_cat_name(sindecs)
+
+    try:
+        os.makedirs(os.path.dirname(save_path))
+    except FileExistsError:
+        pass
+
+    logging.info("Saving to {0}".format(save_path))
+    np.save(save_path, cat)
+
+
+def ps_stack_catalogue_name(*args):
+
+    name = build_ps_stack_cat_name(args)
+
+    if not os.path.isfile(name):
+        make_stacked_source(args)
 
     return name
 
