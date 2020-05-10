@@ -329,7 +329,7 @@ class PowerLaw(EnergyPDF):
 
 
     def return_energy_parameters(self):
-        default = [2.]
+        default = [2.0]
         bounds = [(gamma_range[0], gamma_range[1])]
         name = ["gamma"]
         return default, bounds, name
