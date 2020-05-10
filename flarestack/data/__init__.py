@@ -56,9 +56,9 @@ class Dataset:
     def get_seasons(self, *args, **kwargs):
         season_names = list(args)
         if len(season_names) == 0:
-            return copy.copy(self)
+            return self.make_copy()
         else:
-            cd = copy.copy(self)
+            cd = self.make_copy()
             cd.seasons = dict()
             cd.subseasons = dict()
             for name in season_names:
@@ -111,6 +111,8 @@ class Dataset:
     def __len__(self):
         return self.seasons.__len__()
 
+    def make_copy(self):
+        return copy.copy(self)
 
 
 class Season:

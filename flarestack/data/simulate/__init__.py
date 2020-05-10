@@ -1,17 +1,11 @@
 from flarestack.data import SeasonWithoutMC, Dataset
 import os
 import numpy as np
+import copy
+import logging
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.shared import sim_dataset_dir_path, k_to_flux
-
-
-# def generate_sim_season_class(season_class, **kwargs):
-#
-#     if not issubclass(season_class, flarestack.data.SeasonWithoutMC):
-#         raise Exception("{0} is not a subclass of SeasonWithoutMC. Cannot "
-#                         "simulate data without effective areas!")
-#
-#     base_args = kwargs
+from flarestack.data.public.icecube import PublicICSeason
 
 sim_dir = os.path.abspath(os.path.dirname(__file__))
 raw_sim_data_dir = sim_dir + "/raw_data/"
@@ -48,13 +42,20 @@ class SimDataset(Dataset):
                            "classes must be added with the add_sim_season "
                            "function.".format(name, self.sim_seasons.keys()))
 
-        self.seasons[name] = self.sim_seasons[name](bkg_flux_model, **kwargs)
-        self.add_season(self.sim_seasons[name](bkg_flux_model, **kwargs))
+
+        ss = self.sim_seasons[name](bkg_flux_model, **kwargs)
+        # self.seasons[name] = ss.make_season()
+        self.add_season(ss)
+
+    def make_copy(self):
+        cd = copy.copy(self)
+        cd.sim_seasons = dict()
+        return cd
 
 class SimSeason(SeasonWithoutMC):
 
     def __init__(self, season_name, sample_name, pseudo_mc_path,
-                 event_dtype, effective_area_f, load_angular_resolution,
+                 event_dtype, load_effective_area, load_angular_resolution,
                  bkg_flux_model,
                  energy_proxy_map, **kwargs):
 
@@ -63,7 +64,7 @@ class SimSeason(SeasonWithoutMC):
         self.bkg_flux_model = bkg_flux_model
 
         self.load_angular_resolution = load_angular_resolution
-        self.angular_res_f = self.load_angular_resolution()
+        self.load_effective_area = load_effective_area
 
         self.base_dataset_path = sim_dataset_dir_path(
             sample_name, season_name, bkg_flux_model)
@@ -76,8 +77,6 @@ class SimSeason(SeasonWithoutMC):
 
         self.energy_proxy_map = energy_proxy_map
 
-        self.effective_area_f = effective_area_f
-
         self.check_sim(**kwargs)
 
     def load_energy_proxy_mapping(self):
@@ -89,7 +88,7 @@ class SimSeason(SeasonWithoutMC):
     def check_sim(self, resimulate=False, **kwargs):
 
         if np.logical_and(not resimulate, os.path.isfile(self.exp_path)):
-            print("Found existing simulation at {0}".format(self.exp_path))
+            logging.info("Found existing simulation at {0}".format(self.exp_path))
         else:
             self.simulate()
 
@@ -126,5 +125,9 @@ class SimSeason(SeasonWithoutMC):
 
         return k_to_flux(
             self.bkg_flux_model.get_norm() * self.get_time_pdf().effective_injection_time())
+
+    def make_season(self):
+
+        return NotImplementedError
 
 

@@ -83,7 +83,7 @@ bkg_e_pdf_dict = {
 class SimCubeSeason(SimSeason):
 
     def __init__(self, season_name, sample_name, pseudo_mc_path,
-                 event_dtype, effective_area_f, load_angular_resolution,
+                 event_dtype, load_effective_area, load_angular_resolution,
                  bkg_time_pdf_dict, bkg_flux_norm, bkg_e_pdf_dict,
                  energy_proxy_map, sin_dec_bins, log_e_bins, **kwargs):
 
@@ -92,7 +92,7 @@ class SimCubeSeason(SimSeason):
 
         SimSeason.__init__(
             self, season_name, sample_name, pseudo_mc_path,
-            event_dtype, effective_area_f,
+            event_dtype, load_effective_area,
             load_angular_resolution, bkg_time_pdf_dict, bkg_flux_norm,
             bkg_e_pdf_dict, energy_proxy_map, **kwargs
         )
@@ -204,7 +204,7 @@ for (name, season) in icecube_ps_3_year.get_seasons().items():
             season_name=name,
             sample_name="SimCube_{0}".format(sim_name),
             pseudo_mc_path=season.pseudo_mc_path,
-            effective_area_f=season.load_effective_area(),
+            load_effective_area=season.load_effective_area(),
             event_dtype=season.get_background_dtype(),
             load_angular_resolution=season.load_angular_resolution,
             bkg_time_pdf_dict=bkg_time_pdf_dict,

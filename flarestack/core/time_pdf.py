@@ -229,11 +229,12 @@ class TimePDF(object):
         raise NotImplementedError
 
     def get_livetime(self):
+        if self.livetime is not None:
+            return self.livetime
         raise NotImplementedError
 
     def get_mjd_conversion(self):
-        raise NotImplementedError
-
+        return self.mjd_to_livetime, self.livetime_to_mjd
 
 @TimePDF.register_subclass('steady')
 class Steady(TimePDF):
@@ -357,6 +358,7 @@ class Box(TimePDF):
                 logging.debug("Using time PDF as a detector livetime PDF.")
                 self.mjd_to_livetime = lambda x: x - self.sig_t0([])
                 self.livetime_to_mjd = lambda x: x + self.sig_t0([])
+                self.livetime = self.t_dict["post_window"] + self.t_dict["pre_window"]
                 # print(self.t1, self.t0, self.livetime, self.livetime_to_mjd(7.), self.pre_window, self.sig_t0([]))
         except KeyError:
             pass

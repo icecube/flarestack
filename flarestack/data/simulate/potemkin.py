@@ -7,6 +7,7 @@ from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.core.time_pdf import TimePDF
 from flarestack.data.simulate import SimSeason, SimDataset
 from flarestack.shared import flux_to_k
+from flarestack.data.public.icecube import PublicICSeason
 
 class BackgroundFluxModel:
 
@@ -56,16 +57,17 @@ class IdealBackgroundFluxModel(BackgroundFluxModel):
 class PotemkinSeason(SimSeason):
 
     def __init__(self, season_name, sample_name, pseudo_mc_path,
-                 event_dtype, effective_area_f, load_angular_resolution,
+                 event_dtype, load_effective_area, load_angular_resolution,
                  bkg_flux_model,
-                 energy_proxy_map, sin_dec_bins, log_e_bins, **kwargs):
+                 energy_proxy_map, sin_dec_bins, log_e_bins, a_eff_path, **kwargs):
 
         self.log_e_bins = log_e_bins
         self.sin_dec_bins = sin_dec_bins
+        self.a_eff_path = a_eff_path
 
         SimSeason.__init__(
             self, season_name, sample_name, pseudo_mc_path,
-            event_dtype, effective_area_f,
+            event_dtype, load_effective_area,
             load_angular_resolution, bkg_flux_model,
             energy_proxy_map, **kwargs
         )
@@ -99,8 +101,10 @@ class PotemkinSeason(SimSeason):
         solid_angle = 2 * np.pi * (upper_sin_dec - lower_sin_dec)
         sim_fluence = fluence * solid_angle # GeV^-1 cm^-2
 
+        effective_area_f = self.load_effective_area()
+
         def source_eff_area(e):
-            return self.effective_area_f(
+            return effective_area_f(
                 np.log10(e), mean_sin_dec) * self.bkg_flux_model.flux_model_f(e, mean_sin_dec)
 
         lower, upper = self.bkg_flux_model.flux_range()
@@ -152,14 +156,25 @@ class PotemkinSeason(SimSeason):
 
         new_events["logE"] = self.energy_proxy_map(true_e_vals)
 
-        new_events["sigma"] = self.angular_res_f(new_events["logE"]).copy()
+        angular_res_f = self.load_angular_resolution()
+
+        new_events["sigma"] = angular_res_f(new_events["logE"]).copy()
         new_events["raw_sigma"] = new_events["sigma"].copy()
 
         return new_events
 
-potemkin_dataset = SimDataset()
+    def make_season(self):
+        return PublicICSeason(
+            season_name=self.season_name,
+            sample_name=self.sample_name,
+            exp_path=self.exp_path,
+            pseudo_mc_path=self.pseudo_mc_path,
+            sin_dec_bins=self.sin_dec_bins,
+            log_e_bins=self.log_e_bins,
+            a_eff_path=self.a_eff_path,
+        )
 
-effective_area_f = lambda x, y: 0.002
+potemkin_dataset = SimDataset()
 
 for (name, season) in icecube_ps_3_year.get_seasons().items():
 
@@ -185,14 +200,14 @@ for (name, season) in icecube_ps_3_year.get_seasons().items():
             season_name=name,
             sample_name="SimCube_{0}".format(sim_name),
             pseudo_mc_path=season.pseudo_mc_path,
-            effective_area_f=season.load_effective_area(),
-            # effective_area_f=effective_area_f,
+            load_effective_area=season.load_effective_area,
             event_dtype=season.get_background_dtype(),
             load_angular_resolution=season.load_angular_resolution,
             bkg_flux_model=bkg_flux_model,
             energy_proxy_map=energy_proxy_map,
             sin_dec_bins=sin_dec_bins,
             log_e_bins=season.log_e_bins,
+            a_eff_path=season.a_eff_path,
             **kwargs
         )
         return sim_season
