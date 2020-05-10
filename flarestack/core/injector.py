@@ -13,10 +13,6 @@ from flarestack.utils.catalogue_loader import calculate_source_weight
 from scipy import sparse, interpolate
 from flarestack.shared import k_to_flux
 
-
-logging.basicConfig(level=logging.DEBUG)
-
-
 def read_injector_dict(inj_dict):
     """Ensures that injection dictionaries remain backwards-compatible
 
