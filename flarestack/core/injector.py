@@ -556,7 +556,7 @@ class EffectiveAreaInjector(BaseInjector):
 
             random_fraction = [random.random() for _ in range(n_s)]
 
-            sim_ev["logE"] = np.log10(np.exp(convert_f(random_fraction)))
+            sim_ev["logE"] = convert_f(random_fraction)
 
             # Simulates times according to Time PDF
 
@@ -622,13 +622,13 @@ class EffectiveAreaInjector(BaseInjector):
                    self.energy_pdf.f(log_e) * \
                    self.energy_proxy_mapping(log_e)
 
-        start_x = np.log(self.energy_pdf.integral_e_min)
+        start_x = np.log10(self.energy_pdf.integral_e_min)
 
 
 
         x_vals = np.linspace(
             start_x + 1e-7,
-            np.log(self.energy_pdf.integral_e_max),
+            np.log10(self.energy_pdf.integral_e_max),
             100
         )[1:]
 
