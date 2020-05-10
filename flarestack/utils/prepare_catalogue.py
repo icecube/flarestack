@@ -52,7 +52,7 @@ def build_ps_cat_name(sindec):
            + ".npy"
 
 def build_ps_stack_cat_name(sindecs):
-    return f"{catalogue_dir}single_source/{hash(str(sindecs))}.npy"
+    return f"{catalogue_dir}multi_source/{hash(str(sindecs))}.npy"
 
 def make_single_source(sindec):
     cat = single_source(sindec)
