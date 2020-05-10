@@ -34,8 +34,6 @@ def single_source(sindec, ra_rad=np.pi):
 
     ref_time = 55800.4164699
 
-    print(np.deg2rad(180.), ra_rad)
-
     sources['ra_rad'] = np.array([ra_rad])
     sources['dec_rad'] = np.arcsin(sindec)
     sources['base_weight'] = np.array([1.])
