@@ -8,8 +8,8 @@ arbitrary number of sources.
 import numpy as np
 import os
 import logging
+import random
 from flarestack.shared import catalogue_dir
-import zlib
 
 cat_dtype = [
     ("ra_rad", np.float), ("dec_rad", np.float),
@@ -22,10 +22,11 @@ cat_dtype = [
 ]
 
 
-def single_source(sindec):
+def single_source(sindec, ra_rad=np.pi):
     """Produces a catalogue with a single source_path.
 
     :param sindec: Sin(Declination) of Source
+    :param ra: Right Ascension in radians
     :return: Source Array
     """
     sources = np.empty(
@@ -33,7 +34,9 @@ def single_source(sindec):
 
     ref_time = 55800.4164699
 
-    sources['ra_rad'] = np.array([np.deg2rad(180.)])
+    print(np.deg2rad(180.), ra_rad)
+
+    sources['ra_rad'] = np.array([ra_rad])
     sources['dec_rad'] = np.arcsin(sindec)
     sources['base_weight'] = np.array([1.])
     sources['injection_weight_modifier'] = np.array([1.])
@@ -76,7 +79,10 @@ def make_stacked_source(sindecs):
     cat = []
 
     for sindec in sindecs:
-        cat.append(single_source(sindec))
+
+        ra_rad = random.random() ** 2 * np.pi
+
+        cat.append(single_source(sindec, ra_rad=ra_rad))
 
     cat = np.array(cat, dtype=cat[0].dtype).T[0]
 
