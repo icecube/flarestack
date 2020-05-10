@@ -77,11 +77,8 @@ def make_stacked_source(sindecs):
 
     for sindec in sindecs:
         cat.append(single_source(sindec))
-        print(cat, sindec)
-
 
     cat = np.array(cat, dtype=cat[0].dtype).T[0]
-    print(cat)
 
     save_path = build_ps_stack_cat_name(sindecs)
 
