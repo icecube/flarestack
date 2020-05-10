@@ -9,6 +9,7 @@ import numpy as np
 import os
 import logging
 from flarestack.shared import catalogue_dir
+import zlib
 
 cat_dtype = [
     ("ra_rad", np.float), ("dec_rad", np.float),
@@ -49,6 +50,9 @@ def build_ps_cat_name(sindec):
     return catalogue_dir + "single_source/sindec_" + '{0:.2f}'.format(sindec)\
            + ".npy"
 
+def build_ps_stack_cat_name(sindecs):
+    return f"{catalogue_dir}single_source/{hash(str(sindecs))}.npy"
+
 def make_single_source(sindec):
     cat = single_source(sindec)
     save_path = build_ps_cat_name(sindec)
@@ -65,6 +69,37 @@ def ps_catalogue_name(sindec):
     
     if not os.path.isfile(name):
         make_single_source(sindec)
+
+    return name
+
+def make_stacked_source(sindecs):
+    cat = []
+
+    for sindec in sindecs:
+        cat.append(single_source(sindec))
+        print(cat, sindec)
+
+
+    cat = np.array(cat, dtype=cat[0].dtype).T[0]
+    print(cat)
+
+    save_path = build_ps_stack_cat_name(sindecs)
+
+    try:
+        os.makedirs(os.path.dirname(save_path))
+    except FileExistsError:
+        pass
+
+    logging.info("Saving to {0}".format(save_path))
+    np.save(save_path, cat)
+
+
+def ps_stack_catalogue_name(*args):
+
+    name = build_ps_stack_cat_name(args)
+
+    if not os.path.isfile(name):
+        make_stacked_source(args)
 
     return name
 
