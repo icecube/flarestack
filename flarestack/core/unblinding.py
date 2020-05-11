@@ -253,7 +253,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 logging.warning("Unable to set limits. No TS distributions found.")
 
         def compare_to_background_TS(self):
-            logging.debug("Retrieving Background TS Distribution from {0}".format(self.pickle_dir))
+            logging.info("Retrieving Background TS Distribution from {0}".format(self.pickle_dir))
 
             try:
 
@@ -262,7 +262,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 for subdir in os.listdir(self.pickle_dir):
                     merged_pkl = self.pickle_dir + subdir + "/merged/0.pkl"
 
-                    logging.debug("Loading {0}".format(merged_pkl))
+                    logging.info("Loading {0}".format(merged_pkl))
 
                     with open(merged_pkl, 'rb') as mp:
 
@@ -276,8 +276,27 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     ts_array, self.output_file, self.ts_type, self.ts, self.mock_unblind)
 
             except (IOError, OSError):
-                logging.warning("No Background TS Distribution found")
-                pass
+
+                try:
+                    ts_array = list()
+
+                    merged_pkl = self.pickle_dir + "merged/0.pkl"
+
+                    logging.info("No subfolders found, loading {0}".format(merged_pkl))
+
+                    with open(merged_pkl, 'rb') as mp:
+                        merged_data = pickle.load(mp)
+
+                    ts_array += list(merged_data["TS"])
+
+                    ts_array = np.array(ts_array)
+
+                    self.sigma = plot_background_ts_distribution(
+                        ts_array, self.output_file, self.ts_type, self.ts, self.mock_unblind)
+
+                except (IOError, OSError):
+                    logging.warning("No Background TS Distribution found")
+                    pass
 
         def check_unblind(self):
             print("\n")
