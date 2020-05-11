@@ -82,4 +82,4 @@ All plots can be found in: `/path/to/scratch/flarestack_data/output/plots/analys
 - `scripts_for_unblinding/make_energy_range_plots.ipynb`:
     notebook to create sensitivity/dp plots as a function of min/max energy bound.
 
-*All other scripts are either not relevant for the unblinding or deprecated.*
+**All other scripts are either not relevant for the unblinding or deprecated.**
