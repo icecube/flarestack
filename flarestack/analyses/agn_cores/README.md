@@ -1,4 +1,4 @@
-**Name:** AGN Cores Analysis
+**Name:** AGN Cores Stacking Analysis
 
 **Analyser:** Federica Bradascio (federica.bradascio@desy.de)
 
@@ -16,7 +16,7 @@ This analysis uses three AGN samples: Radio-selected AGN, IR-selected AGN
 and LLAGN. It performs a stacking analysis using the "fitting weights"
 method and the X-ray flux as source weight.
 
-STEPS TO REPRODUCE AGN CORES ANALYSIS
+## STEPS TO REPRODUCE AGN CORES ANALYSIS
 
 1. Create the 3 AGN samples:
     - The scripts_for_unblinding/create_agn_samples/create_*agn_north_catalogue.py must be run, one for each AGN sample
@@ -45,7 +45,7 @@ All scripts are run on the DESY (Zeuthen) clusters.
 All plots can be found in: /path/to/scratch/flarestack_data/output/plots/analyses/agn_cores/
 
 
-DESCRITPION OF SCRIPTS RELEVANT FOR UNBLINDING
+## DESCRITPION OF SCRIPTS RELEVANT FOR UNBLINDING
 
 - scripts_for_unblinding/create_agn_samples/create_radio_selected_agn_north_catalogue.py,
 scripts_for_unblinding/create_agn_samples/create_ir_selected_agn_north_catalogue.py,
@@ -82,4 +82,4 @@ scripts_for_unblinding/energy_range/calculate_energy_range_upper.py:
 - scripts_for_unblinding/make_energy_range_plots.ipynb:
     notebook to create sensitivity/dp plots as a function of min/max energy bound.
 
-All other scripts are either not relevant for the unblinding or deprecated.
+*All other scripts are either not relevant for the unblinding or deprecated.*
