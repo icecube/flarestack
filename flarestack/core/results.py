@@ -107,6 +107,8 @@ class ResultsHandler(object):
         except ValueError as e:
             logging.warning("RuntimeError for ns scale factor: \n {0}".format(e))
 
+        self.plot_bias()
+
         try:
             self.find_sensitivity()
         except ValueError as e:
@@ -120,8 +122,6 @@ class ResultsHandler(object):
             logging.warning("TypeError for discovery potential: \n {0}".format(e))
         except ValueError as e:
             logging.warning("TypeError for discovery potential: \n {0}".format(e))
-
-        self.plot_bias()
 
 
     def astro_values(self, e_pdf_dict):
