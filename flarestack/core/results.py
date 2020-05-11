@@ -755,6 +755,12 @@ class ResultsHandler(object):
 
             savepath = os.path.join(self.plot_dir, "bias_" + param + ".pdf")
             logging.info("Saving bias plot to {0}".format(savepath))
+
+            try:
+                os.makedirs(os.path.dirname(savepath))
+            except OSError:
+                pass
+
             plt.savefig(savepath)
             plt.close()
 
