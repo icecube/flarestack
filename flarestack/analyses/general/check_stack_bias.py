@@ -2,7 +2,7 @@ import numpy as np
 from astropy.table import Table
 import argparse
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.icecube import ps_v002_p01, diffuse_8_year
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits, get_figure_limits, p_vals
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import sn_cats, updated_sn_catalogue_name, \
@@ -46,19 +46,28 @@ llh_dict = {
     "llh_bkg_time_pdf": {"time_pdf_name": "steady"}
 }
 
+old_path = updated_sn_catalogue_name("IIn")
+new_cat_path = os.path.join(os.path.dirname(old_path), "cut_IIn.npy")
+
+old_cat = np.load(old_path)
+old_cat = old_cat[old_cat["dec_rad"] > 0.]
+np.save(new_cat_path, old_cat)
+
 mh_dict = {
-    "name": "examples/crosscheck_stacking",
+    "name": "analyses/general/crosscheck_stacking",
     "mh_name": 'fixed_weights',
-    "dataset": ps_v002_p01.get_seasons(),
-    "catalogue": updated_sn_catalogue_name("IIn"),
+    # "dataset": ps_v002_p01.get_seasons(),
+    "dataset": diffuse_8_year.get_seasons(),
+    # "catalogue": updated_sn_catalogue_name("IIn"),
+    "catalogue": new_cat_path,
 #     "catalogue": ps_stack_catalogue_name(0.1, 0.3),
 #     "catalogue": tde_catalogue_name("jetted"),
     "inj_dict": inj_dict,
     "llh_dict": llh_dict,
-    "scale": 10.,
+    "scale": 8.,
     "n_trials": 50,
-    "n_steps": 5
+    "n_steps": 10.
 }
 
-analyse(mh_dict, cluster=False)
+analyse(mh_dict, cluster=False, n_cpu=16)
 rh = ResultsHandler(mh_dict)
