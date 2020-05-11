@@ -1,10 +1,10 @@
-Name: AGN Cores Analysis
-Analyser: Federica Bradascio (federica.bradascio@desy.de)
-Unblinding Date: May, 2020
-Flarestack Release: v2.2.0 (Titan)
-Wiki Page: https://wiki.icecube.wisc.edu/index.php/Neutrinos_from_AGN_cores
-Datasets: diffuse_8_year
-Results: https://wiki.icecube.wisc.edu/index.php?title=Radio_Galaxies_Stacking_Analysis/Results&action=edit&redlink=1
+**Name:** AGN Cores Analysis
+**Analyser:** Federica Bradascio (federica.bradascio@desy.de)
+**Unblinding Date:** May, 2020
+**Flarestack Release:** v2.2.0 (Titan)
+**Datasets:** diffuse_8_year
+**Wiki Page:** https://wiki.icecube.wisc.edu/index.php/Neutrinos_from_AGN_cores
+**Results:** https://wiki.icecube.wisc.edu/index.php?title=Radio_Galaxies_Stacking_Analysis/Results&action=edit&redlink=1
 
 This analysis uses three AGN samples: Radio-selected AGN, IR-selected AGN
 and LLAGN. It performs a stacking analysis using the "fitting weights"
