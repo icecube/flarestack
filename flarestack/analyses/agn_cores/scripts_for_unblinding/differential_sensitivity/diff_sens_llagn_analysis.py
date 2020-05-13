@@ -1,7 +1,5 @@
-"""Script to compare the sensitivity for each TDE catalogues as a function of
-injected spectral index. Rather than the traditional flux at 1 GeV,
-Sensitivities are given as the total integrated fluence across all sources,
-and as the corresponding standard-candle-luminosity.
+"""Script to compare the sensitivity and discovery potential for the LLAGN sample (15887 sources)
+as a function of injected spectral index for energy decades between 100 GeV and 10 PeV.
 """
 from __future__ import print_function
 from __future__ import division
@@ -13,7 +11,7 @@ from flarestack.core.results import ResultsHandler
 # from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle, k_to_flux
 
-from flarestack.data.icecube import diffuse_8_year, diffuse_10_year
+from flarestack.data.icecube import diffuse_8_year
 from flarestack.utils.catalogue_loader import load_catalogue
 from flarestack.analyses.agn_cores.shared_agncores import \
     agn_subset_catalogue, complete_cats_north, complete_cats_north, agn_catalogue_name, agn_subset_catalogue_north
@@ -24,7 +22,6 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 
-import matplotlib.pyplot as plt
 # plt.style.use('~/scratch/phdthesis.mpltstyle')
 
 import time
@@ -52,10 +49,8 @@ llh_dict = {
     "llh_energy_pdf": llh_energy
 }
 
-#test_completeness_diffuse_15steps_8years_debug
-
 def base_name(cat_key, gamma):
-    return "analyses/agn_cores/test_completeness_diffuse_8years_15steps_3scale_cluster_scaleby3_newcat_energy_cut/{0}/"\
+    return "analyses/agn_cores/stacking_analysis_8yrNTsample_diff_sens_pre_unblinding/{0}/" \
            "{1}/".format(cat_key, gamma)
 
 
@@ -65,16 +60,16 @@ def generate_name(cat_key, n_sources, gamma):
 
 gammas = [2.0, 2.5]
 
-nr_brightest_sources = [100]
+# Number of sources in the LLAGN sample
+nr_brightest_sources = [15887]
 
-# # Energy bins
-energies = np.logspace(2, 5, 7)
+# Energy bins
+energies = np.logspace(2, 7, 6)
 bins = list(zip(energies[:-1], energies[1:]))
 
 all_res = dict()
 
-running_time = []
-for (cat_type, method) in complete_cats_north[:]:
+for (cat_type, method) in complete_cats_north[-1:]:
 
     unique_key = cat_type + "_" + method
 
@@ -87,21 +82,28 @@ for (cat_type, method) in complete_cats_north[:]:
         for j, nr_srcs in enumerate(nr_brightest_sources):
 
             cat_path = agn_subset_catalogue(cat_type, method, nr_srcs)
+            print("Loading catalogue", cat_path, " with ", nr_srcs, "sources")
             catalogue = load_catalogue(cat_path)
             cat = np.load(cat_path)
+            print("Total flux is: ", cat['base_weight'].sum()*1e-13)
             full_name = generate_name(unique_key, nr_srcs, gamma_index)
 
             res_e_min = dict()
-            for i, (e_min, e_max) in enumerate(bins):
-                full_name_en = full_name + '{0:.2f}'.format(e_min) + "/"
 
+            # scale factor of neutrino injection, tuned for each energy bin
+            scale_factor_per_decade = [0.2, 0.5, 1, 0.57, 0.29]
+
+            for i, (e_min, e_max) in enumerate(bins[:]):
+
+                full_name_en = full_name + 'Emin={0:.2f}'.format(e_min) + "/"
+                print("Full name for ", nr_srcs, " sources is", full_name_en)
+
+                # Injection parameters
                 injection_time = llh_time
-
-                # Change injection minimum energy keeping fixed the max energy
                 injection_energy = dict(llh_energy)
                 injection_energy["gamma"] = gamma_index
                 injection_energy["e_min_gev"] = e_min
-                injection_energy["e_max_gev"] = 1e7
+                injection_energy["e_max_gev"] = e_max
 
 
                 inj_kwargs = {
@@ -116,42 +118,34 @@ for (cat_type, method) in complete_cats_north[:]:
                     "catalogue": cat_path,
                     "llh_dict": llh_dict,
                     "inj_dict": inj_kwargs,
-                    "n_trials": 1,
+                    "n_trials": 1, #10,
+                    # "n_steps": 15,
                 }
 
                 mh = MinimisationHandler.create(mh_dict)
+                # scale factor to tune (manually) the number of injected neutrinos
+                scale_factor = 3 * mh.guess_scale()/3/7/scale_factor_per_decade[i]
+                print("Scale Factor: ", scale_factor_per_decade[i], scale_factor)
 
-                # Set the scale for the injection
-                scale_factor = 3 * mh.guess_scale()/3/7
-
-                '''
-                UNCOMMENT THIS IF:
-                1. It is the first time you are running this code
-                2. You want to run locally
-                3. If you are running on the cluster with < 1000 sources
-                '''
+                # # # # # How to run on the cluster for sources < 3162
                 mh_dict["n_steps"] = 15
                 mh_dict["scale"] = scale_factor
-                analyse(mh_dict, cluster=True, n_cpu=8, n_jobs=100,
-                        len_catalogue=nr_srcs, nr_seasons=10)
+                analyse(mh_dict, cluster=False, n_cpu=32, n_jobs=150)
 
-                '''
-                UNCOMMENT THIS IF:
-                1. If you are running on the cluster with > 1000 sources
-                '''
-                # _n_jobs = 100
+                # How to run on the cluster for sources > 3162
+                # _n_jobs = 50
                 # scale_loop = np.linspace(0, scale_factor, 15)
                 # print(scale_loop)
-                # for scale in scale_loop[:]:
+                # for scale in scale_loop[:4]:
                 #     print('Running ' + str(mh_dict["n_trials"]) + ' trials with scale ' + str(scale))
                 #     mh_dict["fixed_scale"] = scale
+                #     # # analyse(mh_dict, cluster=False, n_cpu=35, n_jobs=10)
                 #     if scale == 0.:
                 #         n_jobs = _n_jobs*10
                 #     else:
                 #         n_jobs = _n_jobs
                 #     print("Submitting " + str(n_jobs) + " jobs")
-                #     analyse(mh_dict, cluster=True, n_cpu=1, n_jobs=n_jobs,
-                #             len_catalogue=nr_srcs, nr_seasons=10)
+                #     analyse(mh_dict, cluster=True, n_cpu=1, n_jobs=n_jobs)
 
                 res_e_min[e_min] = mh_dict
             res[nr_srcs] = res_e_min
@@ -160,22 +154,15 @@ for (cat_type, method) in complete_cats_north[:]:
     all_res[unique_key] = gamma_dict
 
 # wait_for_cluster()
-#
+
 logging.getLogger().setLevel("INFO")
-
-print(gamma_dict.items(), iter(gamma_dict.items()))
-
-print(all_res.items(), iter(all_res.items()))
-
 
 for (cat_key, gamma_dict) in all_res.items():
 
     print(cat_key, cat_key.split("_"))
-    # agn_type, xray_cat = cat_key.split("_")[0]
     agn_type = cat_key.split("_")[0]
-    print(agn_type)
+
     xray_cat = cat_key.split(str(agn_type)+'_')[-1]
-    print(xray_cat)
 
     full_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
 
@@ -183,13 +170,8 @@ for (cat_key, gamma_dict) in all_res.items():
 
     saturate_ratio = 0.26
 
+    # Loop on gamma
     for (gamma_index, gamma_res) in (iter(gamma_dict.items())):
-
-        print("gamma: ", gamma_index)
-
-        print("In if loop on gamma_index and res")
-        print(gamma_index)
-        print(gamma_res)
 
         sens = []
         sens_err_low = []
@@ -216,17 +198,15 @@ for (cat_key, gamma_dict) in all_res.items():
 
         base_dir = base_name(cat_key, gamma_index)
 
+        # Loop on number of sources of the AGN sample
         for (nr_srcs, rh_dict_srcs) in sorted(gamma_res.items()):
 
             print("In if loop on nr_srcs and rh_dict")
             print(nr_srcs)
             print(rh_dict_srcs)
             print("nr_srcs in loop: ", nr_srcs)
-            print("   ")
-            print("   ")
 
-            print("   ")
-            print(type(rh_dict_srcs),  rh_dict_srcs)
+            # loop on emin and emax
             for (e_min, rh_dict) in sorted(rh_dict_srcs.items()):
 
                 cat = load_catalogue(rh_dict["catalogue"])
@@ -293,7 +273,6 @@ for (cat_key, gamma_dict) in all_res.items():
                 except OSError:
                     pass
 
-        # # n_src_modified = [1,3,10,31,100,1000,13927]
         # # Save arrays to file
         np.savetxt(plot_output_dir(base_dir) + "data.out",
                    (np.array(n_src), np.array(int_xray_flux_erg),
@@ -316,3 +295,4 @@ for (cat_key, gamma_dict) in all_res.items():
                            "int_sensitivity_100GeV10PeV, int_dp_100GeV10PeV, ratio_sens_100GeV10PeV, ratio_dp_100GeV10PeV,"
                            "ratio_sens_saturate_100GeV10PeV, ratio_dp_saturate_100GeV10PeV,"
                            "sensitivity_nr_neutrinos, dp_nr_neutrinos")
+

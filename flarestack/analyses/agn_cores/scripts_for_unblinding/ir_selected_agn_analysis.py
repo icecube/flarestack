@@ -1,17 +1,16 @@
-"""Script to compare the sensitivity for each TDE catalogues as a function of
-injected spectral index. Rather than the traditional flux at 1 GeV,
-Sensitivities are given as the total integrated fluence across all sources,
-and as the corresponding standard-candle-luminosity.
+"""Script to compare the sensitivity and discovery potential for the IR-selected AGN sample
+as a function of injected spectral index. The analysis is performed for 10 sub-samples of the
+X-ray brightest sources of the total IR-selected AGN sample (total of 32249 sources).
 """
 from __future__ import print_function
 from __future__ import division
 import numpy as np
-from flarestack.data.icecube import diffuse_8_year, diffuse_10_year
+from flarestack.data.icecube import diffuse_8_year
 from flarestack.utils.catalogue_loader import load_catalogue
 from flarestack.analyses.agn_cores.shared_agncores import \
     agn_subset_catalogue, complete_cats_north, complete_cats_north, agn_catalogue_name, agn_subset_catalogue_north
 from flarestack.core.minimisation import MinimisationHandler
-
+from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle, k_to_flux
 from flarestack.cluster import analyse, wait_for_cluster
 
 import logging
@@ -38,33 +37,33 @@ llh_dict = {
 }
 
 
-def base_name(cat_key, gamma):
-    return "analyses/agn_cores/test_completeness_diffuse_8years_15steps_3scale_cluster_scaleby3_newcat/{0}/" \
-           "{1}/".format(cat_key, gamma)
+def base_name(cat_key, n_sources):
+    return "analyses/agn_cores/stacking_analysis_8yrNTsample_pre_unblinding/{0}/" \
+           "NrSrcs={1}/".format(cat_key, n_sources)
 
 
 def generate_name(cat_key, n_sources, gamma):
-    return base_name(cat_key, gamma) + "NrSrcs={0}/".format(n_sources)
+    return base_name(cat_key, n_sources) + "{0}/".format(gamma)
 
 
 gammas = [2.0, 2.5]
 
+# Select X-ray brightest sources and run analysis of sen/dp for each of these sub-samples
 nr_brightest_sources = [1, 3, 10, 31, 100, 316, 1000, 3162, 10000, 32249]
 
 all_res = dict()
 
-running_time = []
 for (cat_type, method) in complete_cats_north[1:2]:
 
     unique_key = cat_type + "_" + method
 
-    print(unique_key)
+    res = dict()
 
-    gamma_dict = dict()
+    for j, nr_srcs in enumerate(nr_brightest_sources):
 
-    for gamma_index in gammas:
-        res = dict()
-        for j, nr_srcs in enumerate(nr_brightest_sources):
+        gamma_dict = dict()
+
+        for gamma_index in gammas:
 
             cat_path = agn_subset_catalogue(cat_type, method, nr_srcs)
             catalogue = load_catalogue(cat_path)
@@ -83,11 +82,11 @@ for (cat_type, method) in complete_cats_north[1:2]:
             mh_dict = {
                 "name": full_name,
                 "mh_name": "large_catalogue",
-                "dataset": diffuse_8_year.get_seasons(), #subselection_fraction=1),
+                "dataset": diffuse_8_year.get_seasons(),
                 "catalogue": cat_path,
                 "llh_dict": llh_dict,
                 "inj_dict": inj_kwargs,
-                "n_trials": 1, #10,
+                "n_trials": 9,
             }
 
             mh = MinimisationHandler.create(mh_dict)
@@ -96,15 +95,15 @@ for (cat_type, method) in complete_cats_north[1:2]:
             scale_factor = 3 * mh.guess_scale()/3
 
             '''
-            UNCOMMENT THIS IF:
-            1. It is the first time you are running this code
-            2. You want to run locally
-            3. If you are running on the cluster with < 1000 sources
-            '''
+            # UNCOMMENT THIS IF:
+            # 1. It is the first time you are running this code
+            # 2. You want to run locally
+            # 3. If you are running on the cluster with < 1000 sources
+            # '''
             mh_dict["n_steps"] = 15
             mh_dict["scale"] = scale_factor
-            analyse(mh_dict, cluster=True, n_cpu=8, n_jobs=100,
-                    len_catalogue=nr_srcs, nr_seasons=10)
+            analyse(mh_dict, cluster=False, n_cpu=8, n_jobs=100)
+
 
             '''
             UNCOMMENT THIS IF:
@@ -121,36 +120,38 @@ for (cat_type, method) in complete_cats_north[1:2]:
             #     else:
             #         n_jobs = _n_jobs
             #     print("Submitting " + str(n_jobs) + " jobs")
-            #     analyse(mh_dict, cluster=True, n_cpu=1, n_jobs=n_jobs,
-            #             len_catalogue=nr_srcs, nr_seasons=10)
+            #     analyse(mh_dict, cluster=True, n_cpu=1, n_jobs=n_jobs)
 
-            res[nr_srcs] = mh_dict
+            gamma_dict[gamma_index] = mh_dict
 
-        gamma_dict[gamma_index] = res
-    all_res[unique_key] = gamma_dict
+        res[nr_srcs] = gamma_dict
+
+
+    all_res[unique_key] = res
 
 
 wait_for_cluster()
 
 logging.getLogger().setLevel("INFO")
 
+# Create plots and save data in file data.out
+for (cat_key, res_dict) in all_res.items():
 
-for (cat_key, gamma_dict) in all_res.items():
-    # print (cat_key, gamma_dict)
     agn_type = cat_key.split("_")[0]
-    print(agn_type)
+
     xray_cat = cat_key.split(str(agn_type)+'_')[-1]
-    print(xray_cat)
 
     full_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
 
     full_flux = np.sum(full_cat["base_weight"])
 
+    # neutrino flux (using joint paper) divided by AGN flux calculated with luminosity function
     saturate_ratio = 0.26
 
-    for (gamma_index, gamma_res) in (iter(gamma_dict.items())):
+    for (nr_srcs, res) in (iter(res_dict.items())):
 
-        print("gamma: ", gamma_index)
+        print("Nr of sources is ", nr_srcs)
+
         sens = []
         sens_err_low = []
         sens_err_upp = []
@@ -168,19 +169,17 @@ for (cat_key, gamma_dict) in all_res.items():
         sens_n = []
         disc_pot_n = []
 
-        base_dir = base_name(cat_key, gamma_index)
+        base_dir = base_name(cat_key, nr_srcs)
 
-        for (nr_srcs, rh_dict) in sorted(gamma_res.items()):
+        for (gamma_index, rh_dict) in sorted(res.items()):
 
             cat = load_catalogue(rh_dict["catalogue"])
 
-            print("nr_srcs in loop: ", nr_srcs)
-            print("   ")
-            print("   ")
+            print("gamma: ", gamma_index)
+
             int_xray = np.sum(cat["base_weight"] / 1e13*624.151)
             int_xray_flux.append(int_xray) # GeV cm-2 s-1
-            int_xray_flux_erg.append(np.sum(cat["base_weight"]) / 1e13) # erg
-            # cm-2 s-1
+            int_xray_flux_erg.append(np.sum(cat["base_weight"]) / 1e13) # erg cm-2 s-1
             fracs.append(np.sum(cat["base_weight"])/full_flux)
 
             try:
@@ -189,11 +188,8 @@ for (cat_key, gamma_dict) in all_res.items():
                 print("Sens_err", rh.sensitivity_err, rh.sensitivity_err[0], rh.sensitivity_err[1])
                 print("Disc", rh.disc_potential)
                 print("Disc_TS_threshold", rh.disc_ts_threshold)
-                # print("Guess", rh_dict["scale"])
                 print("Sens (n)", rh.sensitivity * rh.flux_to_ns)
                 print("DP (n)", rh.disc_potential * rh.flux_to_ns)
-                # # guess.append(k_to_flux(rh_dict["scale"])* 2./3.)
-                # guess.append(k_to_flux(rh_dict["scale"])/3.)
 
                 # sensitivity/dp normalized per flux normalization GeV-1 cm-2 s-1
                 sens.append(rh.sensitivity)
@@ -207,13 +203,13 @@ for (cat_key, gamma_dict) in all_res.items():
                 astro_sens, astro_disc = rh.astro_values(
                     rh_dict["inj_dict"]["injection_energy_pdf"])
 
-                key = "Energy Flux (GeV cm^{-2} s^{-1})" # old version: "Total Fluence (GeV cm^{-2} s^{-1})"
+                key = "Energy Flux (GeV cm^{-2} s^{-1})"
 
-                sens_livetime.append(astro_sens[key])   # fluence=integrated over energy
+                sens_livetime.append(astro_sens[key])
                 disc_pots_livetime.append(astro_disc[key])
 
-                ratio_sens.append(astro_sens[key] / int_xray) # fluence
-                # normalized over tot xray flux
+                # fluence normalized over tot xray flux
+                ratio_sens.append(astro_sens[key] / int_xray)
                 ratio_disc.append(astro_disc[key] / int_xray)
 
                 n_src.append(nr_srcs)
@@ -221,17 +217,16 @@ for (cat_key, gamma_dict) in all_res.items():
             except OSError:
                 pass
 
-        # n_src_modified = [1,3,10,31,100,1000,13927]
         # Save arrays to file
         np.savetxt(plot_output_dir(base_dir) + "data.out",
-                   (np.array(n_src), np.array(int_xray_flux_erg), np.array(int_xray_flux),
+                   (np.array(n_src), np.array(int_xray_flux_erg),
                     np.array(sens), np.array(sens_err_low), np.array(sens_err_upp),
                     np.array(disc_pot), np.array(disc_ts_threshold),
                     np.array(sens_livetime), np.array(disc_pots_livetime),
                     np.array(ratio_sens), np.array(ratio_disc),
                     np.array(ratio_sens)/saturate_ratio, np.array(ratio_disc)/saturate_ratio,
                     np.array(sens_n), np.array(disc_pot_n)),
-                    header="n_src, int_xray_flux_erg, int_xray_flux_gev," 
+                    header="n_src, int_xray_flux_erg," 
                            "sensitivity, sensitivity_err_lower, sensitivity_err_upper,"
                            "dp, disc_ts_threshold,"
                            "int_sensitivity, int_dp," 
@@ -402,62 +397,6 @@ for (cat_key, gamma_dict) in all_res.items():
             plt.savefig(plot_output_dir(base_dir) + labels[i+2] +
                         "_vs_Xray_cut_diffuse.pdf")
             plt.close()
-
-
-        # labels = ['Number of Sources', 'Integrated X-Ray Flux [erg cm$^{-2}$ s$^{-1}$]', 'Nsrcs', 'Xray_cut_ratio']
-        # for i, xaxis in enumerate([n_src, int_xray_flux_erg]):
-        #     print(i, sens_dp)
-        #     # Plot 1: sensitivity/dp fluence vs number of sources (cuts)
-        #     plt.rc('axes', axisbelow=True)
-        #     plt.figure()
-        #     ax1 = plt.subplot(111)
-        #     ax1.plot(xaxis, guess, ls='-', marker='o', label = labels[i])
-        #     ax1.grid(True, which='both')
-        #     ax1.set_ylabel(r"Estimated Discovery Potential [GeV sr$^{-1}$ cm$^{-2}$ s$^{-1}$]", fontsize=12)
-        #     ax1.set_xlabel(labels[i], fontsize=12)
-        #     ax1.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        #     ax1.set_xscale("log")
-        #     ax1.set_yscale("log")
-        #     plt.tight_layout()
-        #     plt.savefig(plot_output_dir(base_dir) + "guess_vs_" +labels[i+2] +".pdf")
-        #     plt.close()
-        #
-        # labels = ['Number of Sources', 'Integrated X-Ray Flux [erg cm$^{-2}$ s$^{-1}$]', 'Nsrcs', 'Xray_cut_ratio']
-        # for i, xaxis in enumerate([n_src, int_xray_flux_erg]):
-        #     print(i, sens_dp)
-        #     # Plot 1: sensitivity/dp fluence vs number of sources (cuts)
-        #     plt.rc('axes', axisbelow=True)
-        #     plt.figure()
-        #     ax1 = plt.subplot(111)
-        #     ax1.plot(xaxis, np.array(guess)/np.array(disc_pots_livetime), ls='-', marker='o', label = labels[i])
-        #     ax1.grid(True, which='both')
-        #     ax1.set_ylabel(r"Guess / Discovery Potential ", fontsize=12)
-        #     ax1.set_xlabel(labels[i], fontsize=12)
-        #     ax1.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        #     ax1.set_xscale("log")
-        #     ax1.set_yscale("log")
-        #     plt.tight_layout()
-        #     plt.savefig(plot_output_dir(base_dir) + "ratio_guess_dp_vs_" +labels[i+2] +".pdf")
-        #     plt.close()
-        #
-        # labels = ['Number of Sources', 'Integrated X-Ray Flux [erg cm$^{-2}$ s$^{-1}$]', 'Nsrcs', 'Xray_cut_ratio']
-        # for i, xaxis in enumerate([n_src, int_xray_flux_erg]):
-        #     print(i, sens_dp)
-        #     # Plot 1: sensitivity/dp fluence vs number of sources (cuts)
-        #     plt.rc('axes', axisbelow=True)
-        #     plt.figure()
-        #     ax1 = plt.subplot(111)
-        #     ax1.plot(xaxis, np.array(guess)/np.array(sens_livetime), ls='-', marker='o', label = labels[i])
-        #     ax1.grid(True, which='both')
-        #     ax1.set_ylabel(r"Guess / Sensitivity", fontsize=12)
-        #     ax1.set_xlabel(labels[i], fontsize=12)
-        #     ax1.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        #     ax1.set_xscale("log")
-        #     ax1.set_yscale("log")
-        #     plt.tight_layout()
-        #     plt.savefig(plot_output_dir(base_dir) + "ratio_guess_sen_vs_" +labels[i+2] +".pdf")
-        #     plt.close()
-
 
         labels = ['Sensitivity', 'Discovery Potential', 'sens', 'dp']
         for i, sens_dp in enumerate([ratio_sens, ratio_disc]):
