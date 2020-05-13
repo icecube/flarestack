@@ -41,7 +41,7 @@ inj_dict = {
 }
 
 llh_dict = {
-    "llh_name": "standard",
+    "llh_name": "standard_matrix",
     "llh_energy_pdf": llh_energy,
     "llh_sig_time_pdf": llh_time,
     "llh_bkg_time_pdf": {"time_pdf_name": "steady"}
@@ -54,9 +54,10 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 temp_save_catalogue_to = f'{dir_path}/temp_check_stack_bias_equal_dist_cat.npy'
 np.save(temp_save_catalogue_to, catalogue)
 
+
 mh_dict = {
-    "name": "examples/crosscheck_stacking_equal_dist",
-    "mh_name": 'fixed_weights',
+    "name": "examples/crosscheck_stacking_equal_dist/",
+    "mh_name": 'large_catalogue',
     "dataset": ps_v002_p01.get_seasons(),
     "catalogue": temp_save_catalogue_to,
 #     "catalogue": ps_stack_catalogue_name(0.1, 0.3),
@@ -64,11 +65,11 @@ mh_dict = {
     "inj_dict": inj_dict,
     "llh_dict": llh_dict,
     "scale": 10.,
-    "n_trials": 50,
+    "n_trials": 30,
     "n_steps": 10
 }
 
-analyse(mh_dict, cluster=False, n_cpu=10)
+analyse(mh_dict, cluster=False, n_cpu=32)
 rh = ResultsHandler(mh_dict)
 
 os.remove(temp_save_catalogue_to)
