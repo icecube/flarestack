@@ -9,19 +9,26 @@ import numpy as np
 import logging
 import os
 
+
+# define output directory
 ratios_plot_dir = plot_output_dir(f'{raw_output_dir}/ratios')
 if not os.path.isdir(ratios_plot_dir):
     logging.debug(f'making directory {ratios_plot_dir}')
     os.mkdir(ratios_plot_dir)
 
+# use this minimizer
 mh_name = 'fit_weights'
-gamma = 2.
-raw = f'{ratios_plot_dir}/{mh_name}'
 
+# spectral indice to be used
+gamma = 2.
+
+# base name
+raw = f'{ratios_plot_dir}/{mh_name}'
 if not os.path.isdir(raw):
     logging.debug(f'making directory {plot_output_dir(raw)}')
     os.mkdir(raw)
 
+# loop over pdf types
 for pdf_type in ['box', 'decay']:
 
     plot_dir = f'{raw}/{pdf_type}'
@@ -30,10 +37,10 @@ for pdf_type in ['box', 'decay']:
         os.mkdir(plot_dir)
 
     # load saved sensitivities
-
     with open(necker_sens(mh_name, pdf_type), 'rb') as f:
         necker_sens_dict = pickle.load(f)
 
+    # format nicer
     stacked_sens_necker = {
         cat_name: np.array(
             [(necker_sens_dict[cat_name][time_key][gamma][2], time_key)
@@ -42,9 +49,11 @@ for pdf_type in ['box', 'decay']:
         for cat_name in necker_sens_dict
     }
 
+    # load original results by Alex Stasik
     with open(stasik_sens_flarestack(mh_name, pdf_type), 'rb') as f:
         stasik_sens_flaresatck_dict = pickle.load(f)
 
+    # format nicer
     stacked_sens_stasik_flaresatck = {
         cat_name: np.array(
             [(stasik_sens_flaresatck_dict[cat_name][time_key][gamma][2], time_key)
