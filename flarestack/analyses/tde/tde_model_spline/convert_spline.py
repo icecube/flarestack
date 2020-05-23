@@ -11,7 +11,8 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 path = os.path.join(dir_path, "Neutrinos_from_TDE.pickle")
 
-data = np.load(path, allow_pickle=True, fix_imports=True)
+with open(path, "rb") as f:
+    data = pickle.load(f, encoding='bytes')
 
 e = data["E_GeV"][:,0]
 y = data["E_GeV"][:,1]
@@ -28,7 +29,7 @@ tde_spline_output_path = os.path.join(dir_path, "morejon_model_spline.pkl")
 
 print("Saving to {0}".format(tde_spline_output_path))
 
-with open(tde_spline_output_path, "w") as file:
+with open(tde_spline_output_path, "wb") as file:
     pickle.dump(f, file)
 
 min_nu_e_gev = min(x_vals)
