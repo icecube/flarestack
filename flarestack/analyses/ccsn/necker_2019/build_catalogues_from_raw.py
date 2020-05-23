@@ -291,25 +291,3 @@ if __name__ == '__main__':
                 sname_combined = updated_sn_catalogue_name(sn_type, flagged=flag, nearby=False, z_conservative=z_add)
                 logging.info(f'saving the combined catalogue for {sn_type} {msg} to {sname_combined}')
                 np.save(sname_combined, combined_catalogue)
-
-                # for faster analyses, only include nearby events
-                # therefore only include events, included in the nearby catalogue under stasik_2017
-                # snt = 'IIp' if sn_type == 'IIP' else sn_type
-                # nearby_stasik_path = sn_catalogue_name(snt, nearby=True)
-                # logging.debug(f'loading the nearby catalogue from {nearby_stasik_path}')
-                # nearby_stasik = np.load(nearby_stasik_path)
-                # logging.info(f'{len(nearby_stasik)} objects in nearby stasik catalogue')
-                #
-                # near_mask = [
-                #     bytes(row['source_name'], encoding='utf8') in nearby_stasik['source_name'] for row in combined_catalogue
-                # ]
-                #
-                # near_catalogue = combined_catalogue[near_mask]
-                #
-                # logging.debug(f'stasik nearby: {nearby_stasik}')
-                # logging.debug(f'necker nearby: {near_catalogue}')
-                #
-                # logging.info(f'{len(near_catalogue)} objects in nearby necker catalogue')
-                # sname_near = updated_sn_catalogue_name(sn_type, flagged=flag, nearby=True)
-                # logging.info(f'saving nearby necker catalogue under {sname_near}')
-                # np.save(sname_near, near_catalogue)

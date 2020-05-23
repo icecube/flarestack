@@ -26,13 +26,10 @@ import time
 start = time.time()
 
 logging.getLogger().setLevel("DEBUG")
-
 logging.debug('logging level is DEBUG')
-
 logging.getLogger('matplotlib').setLevel('INFO')
 
 # LLH Energy PDF
-
 llh_energy = {
     "energy_pdf_name": "power_law",
 }
@@ -40,68 +37,62 @@ llh_energy = {
 cluster = 500
 
 # Spectral indices to loop over
-
-# gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
-# gammas = [1.8, 2.0, 2.5]
-# gammas = [2., 2.5]
 gammas = [2.]
 
-# Base name
+# minimizer to use
 mh_name = 'fit_weights'
+
+# using the box pdfs
 pdf_type = 'box'
 
+# base name
 raw = raw_output_dir + f"/calculate_sensitivity/{mh_name}/{pdf_type}/"
 
+# set up emtpy dictionary to store the minimizer information in
 full_res = dict()
 
+# set up empty list for cluster job IDs
 job_ids = []
-# Loop over SN catalogues
 
 plot_results = '_figureresults'
 
 if __name__ == '__main__':
 
+    # loop over SN catalogues
     for cat in sn_cats:
 
         name = raw + cat + "/"
 
-        # cat_path = sn_catalogue_name(cat)
-        # logging.debug('catalogue path: ' + str(cat_path))
-        # catalogue = np.load(cat_path)
-        #
-        # logging.debug('catalogue dtype: ' + str(catalogue.dtype))
-        #
-        # closest_src = np.sort(catalogue, order="distance_mpc")[0]
-
+        # set up empty results dictionary for this catalogue
         cat_res = dict()
 
+        # get the time pdfs for this catalogue
         time_pdfs = sn_time_pdfs(cat, pdf_type=pdf_type)
 
         # Loop over time PDFs
-
         for llh_time in time_pdfs:
+
+            # set up an empty results array for this time pdf
+            time_res = dict()
+
+            logging.debug(f'time_pdf is {llh_time}')
 
             time_key = str(llh_time["post_window"] + llh_time["pre_window"])
 
             pdf_time = float(time_key) if llh_time['pre_window'] == 0 else - float(time_key)
             pdf_name = pdf_names(pdf_type, pdf_time)
-            cat_path = updated_sn_catalogue_name(cat)  # , pdf_name=pdf_name)
+            cat_path = updated_sn_catalogue_name(cat)
             logging.debug('catalogue path: ' + str(cat_path))
 
-            # input('continue? ')
-
+            # load catalogue and select the closest source
+            # that serves for estimating a good injection scale later
             catalogue = np.load(cat_path)
-
             logging.debug('catalogue dtype: ' + str(catalogue.dtype))
-
             closest_src = np.sort(catalogue, order="distance_mpc")[0]
-
-            logging.debug(f'time_pdf is {llh_time}')
 
             time_name = name + time_key + "/"
 
-            time_res = dict()
-
+            # set up the likelihood dictionary
             llh_dict = {
                 "llh_name": "standard",
                 "llh_energy_pdf": llh_energy,
@@ -111,27 +102,32 @@ if __name__ == '__main__':
                 }
             }
 
+            # set up an injection dictionary which will be equal to the time pdf dictionary
             injection_time = llh_time
 
             # Loop over spectral indices
-
             for gamma in gammas:
 
                 full_name = time_name + str(gamma) + "/"
 
                 length = float(time_key)
 
+                # try to estimate a good scale based on the sensitivity from the 7-yr PS sensitivity
+                # at the declination of the closest source
                 scale = 0.5 * (flux_to_k(reference_sensitivity(
                     np.sin(closest_src["dec_rad"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * 200.) / length
 
-                if cat == 'IIP':# and pdf_type != 100:
+                # in some cases the sensitivity is outside the tested range
+                # to get a good sensitivity, adjust the scale in these cases
+                if cat == 'IIP':
                     scale *= 0.2
                 if cat == 'Ibc':
                     scale *= 0.5
                 if cat == 'IIn' and gamma == 2.5 and pdf_time == 1000:
                     scale *= 1.4
 
+                # set up an injection dictionary and set the desired spectral index
                 injection_energy = dict(llh_energy)
                 injection_energy["gamma"] = gamma
 
@@ -141,6 +137,7 @@ if __name__ == '__main__':
                     "poisson_smear_bool": True,
                 }
 
+                # set up the final minimizer dictionary
                 mh_dict = {
                     "name": full_name,
                     "mh_name": mh_name,
@@ -150,11 +147,11 @@ if __name__ == '__main__':
                     "inj_dict": inj_dict,
                     "llh_dict": llh_dict,
                     "scale": scale,
-                    "n_trials": 500/cluster if cluster else 1000,
+                    "n_trials": 500/cluster if cluster else 500,
                     "n_steps": 10
                 }
-                # !!! number of total trial is ntrials * n_jobs !!!
 
+                # call the main analyse function
                 job_id = None
                 job_id = analyse(mh_dict,
                                  cluster=True if cluster else False,
@@ -174,16 +171,20 @@ if __name__ == '__main__':
         logging.info(f'waiting for jobs {job_ids}')
         wait_for_cluster(job_ids)
 
+    # set up an empty results dictionary
     stacked_sens_flux = {}
 
+    # loop over the SN catalogues for getting the results
     for b, (cat_name, cat_res) in enumerate(full_res.items()):
 
         stacked_sens_flux[cat_name] = {}
 
+        # loop over the analysed times
         for (time_key, time_res) in cat_res.items():
 
             stacked_sens_flux[cat_name][time_key] = {}
 
+            # set up emtpy result lists
             sens_livetime = []
             fracs = []
             disc_pots_livetime = []
@@ -193,25 +194,22 @@ if __name__ == '__main__':
             labels = []
 
             # Loop over gamma
-
             for (gamma, rh_dict) in sorted(time_res.items()):
 
                 logging.debug(f'gamma is {gamma}, cat is {cat_name}, pdf time is {time_key}')
-
+                # calling ResultsHandler will calculate the overfluctuations and sensitivities
                 rh = ResultsHandler(rh_dict)
 
+                # get the injection time and convert it to seconds
                 inj = rh_dict["inj_dict"]["injection_sig_time_pdf"]
                 injection_length = inj["pre_window"] + inj["post_window"]
-
                 inj_time = injection_length * 60 * 60 * 24
 
                 # Convert IceCube numbers to astrophysical quantities
-
                 astro_sens, astro_disc = rh.astro_values(
                     rh_dict["inj_dict"]["injection_energy_pdf"])
 
                 key = "Energy Flux (GeV cm^{-2} s^{-1})"
-
                 e_key = "Mean Luminosity (erg/s)"
 
                 sens_livetime.append(astro_sens[key] * inj_time)
@@ -222,24 +220,15 @@ if __name__ == '__main__':
 
                 fracs.append(gamma)
 
-                # if gamma == plot_gamma:
-                #     if cat_name not in stacked_sens.keys():
-                #         stacked_sens[cat_name] = [[astro_sens[e_key] * inj_time, time_key]]
-                #     else:
-                #         stacked_sens[cat_name].append([astro_sens[e_key] * inj_time, time_key])
-
                 stacked_sens_flux[cat_name][time_key][gamma] = (
                     rh.sensitivity,
                     rh.sensitivity_err,
                     astro_sens[e_key] * inj_time
                 )
-                # rh.ts_distribution_evolution()
-                # rh.ts_evolution_gif()
-
-                # stacked_sens_flux[cat_name][time_key][gamma] = (rh.sensitivity, rh.sensitivity_err)
 
             name = "{0}/{1}/{2}".format(raw, cat_name, time_key)
 
+            # make plots total energy/fluence plots
             for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
                                                   [disc_pots_livetime, disc_e]]):
 
@@ -291,10 +280,13 @@ if __name__ == '__main__':
 
     # =================================        make final plots       =============================== #
 
+    # loop over gammas to make a plots for each spectral indice
     for gamma in gammas:
 
+        # -------------    plot sensitivity against box length   ------------------- #
         flux_fig, flux_ax = plt.subplots()
 
+        # loop over SN catalogues and plot the sensitivities against the box length
         for cat_name, cat_dict in stacked_sens_flux.items():
 
             x_raw = [float(key) for key in cat_dict.keys()]
@@ -329,8 +321,10 @@ if __name__ == '__main__':
             for cat_name in stacked_sens_flux
         }
 
+        # -------------    plot total emitted energy against box length   ---------------- #
         fig, ax = plt.subplots()
 
+        # loop over SN catalogues and plot the total emitted neutrino energy against the box length
         for cat_name in stacked_sens:
             plot_arr = np.array(stacked_sens[cat_name], dtype='<f8')
             logging.debug(f'plot array: \n {plot_arr}')
@@ -343,6 +337,8 @@ if __name__ == '__main__':
                     label=cat_name, ls='')
 
             pval_mask = p_vals[pdf_type][cat_name if not 'P' in cat_name else 'IIp']['pval'] >= 0.5
+
+            # plot the original results by Alex Stasik to make a comparison
 
             if plot_results == '_figureresults':
                 res = get_figure_limits(cat_name, pdf_type)

@@ -1,7 +1,7 @@
 import os
 import logging
 from flarestack.shared import limits_dir, limit_output_path
-# from flarestack.analyses.ccsn.necker2019.ccsn_helpers import sn_catalogue_name
+
 
 raw_output_dir = 'analyses/ccsn/necker_2019'
 
