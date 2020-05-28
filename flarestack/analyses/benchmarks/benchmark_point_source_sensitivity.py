@@ -6,7 +6,7 @@ from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity,\
     reference_7year_discovery_potential
 import matplotlib.pyplot as plt
-from flarestack import analyse
+from flarestack import analyse, wait_cluster
 import logging
 
 logging.getLogger().setLevel("INFO")
@@ -43,8 +43,8 @@ llh_kwargs = {
 name = "analyses/benchmarks/ps_sens"
 
 # sindecs = np.linspace(0.90, -0.90, 3)
-# sindecs = np.linspace(0.90, -0.90, 9)
-sindecs = np.linspace(0.5, -0.5, 3)
+sindecs = np.linspace(0.90, -0.90, 9)
+# sindecs = np.linspace(0.5, -0.5, 3)
 
 analyses = []
 
@@ -63,13 +63,15 @@ for sindec in sindecs:
         "inj_dict": inj_kwargs,
         "llh_dict": llh_kwargs,
         "scale": scale,
-        "n_trials": 100,
+        "n_trials": 50,
         "n_steps": 10
     }
 
-    # analyse(mh_dict, cluster=False, n_cpu=32)
+    analyse(mh_dict, cluster=True, n_jobs=100)
 
     analyses.append(mh_dict)
+
+wait_cluster()
 
 sens = []
 sens_err = []
