@@ -438,10 +438,10 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
         if ts_val > np.median(ts_array):
 
-            val = (ts_val - frac_under) / (1. - frac_under)
+            # val = (ts_val - frac_under) / (1. - frac_under)
 
             cdf = frac_under + frac_over * scipy.stats.chi2.cdf(
-                val, df, loc, scale)
+                ts_val, df, loc, scale)
 
             sig = norm.ppf(cdf)
 
