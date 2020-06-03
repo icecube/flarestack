@@ -121,7 +121,7 @@ class Season:
         self._time_pdf = None
         self.all_paths = [self.exp_path]
         self._subselection_fraction = None
-        self.get_trial_model = lambda : self.get_background_model()
+        self.get_trial_model = self.get_background_model
 
         # If any keywords left over, they're unrecognized, raise an error
         if kwargs:
@@ -202,7 +202,7 @@ class Season:
             logging.warning("This season is already set to generate trials using scrambled data. "
                            "No need to set it again!")
         else:
-            self.get_trial_model = lambda : Season.get_background_model(self)
+            self.get_trial_model = self.get_exp_data
             logging.info("Set trial model to use scrambled data.")
 
     def pseudo_background(self):
