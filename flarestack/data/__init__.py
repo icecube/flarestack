@@ -10,6 +10,7 @@ from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
 from flarestack.core.time_pdf import TimePDF, DetectorOnOffList, FixedEndBox, \
     FixedRefBox
+import flarestack
 
 
 class DatasetHolder:
@@ -47,14 +48,17 @@ class Dataset:
         self.seasons = dict()
         self.subseasons = dict()
 
-    def add_season(self, season):
-        self.seasons[season.season_name] = season
+    def add_season(self, season, **kwargs):
+        self.seasons[season.season_name] = copy.copy(season)
+        self.seasons[season.season_name].setup(**kwargs)
 
-    def add_subseason(self, season):
-        self.subseasons[season.season_name] = season
+    def add_subseason(self, season, **kwargs):
+        self.subseasons[season.season_name] = copy.copy(season)
+        self.subseasons[season.season_name].setup(**kwargs)
 
     def get_seasons(self, *args, **kwargs):
         season_names = list(args)
+
         if len(season_names) == 0:
             return self.make_copy()
         else:
@@ -63,9 +67,9 @@ class Dataset:
             cd.subseasons = dict()
             for name in season_names:
                 if name in self.seasons:
-                    cd.add_season(self.seasons[name])
+                    cd.add_season(self.seasons[name], **kwargs)
                 elif name in self.subseasons:
-                    cd.add_season(self.subseasons[name])
+                    cd.add_season(self.subseasons[name], **kwargs)
                 else:
                     raise Exception(
                         "Unrecognised season name: {0} not found. \n"
@@ -73,22 +77,11 @@ class Dataset:
                         "Available subseasons are: {2}".format(
                             name, self.seasons.keys(), self.subseasons.keys()))
 
-            if "subselection_fraction" in kwargs.keys():
-
-                subselection_fraction = kwargs["subselection_fraction"]
-
-                if float(subselection_fraction) > 1.:
-                    raise ValueError("Subselection {0} is greater than 1."
-                                     "Please specify a different subselection value")
-
-                for season in cd.values():
-                    season.set_subselection_fraction(subselection_fraction)
-
 
             return cd
 
-    def get_single_season(self, name):
-        return self.get_seasons(name)[name]
+    def get_single_season(self, name, **kwargs):
+        return self.get_seasons(name, **kwargs)[name]
 
     def __iter__(self):
         return self.seasons.__iter__()
@@ -121,17 +114,54 @@ class Season:
         self.season_name = season_name
         self.sample_name = sample_name
         self.exp_path = exp_path
-        self.loaded_background = None
+        self.loaded_background_model = None
+        self.loaded_trial_model = None
         self.pseudo_mc_path = None
         self.background_dtype = None
         self._time_pdf = None
         self.all_paths = [self.exp_path]
         self._subselection_fraction = None
+        self.get_trial_model = lambda : self.get_background_model()
+
+        # If any keywords left over, they're unrecognized, raise an error
+        if kwargs:
+            # Arbitrarily select alphabetically first unknown keyword arg
+            raise TypeError(f'Season got unexpected keyword argument {min(kwargs)}')
+
+    def setup(self, **kwargs):
+
+        logging.info(f"setup {kwargs}")
+
+        trial_with_data = kwargs.pop('trial_with_data', None)
+        subselection_fraction = kwargs.pop("subselection_fraction", None)
+
+        # If any keywords left over, they're unrecognized, raise an error
+        if kwargs:
+            # Arbitrarily select alphabetically first unknown keyword arg
+            raise TypeError(f'Season got unexpected keyword argument {min(kwargs)}')
+
+        # Subselection fraction
+
+        if subselection_fraction is not None:
+
+            if float(subselection_fraction) > 1.:
+                raise ValueError("Subselection {0} is greater than 1."
+                                 "Please specify a different subselection value")
+
+            self.set_subselection_fraction(subselection_fraction)
+
+        if trial_with_data is True:
+            self.use_data_for_trials()
 
     def load_background_model(self):
         """Generic function to load background data to memory. It is useful
         for Injector, but does not always need to be used."""
-        self.loaded_background = self.get_background_model()
+        self.loaded_background_model = self.get_background_model()
+
+    def load_trial_model(self):
+        """Generic function to load background data to memory. It is useful
+        for Injector, but does not always need to be used."""
+        self.loaded_trial_model = self.get_trial_model()
 
     def set_subselection_fraction(self, subselection_fraction):
         if float(subselection_fraction) > 1.:
@@ -147,16 +177,33 @@ class Season:
             del exp
         return self.background_dtype
 
-    def get_background_model(self, **kwargs):
-        """Generic Function to return background model. This could be
-        the experimental data (if the signal contamination is small),
-        or a weighted MC dataset."""
+    def data_background_model(self, **kwargs):
+        """Function to return data as a background model."""
         exp = self.get_exp_data(**kwargs)
         weight = np.ones(len(exp))
         exp = append_fields(
             exp, 'weight', weight, usemask=False, dtypes=[np.float]
         ).copy()
         return exp
+
+    def get_background_model(self, **kwargs):
+        """Generic Function to return background model. This could be
+        the experimental data (if the signal contamination is small),
+        or a weighted MC dataset. By default, uses data."""
+        return self.data_background_model()
+
+    def generate_trial_dataset(self):
+        if self.loaded_trial_model is None:
+            self.load_trial_model()
+        return np.copy(self.loaded_trial_model)
+
+    def use_data_for_trials(self):
+        if self.__class__.get_background_model == Season.get_background_model:
+            logging.warning("This season is already set to generate trials using scrambled data. "
+                           "No need to set it again!")
+        else:
+            self.get_trial_model = lambda : Season.get_background_model(self)
+            logging.info("Set trial model to use scrambled data.")
 
     def pseudo_background(self):
         """Scrambles the raw dataset to "blind" the data. Assigns a flat Right
@@ -165,9 +212,7 @@ class Season:
         blinded analysis.
         :return: data: The scrambled dataset
         """
-        if self.loaded_background is None:
-            self.load_background_model()
-        data = np.copy(self.loaded_background)
+        data = self.generate_trial_dataset()
         # Assigns a flat random distribution for Right Ascension
         data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
