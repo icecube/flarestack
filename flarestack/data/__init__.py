@@ -130,8 +130,6 @@ class Season:
 
     def setup(self, **kwargs):
 
-        logging.info(f"setup {kwargs}")
-
         trial_with_data = kwargs.pop('trial_with_data', None)
         subselection_fraction = kwargs.pop("subselection_fraction", None)
 
