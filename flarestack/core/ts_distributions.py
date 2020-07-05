@@ -447,7 +447,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
             cdf = 0.
             sig = 0.
 
-        logging.info(f"Pre-trial P-value is {1-cdf):.2E}")
+        logging.info(f"Pre-trial P-value is {1-cdf:.2E}")
         logging.info(f"Significance is {sig:.2f} Sigma")
 
         plt.axvline(ts_val, color="purple",

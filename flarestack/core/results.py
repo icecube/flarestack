@@ -290,7 +290,6 @@ class ResultsHandler(object):
             return
 
         bkg_ts = bkg_dict["TS"]
-
         bkg_median = np.median(bkg_ts)
         self.bkg_median = bkg_median
 
@@ -361,7 +360,7 @@ class ResultsHandler(object):
             ts_array = np.array(self.results[scale]["TS"])
             frac = float(len(ts_array[ts_array > ts_val])) / (float(len(
                 ts_array)))
-            
+
             logging.info(
                 "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
                     frac, ts_val, len(ts_array), scale
@@ -375,6 +374,7 @@ class ResultsHandler(object):
                 y.append(frac)
                 x_acc.append(float(scale))
                 yerr.append(1./np.sqrt(float(len(ts_array))))
+
 
                 self.make_plots(scale)
 
@@ -408,7 +408,7 @@ class ResultsHandler(object):
 
         if fit > max(x_flux):
             logging.warning("The sensitivity is beyond the range of the tested scales."
-                            "The numnber is probably not good.")
+                            "The number is probably not good.")
             extrapolated = True
         else:
             extrapolated = False
@@ -573,7 +573,7 @@ class ResultsHandler(object):
 
     def ts_evolution_gif(self, n_scale_steps=None, cmap_name='winter'):
 
-        logging.debug('making animation')
+        logging.debug('Making animation')
 
         all_scales_list = list(self.results.keys())
         n_scales_all = len(all_scales_list)
@@ -596,7 +596,7 @@ class ResultsHandler(object):
         ])
 
         n_s = [sum(a) for a in ns_arrays]
-        logging.debug('numbers of injected neutrinos: ' + str(n_s))
+        logging.debug('Numbers of injected neutrinos: ' + str(n_s))
 
         norm = colors.Normalize(vmin=0, vmax=max(n_s))
         mappable = cm.ScalarMappable(norm=norm, cmap=cmap_name)
@@ -623,7 +623,7 @@ class ResultsHandler(object):
         )
 
         anim_name = os.path.join(self.plot_dir, "ts_distributions/ts_distributions_evolution.gif")
-        logging.debug('saving animation under ' + anim_name)
+        logging.debug(f'Saving animation under {anim_name}')
         anim.save(anim_name, dpi=80, writer='imagemagick')
 
     def ts_distribution_evolution(self):
@@ -652,7 +652,7 @@ class ResultsHandler(object):
         ])
 
         n_s = [sum(a) for a in ns_arrays]
-        logging.debug('numbers of injected neutrinos: ' + str(n_s))
+        logging.debug('Numbers of injected neutrinos: ' + str(n_s))
 
         fig, ax = plt.subplots()
 
@@ -675,8 +675,8 @@ class ResultsHandler(object):
 
         plt.tight_layout()
 
-        sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_.pdf")
-        logging.debug('saving plot to ' + sn)
+        sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution.pdf")
+        logging.debug('Saving plot to {sn}')
         fig.savefig(sn)
 
         plt.close()
