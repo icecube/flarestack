@@ -246,7 +246,7 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
         nu_at_horizon * u.yr).to("GeV-1 cm-2 sr-1")))
 
     ratio = nu_at_horizon.value / diffuse_flux.value
-    logging.info("Fraction of diffuse flux {0}".format(ratio))
+    logging.info("Fraction of diffuse flux at 1GeV: {0:.2g}".format(ratio))
     logging.info("Cumulative neutrino flux {0}".format(nu_at_horizon))
     logging.debug("Diffuse neutrino flux {0}".format(diffuse_flux))
 
@@ -281,13 +281,13 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
             z, Distance(z=z).to("Mpc"), cumulative_z(rate_per_z, z)[-1])
         )
 
-    nearby = 0.3
+    for nearby in [0.1, 0.3]:
 
-    logging.info(
-        "Fraction from nearby (z<{0}) sources: {1}".format(
-            nearby, cumulative_nu_flux(nearby)[-1] / nu_at_horizon
+        logging.info(
+            "Fraction from nearby (z<{0}) sources: {1}".format(
+                nearby, cumulative_nu_flux(nearby)[-1] / nu_at_horizon
+            )
         )
-    )
 
     plt.figure()
     plt.plot(zrange, rate_per_z(zrange))
