@@ -129,7 +129,6 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             logging.info("Test Statistic of: {0}".format(self.ts))
 
             ub_res_dict = {
-                "res": self.res_dict['res'],
                 "Parameters": self.res_dict['Parameters'],
                 "TS": self.res_dict['TS'],
                 "Flag": self.res_dict['Flag']
