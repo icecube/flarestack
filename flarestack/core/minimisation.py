@@ -50,7 +50,8 @@ def read_mh_dict(mh_dict):
             mh_dict[new_key] = mh_dict[old_key]
 
     if "name" not in mh_dict.keys():
-        mh_dict["name"] = " "
+        raise KeyError("mh_dict object is missing key 'name'."
+                       "This should be the unique save path for results.")
 
     elif mh_dict["name"][-1] != "/":
         mh_dict["name"] += "/"
