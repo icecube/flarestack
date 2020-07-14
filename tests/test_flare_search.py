@@ -22,7 +22,7 @@ llh_time = {
 }
 
 unblind_llh = {
-    "llh_name": "standard",
+    "llh_name": "standard_nonoverlapping",
     "llh_sig_time_pdf": llh_time,
     "llh_bkg_time_pdf": {"time_pdf_name": "steady"},
     "llh_energy_pdf": llh_energy
@@ -32,6 +32,7 @@ unblind_llh = {
 cat_path = ps_catalogue_name(0.5)
 
 unblind_dict = {
+    "name": "tests/test_flare_search/",
     "mh_name": "flare",
     "dataset": icecube_ps_3_year.get_seasons("IC79-2010", "IC86-2011"),
     "catalogue": cat_path,
@@ -63,7 +64,7 @@ class TestFlareSearch(unittest.TestCase):
         ub = create_unblinder(unblind_dict)
         res = [x for x in ub.res_dict["Parameters"].values()]
         for i, x in enumerate(res):
-            self.assertAlmostEqual(x, true_parameters[i], delta=5)
+            self.assertAlmostEqual(x, true_parameters[i], places=1)
 
         logging.info("Best fit values {0}".format(list(res)))
         logging.info("Reference best fit {0}".format(true_parameters))

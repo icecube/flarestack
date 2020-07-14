@@ -29,7 +29,6 @@ true_parameters = [
 
 catalogue = tde_catalogue_name("jetted")
 
-
 class TestTimeIntegrated(unittest.TestCase):
 
     def setUp(self):

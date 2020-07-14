@@ -50,6 +50,7 @@ class TestTimeIntegrated(unittest.TestCase):
         for j, sindec in enumerate(sindecs):
 
             unblind_dict = {
+                "name": f"tests/test_fixed_energy/{sindec:.2f}/",
                 "mh_name": "fixed_weights",
                 "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
                 "catalogue": ps_catalogue_name(sindec),
