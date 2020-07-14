@@ -1,6 +1,6 @@
 import numpy as np
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.icecube import ps_v003_p02
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity,\
@@ -40,7 +40,7 @@ llh_kwargs = {
     "llh_bkg_time_pdf": {"time_pdf_name": "steady"}
 }
 
-name = "analyses/benchmarks/ps_sens"
+name = "analyses/benchmarks/ps_sens_1yr"
 
 # sindecs = np.linspace(0.90, -0.90, 3)
 sindecs = np.linspace(0.90, -0.90, 9)
@@ -53,21 +53,23 @@ for sindec in sindecs:
 
     subname = name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
 
-    scale = flux_to_k(reference_sensitivity(sindec)) * 5
+    scale = flux_to_k(reference_sensitivity(sindec)) * 12
 
     mh_dict = {
         "name": subname,
         "mh_name": "fixed_weights",
-        "dataset": ps_v002_p01,
+        "dataset": ps_v003_p02.get_seasons("IC86_2011"),
         "catalogue": cat_path,
         "inj_dict": inj_kwargs,
         "llh_dict": llh_kwargs,
         "scale": scale,
-        "n_trials": 50,
+        "n_trials": 500,
         "n_steps": 10
     }
 
-    analyse(mh_dict, cluster=True, n_jobs=100)
+    # mh = MinimisationHandler.create(mh_dict)
+
+    analyse(mh_dict, cluster=False, n_cpu=24)
 
     analyses.append(mh_dict)
 
@@ -107,7 +109,7 @@ ax1.semilogy(nonposy='clip')
 ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]",
                fontsize=12)
 
-plt.title('7-year Point Source Sensitivity')
+plt.title('10-year Point Source Sensitivity')
 
 ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
@@ -141,5 +143,5 @@ plt.subplots_adjust(hspace=0.001)
 
 ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
 
-plt.savefig(plot_output_dir(name) + "/7yearPS.pdf")
+plt.savefig(plot_output_dir(name) + "/10yearPS.pdf")
 plt.close()

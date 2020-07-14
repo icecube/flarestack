@@ -17,6 +17,7 @@ llh_dict = {
 source = ps_catalogue_name(0.0)
 
 unblind_dict = {
+    "name": "tests/test_llh_spatial/",
     "mh_name": "fixed_weights",
     "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
     "catalogue": ps_catalogue_name(0.5),
