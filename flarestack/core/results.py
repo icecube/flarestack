@@ -751,7 +751,7 @@ class ResultsHandler(object):
 
             plt.xlabel(x_label)
             plt.ylabel(param)
-            plt.title("Bias (" + param + ")")
+            plt.title(f"Bias ({param})")
 
             savepath = os.path.join(self.plot_dir, "bias_" + param + ".pdf")
             logging.info("Saving bias plot to {0}".format(savepath))

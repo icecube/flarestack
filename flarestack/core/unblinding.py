@@ -110,7 +110,11 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
             self.plot_dir = plot_output_dir(self.name)
 
-
+            try:
+                os.makedirs(os.path.dirname(self.unblind_res_path))
+            except OSError:
+                pass
+            
             logging.info("Unblinding catalogue")
 
             # Minimise likelihood and produce likelihood scans
@@ -125,7 +129,6 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             logging.info("Test Statistic of: {0}".format(self.ts))
 
             ub_res_dict = {
-                "res": self.res_dict['res'],
                 "Parameters": self.res_dict['Parameters'],
                 "TS": self.res_dict['TS'],
                 "Flag": self.res_dict['Flag']

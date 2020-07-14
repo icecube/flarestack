@@ -22,7 +22,7 @@ llh_time = {
 }
 
 unblind_llh = {
-    "llh_name": "standard_nonoverlapping",
+    "llh_name": "standard",
     "llh_sig_time_pdf": llh_time,
     "llh_bkg_time_pdf": {"time_pdf_name": "steady"},
     "llh_energy_pdf": llh_energy
