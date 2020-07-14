@@ -87,13 +87,19 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             try:
                 if self.mock_unblind:
                     self.limit_path = limit_output_path(
-                        self.unblind_dict["background_ts"] + "mock_unblind/")
+                        self.unblind_dict["name"] + "mock_unblind/")
+                    self.unblind_res_path = unblinding_output_path(
+                        self.unblind_dict["name"] + "mock_unblind/")
 
                 else:
                     self.limit_path = limit_output_path(
-                        self.unblind_dict["background_ts"] + "real_unblind/")
+                        self.unblind_dict["name"] + "real_unblind/")
+                    self.unblind_res_path = unblinding_output_path(
+                        self.unblind_dict["name"] + "real_unblind/")
+
             except KeyError:
                 self.limit_path = np.nan
+                self.unblind_res_path = np.nan
 
             if self.name != " /":
                 if self.mock_unblind:
@@ -117,6 +123,18 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             self.sigma = np.nan
 
             logging.info("Test Statistic of: {0}".format(self.ts))
+
+            ub_res_dict = {
+                "res": self.res_dict['res'],
+                "Parameters": self.res_dict['Parameters'],
+                "TS": self.res_dict['TS'],
+                "Flag": self.res_dict['Flag']
+            }
+
+            logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
+
+            with open(self.unblind_res_path, "wb") as f:
+                pickle.dump(ub_res_dict, f)
 
             try:
                 path = self.unblind_dict["background_ts"]
