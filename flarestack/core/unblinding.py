@@ -96,6 +96,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                         self.unblind_dict["background_ts"] + "real_unblind/")
                     self.unblind_res_path = unblinding_output_path(
                         self.unblind_dict["background_ts"] + "real_unblind/")
+                    print(self.unblind_res_path, type(self.unblind_res_path))
             except KeyError:
                 self.limit_path = np.nan
                 self.unblind_res_path = np.nan
@@ -109,8 +110,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
             self.plot_dir = plot_output_dir(self.name)
 
+            print("============TRAVIS===========", self.unblind_res_path)
             try:
-                os.makedirs(os.path.dirname(self.unblind_res_path))
+                os.makedirs(os.path.dirname(str(self.unblind_res_path)))
             except OSError:
                 pass
 
