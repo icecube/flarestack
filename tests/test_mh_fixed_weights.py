@@ -27,6 +27,8 @@ true_parameters = [3.70369960756338, 4.0]
 catalogue = tde_catalogue_name("jetted")
 
 
+logging.getLogger().setLevel("INFO")
+
 class TestTimeIntegrated(unittest.TestCase):
 
     def setUp(self):
@@ -39,6 +41,7 @@ class TestTimeIntegrated(unittest.TestCase):
         # Test three declinations
 
         unblind_dict = {
+            "name": "test/test_fixed_weights/",
             "mh_name": "fixed_weights",
             "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
             "catalogue": catalogue,
