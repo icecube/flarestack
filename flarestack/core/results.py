@@ -305,37 +305,37 @@ class ResultsHandler(object):
 
         logging.info("{0}Sensitivity is {1:.3g}".format(msg, self.sensitivity))
 
-    # def set_upper_limit(self, ts_val, savepath):
-    #     """Set an upper limit, based on a Test Statistic value from
-    #     unblinding, as well as a
-    #
-    #     :param ts_val: Test Statistic Value
-    #     :param savepath: Path to save plot
-    #     :return: Upper limit, and whether this was extrapolated
-    #     """
-    #
-    #     try:
-    #         bkg_dict = self.results[scale_shortener(0.0)]
-    #     except KeyError:
-    #         print "No key equal to '0'"
-    #         return
-    #
-    #     bkg_ts = bkg_dict["TS"]
-    #     bkg_median = np.median(bkg_ts)
-    #
-    #     # Set an upper limit based on the Test Statistic value for an
-    #     # overfluctuation, or the median background for an underfluctuation.
-    #
-    #     ref_ts = max(ts_val, bkg_median)
-    #
-    #     ul, extrapolated = self.find_overfluctuations(
-    #         ref_ts, savepath)
-    #
-    #     if extrapolated:
-    #         print "EXTRAPOLATED",
-    #
-    #     print "Upper limit is", "{0:.3g}".format(ul)
-    #     return ul, extrapolated
+    def set_upper_limit(self, ts_val, savepath):
+        """Set an upper limit, based on a Test Statistic value from
+        unblinding, as well as a
+
+        :param ts_val: Test Statistic Value
+        :param savepath: Path to save plot
+        :return: Upper limit, and whether this was extrapolated
+        """
+
+        try:
+            bkg_dict = self.results[scale_shortener(0.0)]
+        except KeyError:
+            print ("No key equal to '0'")
+            return
+
+        bkg_ts = bkg_dict["TS"]
+        bkg_median = np.median(bkg_ts)
+
+        # Set an upper limit based on the Test Statistic value for an
+        # overfluctuation, or the median background for an underfluctuation.
+
+        ref_ts = max(ts_val, bkg_median)
+
+        ul, extrapolated, err = self.find_overfluctuations(
+            ref_ts, savepath)
+
+        if extrapolated:
+            print ("EXTRAPOLATED"),
+
+        print ("Upper limit is", "{0:.3g}".format(ul))
+        return ul, extrapolated, err
 
     def find_overfluctuations(self, ts_val, savepath):
         """Uses the values of injection trials to fit an 1-exponential decay
