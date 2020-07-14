@@ -110,7 +110,11 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
             self.plot_dir = plot_output_dir(self.name)
 
-
+            try:
+                os.makedirs(os.path.dirname(self.unblind_res_path))
+            except OSError:
+                pass
+            
             logging.info("Unblinding catalogue")
 
             # Minimise likelihood and produce likelihood scans
