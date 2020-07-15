@@ -29,7 +29,7 @@ def confirm():
 
 
 def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
-                     disable_warning=False):
+                     disable_warning=False, **kwargs):
     """Dynamically create an Unblinder class that inherits corectly from the
     appropriate MinimisationHandler. The name of the parent is specified in
     the unblinder dictionary as 'mh_name'.
@@ -66,7 +66,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
     class Unblinder(ParentMiminisationHandler):
 
-        def __init__(self, unblind_dict, seed=None):
+        def __init__(self, unblind_dict, seed=None, scan_2d=False, **kwargs):
+
             self.unblind_dict = unblind_dict
             unblind_dict["unblind_bool"] = True
             unblind_dict["mock_unblind_bool"] = mock_unblind
@@ -155,7 +156,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 if isinstance(self, FlareMinimisationHandler):
                     self.neutrino_lightcurve()
                 else:
-                    self.scan_likelihood(scan_2d=False)
+                    self.scan_likelihood(scan_2d=scan_2d)
 
         def add_injector(self, season, sources):
             if self.mock_unblind is False:
@@ -183,7 +184,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 for subdir in os.listdir(self.pickle_dir):
                     new_path = self.unblind_dict["background_ts"] + subdir + "/"
                     with open(analysis_pickle_path(name=new_path), "rb") as f:
-                        print('opening file ', analysis_pickle_path(name=new_path))
+                        logging.info(f'Opening file {analysis_pickle_path(name=new_path)}')
                         mh_dict = pickle.load(f)
                         e_pdf_dict = mh_dict["inj_dict"]["injection_energy_pdf"]
 
@@ -286,7 +287,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 with open(self.limit_path, "wb") as f:
                     pickle.dump(res_dict, f)
 
-            except OSError:
+            except (OSError, AttributeError) as e:
                 logging.warning("Unable to set limits. No TS distributions found.")
 
         def compare_to_background_TS(self):
@@ -383,4 +384,4 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             print("OK, you asked for it...")
             print("\n")
 
-    return Unblinder(unblind_dict)
+    return Unblinder(unblind_dict, **kwargs)
