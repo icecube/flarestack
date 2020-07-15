@@ -34,7 +34,7 @@ cat_path = ps_catalogue_name(0.5)
 unblind_dict = {
     "name": "tests/test_flare_search/",
     "mh_name": "flare",
-    "dataset": icecube_ps_3_year.get_seasons("IC79-2010", "IC86-2011"),
+    "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
     "catalogue": cat_path,
     "llh_dict": unblind_llh
 }
