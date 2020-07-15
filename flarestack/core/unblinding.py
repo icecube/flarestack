@@ -298,7 +298,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 ts_array = list()
 
                 for subdir in os.listdir(self.pickle_dir):
-                    merged_pkl = self.pickle_dir + subdir + "/merged/0.pkl"
+                    merged_pkl = os.path.join(self.pickle_dir, os.path.join(subdir, "/merged/0.pkl"))
 
                     logging.info("Loading {0}".format(merged_pkl))
 
@@ -318,7 +318,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 try:
                     ts_array = list()
 
-                    merged_pkl = self.pickle_dir + "merged/0.pkl"
+                    merged_pkl = os.path.join(self.pickle_dir,"merged/0.pkl")
 
                     logging.info("No subfolders found, loading {0}".format(merged_pkl))
 

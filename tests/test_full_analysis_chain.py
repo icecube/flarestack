@@ -22,7 +22,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         logging.info("Testing MinimisationHandler analysis chain")
 
-        base_name = "tests/test_analysis_chain"
+        base_name = "tests/test_analysis_chain/"
 
         for j, gamma in enumerate([2.0, 2.5]):
             # Initialise Injectors/LLHs
@@ -33,7 +33,7 @@ class TestTimeIntegrated(unittest.TestCase):
                 },
                 "injection_energy_pdf": {
                     "energy_pdf_name": "power_law",
-                    "gamma": 2.0
+                    "gamma": gamma
                 }
             }
 
@@ -61,7 +61,7 @@ class TestTimeIntegrated(unittest.TestCase):
                 "llh_dict": llh_dict,
                 "n_steps": 5,
                 "n_trials": 10,
-                "scale": [3.,][j]
+                "scale": [3.,500.][j]
             }
 
             analyse(mh_dict, n_cpu=2, cluster=False)
