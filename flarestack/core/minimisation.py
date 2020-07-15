@@ -663,7 +663,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return f_final
 
-    def scan_likelihood(self, scale=1., scan_2d = False):
+    def scan_likelihood(self, scale=1., scan_2d=False):
         """Generic wrapper to perform a likelihood scan a background scramble
         with an injection of signal given by scale.
 
@@ -806,8 +806,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                 plt.ylabel(param_name)
 
-                y = np.linspace(max(bound[0], -100),
-                                np.array(u_ranges)[index], 1e2)
+                y = np.linspace(
+                    float(max(bound[0], -100)),
+                    np.array(u_ranges)[index],
+                    int(1e2)
+                )
 
                 X, Y = np.meshgrid(x, y[::-1])
                 Z = []
@@ -838,7 +841,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                     fmt[l] = s
 
                 ax.clabel(CS, fmt=fmt, inline=1, fontsize=10, levels=levels,
-                          color="white")
+                          colors="white")
                 cbar.set_label(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
                                rotation=90)
 
@@ -863,7 +866,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return res_dict
 
-    def neutrino_lightcurve(self):
+    def neutrino_lightcurve(self, seed=None):
+
+        full_dataset = self.prepare_dataset(30., seed)
 
         for source in self.sources:
 
@@ -876,24 +881,22 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             for season in self.seasons:
 
-                time_key = season["MJD Time Key"]
-
                 # Generate a scrambled dataset, and save it to the datasets
                 # dictionary. Loads the llh for the season.
-
-                data = self.injectors[season["Name"]].create_dataset(scale=0)
-                llh = self.llhs[season["Name"]]
+                data = full_dataset[season]
+                llh = self.get_likelihood(season)
 
                 mask = llh.select_spatially_coincident_data(data, [source])
+
                 spatial_coincident_data = data[mask]
 
                 t_mask = np.logical_and(
                     np.greater(
-                        spatial_coincident_data[time_key],
-                        llh.time_pdf.sig_t0(source)),
+                        spatial_coincident_data["time"],
+                        llh.sig_time_pdf.sig_t0(source)),
                     np.less(
-                        spatial_coincident_data[time_key],
-                        llh.time_pdf.sig_t1(source))
+                        spatial_coincident_data["time"],
+                        llh.sig_time_pdf.sig_t1(source))
                 )
 
                 coincident_data = spatial_coincident_data[t_mask]
@@ -907,13 +910,16 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 if np.sum(mask) > 0:
 
                     logE += list(10 ** (coincident_data["logE"][mask] - 3))
-                    time += list(coincident_data[time_key][mask])
+                    time += list(coincident_data["time"][mask])
                     sig += list(y)
 
-                ax0.axvline(max(llh.time_pdf.sig_t0(source), llh.time_pdf.t0),
-                            color="k", linestyle="--", alpha=0.5)
-                ax0.axvline(min(llh.time_pdf.sig_t1(source), llh.time_pdf.t1),
-                            color="k", linestyle="--", alpha=0.5)
+                if llh.sig_time_pdf.sig_t0(source) > llh.sig_time_pdf.t0:
+
+                    ax0.axvline(llh.sig_time_pdf.sig_t0(source), color="k", linestyle="--", alpha=0.5)
+
+                if llh.sig_time_pdf.sig_t1(source) < llh.sig_time_pdf.t1:
+
+                    ax0.axvline(llh.sig_time_pdf.sig_t1(source), color="k", linestyle="--", alpha=0.5)
 
             cmap = cm.get_cmap('jet')
             norm = mpl.colors.Normalize(vmin=min(logE), vmax=max(logE),
@@ -925,10 +931,14 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 ax0.plot([x, x], [0, val], color=m.to_rgba(logE[i]))
 
             if hasattr(self, "res_dict"):
-                params = self.res_dict[source["Name"]]["Parameters"]
+                params = self.res_dict["Parameters"]
                 if len(params) > 1:
-                    ax0.axvspan(params[2], params[3], facecolor="grey",
-                                      alpha=0.2)
+                    ax0.axvspan(
+                        params[f"t_start ({source['source_name']})"],
+                        params[f"t_end ({source['source_name']})"],
+                        facecolor="grey",
+                        alpha=0.2
+                    )
             ax0.set_xlabel("Arrival Time (MJD)")
             ax0.set_ylabel("Log(Signal/Background)")
 
@@ -938,16 +948,16 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             ax1.set_ylabel("Muon Energy Proxy (TeV)")
 
             ax0.set_ylim(bottom=0)
-            plt.suptitle(source["Name"])
             # plt.tight_layout()
 
-            path = plot_output_dir(self.name) + source["Name"] + \
-                   "_neutrino_lightcurve.pdf"
+            path = f"{plot_output_dir(self.name)}neutrino_lightcurve.pdf"
 
             try:
                 os.makedirs(os.path.dirname(path))
             except OSError:
                 pass
+
+            logging.info(f"Saving to {path}")
 
             plt.savefig(path)
             plt.close()
