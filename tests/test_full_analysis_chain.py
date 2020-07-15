@@ -8,6 +8,8 @@ from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack import analyse, ResultsHandler
 
+logging.getLogger().setLevel("INFO")
+
 # Initialise Injectors/LLHs
 
 inj_dict = {
@@ -41,7 +43,7 @@ class TestTimeIntegrated(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_declination_sensitivity(self):
+    def test_full_chain(self):
 
         logging.info("Testing MinimisationHandler analysis chain")
 
@@ -63,6 +65,11 @@ class TestTimeIntegrated(unittest.TestCase):
 
         rh = ResultsHandler(mh_dict)
 
+        ub_dict = dict(mh_dict)
+
+        ub_dict["background_ts"] = mh_dict["name"]
+
+        ub = create_unblinder(ub_dict, full_plots=True)
 
 if __name__ == '__main__':
     unittest.main()
