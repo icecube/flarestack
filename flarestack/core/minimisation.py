@@ -708,7 +708,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             u_ranges.append(ur)
 
-            n_range = np.linspace(max(bound[0], -100), ur, 1e2)
+            n_range = np.linspace(float(max(bound[0], -100)), ur, int(1e2))
 
             # n_range = np.linspace(-30, 30, 1e2)
             y = []
@@ -727,35 +727,35 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             plt.xlabel(self.param_names[i])
             plt.ylabel(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$")
 
-            print("PARAM:", self.param_names[i])
+            logging.info(f"PARAM: {self.param_names[i]}")
             min_y = np.min(y)
-            print("Minimum value of", min_y)
 
             min_index = y.index(min_y)
             min_n = n_range[min_index]
-            print("at", min_n)
 
-            print("One Sigma interval between")
+            logging.info(f"Minimum value of {min_y} at {min_n}")
+
+            logging.info("One Sigma interval between")
 
             l_y = np.array(y[:min_index])
             try:
                 l_y = min(l_y[l_y > (min_y + 0.5)])
                 l_lim = n_range[y.index(l_y)]
-                print(l_lim)
+                logging.info(l_lim)
             except ValueError:
                 l_lim = min(n_range)
-                print("<"+str(l_lim))
+                logging.info(f"<{l_lim}")
 
-            print("and")
+            logging.info("and")
 
             u_y = np.array(y[min_index:])
             try:
                 u_y = min(u_y[u_y > (min_y + 0.5)])
                 u_lim = n_range[y.index(u_y)]
-                print(u_lim)
+                logging.info(u_lim)
             except ValueError:
                 u_lim = max(n_range)
-                print(">" + str(u_lim))
+                logging.info(f">{u_lim}")
 
             ax.axvspan(l_lim, u_lim, facecolor="grey",
                         alpha=0.2)

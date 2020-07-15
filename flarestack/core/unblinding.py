@@ -190,7 +190,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     self.unblind_dict['name'] = mh_dict['name']
                     rh = ResultsHandler(self.unblind_dict)
 
-                    print("In calculate_upper_limits, ResultsHandler is ", rh)
+                    logging.debug(f"In calculate_upper_limits, ResultsHandler is {rh}")
 
                     savepath = ul_dir + subdir + ".pdf"
 
