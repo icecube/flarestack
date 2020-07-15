@@ -123,7 +123,7 @@ class IceCubeRunList(DetectorOnOffList):
 
         full_livetime = np.sum(self.on_off_list["length"])
 
-        step = 1e-10
+        step = 1e-12
 
         t_range = [t0 - step]
         f = [0.]
