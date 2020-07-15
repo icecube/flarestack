@@ -61,7 +61,7 @@ class TestFlareSearch(unittest.TestCase):
     def test_flare(self):
         logging.info("Testing 'flare' LLH class")
 
-        ub = create_unblinder(unblind_dict)
+        ub = create_unblinder(unblind_dict, full_plots=True)
         res = [x for x in ub.res_dict["Parameters"].values()]
         for i, x in enumerate(res):
             self.assertAlmostEqual(x, true_parameters[i], places=1)
