@@ -69,7 +69,7 @@ class TestTimeIntegrated(unittest.TestCase):
 
         ub_dict["background_ts"] = mh_dict["name"]
 
-        ub = create_unblinder(ub_dict, full_plots=True)
+        ub = create_unblinder(ub_dict, full_plots=True, scan_2d=True)
 
 if __name__ == '__main__':
     unittest.main()
