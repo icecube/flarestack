@@ -10,31 +10,6 @@ from flarestack import analyse, ResultsHandler
 
 logging.getLogger().setLevel("INFO")
 
-# Initialise Injectors/LLHs
-
-inj_dict = {
-    "injection_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "injection_energy_pdf": {
-        "energy_pdf_name": "power_law",
-        "gamma": 2.0
-    }
-}
-
-llh_dict = {
-    "llh_name": "standard",
-    "llh_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_bkg_time_pdf": {
-        "time_pdf_name": "steady",
-    },
-    "llh_energy_pdf": {
-        "energy_pdf_name": "power_law"
-    }
-}
-
 catalogue = tde_catalogue_name("jetted")
 
 
@@ -47,27 +22,55 @@ class TestTimeIntegrated(unittest.TestCase):
 
         logging.info("Testing MinimisationHandler analysis chain")
 
-        # Test three declinations
+        base_name = "tests/test_analysis_chain"
 
-        mh_dict = {
-            "name": "tests/test_analysis_chain",
-            "mh_name": "fixed_weights",
-            "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
-            "catalogue": catalogue,
-            "inj_dict": inj_dict,
-            "llh_dict": llh_dict,
-            "n_steps": 5,
-            "n_trials": 10,
-            "scale": 3.
-        }
+        for j, gamma in enumerate([2.0, 2.5]):
+            # Initialise Injectors/LLHs
 
-        analyse(mh_dict, n_cpu=2, cluster=False)
+            inj_dict = {
+                "injection_sig_time_pdf": {
+                    "time_pdf_name": "steady"
+                },
+                "injection_energy_pdf": {
+                    "energy_pdf_name": "power_law",
+                    "gamma": 2.0
+                }
+            }
 
-        rh = ResultsHandler(mh_dict)
+            llh_dict = {
+                "llh_name": "standard",
+                "llh_sig_time_pdf": {
+                    "time_pdf_name": "steady"
+                },
+                "llh_bkg_time_pdf": {
+                    "time_pdf_name": "steady",
+                },
+                "llh_energy_pdf": {
+                    "energy_pdf_name": "power_law"
+                }
+            }
+
+            # Test three declinations
+
+            mh_dict = {
+                "name": f"{base_name}/{gamma}/",
+                "mh_name": "fixed_weights",
+                "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
+                "catalogue": catalogue,
+                "inj_dict": inj_dict,
+                "llh_dict": llh_dict,
+                "n_steps": 5,
+                "n_trials": 10,
+                "scale": [3.,][j]
+            }
+
+            analyse(mh_dict, n_cpu=2, cluster=False)
+
+            rh = ResultsHandler(mh_dict)
 
         ub_dict = dict(mh_dict)
 
-        ub_dict["background_ts"] = mh_dict["name"]
+        ub_dict["background_ts"] = base_name
 
         ub = create_unblinder(ub_dict, full_plots=True, scan_2d=True)
 
