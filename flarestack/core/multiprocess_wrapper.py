@@ -75,7 +75,7 @@ class MultiProcessor:
         self.queue.put(item)
 
     def dump_all_injection_values(self):
-        for scale in list(set(list(self.scales))):
+        for scale in self.scales:
             self.mh.dump_injection_values(scale)
 
     def run_trial(self, **kwargs):
