@@ -200,12 +200,20 @@ class ResultsHandler(object):
         all_sub_dirs = [x for x in os.listdir(self.pickle_output_dir)
                         if x[0] != "." and x != "merged"]
 
+        missed = [x for x in all_sub_dirs if x not in self.inj.keys()]
+
+        if len(missed) > 0:
+            logging.warning("Some older results were found, for flux scales that "
+                            "were not used in the most recent injection iteration.")
+            logging.warning("These older results will not be used here.")
+            logging.warning(f"The following flux scale results were ignored: {missed}")
+
         try:
             os.makedirs(self.merged_dir)
         except OSError:
             pass
 
-        for sub_dir_name in all_sub_dirs:
+        for sub_dir_name in self.inj.keys():
             sub_dir = os.path.join(self.pickle_output_dir,  sub_dir_name)
 
             files = os.listdir(sub_dir)
