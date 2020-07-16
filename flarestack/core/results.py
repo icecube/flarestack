@@ -625,16 +625,17 @@ class ResultsHandler(object):
         anim_name = os.path.join(self.plot_dir, "ts_distributions/ts_distributions_evolution.gif")
         logging.debug(f'Saving animation under {anim_name}')
         anim.save(anim_name, dpi=80, writer='imagemagick')
+        plt.close()
 
     def ts_distribution_evolution(self):
 
-        logging.debug('plotting evolution of TS distribution')
+        logging.debug('Plotting evolution of TS distribution')
 
         all_scales = np.array(list(self.results.keys()))
         all_scales_floats = [float(sc) for sc in all_scales]
 
-        logging.debug('all scales: ' + str(all_scales_floats))
-        logging.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
+        logging.debug('All scales: ' + str(all_scales_floats))
+        logging.debug('Sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
 
         sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
         disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
@@ -660,23 +661,23 @@ class ResultsHandler(object):
 
 
         ax.hist(ts_arrays[1], histtype='step', density=True, color='orange',
-                label='signal: {:.2} signal neutrinos'.format(n_s[1]))
+                label='Signal: {:.2} signal neutrinos'.format(n_s[1]))
         ax.axvline(self.bkg_median, ls='--', label='sensitivity threshold', color='orange')
 
         ax.hist(ts_arrays[2], histtype='step', density=True, color='red',
-                label='signal: {:.2} signal neutrinos'.format(n_s[2]))
+                label='Signal: {:.2} signal neutrinos'.format(n_s[2]))
         ax.axvline(self.disc_ts_threshold, ls='--', label='discovery potential threshold',
                    color='red')
 
         ax.set_xlabel('Test Statistic')
-        ax.set_ylabel('a.u.')
+        ax.set_ylabel('A.U.')
         ax.legend()
         ax.set_yscale('log')
 
         plt.tight_layout()
 
         sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution.pdf")
-        logging.debug('Saving plot to {sn}')
+        logging.debug(f'Saving plot to {sn}')
         fig.savefig(sn)
 
         plt.close()
