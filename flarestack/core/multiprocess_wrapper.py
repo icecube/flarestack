@@ -8,7 +8,10 @@ from multiprocessing import JoinableQueue, Process, Queue, Value
 import random
 import numpy as np
 from multiprocessing import set_start_method
-set_start_method("fork")
+try:
+    set_start_method("fork")
+except RuntimeError:
+    pass
 
 def generate_dynamic_mh_class(mh_dict):
 
