@@ -12,7 +12,7 @@ try:
     icecube_dataset_dir = os.environ['FLARESTACK_DATASET_DIR']
 
     if os.path.isdir(icecube_dataset_dir + "mirror-7year-PS-sens/"):
-        published_sens_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
+        ref_dir_7yr = icecube_dataset_dir + "mirror-7year-PS-sens/"
     logging.info(f"Loading datasets from {icecube_dataset_dir} (local)")
 except KeyError:
     icecube_dataset_dir = None
@@ -20,11 +20,13 @@ except KeyError:
 if icecube_dataset_dir is None:
     if host_server == "DESY":
         icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
-        published_sens_ref_dir = icecube_dataset_dir + "mirror-7year-PS-sens/"
+        ref_dir_7yr = icecube_dataset_dir + "ref_sensitivity/mirror-7year-PS-sens/"
+        ref_10yr = icecube_dataset_dir + "ref_sensitivity/TenYr_E2andE3_sensitivity_and_discpot.npy"
         logging.info(f"Loading datasets from {icecube_dataset_dir} (DESY)")
     elif host_server == "WIPAC":
         icecube_dataset_dir = "/data/ana/analyses/"
-        published_sens_ref_dir = "/data/user/steinrob/mirror-7year-PS-sens/"
+        ref_dir_7yr = "/data/user/steinrob/mirror-7year-PS-sens/"
+        ref_10yr = "/data/user/tcarver/skylab_scripts/skylab_trunk/doc/analyses/combined_tracks/TenYr_E2andE3_sensitivity_and_discpot.npy"
         logging.info(f"Loading datasets from {icecube_dataset_dir} (WIPAC)")
     else:
         raise ImportError("No IceCube data directory found. Run: \n"
@@ -32,7 +34,7 @@ if icecube_dataset_dir is None:
 
 def get_published_sens_ref_dir():
     try:
-        return published_sens_ref_dir
+        return ref_dir_7yr, ref_10yr
     except NameError:
         logging.error(
             "No reference sensitivity directory found. "
