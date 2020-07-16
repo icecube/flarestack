@@ -38,8 +38,6 @@ def analyse(mh_dict, cluster=False, n_cpu=None, **kwargs):
 
     path = make_analysis_pickle(mh_dict)
 
-    print(path)
-
     job_id = None
 
     if cluster:
