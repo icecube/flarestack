@@ -264,9 +264,9 @@ def fit_background_ts(ts_array, ts_type):
         labs.append("TS <= 0")
         cols.append("grey")
 
-    if len(res) > 1:
-        res = np.array(res, dtype=object)
-        res.shape = (2, 1)
+    # if len(res) > 1:
+    #     res = np.array(res, dtype=object)
+    #     res.shape = (2, 1)
 
     plt.hist(res,
              bins=n_bins, lw=2, histtype='step',
