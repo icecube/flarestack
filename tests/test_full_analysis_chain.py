@@ -64,11 +64,11 @@ class TestTimeIntegrated(unittest.TestCase):
                 "scale": [3., 500.][j]
             }
 
-            analyse(mh_dict, n_cpu=2, cluster=False)
+            analyse(mh_dict, n_cpu=24, cluster=False)
 
             rh = ResultsHandler(mh_dict)
 
-            # Deliberately test a second time, to see performamnce once results have been combined
+            # Deliberately test a second time, to see performance once results have been combined
 
             rh = ResultsHandler(mh_dict)
 

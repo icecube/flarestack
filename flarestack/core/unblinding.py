@@ -169,7 +169,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
         def calculate_upper_limits(self):
 
             try:
-                ul_dir = self.plot_dir + "upper_limits/"
+                ul_dir = os.path.join(self.plot_dir, "upper_limits/")
                 try:
                     os.makedirs(ul_dir)
                 except OSError:
@@ -182,9 +182,14 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 x_axis = []
 
                 for subdir in os.listdir(self.pickle_dir):
-                    new_path = self.unblind_dict["background_ts"] + subdir + "/"
-                    with open(analysis_pickle_path(name=new_path), "rb") as f:
-                        logging.info(f'Opening file {analysis_pickle_path(name=new_path)}')
+
+                    root = os.path.join(self.unblind_dict["background_ts"], subdir)
+
+                    new_path = analysis_pickle_path(name=root)
+
+                    logging.info(f'Opening file {new_path}')
+
+                    with open(new_path, "rb") as f:
                         mh_dict = pickle.load(f)
                         e_pdf_dict = mh_dict["inj_dict"]["injection_energy_pdf"]
 
@@ -287,7 +292,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 with open(self.limit_path, "wb") as f:
                     pickle.dump(res_dict, f)
 
-            except (OSError, AttributeError) as e:
+            except AttributeError as e:
                 logging.warning("Unable to set limits. No TS distributions found.")
 
         def compare_to_background_TS(self):
@@ -298,7 +303,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 ts_array = list()
 
                 for subdir in os.listdir(self.pickle_dir):
-                    merged_pkl = os.path.join(self.pickle_dir, os.path.join(subdir, "/merged/0.pkl"))
+
+                    merged_pkl = os.path.join(os.path.join(self.pickle_dir, subdir), "merged/0.pkl")
 
                     logging.info("Loading {0}".format(merged_pkl))
 
@@ -318,7 +324,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 try:
                     ts_array = list()
 
-                    merged_pkl = os.path.join(self.pickle_dir,"merged/0.pkl")
+                    merged_pkl = os.path.join(self.pickle_dir, "merged/0.pkl")
 
                     logging.info("No subfolders found, loading {0}".format(merged_pkl))
 
