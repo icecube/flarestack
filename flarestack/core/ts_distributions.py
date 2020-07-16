@@ -316,7 +316,10 @@ def fit_background_ts(ts_array, ts_type):
 
     elif ts_type in ["Standard", "Negative n_s"]:
 
-        plt.hist(np.array([ts_array[mask], np.zeros(np.sum(~mask))], dtype=object),
+        data = np.array([ts_array[mask], np.zeros(np.sum(~mask))], dtype=object)
+        data.shape = (2, 1)
+
+        plt.hist(data,
                  bins=n_bins, lw=2, histtype='step',
                  color=['black', "grey"],
                  label=['TS > 0', "TS <= 0"],
