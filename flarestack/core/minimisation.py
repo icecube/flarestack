@@ -663,7 +663,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return f_final
 
-    def scan_likelihood(self, scale=1., scan_2d=False):
+    def scan_likelihood(self, scale=0., scan_2d=False):
         """Generic wrapper to perform a likelihood scan a background scramble
         with an injection of signal given by scale.
 
