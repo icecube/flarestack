@@ -214,47 +214,50 @@ class ResultsHandler(object):
             pass
 
         for sub_dir_name in self.inj.keys():
-            sub_dir = os.path.join(self.pickle_output_dir,  sub_dir_name)
 
-            files = os.listdir(sub_dir)
+            if sub_dir_name in all_sub_dirs:
 
-            merged_path = os.path.join(self.merged_dir, sub_dir_name + ".pkl")
+                sub_dir = os.path.join(self.pickle_output_dir,  sub_dir_name)
 
-            if os.path.isfile(merged_path):
-                with open(merged_path, "rb") as mp:
-                    merged_data = Pickle.load(mp)
-            else:
-                merged_data = {}
+                files = os.listdir(sub_dir)
 
-            for filename in files:
-                path = os.path.join(sub_dir, filename)
+                merged_path = os.path.join(self.merged_dir, sub_dir_name + ".pkl")
 
-                try:
-                    with open(path, "rb") as f:
-                        data = Pickle.load(f)
-                except EOFError:
-                    logging.warning("Failed loading: {0}".format(path))
-                    continue
-                os.remove(path)
-
-                if merged_data == {}:
-                    merged_data = data
+                if os.path.isfile(merged_path):
+                    with open(merged_path, "rb") as mp:
+                        merged_data = Pickle.load(mp)
                 else:
-                    for (key, info) in data.items():
-                        if isinstance(info, list):
-                            merged_data[key] += info
-                        else:
-                            for (param_name, params) in info.items():
-                                try: merged_data[key][param_name] += params
-                                except KeyError as m:
-                                    logging.warning('Keys [{key}][{param_name}] not found in \n {merged_data}')
-                                    raise KeyError(m)
+                    merged_data = {}
 
-            with open(merged_path, "wb") as mp:
-                Pickle.dump(merged_data, mp)
+                for filename in files:
+                    path = os.path.join(sub_dir, filename)
 
-            if len(list(merged_data.keys())) > 0:
-                self.results[scale_shortener(float(sub_dir_name))] = merged_data
+                    try:
+                        with open(path, "rb") as f:
+                            data = Pickle.load(f)
+                    except EOFError:
+                        logging.warning("Failed loading: {0}".format(path))
+                        continue
+                    os.remove(path)
+
+                    if merged_data == {}:
+                        merged_data = data
+                    else:
+                        for (key, info) in data.items():
+                            if isinstance(info, list):
+                                merged_data[key] += info
+                            else:
+                                for (param_name, params) in info.items():
+                                    try: merged_data[key][param_name] += params
+                                    except KeyError as m:
+                                        logging.warning('Keys [{key}][{param_name}] not found in \n {merged_data}')
+                                        raise KeyError(m)
+
+                with open(merged_path, "wb") as mp:
+                    Pickle.dump(merged_data, mp)
+
+                if len(list(merged_data.keys())) > 0:
+                    self.results[scale_shortener(float(sub_dir_name))] = merged_data
 
         if len(list(self.results.keys())) == 0:
             logging.warning("No data was found by ResultsHandler object! \n")
@@ -325,7 +328,7 @@ class ResultsHandler(object):
         try:
             bkg_dict = self.results[scale_shortener(0.0)]
         except KeyError:
-            print ("No key equal to '0'")
+            logging.error("No key equal to '0'")
             return
 
         bkg_ts = bkg_dict["TS"]
@@ -340,9 +343,9 @@ class ResultsHandler(object):
             ref_ts, savepath)
 
         if extrapolated:
-            print ("EXTRAPOLATED"),
-
-        print ("Upper limit is", "{0:.3g}".format(ul))
+            logging.info(f"EXTRAPOLATED upper limit is {ul:.3g}")
+        else:
+            logging.info(f"Upper limit is {ul:.3g}")
         return ul, extrapolated, err
 
     def find_overfluctuations(self, ts_val, savepath):
