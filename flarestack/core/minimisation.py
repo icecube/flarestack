@@ -39,7 +39,8 @@ def read_mh_dict(mh_dict):
 
     maps = [
         ("inj kwargs", "inj_dict"),
-        ("datasets", "dataset")
+        ("datasets", "dataset"),
+        ("background TS", "background_ts")
     ]
 
     for (old_key, new_key) in maps:
@@ -384,7 +385,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         else:
 
             inj_dict = self.return_injected_parameters(scale)
-            # print self.exp
 
             inj_dir = inj_dir_name(self.name)
 
@@ -395,6 +395,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 pass
 
             file_name = os.path.join(inj_dir, scale_shortener(scale) + ".pkl")
+
+            logging.debug(f"Dumping Injection values to {file_name}")
+
             with open(file_name, "wb") as f:
                 Pickle.dump(inj_dict, f)
 
@@ -551,7 +554,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         }
 
         self.dump_results(results, scale, seed)
-
         self.dump_injection_values(scale)
 
     def make_season_weight(self, params, season):
