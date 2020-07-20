@@ -46,6 +46,7 @@ class TestTimeIntegrated(unittest.TestCase):
         # Test stacking
 
         unblind_dict = {
+            "name": "test/test_llh_standard_overlapping/",
             "mh_name": "fixed_weights",
             "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
             "catalogue": catalogue,

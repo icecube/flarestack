@@ -45,6 +45,7 @@ pickle_dir = storage_dir + "pickles/"
 inj_param_dir = pickle_dir + "injection_values/"
 
 plots_dir = output_dir + "plots/"
+unbliding_dir = output_dir + "unblinding_results/"
 limits_dir = output_dir + "limits/"
 dataset_plot_dir = output_dir + "dataset_plots/"
 eff_a_plot_dir = dataset_plot_dir + "effective_area_plots/"
@@ -67,7 +68,7 @@ all_dirs = [
     fs_scratch_dir, input_dir, storage_dir, output_dir, cluster_dir, pc_dir,
     log_dir, catalogue_dir, acc_f_dir, energy_spline_dir, pickle_dir, plots_dir,
     SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
-    bkg_spline_dir, dataset_plot_dir, limits_dir, pull_dir, floor_dir,
+    bkg_spline_dir, dataset_plot_dir, unbliding_dir, limits_dir, pull_dir, floor_dir,
     cache_dir, cat_cache_dir, public_dataset_dir, energy_proxy_dir,
     eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir, energy_proxy_plot_dir,
     sim_dataset_dir
@@ -189,6 +190,10 @@ def inj_dir_name(name):
 def plot_output_dir(name):
     return os.path.join(plots_dir, name)
 
+
+def unblinding_output_path(name):
+    path = os.path.join(unbliding_dir, name + "unblinding_results.pkl")
+    return path
 
 def limit_output_path(name):
     path = os.path.join(limits_dir, name + "limit.pkl")

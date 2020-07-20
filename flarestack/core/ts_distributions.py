@@ -104,8 +104,7 @@ class Chi2_LeftTruncated(object):
         """
         m_flat = (0. <= x) & (x <= self._cut)
         m_chi2 = (x > self._cut)
-
-        x = np.asarray(x)
+        x = np.asarray(x, dtype=object)
         r = np.zeros_like(x)
         if self._cut == 0.:
             r[m_flat] = self._f.cdf(self._cut)
@@ -252,14 +251,31 @@ def fit_background_ts(ts_array, ts_type):
     frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
     threshold_err = 0.0
 
-    if ts_type == "Flare":
+    res = []
+    labs = []
+    cols = []
 
-        plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
-                 bins=n_bins, lw=2, histtype='step',
-                 color=['black', "grey"],
-                 label=['TS > 0', "TS <= 0"],
-                 density=True,
-                 stacked=True)
+    if np.sum(mask) > 0.:
+        res.append(ts_array[mask])
+        labs.append('TS > 0')
+        cols.append("black")
+    if np.sum(~mask) > 0.:
+        res.append(ts_array[~mask])
+        labs.append("TS <= 0")
+        cols.append("grey")
+
+    # if len(res) > 1:
+    #     res = np.array(res, dtype=object)
+    #     res.shape = (2, 1)
+
+    plt.hist(res,
+             bins=n_bins, lw=2, histtype='step',
+             color=cols,
+             label=labs,
+             density=True,
+             stacked=True)
+
+    if ts_type == "Flare":
 
         chi2 = Chi2_LeftTruncated(ts_array)
 
@@ -285,13 +301,6 @@ def fit_background_ts(ts_array, ts_type):
 
     elif ts_type == "Fit Weights":
 
-        plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
-                 bins=n_bins, lw=2, histtype='step',
-                 color=['black', "grey"],
-                 label=['TS > 0', "TS <= 0"],
-                 density=True,
-                 stacked=True)
-
         chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
 
         if chi2._res.success:
@@ -316,13 +325,6 @@ def fit_background_ts(ts_array, ts_type):
                 frac_over = 1.
 
     elif ts_type in ["Standard", "Negative n_s"]:
-
-        plt.hist([ts_array[mask], np.zeros(np.sum(~mask))],
-                 bins=n_bins, lw=2, histtype='step',
-                 color=['black', "grey"],
-                 label=['TS > 0', "TS <= 0"],
-                 density=True,
-                 stacked=True)
 
         chi2 = Chi2_one_side(ts_array[ts_array > 0.])
 
@@ -407,6 +409,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
 
     plt.plot(x_range, frac_over * scipy.stats.chi2.pdf(x_range, df, loc, scale),
              color="blue", label=r"$\chi^{2}$ Distribution")
+
     if t_err is not None:
         plt.fill_between(
             x_range,
@@ -427,14 +430,12 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     plt.axvline(disc_potential, color="r", label=r"5 $\sigma$ Threshold")
 
     if ts_val is not None:
-        print("\n")
 
         if not isinstance(ts_val, float):
             ts_val = float(ts_val[0])
 
-        # print
 
-        print("Quantifying TS:", "{:.2f}".format(ts_val))
+        logging.info(f"Quantifying TS: {ts_val:.2f}")
 
         if ts_val > np.median(ts_array):
 
@@ -449,9 +450,8 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
             cdf = 0.
             sig = 0.
 
-        print("Pre-trial P-value is", "{:.2E}".format(1-cdf), 1-cdf)
-        print("Significance is", "{:.2f}".format(sig), "Sigma")
-        print("\n")
+        logging.info(f"Pre-trial P-value is {1-cdf:.2E}")
+        logging.info(f"Significance is {sig:.2f} Sigma")
 
         plt.axvline(ts_val, color="purple",
                     label="{:.2f}".format(ts_val) + " TS/" +

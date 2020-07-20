@@ -49,6 +49,8 @@ def analyse(mh_dict, cluster=False, n_cpu=None, **kwargs):
     else:
         if n_cpu is None:
             n_cpu = min(os.cpu_count() - 1, 32)
+        else:
+            n_cpu = min(n_cpu, os.cpu_count() -1)
         submit_local(mh_dict, n_cpu=n_cpu)
 
     return job_id

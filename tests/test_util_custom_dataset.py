@@ -50,6 +50,7 @@ class TestUtilCustomDataset(unittest.TestCase):
         # Test three declinations
 
         unblind_dict = {
+            "name": "test_custom_dataset",
             "mh_name": "fixed_weights",
             "dataset": custom_dataset(
                 icecube_ps_3_year, load_catalogue(catalogue),

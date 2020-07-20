@@ -65,6 +65,7 @@ class TestTimeIntegrated(unittest.TestCase):
         # Test stacking
 
         unblind_dict = {
+            "name": "test/test_large_catalogue/",
             "mh_name": "large_catalogue",
             "dataset": icecube_ps_3_year.get_seasons("IC79-2010"),
             "catalogue": catalogue,

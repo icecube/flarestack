@@ -87,6 +87,7 @@ class TestTimeIntegrated(unittest.TestCase):
             }
 
             unblind_dict = {
+                "name": "tests/test_energy_pdfs/",
                 "mh_name": "fixed_weights",
                 "dataset": icecube_ps_3_year.get_seasons('IC79-2010', 'IC86-2011'),
                 "catalogue": catalogue,

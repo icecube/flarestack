@@ -7,7 +7,11 @@ from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
 from multiprocessing import JoinableQueue, Process, Queue, Value
 import random
 import numpy as np
-
+from multiprocessing import set_start_method
+try:
+    set_start_method("fork")
+except RuntimeError:
+    pass
 
 def generate_dynamic_mh_class(mh_dict):
 
@@ -31,7 +35,6 @@ def generate_dynamic_mh_class(mh_dict):
             pass
 
     return MultiProcessingMinimisationHandler(mh_dict)
-
 
 class MultiProcessor:
     queue = None
@@ -153,5 +156,6 @@ if __name__ == '__main__':
 
     with open(cfg.file, "rb") as f:
         mh_dict = pickle.load(f)
+
 
     run_multiprocess(n_cpu=cfg.n_cpu, mh_dict=mh_dict)

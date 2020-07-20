@@ -28,7 +28,6 @@ name = "tests/test_likelihood_spatial/"
 
 catalogue = tde_catalogue_name("jetted")
 
-
 # These results arise from high-statistics sensitivity calculations,
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
@@ -48,6 +47,7 @@ class TestTimeIntegrated(unittest.TestCase):
         # Test stacking
 
         unblind_dict = {
+            "name": "test/test_llh_standard_matrix/",
             "mh_name": "fixed_weights",
             "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
             "catalogue": catalogue,

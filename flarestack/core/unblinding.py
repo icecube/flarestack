@@ -8,7 +8,7 @@ from flarestack.core.injector import MockUnblindedInjector, \
 from flarestack.core.results import ResultsHandler
 from flarestack.core.time_pdf import TimePDF
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
-    analysis_pickle_path, limit_output_path
+    analysis_pickle_path, limit_output_path, unblinding_output_path
 import pickle
 from flarestack.core.ts_distributions import plot_background_ts_distribution
 import matplotlib.pyplot as plt
@@ -29,7 +29,7 @@ def confirm():
 
 
 def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
-                     disable_warning=False):
+                     disable_warning=False, **kwargs):
     """Dynamically create an Unblinder class that inherits corectly from the
     appropriate MinimisationHandler. The name of the parent is specified in
     the unblinder dictionary as 'mh_name'.
@@ -42,6 +42,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
     limits be generated (can be computationally expensive)
     :param disable_warning: By default, the unblinder gives a warning if real
     data is unblinded. This can be disabled.
+    :param reunblinding: By default, the unblinder performs the analysis and
+    save the ns, gamma and TS results in a pickle file. If set to False, the
+    pickle file is loaded and unblinding not performed.
     :return: Instance of dynamically-generated Unblinder class
     """
 
@@ -63,7 +66,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
     class Unblinder(ParentMiminisationHandler):
 
-        def __init__(self, unblind_dict, seed=None):
+        def __init__(self, unblind_dict, seed=None, scan_2d=False, **kwargs):
+
             self.unblind_dict = unblind_dict
             unblind_dict["unblind_bool"] = True
             unblind_dict["mock_unblind_bool"] = mock_unblind
@@ -84,12 +88,19 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             try:
                 if self.mock_unblind:
                     self.limit_path = limit_output_path(
-                        self.unblind_dict["background_ts"] + "mock_unblind/")
+                        self.unblind_dict["name"] + "mock_unblind/")
+                    self.unblind_res_path = unblinding_output_path(
+                        self.unblind_dict["name"] + "mock_unblind/")
+
                 else:
                     self.limit_path = limit_output_path(
-                        self.unblind_dict["background_ts"] + "real_unblind/")
+                        self.unblind_dict["name"] + "real_unblind/")
+                    self.unblind_res_path = unblinding_output_path(
+                        self.unblind_dict["name"] + "real_unblind/")
+
             except KeyError:
                 self.limit_path = np.nan
+                self.unblind_res_path = np.nan
 
             if self.name != " /":
                 if self.mock_unblind:
@@ -100,18 +111,34 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
             self.plot_dir = plot_output_dir(self.name)
 
+            try:
+                os.makedirs(os.path.dirname(self.unblind_res_path))
+            except OSError:
+                pass
+            
+            logging.info("Unblinding catalogue")
+
             # Minimise likelihood and produce likelihood scans
             self.res_dict = self.simulate_and_run(0, seed)
-
             logging.info(self.res_dict)
 
             # Quantify the TS value significance
-            # print type(np.array([self.res_dict["TS"]]))
             self.ts = np.array([self.res_dict["TS"]])[0]
             self.ts_type = unblind_dict.get('ts_type', 'Standard')
             self.sigma = np.nan
 
             logging.info("Test Statistic of: {0}".format(self.ts))
+
+            ub_res_dict = {
+                "Parameters": self.res_dict['Parameters'],
+                "TS": self.res_dict['TS'],
+                "Flag": self.res_dict['Flag']
+            }
+
+            logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
+
+            with open(self.unblind_res_path, "wb") as f:
+                pickle.dump(ub_res_dict, f)
 
             try:
                 path = self.unblind_dict["background_ts"]
@@ -122,14 +149,14 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 logging.warning("No Background TS Distribution specified. "
                                 "Cannot assess significance of TS value.")
 
+
             if full_plots:
 
                 self.calculate_upper_limits()
-
                 if isinstance(self, FlareMinimisationHandler):
                     self.neutrino_lightcurve()
                 else:
-                    self.scan_likelihood()
+                    self.scan_likelihood(scan_2d=scan_2d)
 
         def add_injector(self, season, sources):
             if self.mock_unblind is False:
@@ -142,9 +169,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
         def calculate_upper_limits(self):
 
             try:
-
-                ul_dir = self.plot_dir + "upper_limits/"
-
+                ul_dir = os.path.join(self.plot_dir, "upper_limits/")
                 try:
                     os.makedirs(ul_dir)
                 except OSError:
@@ -153,20 +178,30 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 flux_uls = []
                 fluence_uls = []
                 e_per_source_uls = []
+                energy_flux = []
                 x_axis = []
 
                 for subdir in os.listdir(self.pickle_dir):
-                    new_path = self.unblind_dict["background_ts"] + subdir + "/"
 
-                    with open(analysis_pickle_path(name=new_path), "rb") as f:
+                    root = os.path.join(self.unblind_dict["background_ts"], subdir)
+
+                    new_path = analysis_pickle_path(name=root)
+
+                    logging.info(f'Opening file {new_path}')
+
+                    with open(new_path, "rb") as f:
                         mh_dict = pickle.load(f)
                         e_pdf_dict = mh_dict["inj_dict"]["injection_energy_pdf"]
 
+                    self.unblind_dict['name'] = mh_dict['name']
                     rh = ResultsHandler(self.unblind_dict)
+
+                    logging.debug(f"In calculate_upper_limits, ResultsHandler is {rh}")
 
                     savepath = ul_dir + subdir + ".pdf"
 
-                    ul, extrapolated = rh.set_upper_limit(mh_name, savepath)
+                    ul, extrapolated, err = rh.set_upper_limit(self.ts, savepath)
+
                     flux_uls.append(ul)
 
                     # Calculate mean injection time per source
@@ -175,20 +210,21 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     inj_time = 0.
 
-                    for season in mh_dict["dataset"]:
-
+                    seasons = mh_dict["dataset"]
+                    for (name, season) in seasons.items():
                         t_pdf = TimePDF.create(
-                            mh_dict["inj_dict"]["injection_sig_time_pdf"], season
+                            mh_dict["inj_dict"]["injection_sig_time_pdf"], season.get_time_pdf()
                         )
-
                         for src in self.sources:
                             inj_time += t_pdf.raw_injection_time(src) / \
                                         n_sources
 
                     astro_dict = rh.nu_astronomy(ul, e_pdf_dict)
 
+                    key = "Energy Flux (GeV cm^{-2} s^{-1})"  # old version: "Total Fluence (GeV cm^{-2} s^{-1})"
+
                     fluence_uls.append(
-                        astro_dict["Total Fluence (GeV cm^{-2} s^{-1})"]
+                        astro_dict[key]
                         * inj_time
                     )
 
@@ -196,15 +232,19 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                         astro_dict["Mean Luminosity (erg/s)"] * inj_time
                     )
 
+                    energy_flux.append(astro_dict[key])
                     x_axis.append(float(subdir))
+
 
                 plt.figure()
                 ax = plt.subplot(111)
-                plt.plot(x_axis, flux_uls, label="upper limit")
+                plt.plot(x_axis, flux_uls, marker = 'o', label="upper limit")
 
                 if self.mock_unblind:
                     ax.text(0.2, 0.5, "MOCK DATA", color="grey", alpha=0.5, transform=ax.transAxes)
 
+                ax.set_xlabel('Gamma')
+                ax.set_ylabel('Flux')
                 plt.yscale("log")
                 plt.savefig(self.plot_dir + "upper_limit_flux.pdf")
                 plt.close()
@@ -213,13 +253,15 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 ax1 = plt.subplot(111)
                 ax2 = ax1.twinx()
 
-                ax1.plot(x_axis, fluence_uls)
-                ax2.plot(x_axis, e_per_source_uls)
+                ax1.plot(x_axis, fluence_uls, marker='o')
+                ax2.plot(x_axis, e_per_source_uls, marker='o')
 
                 if self.mock_unblind:
                     ax1.text(0.2, 0.5, "MOCK DATA", color="grey", alpha=0.5, transform=ax1.transAxes)
 
                 ax2.grid(True, which='both')
+                ax1.set_xlabel('Gamma')
+                ax2.set_xlabel('Gamma')
                 ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$ s$^{-1}$]")
                 ax2.set_ylabel(r"Isotropic-Equivalent Luminosity $L_{\nu}$ (erg/s)")
                 ax1.set_yscale("log")
@@ -240,8 +282,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 logging.info("Saving limits to {0}".format(self.limit_path))
 
                 res_dict = {
-                    "x": x_axis,
+                    "gamma": x_axis,
                     "flux": flux_uls,
+                    "energy_flux": energy_flux,
                     "fluence": fluence_uls,
                     "energy": e_per_source_uls
                 }
@@ -249,7 +292,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 with open(self.limit_path, "wb") as f:
                     pickle.dump(res_dict, f)
 
-            except OSError:
+            except AttributeError as e:
                 logging.warning("Unable to set limits. No TS distributions found.")
 
         def compare_to_background_TS(self):
@@ -260,7 +303,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 ts_array = list()
 
                 for subdir in os.listdir(self.pickle_dir):
-                    merged_pkl = self.pickle_dir + subdir + "/merged/0.pkl"
+
+                    merged_pkl = os.path.join(os.path.join(self.pickle_dir, subdir), "merged/0.pkl")
 
                     logging.info("Loading {0}".format(merged_pkl))
 
@@ -280,7 +324,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 try:
                     ts_array = list()
 
-                    merged_pkl = self.pickle_dir + "merged/0.pkl"
+                    merged_pkl = os.path.join(self.pickle_dir, "merged/0.pkl")
 
                     logging.info("No subfolders found, loading {0}".format(merged_pkl))
 
@@ -316,6 +360,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             cat = load_catalogue(self.unblind_dict["catalogue"])
 
             print(cat.dtype.names)
+            print(len(cat), np.sum(cat['base_weight']))
             print(cat)
             print("\n")
             confirm()
@@ -345,4 +390,4 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             print("OK, you asked for it...")
             print("\n")
 
-    return Unblinder(unblind_dict)
+    return Unblinder(unblind_dict, **kwargs)
