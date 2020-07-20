@@ -707,7 +707,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             u_ranges.append(ur)
 
-            n_range = np.linspace(max(bound[0], -100), ur, 1e2)
+            n_range = np.linspace(max(bound[0], -100), ur, 100)
 
             # n_range = np.linspace(-30, 30, 1e2)
             y = []
@@ -806,7 +806,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 plt.ylabel(param_name)
 
                 y = np.linspace(max(bound[0], -100),
-                                np.array(u_ranges)[index], 1e2)
+                                np.array(u_ranges)[index], 100)
 
                 X, Y = np.meshgrid(x, y[::-1])
                 Z = []
@@ -836,8 +836,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 for l, s in zip(CS.levels, strs):
                     fmt[l] = s
 
-                ax.clabel(CS, fmt=fmt, inline=1, fontsize=10, levels=levels,
-                          color="white")
+                ax.clabel(CS, levels, fmt=fmt, inline=1, fontsize=10, #levels=levels,
+                          colors="white")
                 cbar.set_label(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
                                rotation=90)
 
