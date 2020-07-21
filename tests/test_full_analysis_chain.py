@@ -4,7 +4,7 @@ IceCube data (IC86_1).
 import logging
 import unittest
 from flarestack.data.public import icecube_ps_3_year
-from flarestack.core.unblinding import create_unblinder
+from flarestack import create_unblinder, MinimisationHandler
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack import analyse, ResultsHandler, OverfluctuationError
 
@@ -85,6 +85,9 @@ class TestTimeIntegrated(unittest.TestCase):
             ub_dict["background_ts"] = base_name
 
             ub = create_unblinder(ub_dict, full_plots=True, scan_2d=True)
+
+            mh = MinimisationHandler.create(mh_dict)
+            mh.iterate_run(scale=1., n_steps=3, n_trials=1)
 
         except OverfluctuationError:
             pass
