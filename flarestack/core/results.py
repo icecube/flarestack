@@ -200,64 +200,53 @@ class ResultsHandler(object):
         all_sub_dirs = [x for x in os.listdir(self.pickle_output_dir)
                         if x[0] != "." and x != "merged"]
 
-        missed = [x for x in all_sub_dirs if x not in self.inj.keys()]
-
-        if len(missed) > 0:
-            logging.warning("Some older results were found, for flux scales that "
-                            "were not used in the most recent injection iteration.")
-            logging.warning("These older results will not be used here.")
-            logging.warning(f"The following flux scale results were ignored: {missed}")
-
         try:
             os.makedirs(self.merged_dir)
         except OSError:
             pass
 
-        for sub_dir_name in self.inj.keys():
+        for sub_dir_name in all_sub_dirs:
+            sub_dir = os.path.join(self.pickle_output_dir,  sub_dir_name)
 
-            if sub_dir_name in all_sub_dirs:
+            files = os.listdir(sub_dir)
 
-                sub_dir = os.path.join(self.pickle_output_dir,  sub_dir_name)
+            merged_path = os.path.join(self.merged_dir, sub_dir_name + ".pkl")
 
-                files = os.listdir(sub_dir)
+            if os.path.isfile(merged_path):
+                with open(merged_path, "rb") as mp:
+                    merged_data = Pickle.load(mp)
+            else:
+                merged_data = {}
 
-                merged_path = os.path.join(self.merged_dir, sub_dir_name + ".pkl")
+            for filename in files:
+                path = os.path.join(sub_dir, filename)
 
-                if os.path.isfile(merged_path):
-                    with open(merged_path, "rb") as mp:
-                        merged_data = Pickle.load(mp)
+                try:
+                    with open(path, "rb") as f:
+                        data = Pickle.load(f)
+                except EOFError:
+                    logging.warning("Failed loading: {0}".format(path))
+                    continue
+                os.remove(path)
+
+                if merged_data == {}:
+                    merged_data = data
                 else:
-                    merged_data = {}
+                    for (key, info) in data.items():
+                        if isinstance(info, list):
+                            merged_data[key] += info
+                        else:
+                            for (param_name, params) in info.items():
+                                try: merged_data[key][param_name] += params
+                                except KeyError as m:
+                                    logging.warning('Keys [{key}][{param_name}] not found in \n {merged_data}')
+                                    raise KeyError(m)
 
-                for filename in files:
-                    path = os.path.join(sub_dir, filename)
+            with open(merged_path, "wb") as mp:
+                Pickle.dump(merged_data, mp)
 
-                    try:
-                        with open(path, "rb") as f:
-                            data = Pickle.load(f)
-                    except EOFError:
-                        logging.warning("Failed loading: {0}".format(path))
-                        continue
-                    os.remove(path)
-
-                    if merged_data == {}:
-                        merged_data = data
-                    else:
-                        for (key, info) in data.items():
-                            if isinstance(info, list):
-                                merged_data[key] += info
-                            else:
-                                for (param_name, params) in info.items():
-                                    try: merged_data[key][param_name] += params
-                                    except KeyError as m:
-                                        logging.warning('Keys [{key}][{param_name}] not found in \n {merged_data}')
-                                        raise KeyError(m)
-
-                with open(merged_path, "wb") as mp:
-                    Pickle.dump(merged_data, mp)
-
-                if len(list(merged_data.keys())) > 0:
-                    self.results[scale_shortener(float(sub_dir_name))] = merged_data
+            if len(list(merged_data.keys())) > 0:
+                self.results[scale_shortener(float(sub_dir_name))] = merged_data
 
         if len(list(self.results.keys())) == 0:
             logging.warning("No data was found by ResultsHandler object! \n")
@@ -301,6 +290,7 @@ class ResultsHandler(object):
             return
 
         bkg_ts = bkg_dict["TS"]
+
         bkg_median = np.median(bkg_ts)
         self.bkg_median = bkg_median
 
@@ -316,37 +306,37 @@ class ResultsHandler(object):
 
         logging.info("{0}Sensitivity is {1:.3g}".format(msg, self.sensitivity))
 
-    def set_upper_limit(self, ts_val, savepath):
-        """Set an upper limit, based on a Test Statistic value from
-        unblinding, as well as a
-
-        :param ts_val: Test Statistic Value
-        :param savepath: Path to save plot
-        :return: Upper limit, and whether this was extrapolated
-        """
-
-        try:
-            bkg_dict = self.results[scale_shortener(0.0)]
-        except KeyError:
-            logging.error("No key equal to '0'")
-            return
-
-        bkg_ts = bkg_dict["TS"]
-        bkg_median = np.median(bkg_ts)
-
-        # Set an upper limit based on the Test Statistic value for an
-        # overfluctuation, or the median background for an underfluctuation.
-
-        ref_ts = max(ts_val, bkg_median)
-
-        ul, extrapolated, err = self.find_overfluctuations(
-            ref_ts, savepath)
-
-        if extrapolated:
-            logging.info(f"EXTRAPOLATED upper limit is {ul:.3g}")
-        else:
-            logging.info(f"Upper limit is {ul:.3g}")
-        return ul, extrapolated, err
+    # def set_upper_limit(self, ts_val, savepath):
+    #     """Set an upper limit, based on a Test Statistic value from
+    #     unblinding, as well as a
+    #
+    #     :param ts_val: Test Statistic Value
+    #     :param savepath: Path to save plot
+    #     :return: Upper limit, and whether this was extrapolated
+    #     """
+    #
+    #     try:
+    #         bkg_dict = self.results[scale_shortener(0.0)]
+    #     except KeyError:
+    #         print "No key equal to '0'"
+    #         return
+    #
+    #     bkg_ts = bkg_dict["TS"]
+    #     bkg_median = np.median(bkg_ts)
+    #
+    #     # Set an upper limit based on the Test Statistic value for an
+    #     # overfluctuation, or the median background for an underfluctuation.
+    #
+    #     ref_ts = max(ts_val, bkg_median)
+    #
+    #     ul, extrapolated = self.find_overfluctuations(
+    #         ref_ts, savepath)
+    #
+    #     if extrapolated:
+    #         print "EXTRAPOLATED",
+    #
+    #     print "Upper limit is", "{0:.3g}".format(ul)
+    #     return ul, extrapolated
 
     def find_overfluctuations(self, ts_val, savepath):
         """Uses the values of injection trials to fit an 1-exponential decay
@@ -371,7 +361,7 @@ class ResultsHandler(object):
             ts_array = np.array(self.results[scale]["TS"])
             frac = float(len(ts_array[ts_array > ts_val])) / (float(len(
                 ts_array)))
-
+            
             logging.info(
                 "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
                     frac, ts_val, len(ts_array), scale
@@ -385,7 +375,6 @@ class ResultsHandler(object):
                 y.append(frac)
                 x_acc.append(float(scale))
                 yerr.append(1./np.sqrt(float(len(ts_array))))
-
 
                 self.make_plots(scale)
 
@@ -584,7 +573,7 @@ class ResultsHandler(object):
 
     def ts_evolution_gif(self, n_scale_steps=None, cmap_name='winter'):
 
-        logging.debug('Making animation')
+        logging.debug('making animation')
 
         all_scales_list = list(self.results.keys())
         n_scales_all = len(all_scales_list)
@@ -607,7 +596,7 @@ class ResultsHandler(object):
         ])
 
         n_s = [sum(a) for a in ns_arrays]
-        logging.debug('Numbers of injected neutrinos: ' + str(n_s))
+        logging.debug('numbers of injected neutrinos: ' + str(n_s))
 
         norm = colors.Normalize(vmin=0, vmax=max(n_s))
         mappable = cm.ScalarMappable(norm=norm, cmap=cmap_name)
@@ -634,19 +623,18 @@ class ResultsHandler(object):
         )
 
         anim_name = os.path.join(self.plot_dir, "ts_distributions/ts_distributions_evolution.gif")
-        logging.debug(f'Saving animation under {anim_name}')
+        logging.debug('saving animation under ' + anim_name)
         anim.save(anim_name, dpi=80, writer='imagemagick')
-        plt.close()
 
     def ts_distribution_evolution(self):
 
-        logging.debug('Plotting evolution of TS distribution')
+        logging.debug('plotting evolution of TS distribution')
 
         all_scales = np.array(list(self.results.keys()))
         all_scales_floats = [float(sc) for sc in all_scales]
 
-        logging.debug('All scales: ' + str(all_scales_floats))
-        logging.debug('Sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
+        logging.debug('all scales: ' + str(all_scales_floats))
+        logging.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
 
         sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
         disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
@@ -664,7 +652,7 @@ class ResultsHandler(object):
         ])
 
         n_s = [sum(a) for a in ns_arrays]
-        logging.debug('Numbers of injected neutrinos: ' + str(n_s))
+        logging.debug('numbers of injected neutrinos: ' + str(n_s))
 
         fig, ax = plt.subplots()
 
@@ -672,23 +660,23 @@ class ResultsHandler(object):
 
 
         ax.hist(ts_arrays[1], histtype='step', density=True, color='orange',
-                label='Signal: {:.2} signal neutrinos'.format(n_s[1]))
+                label='signal: {:.2} signal neutrinos'.format(n_s[1]))
         ax.axvline(self.bkg_median, ls='--', label='sensitivity threshold', color='orange')
 
         ax.hist(ts_arrays[2], histtype='step', density=True, color='red',
-                label='Signal: {:.2} signal neutrinos'.format(n_s[2]))
+                label='signal: {:.2} signal neutrinos'.format(n_s[2]))
         ax.axvline(self.disc_ts_threshold, ls='--', label='discovery potential threshold',
                    color='red')
 
         ax.set_xlabel('Test Statistic')
-        ax.set_ylabel('A.U.')
+        ax.set_ylabel('a.u.')
         ax.legend()
         ax.set_yscale('log')
 
         plt.tight_layout()
 
-        sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution.pdf")
-        logging.debug(f'Saving plot to {sn}')
+        sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_.pdf")
+        logging.debug('saving plot to ' + sn)
         fig.savefig(sn)
 
         plt.close()
@@ -763,7 +751,7 @@ class ResultsHandler(object):
 
             plt.xlabel(x_label)
             plt.ylabel(param)
-            plt.title(f"Bias ({param})")
+            plt.title("Bias (" + param + ")")
 
             savepath = os.path.join(self.plot_dir, "bias_" + param + ".pdf")
             logging.info("Saving bias plot to {0}".format(savepath))
