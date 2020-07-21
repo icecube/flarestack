@@ -29,7 +29,7 @@ def confirm():
 
 
 def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
-                     disable_warning=False, **kwargs):
+                     disable_warning=False, reunblind=True, **kwargs):
     """Dynamically create an Unblinder class that inherits corectly from the
     appropriate MinimisationHandler. The name of the parent is specified in
     the unblinder dictionary as 'mh_name'.
@@ -42,7 +42,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
     limits be generated (can be computationally expensive)
     :param disable_warning: By default, the unblinder gives a warning if real
     data is unblinded. This can be disabled.
-    :param reunblinding: By default, the unblinder performs the analysis and
+    :param reunblind: By default, the unblinder performs the analysis and
     save the ns, gamma and TS results in a pickle file. If set to False, the
     pickle file is loaded and unblinding not performed.
     :return: Instance of dynamically-generated Unblinder class
@@ -116,29 +116,72 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             except OSError:
                 pass
             
-            logging.info("Unblinding catalogue")
+            if reunblind is True:
+                logging.info("Unblinding catalogue")
 
-            # Minimise likelihood and produce likelihood scans
-            self.res_dict = self.simulate_and_run(0, seed)
-            logging.info(self.res_dict)
+                # Minimise likelihood and produce likelihood scans
+                self.res_dict = self.simulate_and_run(0, seed)
+                logging.info(self.res_dict)
 
-            # Quantify the TS value significance
-            self.ts = np.array([self.res_dict["TS"]])[0]
-            self.ts_type = unblind_dict.get('ts_type', 'Standard')
-            self.sigma = np.nan
+                # Quantify the TS value significance
+                self.ts = np.array([self.res_dict["TS"]])[0]
+                self.ts_type = unblind_dict.get('ts_type', 'Standard')
+                self.sigma = np.nan
 
-            logging.info("Test Statistic of: {0}".format(self.ts))
+                logging.info("Test Statistic of: {0}".format(self.ts))
 
-            ub_res_dict = {
-                "Parameters": self.res_dict['Parameters'],
-                "TS": self.res_dict['TS'],
-                "Flag": self.res_dict['Flag']
-            }
+                ub_res_dict = {
+                    "Parameters": self.res_dict['Parameters'],
+                    "TS": self.res_dict['TS'],
+                    "Flag": self.res_dict['Flag']
+                }
 
-            logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
+                logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
 
-            with open(self.unblind_res_path, "wb") as f:
-                pickle.dump(ub_res_dict, f)
+                with open(self.unblind_res_path, "wb") as f:
+                    pickle.dump(ub_res_dict, f)
+
+            else:
+                try:
+                    logging.info("Not re-unblinding, loading results from {0}".format(self.unblind_res_path))
+
+                    with open(self.unblind_res_path, "rb") as f:
+                        self.res_dict = pickle.load(f)
+
+                    logging.info(self.res_dict)
+
+                    # Quantify the TS value significance
+                    self.ts = np.array([self.res_dict["TS"]])[0]
+                    self.ts_type = unblind_dict.get('ts_type', 'Standard')
+                    self.sigma = np.nan
+
+                    logging.info("Test Statistic of: {0}".format(self.ts))
+
+                except FileNotFoundError:
+                    logging.warning("No pickle files containing unblinding results found. "
+                                    "Re-unblinding now.")
+
+                    # Minimise likelihood and produce likelihood scans
+                    self.res_dict = self.simulate_and_run(0, seed)
+                    logging.info(self.res_dict)
+
+                    # Quantify the TS value significance
+                    self.ts = np.array([self.res_dict["TS"]])[0]
+                    self.ts_type = unblind_dict.get('ts_type', 'Standard')
+                    self.sigma = np.nan
+
+                    logging.info("Test Statistic of: {0}".format(self.ts))
+
+                    ub_res_dict = {
+                        "Parameters": self.res_dict['Parameters'],
+                        "TS": self.res_dict['TS'],
+                        "Flag": self.res_dict['Flag']
+                    }
+
+                    with open(self.unblind_res_path, "wb") as f:
+                        pickle.dump(ub_res_dict, f)
+
+                    logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
 
             try:
                 path = self.unblind_dict["background_ts"]
