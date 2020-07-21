@@ -18,6 +18,8 @@ from flarestack.utils.catalogue_loader import load_catalogue
 import sys
 import logging
 
+class OverfluctuationError(Exception):
+    pass
 
 class ResultsHandler(object):
 
@@ -386,11 +388,10 @@ class ResultsHandler(object):
                 x_acc.append(float(scale))
                 yerr.append(1./np.sqrt(float(len(ts_array))))
 
-
                 self.make_plots(scale)
 
         if len(np.where(np.array(y) < 0.95)[0]) < 2:
-            raise Exception(f"Not enough points with overfluctuations under 95%, lower injection scale!")
+            raise OverfluctuationError(f"Not enough points with overfluctuations under 95%, lower injection scale!")
 
         x = np.array(x_acc)
 
