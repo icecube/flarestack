@@ -19,7 +19,7 @@ def data_loader(data_path, floor=True, cut_fields=True):
         dataset = np.concatenate(
             tuple([np.load(x) for x in data_path]))
     else:
-        dataset = np.load(data_path)
+        dataset = np.load(data_path, allow_pickle=True)
 
     if "sinDec" not in dataset.dtype.names:
 
