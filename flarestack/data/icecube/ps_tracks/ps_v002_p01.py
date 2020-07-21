@@ -59,7 +59,7 @@ Path to local copy of point source tracks, downloaded on 24/04/18 from
 """
 from flarestack.data.icecube.ic_season import IceCubeDataset, \
     IceCubeSeason, icecube_dataset_dir
-from flarestack.data.icecube.ps_tracks import ps_binning
+from flarestack.data.icecube.ps_tracks import get_ps_binning
 import numpy as np
 import copy
 
@@ -75,8 +75,8 @@ ic40 = IceCubeSeason(
     exp_path=ps_data_dir + "IC40_exp.npy",
     mc_path=ps_data_dir + "IC40_corrected_MC.npy",
     grl_path=ps_data_dir + "IC40_GRL.npy",
-    sin_dec_bins=ps_binning["IC40"][0],
-    log_e_bins=ps_binning["IC40"][1]
+    sin_dec_bins=get_ps_binning("IC40")[0],
+    log_e_bins=get_ps_binning("IC40")[1]
 )
 
 ps_v002_p01.add_season(ic40)
@@ -88,8 +88,8 @@ ic59 = IceCubeSeason(
     exp_path=ps_data_dir + "IC59_exp.npy",
     mc_path=ps_data_dir + "IC59_corrected_MC.npy",
     grl_path=ps_data_dir + "IC59_GRL.npy",
-    sin_dec_bins=ps_binning["IC59"][0],
-    log_e_bins=ps_binning["IC59"][1]
+    sin_dec_bins=get_ps_binning("IC59")[0],
+    log_e_bins=get_ps_binning("IC59")[1]
 )
 
 ps_v002_p01.add_season(ic59)
@@ -100,8 +100,8 @@ ic79 = IceCubeSeason(
     exp_path=ps_data_dir + "IC79b_exp.npy",
     mc_path=ps_data_dir + "IC79b_corrected_MC.npy",
     grl_path=ps_data_dir + "IC79b_GRL.npy",
-    sin_dec_bins=ps_binning["IC79"][0],
-    log_e_bins=ps_binning["IC79"][1]
+    sin_dec_bins=get_ps_binning("IC79")[0],
+    log_e_bins=get_ps_binning("IC79")[1]
 )
 ps_v002_p01.add_season(ic79)
 
@@ -113,8 +113,8 @@ ic86_1 = IceCubeSeason(
     exp_path=ps_data_dir + "IC86_exp.npy",
     mc_path=ps_data_dir + "IC86_corrected_MC.npy",
     grl_path=ps_data_dir + "IC86_GRL.npy",
-    sin_dec_bins=ps_binning["IC86"][0],
-    log_e_bins=ps_binning["IC86"][1]
+    sin_dec_bins=get_ps_binning("IC86_2011")[0],
+    log_e_bins=get_ps_binning("IC86_2011")[1]
 )
 
 ps_v002_p01.add_season(ic86_1)
@@ -129,8 +129,8 @@ for i in range(2, 5):
         exp_path=ps_data_dir + "IC86-201{0}_exp_v2.npy".format(i),
         mc_path=ps_data_dir + "IC86-2012_corrected_MC_v2.npy",
         grl_path=ps_data_dir + "IC86-201{0}_GRL.npy".format(i),
-        sin_dec_bins=ps_binning["IC86"][0],
-        log_e_bins=ps_binning["IC86"][1]
+        sin_dec_bins=get_ps_binning("IC86_2012")[0],
+        log_e_bins=get_ps_binning("IC86_2012")[1]
     )
     ps_v002_p01.add_subseason(ic86_i)
 
@@ -148,8 +148,8 @@ ic86_234 = IceCubeSeason(
         ps_data_dir + "IC86-2013_GRL.npy",
         ps_data_dir + "IC86-2014_GRL.npy"
     ],
-    sin_dec_bins=ps_binning["IC86"][0],
-    log_e_bins=ps_binning["IC86"][1]
+    sin_dec_bins=get_ps_binning("IC86_2012")[0],
+    log_e_bins=get_ps_binning("IC86_2012")[1]
 )
 
 ps_v002_p01.add_season(ic86_234)

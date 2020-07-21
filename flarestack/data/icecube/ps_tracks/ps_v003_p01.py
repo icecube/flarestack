@@ -44,8 +44,8 @@ ic86_234567 = IceCubeSeason(
     grl_path=[
         grl_data_dir + "IC86_{0}_exp.npy".format(x) for x in new_years
     ],
-    sin_dec_bins=get_ps_binning("IC86")[0],
-    log_e_bins=get_ps_binning("IC86")[1]
+    sin_dec_bins=get_ps_binning("IC86_2012")[0],
+    log_e_bins=get_ps_binning("IC86_2012")[1]
 )
 
 ps_v003_p01.add_season(ic86_234567)
@@ -60,8 +60,8 @@ def ic86_new_season(year):
         exp_path=ps_data_dir + "IC86_{0}_exp.npy".format(year),
         mc_path=ps_data_dir + "IC86_2012_MC.npy",
         grl_path=grl_data_dir + "IC86_{0}_exp.npy".format(year),
-        sin_dec_bins=get_ps_binning("IC86")[0],
-        log_e_bins=get_ps_binning("IC86")[1]
+        sin_dec_bins=get_ps_binning(year)[0],
+        log_e_bins=get_ps_binning(year)[1]
     )
 
 

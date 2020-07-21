@@ -33,7 +33,7 @@ ps_binning = {
         np.linspace(-1., 1., 50),
         np.arange(2., 9. + 0.01, 0.125)
     ),
-    "IC86": (
+    "IC86_2011": (
         np.unique(np.concatenate([
                 np.linspace(-1., -0.2, 10 + 1),
                 np.linspace(-0.2, boundary, 4 + 1),
@@ -41,12 +41,22 @@ ps_binning = {
                 np.linspace(0.2, 1., 10)
             ])),
         np.arange(1., 10. + 0.01, 0.125)
+    ),
+    "IC86_2012": (
+        np.unique(np.concatenate([
+            np.linspace(-1., -0.93, 4 + 1),
+            np.linspace(-0.93, -0.3, 10 + 1),
+            np.linspace(-0.3, 0.05, 9 + 1),
+            np.linspace(0.05, 1., 18 + 1),
+        ])),
+        np.arange(1., 9.5 + 0.01, 0.125)
     )
 }
 
-
 def get_ps_binning(season):
-    if "IC86" in season:
-        season = "IC86"
+    if season in ["IC86_1", "IC86-2011", "IC86_2011"]:
+        season = "IC86_2011"
+    elif "IC86" in season:
+        season = "IC86_2012"
     return ps_binning[season]
 
