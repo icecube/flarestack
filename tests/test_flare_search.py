@@ -63,11 +63,12 @@ class TestFlareSearch(unittest.TestCase):
 
         ub = create_unblinder(unblind_dict, full_plots=True)
         res = [x for x in ub.res_dict["Parameters"].values()]
-        for i, x in enumerate(res):
-            self.assertAlmostEqual(x, true_parameters[i], places=1)
 
         logging.info("Best fit values {0}".format(list(res)))
         logging.info("Reference best fit {0}".format(true_parameters))
+
+        for i, x in enumerate(res):
+            self.assertAlmostEqual(x, true_parameters[i], places=1)
 
 
 if __name__ == '__main__':

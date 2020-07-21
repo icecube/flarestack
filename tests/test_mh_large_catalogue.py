@@ -76,11 +76,12 @@ class TestTimeIntegrated(unittest.TestCase):
         ub = create_unblinder(unblind_dict)
         key = [x for x in ub.res_dict.keys() if x != "TS"][0]
         res = ub.res_dict[key]
+
+        logging.info("Best fit values {0}".format(list(res["x"])))
+        logging.info("Reference best fit {0}".format(true_parameters[0]))
+
         for i, x in enumerate(res["x"]):
             self.assertAlmostEqual(x, true_parameters[0][i], delta=0.1)
-
-        logging.info("Best fit values {0}".format(list(res)))
-        logging.info("Reference best fit {0}".format(true_parameters[0]))
 
         # mh_dict = {
         #     "name": "tests/test_mh_large_catalogue",
