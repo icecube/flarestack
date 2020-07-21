@@ -60,8 +60,8 @@ def ic86_new_season(year):
         exp_path=ps_data_dir + "IC86_{0}_exp.npy".format(year),
         mc_path=ps_data_dir + "IC86_2012_MC.npy",
         grl_path=grl_data_dir + "IC86_{0}_exp.npy".format(year),
-        sin_dec_bins=get_ps_binning(year)[0],
-        log_e_bins=get_ps_binning(year)[1]
+        sin_dec_bins=get_ps_binning(f"IC86_{year}")[0],
+        log_e_bins=get_ps_binning(f"IC86_{year}")[1]
     )
 
 
