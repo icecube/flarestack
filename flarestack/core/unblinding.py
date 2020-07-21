@@ -224,7 +224,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 energy_flux = []
                 x_axis = []
 
-                for subdir in os.listdir(self.pickle_dir):
+                for subdir in sorted(os.listdir(self.pickle_dir)):
 
                     root = os.path.join(self.unblind_dict["background_ts"], subdir)
 
