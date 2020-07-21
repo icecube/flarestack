@@ -173,7 +173,6 @@ class IceCubeRunList(DetectorOnOffList):
         livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
-
 class IceCubeDataset(Dataset):
     pass
 
