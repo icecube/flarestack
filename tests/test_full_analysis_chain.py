@@ -76,6 +76,12 @@ class TestTimeIntegrated(unittest.TestCase):
 
             ub_dict = dict(mh_dict)
 
+            # Test without background TS
+
+            ub = create_unblinder(ub_dict, full_plots=True)
+
+            # Test with background TS
+
             ub_dict["background_ts"] = base_name
 
             ub = create_unblinder(ub_dict, full_plots=True, scan_2d=True)
