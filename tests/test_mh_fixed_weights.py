@@ -4,8 +4,8 @@ IceCube data (IC86_1).
 import logging
 import unittest
 from flarestack.data.public import icecube_ps_3_year
-from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
+from flarestack import create_unblinder, MinimisationHandler
 
 # Initialise Injectors/LLHs
 
@@ -57,7 +57,6 @@ class TestTimeIntegrated(unittest.TestCase):
 
         for i, x in enumerate(res["x"]):
             self.assertAlmostEqual(x, true_parameters[i], delta=0.1)
-
 
 if __name__ == '__main__':
     unittest.main()
