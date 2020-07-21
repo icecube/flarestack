@@ -20,7 +20,8 @@ llh_dict = {
     },
     "llh_energy_pdf": {
         "energy_pdf_name": "power_law"
-    }
+    },
+    "negative_ns_bool": True
 }
 
 # Loop over sin(dec) values
@@ -34,7 +35,7 @@ sindecs = np.linspace(0.5, -0.5, 3)
 
 true_parameters = [
     [0.0, 2.3746234433776863],
-    [0.0, 2.1278706029950163],
+    [-2.136619848284634, 2.0],
     [3.118277154641447, 4.0]
 ]
 
@@ -53,7 +54,7 @@ class TestTimeIntegrated(unittest.TestCase):
         for j, sindec in enumerate(sindecs):
 
             unblind_dict = {
-                "name": "tests/test_llh_standard/",
+                "name": "tests/test_negative_ns/",
                 "mh_name": "fixed_weights",
                 "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
                 "catalogue": ps_catalogue_name(sindec),

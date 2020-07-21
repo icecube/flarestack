@@ -35,6 +35,9 @@ class TestUtilAstro(unittest.TestCase):
 
         res_astro = calculate_astronomy(1.e-9, injection_energy_pdf, cat)
 
+        logging.info("Calculated values {0}".format(res_astro))
+        logging.info("Reference  values {0}".format(true_res_astro))
+
         for key in ['Energy Flux (GeV cm^{-2} s^{-1})', 'Mean Luminosity (erg/s)']:
 
             self.assertAlmostEqual(np.log(res_astro[key]), np.log(true_res_astro[key]), places=2)
@@ -44,9 +47,6 @@ class TestUtilAstro(unittest.TestCase):
             np.log(true_res_astro['Flux from nearest source'].value),
             places = 2
         )
-
-        logging.info("Calculated values {0}".format(res_astro))
-        logging.info("Reference  values {0}".format(true_res_astro))
 
 
 if __name__ == '__main__':

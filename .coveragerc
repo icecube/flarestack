@@ -12,7 +12,7 @@ omit =
     flarestack/icecube_utils/reference_sensitivity.py
     flarestack/utils/percentile_SoB.py
     flarestack/utils/asimov_estimator.py
-    flarestack/utils/dynamic_pull_corrector.py
+    flarestack/utils/dynamic_pull_correction.py
 
 [report]
 # Regexes for lines to exclude from consideration
