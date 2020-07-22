@@ -10,51 +10,6 @@ n_bins = 100
 
 # Taken via Alex Stasik from Thomas Kintscher
 
-class Chi2(object):
-
-    """ A class similar to the ones from scipy.stats
-       allowing to fit left-truncated chi^2 distributions.
-    """
-
-    def __init__(self, data):
-        """ Fit the given ensemble of measurements with a chi^2 function.
-
-        `data` is a list of test statistics values.
-        `cut` defines where the distribution is truncated.
-        """
-
-        data -= min(data)
-
-        # three parameters will be fitted: dof, location, scale
-        p_start = [2., 1.]
-        p_bounds = [(0., None),  # dof > 0
-                    # (min(data), 0.),  # location < 0 for 'truncated'
-                    # effect
-                    (1e-5, 1e5)]  # shape ~ free
-
-        # define the fit function: likelihood for chi^2 distribution,
-        # plus knowledge about the amount of truncated data
-        def func(p):
-
-            dist = scipy.stats.chi2(p[0], loc=0., scale=p[1])
-            loglh = dist.logpdf(data).sum()
-            print(loglh)
-
-            return -loglh
-
-        res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
-
-        if not res.success:
-            logging.warning('Chi2 fit did not converge! Result is likely garbage.')
-
-        # self._q_left = N_left / float(N_all)
-        self._cut = 0.
-        self._f = scipy.stats.chi2(res.x[0], loc=min(data), scale=res.x[1])
-        self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
-        self.ndof = res.x[0]
-        self.loc = min(data)
-        self.scale = res.x[1]
-
 
 class Chi2_LeftTruncated(object):
     """ A class similar to the ones from scipy.stats
@@ -139,56 +94,6 @@ class Chi2_LeftTruncated(object):
                '\t Location = {0:7.2f}\n'.format(self._f.args[1]) + \
                '\t Scale    = {0:7.2f}\n'.format(self._f.args[2]) + \
                '\t KS       = {0:7.2%}'.format(self._ks)
-
-class Double_Chi2(object):
-    """ A class similar to the ones from scipy.stats
-       allowing to fit left-truncated chi^2 distributions.
-    """
-
-    def __init__(self, data):
-        # p_start = [4., -1., 1.]
-
-        med = np.median(data)
-
-        data_right = data[data > med]
-
-        data_left = data[data <= med]
-
-        p_start = [2.]
-        p_bounds = [(0., None),  # dof > 0
-                    # (None, -0),  # location < 0 for 'truncated' effect
-                    #  shape ~ free
-                    ]
-                    # (1e-5, 1e5)]  # shape ~ free
-
-        def func(p):
-            loglh = scipy.stats.chi2(p[0], loc=med, scale=1).logpdf(
-                data_right).sum()
-            # print loglh, p
-            return -loglh
-
-        res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
-
-        # print res
-
-        self._cut = 0.
-        self._res = res
-        self._f = scipy.stats.chi2(*res.x)
-        self._ks = scipy.stats.kstest(data, self._f.cdf)[0]
-        self._df = res.x[0]
-        self._loc = med
-        self._scale = 1.
-
-        def func(p):
-            loglh = scipy.stats.chi2(p[0], loc=-med, scale=1).logpdf(
-                -data_left).sum()
-            # print loglh, p
-            return -loglh
-
-        res = scipy.optimize.minimize(func, x0=p_start, bounds=p_bounds)
-
-        self.res_left = res
-        self._f_left = scipy.stats.chi2(*res.x)
 
 class Chi2_one_side(object):
 
@@ -350,20 +255,6 @@ def plot_expanded_negative(ts_array, path):
              stacked=True)
 
     med = np.median(ts_array)
-
-    chi2 = Double_Chi2(ts_array)
-
-    # frac_over = 0.5
-
-    # x_range = np.linspace(med, max(ts_array), 100)
-    #
-    # plt.plot(x_range, frac_over * chi2._f.pdf(x_range),
-    #          color="blue", label=r"$\chi^{2}$ Distribution")
-
-    # x_range = np.linspace(min(ts_array), med, 100)
-    #
-    # plt.plot(x_range, frac_over * chi2._f_left.pdf(-x_range),
-    #          color="blue")
 
     plt.yscale("log")
     plt.xlabel(r"Test Statistic ($\lambda$)")
