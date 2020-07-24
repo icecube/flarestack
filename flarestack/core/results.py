@@ -269,12 +269,14 @@ class ResultsHandler(object):
     def find_ns_scale(self):
         """Find the number of neturinos corresponding to flux
         """
-        x = sorted(self.results.keys())
+        x = sorted([float(x) for x in self.results.keys()])
         raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
+
         try:
             # if weights were not fitted, number of neutrinos is stored in just one parameter
             if not 'fit' in self.mh_name:
                 self.flux_to_ns = self.inj[raw_x[1]]["n_s"] / k_to_flux(float(x[1]))
+
             # if weights were fitted, there is one n_s for each fitted source
             else:
                 sc_dict = self.inj[raw_x[1]]
@@ -283,11 +285,7 @@ class ResultsHandler(object):
             logging.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
 
         except KeyError:
-            if 'fit' in self.mh_name:
-                logging.info(f"KeyError: key \"n_s\" not found. "
-                             f"Not necessary because the minimizer {self.mh_name} is used.")
-            else:
-                logging.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!")
+            logging.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!")
 
     def find_sensitivity(self):
         """Uses the results of the background trials to find the median TS
