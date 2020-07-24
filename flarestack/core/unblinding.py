@@ -5,7 +5,7 @@ import numpy as np
 from flarestack.core.minimisation import MinimisationHandler, read_mh_dict, FlareMinimisationHandler
 from flarestack.core.injector import MockUnblindedInjector, \
     TrueUnblindedInjector
-from flarestack.core.results import ResultsHandler
+from flarestack.core.results import ResultsHandler, OverfluctuationError
 from flarestack.core.time_pdf import TimePDF
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
     analysis_pickle_path, limit_output_path, unblinding_output_path
@@ -115,73 +115,48 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 os.makedirs(os.path.dirname(self.unblind_res_path))
             except OSError:
                 pass
-            
-            if reunblind is True:
-                logging.info("Unblinding catalogue")
 
-                # Minimise likelihood and produce likelihood scans
-                self.res_dict = self.simulate_and_run(0, seed)
-                logging.info(self.res_dict)
+            # Avoid redoing unblinding
 
-                # Quantify the TS value significance
-                self.ts = np.array([self.res_dict["TS"]])[0]
-                self.ts_type = unblind_dict.get('ts_type', 'Standard')
-                self.sigma = np.nan
+            if not reunblind:
 
-                logging.info("Test Statistic of: {0}".format(self.ts))
-
-                ub_res_dict = {
-                    "Parameters": self.res_dict['Parameters'],
-                    "TS": self.res_dict['TS'],
-                    "Flag": self.res_dict['Flag']
-                }
-
-                logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
-
-                with open(self.unblind_res_path, "wb") as f:
-                    pickle.dump(ub_res_dict, f)
-
-            else:
                 try:
                     logging.info("Not re-unblinding, loading results from {0}".format(self.unblind_res_path))
 
                     with open(self.unblind_res_path, "rb") as f:
                         self.res_dict = pickle.load(f)
 
-                    logging.info(self.res_dict)
-
-                    # Quantify the TS value significance
-                    self.ts = np.array([self.res_dict["TS"]])[0]
-                    self.ts_type = unblind_dict.get('ts_type', 'Standard')
-                    self.sigma = np.nan
-
-                    logging.info("Test Statistic of: {0}".format(self.ts))
-
                 except FileNotFoundError:
                     logging.warning("No pickle files containing unblinding results found. "
                                     "Re-unblinding now.")
 
-                    # Minimise likelihood and produce likelihood scans
-                    self.res_dict = self.simulate_and_run(0, seed)
-                    logging.info(self.res_dict)
+            # Otherwise unblind
+            
+            if not hasattr(self, "res_dict"):
+                logging.info("Unblinding catalogue")
 
-                    # Quantify the TS value significance
-                    self.ts = np.array([self.res_dict["TS"]])[0]
-                    self.ts_type = unblind_dict.get('ts_type', 'Standard')
-                    self.sigma = np.nan
+                # Minimise likelihood and produce likelihood scans
+                self.res_dict = self.simulate_and_run(0, seed)
 
-                    logging.info("Test Statistic of: {0}".format(self.ts))
+            logging.info(self.res_dict)
 
-                    ub_res_dict = {
-                        "Parameters": self.res_dict['Parameters'],
-                        "TS": self.res_dict['TS'],
-                        "Flag": self.res_dict['Flag']
-                    }
+            # Quantify the TS value significance
+            self.ts = np.array([self.res_dict["TS"]])[0]
+            self.ts_type = unblind_dict.get('ts_type', 'Standard')
+            self.sigma = np.nan
 
-                    with open(self.unblind_res_path, "wb") as f:
-                        pickle.dump(ub_res_dict, f)
+            logging.info("Test Statistic of: {0}".format(self.ts))
 
-                    logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
+            ub_res_dict = {
+                "Parameters": self.res_dict['Parameters'],
+                "TS": self.res_dict['TS'],
+                "Flag": self.res_dict['Flag']
+            }
+
+            logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
+
+            with open(self.unblind_res_path, "wb") as f:
+                pickle.dump(ub_res_dict, f)
 
             try:
                 path = self.unblind_dict["background_ts"]
@@ -337,6 +312,9 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
             except AttributeError as e:
                 logging.warning("Unable to set limits. No TS distributions found.")
+
+            except ValueError as e:
+                raise OverfluctuationError("Insufficent pseudotrial values above and below threshold")
 
         def compare_to_background_TS(self):
             logging.info("Retrieving Background TS Distribution from {0}".format(self.pickle_dir))
