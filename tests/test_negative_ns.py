@@ -69,7 +69,8 @@ class TestTimeIntegrated(unittest.TestCase):
             logging.info("Reference best fit {0}".format(true_parameters[j]))
 
             for i, x in enumerate(res["x"]):
-                self.assertAlmostEqual(x, true_parameters[j][i], delta=0.1)
+                if not np.logical_and(res["x"][0] == 0.0, i > 0):
+                    self.assertAlmostEqual(x, true_parameters[j][i], delta=0.1)
 
 
 if __name__ == '__main__':
