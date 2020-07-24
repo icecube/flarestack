@@ -842,8 +842,13 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 for l, s in zip(CS.levels, strs):
                     fmt[l] = s
 
-                ax.clabel(CS, fmt=fmt, inline=1, fontsize=10, levels=levels,
-                          colors="white")
+                try:
+                    ax.clabel(CS, fmt=fmt, inline=1, fontsize=10, levels=levels,
+                              colors="white")
+                except TypeError:
+                    ax.clabel(CS, levels, fmt=fmt, inline=1, fontsize=10, #levels=levels,
+                              colors="white")
+
                 cbar.set_label(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
                                rotation=90)
 
