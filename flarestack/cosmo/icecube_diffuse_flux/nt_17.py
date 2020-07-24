@@ -7,8 +7,7 @@ for the 8years Northern Track sample, tracing the 68% and 95% contours in Figure
 
 """
 import numpy as np
-import matplotlib.pyplot as plt
-from flarestack.shared import illustration_dir
+from astropy import units as u
 
 contour_68 = [
     (2.03012543242526, 0.7423683777687273),
@@ -120,9 +119,11 @@ units = 10 ** -18  #/ u.GeV /u.cm**2 / u.s / u.sr
 
 
 # Fit is valid from 119 TeV to 4.8 PeV.
-global_fit_e_range = np.logspace(np.log10(119) + 3, np.log10(4.8) + 6, 100)
+e_range = np.logspace(np.log10(119) + 3, np.log10(4.8) + 6, 100)
 
-best_fit_flux = 1.01 * units
+best_fit_flux = 1.01 * units * (
+        u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
+)
 best_fit_gamma = 2.19
 
 nt_17 = {

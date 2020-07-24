@@ -262,33 +262,3 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
     plt.close()
 
     return nu_at_horizon
-
-
-# def estimate_northern_neutrinos(diffuse_fit="joint"):
-#     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
-#
-#     print("\n")
-#
-#     print("Let's assume that 50% of the diffuse flux is distributed on a \n" \
-#           "single source in the northern sky. That's unrealistic, but \n " \
-#           "should give us an idea of expected neutrino numbers! \n")
-#
-#     source = np.load(ps_catalogue_name(0.2))
-#
-#     inj_kwargs = {
-#         "injection_time_pdf": {
-#             "time_pdf_name": "Steady"
-#         },
-#         "injection_energy_pdf": {
-#             "energy_pdf_name": "PowerLaw",
-#             "gamma": diffuse_gamma,
-#             "flux_at_1_gev": diffuse_flux*0.5
-#         }
-#     }
-#
-#     calculate_neutrinos(source[0], IC86_1_dict, inj_kwargs)
-
-#
-# if __name__ == "__main__":
-#     estimate_northern_neutrinos(diffuse_fit="joint")
-#     estimate_northern_neutrinos(diffuse_fit="northern_tracks")

@@ -19,12 +19,12 @@ def get_diffuse_flux_at_100TeV(fit="joint_15"):
     """
 
     if fit == "joint":
-        logging.warning("Fit 'joint' was used, without a specified year."
+        logging.warning("Fit 'joint' was used, without a specified year. "
                         "Assuming 'joint_15', from https://arxiv.org/abs/1507.03991.")
         fit = "joint_15"
 
     if fit == "northern_tracks":
-        logging.warning("Fit 'northern_tracks' was used, without a specified year."
+        logging.warning("Fit 'northern_tracks' was used, without a specified year. "
                         "Assuming 'northern_tracks_19', from https://arxiv.org/abs/1908.09551.")
         fit = "northern_tracks_19"
 
@@ -61,7 +61,6 @@ def lower_contour(energy_range, contour):
 
 def f(energy, norm, index):
     return norm * energy ** -index * (10**5) ** index
-
 
 def plot_diffuse_flux(label, contour_68, contour_95, e_range):
 

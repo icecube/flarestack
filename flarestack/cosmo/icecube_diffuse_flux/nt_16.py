@@ -7,6 +7,7 @@ for the 6years Northern Track sample, tracing the 68% and 95% contours in Figure
 
 """
 import numpy as np
+from astropy import units as u
 
 contour_68 = [
     (1.9321029740384577, 0.5435661287274187),
@@ -109,7 +110,9 @@ contour_95 = [
 
 units = 10 ** -18  #/ u.GeV /u.cm**2 / u.s / u.sr
 
-best_fit_flux = 0.90 * units
+best_fit_flux = 0.90 * units * (
+        u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
+)
 best_fit_gamma = 2.13
 
 # Fit is valid from 194 TeV and 7.8 PeV
