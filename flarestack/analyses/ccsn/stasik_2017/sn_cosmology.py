@@ -6,74 +6,14 @@ from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits
 from flarestack.core.energy_pdf import EnergyPDF
 from astropy.cosmology import Planck15 as cosmo
 import numpy as np
-from flarestack.misc.convert_diffuse_flux_contour import contour_95, \
-    upper_contour, lower_contour, global_fit_e_range
+from flarestack.cosmo.icecube_diffuse_flux.joint_15 import contour_95, e_range
+from flarestack.cosmo import lower_contour, upper_contour
 import matplotlib.pyplot as plt
 from flarestack.shared import plot_output_dir
 import os
+from flarestack.cosmo.rates import ccsn_clash_candels, ccsn_madau, get_sn_fraction, get_sn_type_rate
 
-
-def ccsn_clash_candels(z):
-    """Best fit k from paper https://arxiv.org/pdf/1509.06574.pdf"""
-    # Why divide by h^3???
-    return 0.0091 * sfr_clash_candels(z) * cosmo.h**2. / cosmo.h**3
-
-
-def ccsn_madau(z):
-    """"Best fit k from http://arxiv.org/pdf/1403.0007v3.pdf"""
-    return 0.0068 * sfr_madau(z)
-
-
-def get_sn_fraction(sn_type):
-    """Return SN rates for specific types. These are taken from
-    https://arxiv.org/pdf/1509.06574.pdf, and are assumed to be fixed
-    fractions of the overall SN rate. Acceptable types are:
-        SNIIn
-        SNIIP
-        SNIb
-        SNIc
-        SNIbc (equal to Ib + Ic)
-
-    :param sn_type: Type of SN
-    :return: fraction represented by that subtype
-    """
-    if sn_type == "IIn":
-        return 0.064
-    elif sn_type == "IIp":
-        return 0.52
-    elif sn_type == "Ib":
-        return 0.069
-    elif sn_type == "Ic":
-        return 0.176
-    elif sn_type == "Ibc":
-        return 0.069 + 0.176
-    else:
-        raise Exception("SN sn_type " + str(sn_type) + " not recognised!")
-
-
-def get_sn_type_rate(fraction=1.0, sn_type=None, rate=ccsn_clash_candels):
-    """Return SN rates for given fraction of the CCSN rate, or specific types.
-    The types are taken from https://arxiv.org/pdf/1509.06574.pdf, and are
-    assumed to be fixed fractions of the overall SN rate. Acceptable types are:
-        IIn
-        IIP
-        Ib
-        Ic
-        Ibc (equal to Ib + Ic)
-
-    :param fraction: Fraction of SN
-    :param sn_type: Type of SN
-    :param rate: CCSN rate to be used (Clash Candels by default)
-    :return: corresponding rate
-    """
-
-    if (fraction != 1.0) and (sn_type is not None):
-        raise Exception("Type and fraction both specified!")
-    elif sn_type is not None:
-        return lambda x: get_sn_fraction(sn_type) * rate(x)
-    else:
-        return lambda x: fraction * rate(x)
-
+global_fit_e_range = e_range
 
 if __name__ == "__main__":
 
