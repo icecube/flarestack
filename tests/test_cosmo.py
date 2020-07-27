@@ -72,7 +72,7 @@ class TestUtilCosmo(unittest.TestCase):
          diffuse_fit=fit
         )
 
-        self.assertAlmostEqual(res.value, true_cosmology.value, places=2)
+        self.assertAlmostEqual(res.value/true_cosmology.value, 1.0, delta=0.1)
 
     def test_plotting(self):
 
