@@ -8,8 +8,7 @@ import numpy as np
 import os
 from flarestack.shared import plots_dir
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
-from flarestack.cosmo.icecube_diffuse_flux import get_diffuse_flux_at_100TeV, get_diffuse_flux_at_1GeV
-from flarestack.cosmo.rates import sfr_madau, sfr_clash_candels
+from flarestack.cosmo.icecube_diffuse_flux import get_diffuse_flux_at_1GeV
 
 
 def integrate_over_z(f, zmin=0.0, zmax=8.0):

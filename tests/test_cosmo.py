@@ -5,7 +5,7 @@ import logging
 import unittest
 from flarestack.cosmo import get_diffuse_flux_at_1GeV, get_diffuse_flux_at_100TeV, calculate_transient_cosmology,\
     contours, plot_diffuse_flux
-from flarestack.cosmo import ccsn_clash_candels
+from flarestack.cosmo import get_rate
 from astropy import units as u
 
 default_flux_100TeV = [
@@ -48,7 +48,7 @@ class TestUtilCosmo(unittest.TestCase):
             self.assertEqual(res_100_tev, default_flux_100TeV[i])
 
             logging.info("Calculated values {0}".format(res_100_tev))
-            logging.info("Reference  values {0}".format(default_flux_100TeV))
+            logging.info("Reference  values {0}".format(default_flux_100TeV[i]))
 
     def test_neutrino_cosmology(self):
 
@@ -63,8 +63,12 @@ class TestUtilCosmo(unittest.TestCase):
 
         # Use Supernova rate
 
+        key = "strolger_15"
+
+        ccsn_rate = get_rate("ccsn", evolution_name=key, rate_name=key)
+
         res = calculate_transient_cosmology(
-         e_pdf_dict, ccsn_clash_candels, "test_CCSN", zmax=8.0,
+         e_pdf_dict, ccsn_rate, "test_CCSN", zmax=8.0,
          diffuse_fit=fit
         )
 
