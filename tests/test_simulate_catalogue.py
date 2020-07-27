@@ -5,7 +5,7 @@ import logging
 import unittest
 from flarestack.utils import load_catalogue
 from flarestack.data.public import icecube_ps_3_year
-from flarestack.cosmo import simulate_transient_catalogue, ccsn_clash_candels
+from flarestack.cosmo import simulate_transient_catalogue, get_rate
 from astropy import units as u
 
 default_cat = [
@@ -46,7 +46,11 @@ class TestSimulateCatalogue(unittest.TestCase):
 
         logging.info("Testing simulate_transient_catalogue util functions.")
 
-        all_cat_names = simulate_transient_catalogue(mh_dict, ccsn_clash_candels,
+        key = "strolger_15"
+
+        ccsn_rate = get_rate("ccsn", evolution_name=key, rate_name=key)
+
+        all_cat_names = simulate_transient_catalogue(mh_dict, ccsn_rate,
                                                      cat_name="test_sim_cat",
                                                      n_entries=3, seed=1111, resimulate=True
                                                      )
