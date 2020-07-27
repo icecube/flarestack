@@ -51,7 +51,7 @@ def get_kcc_rate(kcc_name=None):
     """
 
     if kcc_name is None:
-        logging.warning("No specified kcc (sn per unit star formation). Assuming default kcc.")
+        logging.info("No specified kcc (sn per unit star formation). Assuming default kcc.")
         kcc_name = "madau_14"
 
     if kcc_name not in kcc_rates.keys():
@@ -85,8 +85,7 @@ def get_local_ccsn_rate(rate_name=None, kcc_name=None, sn_subclass=None, fractio
     subclass_fraction = get_sn_fraction(sn_subclass)
 
     if fraction != 1.0:
-        logging.info(f"Assuming a modified rate that is {100.*fraction} of that total.")
-
+        logging.info(f"Assuming a modified rate that is {100.*fraction:.2f} of that total.")
 
     return sfr_rate * kcc * subclass_fraction * fraction
 

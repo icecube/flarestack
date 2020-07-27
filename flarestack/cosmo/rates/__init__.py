@@ -38,4 +38,6 @@ def get_rate(source_name="tde", evolution_name=None, rate_name=None, **kwargs):
             raise Exception(f"Source class '{source_name}' not recognised. "
                             f"The following source evolutions are available: {source_name.keys()}")
 
+    logging.info(f"Loading source class '{source_name}'")
+
     return sources[source_name](evolution_name, rate_name, **kwargs)

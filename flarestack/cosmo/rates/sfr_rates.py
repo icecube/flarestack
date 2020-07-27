@@ -1,18 +1,15 @@
 import logging
 from astropy import units as u
 
-def madau_14(z):
+def madau_14(z, **kwargs):
     """Star formation history as a function of redshift, from
     Madau & Dickinson 2014 (http://arxiv.org/abs/1403.0007v3)
 
     """
-    rate = 0.015 * (1+z)**2.7 / (1 + ((1+z)/2.9)**5.6) /(
-        u.Mpc**3 * u.year
-    )
+    rate = (1+z)**2.7 / (1 + ((1+z)/2.9)**5.6)
     return rate
 
-
-def strolger_15(z):
+def strolger_15(z, **kwargs):
     """
     star formation history
     https://arxiv.org/pdf/1509.06574.pdf
@@ -40,7 +37,7 @@ def get_sfr_evolution(evolution_name=None, **kwargs):
     """
 
     if evolution_name is None:
-        logging.warning("No evolution specified. Assuming default evolution.")
+        logging.info("No evolution specified. Assuming default evolution.")
         evolution_name = "madau_14"
 
     if evolution_name not in sfr_evolutions.keys():
@@ -53,7 +50,7 @@ def get_sfr_evolution(evolution_name=None, **kwargs):
     normed_evolution = lambda x: evolution(x, **kwargs)/evolution(0.0, **kwargs)
     return normed_evolution
 
-local_sfr_rate = {
+local_sfr_rates = {
     "madau_14": (0.015 * u.solMass / (u.Mpc**3 * u.year), "http://arxiv.org/abs/1403.0007v3"),
     "strolger_15": (0.015 * u.solMass/ (u.Mpc**3 * u.year), "https://arxiv.org/abs/1509.06574")
 }
@@ -66,14 +63,14 @@ def get_local_sfr_rate(rate_name=None):
     """
 
     if rate_name is None:
-        logging.warning("No rate specified. Assuming default rate.")
+        logging.info("No rate specified. Assuming default rate.")
         rate_name = "madau_14"
 
-    if rate_name not in local_sfr_rate.keys():
+    if rate_name not in local_sfr_rates.keys():
         raise Exception(f"Rate name '{rate_name}' not recognised. "
-                        f"The following source evolutions are available: {local_sfr_rate.keys()}")
+                        f"The following source evolutions are available: {local_sfr_rates.keys()}")
     else:
-        local_rate, ref = local_sfr_rate[rate_name]
+        local_rate, ref = local_sfr_rates[rate_name]
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
     return local_rate.to("solMass Mpc-3 yr-1")

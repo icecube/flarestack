@@ -45,7 +45,7 @@ def get_tde_evolution(evolution_name=None, **kwargs):
     """
 
     if evolution_name is None:
-        logging.warning("No evolution specified. Assuming default evolution.")
+        logging.info("No evolution specified. Assuming default evolution.")
         evolution_name = "sun_15"
 
     if evolution_name not in tde_evolutions.keys():
@@ -58,7 +58,7 @@ def get_tde_evolution(evolution_name=None, **kwargs):
     normed_evolution = lambda x: evolution(x, **kwargs)/evolution(0.0, **kwargs)
     return normed_evolution
 
-local_tde_rate = {
+local_tde_rates = {
     "sun_15_jetted": (3 * 10 **-11 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1706.00391"),
     "van_velzen_18": (8 * 10**-7 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1707.03458"),
     "biehl_jetted_18": (10**-10 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1711.03555"),
@@ -73,14 +73,14 @@ def get_local_tde_rate(rate_name=None):
     """
 
     if rate_name is None:
-        logging.warning("No rate specified. Assuming default rate.")
+        logging.info("No rate specified. Assuming default rate.")
         rate_name = "van_velzen_18"
 
-    if rate_name not in local_tde_rate.keys():
+    if rate_name not in local_tde_rates.keys():
         raise Exception(f"Rate name '{rate_name}' not recognised. "
-                        f"The following source evolutions are available: {local_tde_rate.keys()}")
+                        f"The following source evolutions are available: {local_tde_rates.keys()}")
     else:
-        local_rate, ref = local_tde_rate[rate_name]
+        local_rate, ref = local_tde_rates[rate_name]
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
     return local_rate.to("Mpc-3 yr-1")
