@@ -1,7 +1,8 @@
 import logging
+import numpy as np
 from astropy.cosmology import Planck15 as cosmo
 from astropy import units as u
-from flarestack.cosmo.rates.sfr_rates import get_local_sfr_rate, get_sfr_evolution
+from flarestack.cosmo.rates.sfr_rates import get_local_sfr_rate, get_sfr_evolution, sfr_evolutions, local_sfr_rates
 
 # Taken from https://arxiv.org/pdf/1509.06574.pdf
 
@@ -99,6 +100,7 @@ def get_ccsn_rate(evolution_name=None, rate_name=None, kcc_name=None, sn_subclas
     :param fraction: Fraction of specified rate to include
     :return: Rate as a function of redshift
     """
+
     normed_evolution = get_sfr_evolution(evolution_name, **kwargs)
     local_rate = get_local_ccsn_rate(rate_name, kcc_name, sn_subclass, fraction)
 

@@ -56,7 +56,7 @@ local_sfr_rates = {
 }
 
 def get_local_sfr_rate(rate_name=None):
-    """Returns local TDE rate
+    """Returns local SFR rate
 
     :param rate_name: Name of chosen evolution
     :return: Normalised evolution, equal to 1 at z=0
@@ -76,8 +76,8 @@ def get_local_sfr_rate(rate_name=None):
     return local_rate.to("solMass Mpc-3 yr-1")
 
 def get_sfr_rate(evolution_name=None, rate_name=None, **kwargs):
-    """Load a TDE rate as a function of redshift. This is a product of
-    a TDE evolution and a TDE local rate.
+    """Load a Star Formation Rate as a function of redshift. This is a product of
+    a SFR evolution and a SFR local rate.
 
     :param evolution_name: Name of SFR evolution to use
     :param rate_name: Name of SFR local rate to use

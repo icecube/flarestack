@@ -2,17 +2,20 @@ import logging
 from flarestack.cosmo.rates.sfr_rates import get_sfr_rate
 from flarestack.cosmo.rates.ccsn_rates import get_ccsn_rate
 from flarestack.cosmo.rates.tde_rates import get_tde_rate
+from flarestack.cosmo.rates.grb_rates import get_grb_rate
 
 source_maps = {
     "tde": ["TDE", "tidal_disruption_event"],
     "sfr": ["SFR", "star_formation_rate"],
-    "ccsn": ["CCSN", "sn", "supernova", "core_collapse_supernova"]
+    "ccsn": ["CCSN", "sn", "supernova", "core_collapse_supernova"],
+    "grb": ["GRB", "gamma_ray_burst"]
 }
 
 sources = {
     "tde": get_tde_rate,
     "sfr": get_sfr_rate,
-    "ccsn": get_ccsn_rate
+    "ccsn": get_ccsn_rate,
+    "grb": get_grb_rate
 }
 
 def get_rate(source_name="tde", evolution_name=None, rate_name=None, **kwargs):
