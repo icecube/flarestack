@@ -18,7 +18,8 @@ class TestCosmoRates(unittest.TestCase):
 
         for vals in source_maps.values():
             for val in vals:
-                get_rate(val)
+                f = get_rate(val)
+                f(1.0)
 
     def test_tde_rates(self):
 
