@@ -9,15 +9,7 @@ from flarestack.cosmo.icecube_diffuse_flux.nt_19 import nt_19
 
 contours = {**joint_15, **nt_16, **nt_17, **nt_19}
 
-def get_diffuse_flux_at_100TeV(fit="joint_15"):
-    """Returns value for the diffuse neutrino flux, based on IceCube's data.
-    The fit can be specified (either 'Joint' or 'Northern Tracks') to get
-    corresponding values from different analyses
-
-    :param fit: Fit of diffuse flux to be used
-    :return: Best fit diffuse flux at 100 TeV, and best fit spectral index
-    """
-
+def backwards_compatibility_fit(fit):
     if fit == "joint":
         logging.warning("Fit 'joint' was used, without a specified year. "
                         "Assuming 'joint_15', from https://arxiv.org/abs/1507.03991.")
@@ -28,11 +20,24 @@ def get_diffuse_flux_at_100TeV(fit="joint_15"):
                         "Assuming 'northern_tracks_19', from https://arxiv.org/abs/1908.09551.")
         fit = "northern_tracks_19"
 
-    if fit in contours.keys():
-        diffuse_flux, diffuse_gamma, _, _, _ = contours[fit]
-
-    else:
+    if fit not in contours.keys():
         raise Exception(f"Fit '{fit}' not recognised! \n The following fits are available: \n {contours.keys()}")
+
+    return fit
+
+
+def get_diffuse_flux_at_100TeV(fit="joint_15"):
+    """Returns value for the diffuse neutrino flux, based on IceCube's data.
+    The fit can be specified (either 'Joint' or 'Northern Tracks') to get
+    corresponding values from different analyses
+
+    :param fit: Fit of diffuse flux to be used
+    :return: Best fit diffuse flux at 100 TeV, and best fit spectral index
+    """
+
+    fit = backwards_compatibility_fit(fit)
+
+    diffuse_flux, diffuse_gamma, _, _, _ = contours[fit]
 
     return diffuse_flux, diffuse_gamma
 
@@ -46,21 +51,50 @@ def get_diffuse_flux_at_1GeV(fit="joint_15"):
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_100TeV(fit)
     return diffuse_flux * (10 ** 5) ** diffuse_gamma, diffuse_gamma
 
+def flux_f(energy, norm, index):
+    """Flux function
+
+    :param energy: Energy to evaluate
+    :param norm: Flux normalisation at 100 TeV
+    :param index: Spectral index
+    :return: Flux at given energy
+    """
+    return norm * energy ** -index * (10**5) ** index
 
 def upper_contour(energy_range, contour):
     """Trace upper contour"""
-    return [max([f(energy, norm, index) for (index, norm) in contour])
+    return [max([flux_f(energy, norm, index) for (index, norm) in contour])
             for energy in energy_range]
-
 
 def lower_contour(energy_range, contour):
     """Trace lower contour"""
-    return [min([f(energy, norm, index) for (index, norm) in contour])
+    return [min([flux_f(energy, norm, index) for (index, norm) in contour])
             for energy in energy_range]
 
+def get_diffuse_flux_contour(fit="joint_15", contour_name="68"):
+    """Provides functions to generate 'butterfly plot' of diffuse flux contours.
 
-def f(energy, norm, index):
-    return norm * energy ** -index * (10**5) ** index
+    :param fit: Diffuse Flux fit to use
+    :param contour_name: Contour to provide ('68' or '95')
+    :return: Best-fit function, upper butterfly function, lower butterfly function, energy range
+    """
+
+    fit = backwards_compatibility_fit(fit)
+
+    best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range = contours[fit]
+
+    if contour_name in [68., 68, 0.68, "68", "0.68", "68%"]:
+        contour = contour_68
+    elif contour_name in [95., 95, 0.95, "95", "0.95", "95%"]:
+        contour = contour_95
+    else:
+        raise Exception(f"Contour '{contour_name}' not recognised. Please select '68' or '95'.")
+
+    upper_f = lambda e: upper_contour(e, contour)
+    lower_f = lambda e: lower_contour(e, contour)
+    best_f = lambda e: flux_f(e, best_fit_flux, best_fit_gamma)
+
+    return best_f, upper_f, lower_f, e_range
 
 def plot_diffuse_flux(label, contour_68, contour_95, e_range):
 
@@ -71,7 +105,7 @@ def plot_diffuse_flux(label, contour_68, contour_95, e_range):
 
     for (index, norm) in contour_68:
         plt.plot(e_range,
-                 e_range ** 2 * f(e_range, norm, index),
+                 e_range ** 2 * flux_f(e_range, norm, index),
                  alpha=0.6)
     plt.plot(
         e_range,
@@ -88,7 +122,7 @@ def plot_diffuse_flux(label, contour_68, contour_95, e_range):
 
     for (index, norm) in contour_95:
         plt.plot(e_range,
-                 e_range ** 2 * f(e_range, norm, index),
+                 e_range ** 2 * flux_f(e_range, norm, index),
                  alpha=0.3)
     plt.plot(
         e_range,
