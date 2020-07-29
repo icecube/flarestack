@@ -105,6 +105,6 @@ best_fit_gamma = 2.5
 e_range = np.logspace(np.log10(25) + 3, np.log10(2.8) + 6, 100)
 
 joint_15 = {
-    "joint_15": (best_fit_flux, best_fit_gamma, np.array(contour_68)*units, np.array(contour_68)*units, e_range)
+    "joint_15": (best_fit_flux, best_fit_gamma, np.array(contour_68)*units, np.array(contour_95)*units, e_range)
 }
 
