@@ -9,7 +9,7 @@ from flarestack.cosmo.icecube_diffuse_flux.nt_19 import nt_19
 
 contours = {**joint_15, **nt_16, **nt_17, **nt_19}
 
-def backwards_compatibility_fit(fit):
+def load_fit(fit):
     if fit == "joint":
         logging.warning("Fit 'joint' was used, without a specified year. "
                         "Assuming 'joint_15', from https://arxiv.org/abs/1507.03991.")
@@ -23,7 +23,11 @@ def backwards_compatibility_fit(fit):
     if fit not in contours.keys():
         raise Exception(f"Fit '{fit}' not recognised! \n The following fits are available: \n {contours.keys()}")
 
-    return fit
+    best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range, ref = contours[fit]
+
+    logging.info(f"Loaded contour '{fit}' from {ref}")
+
+    return best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range
 
 
 def get_diffuse_flux_at_100TeV(fit="joint_15"):
@@ -35,9 +39,7 @@ def get_diffuse_flux_at_100TeV(fit="joint_15"):
     :return: Best fit diffuse flux at 100 TeV, and best fit spectral index
     """
 
-    fit = backwards_compatibility_fit(fit)
-
-    diffuse_flux, diffuse_gamma, _, _, _ = contours[fit]
+    diffuse_flux, diffuse_gamma, _, _, _ = load_fit(fit)
 
     return diffuse_flux, diffuse_gamma
 
@@ -79,9 +81,7 @@ def get_diffuse_flux_contour(fit="joint_15", contour_name="68"):
     :return: Best-fit function, upper butterfly function, lower butterfly function, energy range
     """
 
-    fit = backwards_compatibility_fit(fit)
-
-    best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range = contours[fit]
+    best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range = load_fit(fit)
 
     if contour_name in [68., 68, 0.68, "68", "0.68", "68%"]:
         contour = contour_68

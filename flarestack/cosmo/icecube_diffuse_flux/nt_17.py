@@ -129,6 +129,13 @@ best_fit_flux = 1.01 * units * (
 best_fit_gamma = 2.19
 
 nt_17 = {
-    "northern_tracks_17": (best_fit_flux, best_fit_gamma, contour_68, contour_68, e_range)
+    "northern_tracks_17": (
+        best_fit_flux,
+        best_fit_gamma,
+        contour_68,
+        contour_68,
+        e_range,
+        "https://doi.org/10.22323/1.301.1005"
+    )
 }
 
