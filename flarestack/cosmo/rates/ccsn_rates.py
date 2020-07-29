@@ -85,12 +85,9 @@ def get_local_ccsn_rate(rate_name=None, kcc_name=None, sn_subclass=None, fractio
 
     subclass_fraction = get_sn_fraction(sn_subclass)
 
-    if fraction != 1.0:
-        logging.info(f"Assuming a modified rate that is {100.*fraction:.2f} of that total.")
-
     return sfr_rate * kcc * subclass_fraction * fraction
 
-def get_ccsn_rate(evolution_name=None, rate_name=None, kcc_name=None, sn_subclass=None, fraction=1.0, **kwargs):
+def get_ccsn_rate(evolution_name=None, rate_name=None, kcc_name=None, sn_subclass=None, **kwargs):
     """Returns a local rate of core-collapse supernovae (CCSNe) as a function of redshift.
 
     :param evolution_name: Name of Star Formation evolution to use
@@ -102,6 +99,6 @@ def get_ccsn_rate(evolution_name=None, rate_name=None, kcc_name=None, sn_subclas
     """
 
     normed_evolution = get_sfr_evolution(evolution_name, **kwargs)
-    local_rate = get_local_ccsn_rate(rate_name, kcc_name, sn_subclass, fraction)
+    local_rate = get_local_ccsn_rate(rate_name, kcc_name, sn_subclass)
 
     return lambda z: normed_evolution(z) * local_rate

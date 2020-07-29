@@ -18,13 +18,14 @@ sources = {
     "grb": get_grb_rate
 }
 
-def get_rate(source_name="tde", evolution_name=None, rate_name=None, **kwargs):
+def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, **kwargs):
     """Get rate of astrophysical object, as a function of redshift
 
     :param source_name: Name of source class to use
     :param evolution_name: Name of source evolution for that class to be used
     :param rate_name: Name of local rate for that class to be used
-    :return:
+    :param fraction: Fraction of rate to use
+    :return: Rate function
     """
 
     # Check aliases
@@ -43,4 +44,9 @@ def get_rate(source_name="tde", evolution_name=None, rate_name=None, **kwargs):
 
     logging.info(f"Loading source class '{source_name}'")
 
-    return sources[source_name](evolution_name, rate_name, **kwargs)
+    f = sources[source_name](evolution_name, rate_name, **kwargs)
+
+    if fraction != 1.0:
+        logging.info(f"Assuming a modified rate that is {100.*fraction:.2f} of that total.")
+
+    return lambda z: f(z) * fraction
