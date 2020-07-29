@@ -59,7 +59,7 @@ def flux_f(energy, norm, index):
     :param index: Spectral index
     :return: Flux at given energy
     """
-    return norm * energy ** -index * (10**5) ** index
+    return norm * (energy ** -index) * (10.**5) ** index
 
 def upper_contour(energy_range, contour):
     """Trace upper contour"""

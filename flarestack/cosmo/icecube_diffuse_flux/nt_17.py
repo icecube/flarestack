@@ -9,7 +9,7 @@ for the 8years Northern Track sample, tracing the 68% and 95% contours in Figure
 import numpy as np
 from astropy import units as u
 
-contour_68 = [
+contour_68 = np.array([
     (2.03012543242526, 0.7423683777687273),
     (2.034251572561308, 0.8074403176791254),
     (2.041619679947108, 0.6850712670424288),
@@ -44,9 +44,9 @@ contour_68 = [
     (2.3338879395838474, 1.157279461292647),
     (2.3348703539019544, 1.2496196426893074),
     (2.335607164640534, 1.2011255541370345),
-]
+])
 
-contour_95 = [
+contour_95 = np.array([
     (1.9285527229722836, 0.5643923966631448),
     (1.9361083821824496, 0.5099685923744479),
     (1.9338611094297806, 0.6268656844277705),
@@ -112,11 +112,13 @@ contour_95 = [
     (2.425813850778116, 1.3410302249443906),
     (2.4271190583721722, 1.2874853143895486),
     (2.4267260926449294, 1.2480703107866788),
-]
+])
 
 
 units = 10 ** -18  #/ u.GeV /u.cm**2 / u.s / u.sr
 
+for contour in [contour_68, contour_95]:
+    contour.T[1] *= units
 
 # Fit is valid from 119 TeV to 4.8 PeV.
 e_range = np.logspace(np.log10(119) + 3, np.log10(4.8) + 6, 100)
@@ -127,6 +129,6 @@ best_fit_flux = 1.01 * units * (
 best_fit_gamma = 2.19
 
 nt_17 = {
-    "northern_tracks_17": (best_fit_flux, best_fit_gamma, np.array(contour_68)*units, np.array(contour_68)*units, e_range)
+    "northern_tracks_17": (best_fit_flux, best_fit_gamma, contour_68, contour_68, e_range)
 }
 

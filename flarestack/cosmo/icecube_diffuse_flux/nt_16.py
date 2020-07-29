@@ -9,7 +9,7 @@ for the 6years Northern Track sample, tracing the 68% and 95% contours in Figure
 import numpy as np
 from astropy import units as u
 
-contour_68 = [
+contour_68 = np.array([
     (1.9321029740384577, 0.5435661287274187),
     (1.9397702849315752, 0.6304832917736136),
     (1.9538255805117974, 0.4926978308209975),
@@ -44,9 +44,9 @@ contour_68 = [
     (2.3213704458865747, 1.0767793148438303),
     (2.323989988506117, 1.172941879393492),
     (2.325327012423786, 1.1221276543857184),
-]
+])
 
-contour_95 = [
+contour_95 = np.array([
     (1.8106484596220667, 0.31415018365164915),
     (1.8244061024706184, 0.4847774196161283),
     (1.8383586585932625, 0.29723261600094375),
@@ -105,10 +105,13 @@ contour_95 = [
     (1.7988125071458405, 0.3703905370572027),
     (1.8130521047187713, 0.4308697642030963),
     (1.839755256421923, 0.5417448750782072),
-]
+])
 
 
 units = 10 ** -18  #/ u.GeV /u.cm**2 / u.s / u.sr
+
+for contour in [contour_68, contour_95]:
+    contour.T[1] *= units
 
 best_fit_flux = 0.90 * units * (
         u.GeV ** -1 * u.cm ** -2 * u.s ** -1 * u.sr ** -1
@@ -119,6 +122,6 @@ best_fit_gamma = 2.13
 e_range = np.logspace(np.log10(194) + 3, np.log10(7.8) + 6, 100)
 
 nt_16 = {
-    "northern_tracks_16": (best_fit_flux, best_fit_gamma, np.array(contour_68)*units, np.array(contour_68)*units, e_range)
+    "northern_tracks_16": (best_fit_flux, best_fit_gamma, contour_68, contour_68, e_range)
 }
 

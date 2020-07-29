@@ -9,7 +9,7 @@ C
 import numpy as np
 from astropy import units as u
 
-contour_68 = [
+contour_68 = np.array([
     (2.362728669872589, 6.014203559565713),
     (2.362693966585692, 5.8056368053145615),
     (2.363985424619503, 5.567299588518169),
@@ -46,9 +46,9 @@ contour_68 = [
     (2.3788186009617767, 6.714689405582271),
     (2.370787268851321, 6.4463834217440885),
     (2.3680928065043876, 6.2526647166724505),
-]
+])
 
-contour_95 = [
+contour_95 = np.array([
     (2.534660033167496, 9.597014925373134),
     (2.5014925373134327, 9.53731343283582),
     (2.4723051409618573, 9.373134328358208),
@@ -87,11 +87,14 @@ contour_95 = [
     (2.619568822553897, 9.17910447761194),
     (2.594361525704809, 9.402985074626866),
     (2.5678275290215584, 9.53731343283582),
-]
+])
 
 # Convert from all-flavour to muon-neutrino flux
 
 units = 10 ** -18 / 3. #/ u.GeV /u.cm**2 / u.s / u.sr
+
+for contour in [contour_68, contour_95]:
+    contour.T[1] *= units
 
 # IceCube Joint Best Fit
 # (https://arxiv.org/abs/1507.03991)
@@ -105,6 +108,6 @@ best_fit_gamma = 2.5
 e_range = np.logspace(np.log10(25) + 3, np.log10(2.8) + 6, 100)
 
 joint_15 = {
-    "joint_15": (best_fit_flux, best_fit_gamma, np.array(contour_68)*units, np.array(contour_95)*units, e_range)
+    "joint_15": (best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range)
 }
 
