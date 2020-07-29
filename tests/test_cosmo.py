@@ -75,7 +75,7 @@ class TestUtilCosmo(unittest.TestCase):
 
     def test_plotting(self):
 
-        for label, (_, _, contour_68, contour_95, e_range) in contours.items():
+        for label, (_, _, contour_68, contour_95, e_range, _) in contours.items():
             plot_diffuse_flux(label, contour_68, contour_95, e_range)
 
 if __name__ == '__main__':
