@@ -3,9 +3,8 @@ IceCube data (IC86_1).
 """
 import logging
 import unittest
-from flarestack.cosmo import get_diffuse_flux_at_1GeV, get_diffuse_flux_at_100TeV, calculate_transient_cosmology,\
-    contours, plot_diffuse_flux
-from flarestack.cosmo import get_rate
+from flarestack.cosmo import get_diffuse_flux_at_1GeV, get_diffuse_flux_at_100TeV, calculate_transient_cosmology, get_rate
+from flarestack.cosmo.icecube_diffuse_flux import contours, plot_diffuse_flux
 from astropy import units as u
 
 default_flux_100TeV = [
