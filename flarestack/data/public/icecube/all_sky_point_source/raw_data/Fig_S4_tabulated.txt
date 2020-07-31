@@ -1,3 +1,4 @@
+EXTENT_GEV 2.00 9.00 2.4 7.0
 # Each row of the table below corresponds to a row of Fig. S4.
 # The first two entries for each row give the neutrino energy range in log_10(E_nu/TeV).
 # Each of the remaining 22 columns of the table corresponds to a column of Fig. S4.
