@@ -197,17 +197,29 @@ class BaseInjector:
         else:
             return cls.subclasses[inj_name](season, sources, **inj_dict)
 
+    # @staticmethod
+    # def get_dec_and_omega(source):
+    #     # Sets half width of band
+    #     dec_width = np.deg2rad(2.)
+    #
+    #     # Sets a declination band 5 degrees above and below the source
+    #     min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
+    #     max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
+    #     # Gives the solid angle coverage of the sky for the band
+    #     omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+    #     return dec_width, min_dec, max_dec, omega
+
     @staticmethod
     def get_dec_and_omega(source):
         # Sets half width of band
-        dec_width = np.deg2rad(2.)
+        dec_width = np.sin(np.deg2rad(0.5))
 
-        # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
-        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
+        # Sets a declination band above and below the source
+        min_dec = max(-1, np.sin(source['dec_rad']) - dec_width)
+        max_dec = min(1., np.sin(source['dec_rad']) + dec_width)
         # Gives the solid angle coverage of the sky for the band
-        omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
-        return dec_width, min_dec, max_dec, omega
+        omega = 2. * np.pi * (max_dec - min_dec)
+        return np.arcsin(dec_width), np.arcsin(min_dec), np.arcsin(max_dec), omega
 
 
 class MCInjector(BaseInjector):
