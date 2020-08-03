@@ -8,8 +8,6 @@ from multiprocessing import JoinableQueue, Process, Queue, Value
 import random
 from multiprocessing import set_start_method
 
-logger = logging.getLogger(__name__)
-
 try:
     set_start_method("fork")
 except RuntimeError:
@@ -58,8 +56,8 @@ class MultiProcessor:
         self.mh_dict = kwargs["mh_dict"]
         self.scales = []
 
-        handler = logger.StreamHandler()
-        handler.setFormatter(logger.Formatter("%(levelname)s: %(asctime)s - %(process)s - %(message)s"))
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s: %(asctime)s - %(process)s - %(message)s"))
         # ql gets records from the queue and sends them to the handler
         ql = QueueListener(self.log_queue, handler)
         ql.start()
@@ -83,7 +81,7 @@ class MultiProcessor:
     def run_trial(self, **kwargs):
 
         qh = QueueHandler(self.log_queue)
-        logger = logger.getLogger()
+        logger = logging.getLogger()
         logger.addHandler(qh)
 
         mh_dict = kwargs["mh_dict"]
