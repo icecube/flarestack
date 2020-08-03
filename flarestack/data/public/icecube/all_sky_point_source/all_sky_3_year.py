@@ -2,12 +2,12 @@ import os
 import numpy as np
 import csv
 import pickle
-import logging
 from flarestack.shared import public_dataset_dir, \
     energy_proxy_path, med_ang_res_path, effective_area_plot_path,\
     ang_res_plot_path
 from flarestack.utils.make_SoB_splines import make_individual_spline_set
 from flarestack.shared import SoB_spline_path, energy_proxy_plot_path
+from flarestack.icecube_utils import atmospheric_neutrino_spectrum
 from flarestack.data import Dataset
 from flarestack.data.public.icecube import PublicICSeason
 import matplotlib.pyplot as plt
@@ -89,8 +89,6 @@ def parse_numpy_dataset():
 
         exp_path = data_path(dataset)
 
-        logging.info(f"Saving to {exp_path}")
-
         np.save(exp_path, data)
 
 
@@ -106,9 +104,8 @@ def make_season(season_name):
         exp_path=data_path(season_name),
         pseudo_mc_path=pseudo_mc_path(season_name),
         sin_dec_bins=np.linspace(-1., 1., 50),
-        log_e_bins=np.arange(2., 9. + 0.01, 0.2),
-        a_eff_path=data_dir + season_name + "-TabulatedAeff.txt",
-        proxy_map_path=proxy_map_file
+        log_e_bins=np.arange(2., 9. + 0.01, 0.25),
+        a_eff_path=data_dir + season_name + "-TabulatedAeff.txt"
     )
     icecube_ps_3_year.add_season(season)
 
@@ -194,7 +191,6 @@ def parse_angular_resolution():
         except OSError:
             pass
 
-        logging.info(f"Saving to {save_path}")
         plt.savefig(save_path)
         plt.close()
 
@@ -206,7 +202,7 @@ def parse_angular_resolution():
             pass
 
         with open(ar_path, "wb") as f:
-            logging.info("Saving converted numpy array to", ar_path)
+            print("Saving converted numpy array to", ar_path)
             pickle.dump([full_x, full_y], f)
 
 
@@ -215,8 +211,7 @@ def run_all():
     parse_angular_resolution()
 
     for season in icecube_ps_3_year.get_seasons().values():
-        season.create_pseudo_mc()
-        season.plot_energy_proxy_mapping()
+        season.map_energy_proxy()
         season.plot_effective_area()
         make_individual_spline_set(season, SoB_spline_path(season))
 
