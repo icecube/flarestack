@@ -1,18 +1,17 @@
 import os
+import logging
 import numpy as np
 import csv
 import pickle
-from flarestack.shared import public_dataset_dir, \
-    energy_proxy_path, med_ang_res_path, effective_area_plot_path,\
-    ang_res_plot_path
+from flarestack.shared import public_dataset_dir, med_ang_res_path, ang_res_plot_path
 from flarestack.utils.make_SoB_splines import make_individual_spline_set
-from flarestack.shared import SoB_spline_path, energy_proxy_plot_path
-from flarestack.icecube_utils import atmospheric_neutrino_spectrum
+from flarestack.shared import SoB_spline_path
 from flarestack.data import Dataset
 from flarestack.data.public.icecube import PublicICSeason
 import matplotlib.pyplot as plt
 import zipfile
-from flarestack.icecube_utils.dataset_loader import data_loader
+
+logger = logging.getLogger(__name__)
 
 src_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -202,7 +201,7 @@ def parse_angular_resolution():
             pass
 
         with open(ar_path, "wb") as f:
-            print("Saving converted numpy array to", ar_path)
+            logger.info(f"Saving converted numpy array to {ar_path}")
             pickle.dump([full_x, full_y], f)
 
 

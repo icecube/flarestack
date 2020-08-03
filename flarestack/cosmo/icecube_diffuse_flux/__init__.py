@@ -1,22 +1,23 @@
 import logging
 import matplotlib.pyplot as plt
-from astropy import units as u
 from flarestack.shared import illustration_dir
 from flarestack.cosmo.icecube_diffuse_flux.joint_15 import joint_15
 from flarestack.cosmo.icecube_diffuse_flux.nt_16 import nt_16
 from flarestack.cosmo.icecube_diffuse_flux.nt_17 import nt_17
 from flarestack.cosmo.icecube_diffuse_flux.nt_19 import nt_19
 
+logger = logging.getLogger(__name__)
+
 contours = {**joint_15, **nt_16, **nt_17, **nt_19}
 
 def load_fit(fit):
     if fit == "joint":
-        logging.warning("Fit 'joint' was used, without a specified year. "
+        logger.warning("Fit 'joint' was used, without a specified year. "
                         "Assuming 'joint_15', from https://arxiv.org/abs/1507.03991.")
         fit = "joint_15"
 
     if fit == "northern_tracks":
-        logging.warning("Fit 'northern_tracks' was used, without a specified year. "
+        logger.warning("Fit 'northern_tracks' was used, without a specified year. "
                         "Assuming 'northern_tracks_19', from https://arxiv.org/abs/1908.09551.")
         fit = "northern_tracks_19"
 
@@ -25,7 +26,7 @@ def load_fit(fit):
 
     best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range, ref = contours[fit]
 
-    logging.info(f"Loaded contour '{fit}' from {ref}")
+    logger.info(f"Loaded contour '{fit}' from {ref}")
 
     return best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range
 

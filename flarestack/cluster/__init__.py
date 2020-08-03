@@ -1,10 +1,8 @@
-import numpy as np
 import os
 from flarestack.shared import host_server, make_analysis_pickle
 from flarestack.cluster.run_desy_cluster import submit_to_cluster,\
     wait_for_cluster
 from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file
-import logging
 from flarestack.core.multiprocess_wrapper import run_multiprocess
 
 if host_server == "DESY":

@@ -14,6 +14,8 @@ from flarestack.core.ts_distributions import plot_background_ts_distribution
 import matplotlib.pyplot as plt
 from flarestack.utils.catalogue_loader import load_catalogue
 
+logger = logging.getLogger(__name__)
+
 
 def confirm():
     print("Is this correct? (y/n)")
@@ -24,7 +26,7 @@ def confirm():
         x = input("")
 
     if x == "n":
-        logging.warning("Please check carefully before unblinding!")
+        logger.warning("Please check carefully before unblinding!")
         sys.exit()
 
 
@@ -121,31 +123,31 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             if not reunblind:
 
                 try:
-                    logging.info("Not re-unblinding, loading results from {0}".format(self.unblind_res_path))
+                    logger.info("Not re-unblinding, loading results from {0}".format(self.unblind_res_path))
 
                     with open(self.unblind_res_path, "rb") as f:
                         self.res_dict = pickle.load(f)
 
                 except FileNotFoundError:
-                    logging.warning("No pickle files containing unblinding results found. "
+                    logger.warning("No pickle files containing unblinding results found. "
                                     "Re-unblinding now.")
 
             # Otherwise unblind
             
             if not hasattr(self, "res_dict"):
-                logging.info("Unblinding catalogue")
+                logger.info("Unblinding catalogue")
 
                 # Minimise likelihood and produce likelihood scans
                 self.res_dict = self.simulate_and_run(0, seed)
 
-            logging.info(self.res_dict)
+            logger.info(self.res_dict)
 
             # Quantify the TS value significance
             self.ts = np.array([self.res_dict["TS"]])[0]
             self.ts_type = unblind_dict.get('ts_type', 'Standard')
             self.sigma = np.nan
 
-            logging.info("Test Statistic of: {0}".format(self.ts))
+            logger.info("Test Statistic of: {0}".format(self.ts))
 
             ub_res_dict = {
                 "Parameters": self.res_dict['Parameters'],
@@ -153,7 +155,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 "Flag": self.res_dict['Flag']
             }
 
-            logging.info("Saving unblinding results to {0}".format(self.unblind_res_path))
+            logger.info("Saving unblinding results to {0}".format(self.unblind_res_path))
 
             with open(self.unblind_res_path, "wb") as f:
                 pickle.dump(ub_res_dict, f)
@@ -164,7 +166,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                 self.output_file = self.plot_dir + "TS.pdf"
                 self.compare_to_background_TS()
             except KeyError:
-                logging.warning("No Background TS Distribution specified. "
+                logger.warning("No Background TS Distribution specified. "
                                 "Cannot assess significance of TS value.")
 
 
@@ -205,7 +207,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     new_path = analysis_pickle_path(name=root)
 
-                    logging.info(f'Opening file {new_path}')
+                    logger.info(f'Opening file {new_path}')
 
                     with open(new_path, "rb") as f:
                         mh_dict = pickle.load(f)
@@ -214,7 +216,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     self.unblind_dict['name'] = mh_dict['name']
                     rh = ResultsHandler(self.unblind_dict)
 
-                    logging.debug(f"In calculate_upper_limits, ResultsHandler is {rh}")
+                    logger.debug(f"In calculate_upper_limits, ResultsHandler is {rh}")
 
                     savepath = ul_dir + subdir + ".pdf"
 
@@ -297,7 +299,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     os.makedirs(os.path.dirname(self.limit_path))
                 except OSError:
                     pass
-                logging.info("Saving limits to {0}".format(self.limit_path))
+                logger.info("Saving limits to {0}".format(self.limit_path))
 
                 res_dict = {
                     "gamma": x_axis,
@@ -311,13 +313,13 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                     pickle.dump(res_dict, f)
 
             except AttributeError as e:
-                logging.warning("Unable to set limits. No TS distributions found.")
+                logger.warning("Unable to set limits. No TS distributions found.")
 
             except ValueError as e:
                 raise OverfluctuationError("Insufficent pseudotrial values above and below threshold")
 
         def compare_to_background_TS(self):
-            logging.info("Retrieving Background TS Distribution from {0}".format(self.pickle_dir))
+            logger.info("Retrieving Background TS Distribution from {0}".format(self.pickle_dir))
 
             try:
 
@@ -327,7 +329,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     merged_pkl = os.path.join(os.path.join(self.pickle_dir, subdir), "merged/0.pkl")
 
-                    logging.info("Loading {0}".format(merged_pkl))
+                    logger.info("Loading {0}".format(merged_pkl))
 
                     with open(merged_pkl, 'rb') as mp:
 
@@ -347,7 +349,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     merged_pkl = os.path.join(self.pickle_dir, "merged/0.pkl")
 
-                    logging.info("No subfolders found, loading {0}".format(merged_pkl))
+                    logger.info("No subfolders found, loading {0}".format(merged_pkl))
 
                     with open(merged_pkl, 'rb') as mp:
                         merged_data = pickle.load(mp)
@@ -360,7 +362,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
                         ts_array, self.output_file, self.ts_type, self.ts, self.mock_unblind)
 
                 except (IOError, OSError):
-                    logging.warning("No Background TS Distribution found")
+                    logger.warning("No Background TS Distribution found")
                     pass
 
         def check_unblind(self):

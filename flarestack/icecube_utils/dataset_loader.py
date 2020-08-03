@@ -2,7 +2,8 @@ import numpy as np
 import logging
 from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
-from scipy.interpolate import interp1d
+
+logger = logging.getLogger(__name__)
 
 def data_loader(data_path, floor=True, cut_fields=True):
     """Helper function to load data for a given season/set of season.
@@ -83,12 +84,12 @@ def grl_loader(season):
         if np.sum(~grl["good_i3"]) == 0:
             pass
         else:
-            logging.error("Trying to load", season)
-            logging.error("The following runs are included:")
-            logging.error(grl[~grl["good_i3"]])
+            logger.error("Trying to load", season)
+            logger.error("The following runs are included:")
+            logger.error(grl[~grl["good_i3"]])
             raise Exception("Runs marked as 'bad' are found in Good Run List")
     except ValueError:
-        logging.warning("No field called 'good_i3' found in GoodRunList. "
+        logger.warning("No field called 'good_i3' found in GoodRunList. "
                         "Cannot check if all runs in GoodRunList are actually good.")
 
     if "length" not in grl.dtype.names:
@@ -125,7 +126,7 @@ def grl_loader(season):
 
 def verify_grl_with_data(seasons):
 
-    logging.info("Verifying that, for each dataset, all events are in runs that \n" \
+    logger.info("Verifying that, for each dataset, all events are in runs that \n" \
           "are on the GRL, and not outside the period marked as good in the " \
           "GRL.")
 

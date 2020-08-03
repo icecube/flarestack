@@ -9,6 +9,8 @@ from flarestack.cosmo.neutrino_cosmology import define_cosmology_functions, \
     integrate_over_z, cumulative_z
 from scipy.interpolate import interp1d
 
+logger = logging.getLogger(__name__)
+
 def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
                                  cat_name="random", n_entries=30,
                                  local_z=0.1, seed=None):
@@ -29,22 +31,22 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
     )
 
     n_tot = integrate_over_z(rate_per_z, zmin=0.0, zmax=8.0)
-    logging.info(
+    logger.info(
         "We can integrate the rate up to z=8.0. This gives {:.3E}".format(n_tot)
     )
 
     n_local = integrate_over_z(rate_per_z, zmin=0.0, zmax=local_z)
-    logging.info("We will only simulate up to z={0}. In this volume, there are {1:.3E}".format(local_z, n_local))
+    logger.info("We will only simulate up to z={0}. In this volume, there are {1:.3E}".format(local_z, n_local))
 
     sim_length = (data_end - data_start) * u.day
 
-    logging.info("We simulate for {0}".format(sim_length))
+    logger.info("We simulate for {0}".format(sim_length))
 
     n_local = int(n_local * sim_length)
 
-    logging.debug("Entries in catalogue {0}".format(n_local))
+    logger.debug("Entries in catalogue {0}".format(n_local))
 
-    logging.debug("We expect this region to contribute {:.3g} of all the flux from this source class".format(
+    logger.debug("We expect this region to contribute {:.3g} of all the flux from this source class".format(
         cumulative_nu_flux(local_z)[-1] / cumulative_nu_flux(8.0)[-1]))
 
     n_catalogue = sorted(list(set(
@@ -128,7 +130,7 @@ def simulate_transient_catalogue(mh_dict, rate, resimulate=False,
 
                 np.save(cat_path, cat[mask])
 
-                logging.info("Saved to {0}".format(cat_path))
+                logger.info("Saved to {0}".format(cat_path))
 
     return all_cat_names
 

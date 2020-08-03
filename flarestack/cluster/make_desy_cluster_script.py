@@ -2,6 +2,8 @@ import logging
 import os
 from flarestack.shared import fs_dir, log_dir, fs_scratch_dir
 
+logger = logging.getLogger(__name__)
+
 username = os.path.basename(os.environ['HOME'])
 
 root_dir = os.path.dirname(fs_dir[:-1])
@@ -47,12 +49,12 @@ def make_desy_submit_file(ram_per_core="6.0G", h_cpu='23:59:00'):
            'cp $TMPDIR/${JOB_ID}_stdout.txt ' + log_dir + '\n'\
            'cp $TMPDIR/${JOB_ID}_stderr.txt ' + log_dir + '\n '
 
-    logging.info("Creating file at {0}".format(submit_file))
+    logger.info("Creating file at {0}".format(submit_file))
 
     with open(submit_file, "w") as f:
         f.write(text)
 
-    logging.debug("Bash file created: \n {0}".format(text))
+    logger.debug("Bash file created: \n {0}".format(text))
 
     cmd = "chmod +x " + submit_file
 
