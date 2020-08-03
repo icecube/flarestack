@@ -8,6 +8,8 @@ from multiprocessing import JoinableQueue, Process, Queue, Value
 import random
 from multiprocessing import set_start_method
 
+logger = logging.getLogger(__name__)
+
 try:
     set_start_method("fork")
 except RuntimeError:
@@ -81,7 +83,6 @@ class MultiProcessor:
     def run_trial(self, **kwargs):
 
         qh = QueueHandler(self.log_queue)
-        logger = logging.getLogger()
         logger.addHandler(qh)
 
         mh_dict = kwargs["mh_dict"]
