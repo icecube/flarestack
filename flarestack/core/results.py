@@ -1,7 +1,6 @@
 import os
 import pickle as Pickle
 import numpy as np
-import math
 import scipy
 import scipy.stats
 import matplotlib.cm as cm
@@ -17,6 +16,8 @@ from flarestack.core.minimisation import MinimisationHandler
 from flarestack.utils.catalogue_loader import load_catalogue
 import sys
 import logging
+
+logger = logging.getLogger(__name__)
 
 class OverfluctuationError(Exception):
     pass
@@ -102,28 +103,28 @@ class ResultsHandler(object):
         try:
             self.merge_pickle_data()
         except FileNotFoundError:
-            logging.warning("No files found at {0}".format(self.pickle_output_dir))
+            logger.warning("No files found at {0}".format(self.pickle_output_dir))
 
         try:
             self.find_ns_scale()
         except ValueError as e:
-            logging.warning("RuntimeError for ns scale factor: \n {0}".format(e))
+            logger.warning("RuntimeError for ns scale factor: \n {0}".format(e))
 
         self.plot_bias()
 
         try:
             self.find_sensitivity()
         except ValueError as e:
-            logging.warning("RuntimeError for discovery potential: \n {0}".format(e))
+            logger.warning("RuntimeError for discovery potential: \n {0}".format(e))
 
         try:
             self.find_disc_potential()
         except RuntimeError as e:
-            logging.warning("RuntimeError for discovery potential: \n {0}".format(e))
+            logger.warning("RuntimeError for discovery potential: \n {0}".format(e))
         except TypeError as e:
-            logging.warning("TypeError for discovery potential: \n {0}".format(e))
+            logger.warning("TypeError for discovery potential: \n {0}".format(e))
         except ValueError as e:
-            logging.warning("TypeError for discovery potential: \n {0}".format(e))
+            logger.warning("TypeError for discovery potential: \n {0}".format(e))
 
 
     def astro_values(self, e_pdf_dict):
@@ -227,7 +228,7 @@ class ResultsHandler(object):
                     with open(path, "rb") as f:
                         data = Pickle.load(f)
                 except EOFError:
-                    logging.warning("Failed loading: {0}".format(path))
+                    logger.warning("Failed loading: {0}".format(path))
                     continue
                 os.remove(path)
 
@@ -241,7 +242,7 @@ class ResultsHandler(object):
                             for (param_name, params) in info.items():
                                 try: merged_data[key][param_name] += params
                                 except KeyError as m:
-                                    logging.warning('Keys [{key}][{param_name}] not found in \n {merged_data}')
+                                    logger.warning('Keys [{key}][{param_name}] not found in \n {merged_data}')
                                     raise KeyError(m)
 
             with open(merged_path, "wb") as mp:
@@ -251,8 +252,8 @@ class ResultsHandler(object):
                 self.results[scale_shortener(float(sub_dir_name))] = merged_data
 
         if len(list(self.results.keys())) == 0:
-            logging.warning("No data was found by ResultsHandler object! \n")
-            logging.warning("Tried root directory: \n {0} \n ".format(self.pickle_output_dir))
+            logger.warning("No data was found by ResultsHandler object! \n")
+            logger.warning("Tried root directory: \n {0} \n ".format(self.pickle_output_dir))
             sys.exit()
 
     def find_ns_scale(self):
@@ -271,10 +272,10 @@ class ResultsHandler(object):
                 sc_dict = self.inj[raw_x[1]]
                 self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(float(x[1]))
 
-            logging.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
+            logger.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
 
         except KeyError:
-            logging.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!")
+            logger.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!")
 
     def find_sensitivity(self):
         """Uses the results of the background trials to find the median TS
@@ -286,7 +287,7 @@ class ResultsHandler(object):
         try:
             bkg_dict = self.results[scale_shortener(0.0)]
         except KeyError:
-            logging.error("No key equal to '0'")
+            logger.error("No key equal to '0'")
             return
 
         bkg_ts = bkg_dict["TS"]
@@ -304,7 +305,7 @@ class ResultsHandler(object):
         if self.extrapolated_sens:
             msg = "EXTRAPOLATED "
 
-        logging.info("{0}Sensitivity is {1:.3g}".format(msg, self.sensitivity))
+        logger.info("{0}Sensitivity is {1:.3g}".format(msg, self.sensitivity))
 
     # def set_upper_limit(self, ts_val, savepath):
     #     """Set an upper limit, based on a Test Statistic value from
@@ -362,7 +363,7 @@ class ResultsHandler(object):
             frac = float(len(ts_array[ts_array > ts_val])) / (float(len(
                 ts_array)))
             
-            logging.info(
+            logger.info(
                 "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
                     frac, ts_val, len(ts_array), scale
                 )
@@ -407,7 +408,7 @@ class ResultsHandler(object):
         fit = k_to_flux((1./best_a) * np.log(b / (1 - threshold)))
 
         if fit > max(x_flux):
-            logging.warning("The sensitivity is beyond the range of the tested scales."
+            logger.warning("The sensitivity is beyond the range of the tested scales."
                             "The number is probably not good.")
             extrapolated = True
         else:
@@ -452,7 +453,7 @@ class ResultsHandler(object):
         try:
             bkg_dict = self.results[scale_shortener(0.0)]
         except KeyError:
-            logging.error("No key equal to '0'")
+            logger.error("No key equal to '0'")
             return
 
         bkg_ts = bkg_dict["TS"]
@@ -474,7 +475,7 @@ class ResultsHandler(object):
             frac = float(len(ts_array[ts_array > disc_threshold])) / (
                 float(len(ts_array)))
 
-            logging.info(
+            logger.info(
                 "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
                     frac, disc_threshold, len(ts_array), scale
                 )
@@ -484,7 +485,7 @@ class ResultsHandler(object):
             frac_25 = float(len(ts_array[ts_array > 25.])) / (
                 float(len(ts_array)))
 
-            logging.info(
+            logger.info(
                 "Fraction of overfluctuations is {0:.2f} above 25 (N_trials={1}) (Scale={2})".format(
                     frac_25, len(ts_array), scale
                 )
@@ -553,8 +554,8 @@ class ResultsHandler(object):
         if self.extrapolated_disc:
             msg = "EXTRAPOLATED "
 
-        logging.info("{0}Discovery Potential is {1:.3g}".format(msg, self.disc_potential))
-        logging.info("Discovery Potential (TS=25) is {0:.3g}".format(self.disc_potential_25))
+        logger.info("{0}Discovery Potential is {1:.3g}".format(msg, self.disc_potential))
+        logger.info("Discovery Potential (TS=25) is {0:.3g}".format(self.disc_potential_25))
 
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
@@ -573,7 +574,7 @@ class ResultsHandler(object):
 
     def ts_evolution_gif(self, n_scale_steps=None, cmap_name='winter'):
 
-        logging.debug('making animation')
+        logger.debug('making animation')
 
         all_scales_list = list(self.results.keys())
         n_scales_all = len(all_scales_list)
@@ -596,7 +597,7 @@ class ResultsHandler(object):
         ])
 
         n_s = [sum(a) for a in ns_arrays]
-        logging.debug('numbers of injected neutrinos: ' + str(n_s))
+        logger.debug('numbers of injected neutrinos: ' + str(n_s))
 
         norm = colors.Normalize(vmin=0, vmax=max(n_s))
         mappable = cm.ScalarMappable(norm=norm, cmap=cmap_name)
@@ -623,18 +624,18 @@ class ResultsHandler(object):
         )
 
         anim_name = os.path.join(self.plot_dir, "ts_distributions/ts_distributions_evolution.gif")
-        logging.debug('saving animation under ' + anim_name)
+        logger.debug('saving animation under ' + anim_name)
         anim.save(anim_name, dpi=80, writer='imagemagick')
 
     def ts_distribution_evolution(self):
 
-        logging.debug('plotting evolution of TS distribution')
+        logger.debug('plotting evolution of TS distribution')
 
         all_scales = np.array(list(self.results.keys()))
         all_scales_floats = [float(sc) for sc in all_scales]
 
-        logging.debug('all scales: ' + str(all_scales_floats))
-        logging.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
+        logger.debug('all scales: ' + str(all_scales_floats))
+        logger.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
 
         sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
         disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
@@ -652,7 +653,7 @@ class ResultsHandler(object):
         ])
 
         n_s = [sum(a) for a in ns_arrays]
-        logging.debug('numbers of injected neutrinos: ' + str(n_s))
+        logger.debug('numbers of injected neutrinos: ' + str(n_s))
 
         fig, ax = plt.subplots()
 
@@ -676,7 +677,7 @@ class ResultsHandler(object):
         plt.tight_layout()
 
         sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_.pdf")
-        logging.debug('saving plot to ' + sn)
+        logger.debug('saving plot to ' + sn)
         fig.savefig(sn)
 
         plt.close()
@@ -754,7 +755,7 @@ class ResultsHandler(object):
             plt.title("Bias (" + param + ")")
 
             savepath = os.path.join(self.plot_dir, "bias_" + param + ".pdf")
-            logging.info("Saving bias plot to {0}".format(savepath))
+            logger.info("Saving bias plot to {0}".format(savepath))
 
             try:
                 os.makedirs(os.path.dirname(savepath))

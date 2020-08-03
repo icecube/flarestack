@@ -6,8 +6,10 @@ import argparse
 from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
 from multiprocessing import JoinableQueue, Process, Queue, Value
 import random
-import numpy as np
 from multiprocessing import set_start_method
+
+logger = logging.getLogger(__name__)
+
 try:
     set_start_method("fork")
 except RuntimeError:
@@ -56,13 +58,13 @@ class MultiProcessor:
         self.mh_dict = kwargs["mh_dict"]
         self.scales = []
 
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter("%(levelname)s: %(asctime)s - %(process)s - %(message)s"))
+        handler = logger.StreamHandler()
+        handler.setFormatter(logger.Formatter("%(levelname)s: %(asctime)s - %(process)s - %(message)s"))
         # ql gets records from the queue and sends them to the handler
         ql = QueueListener(self.log_queue, handler)
         ql.start()
-        # logger = logging.getLogger()
-        # logging.getLogger().setLevel("DEBUG")
+        # logger = logger.getLogger()
+        # logger.getLogger().setLevel("DEBUG")
         # # add the handler to the logger so records from this process are handled
         # logger.addHandler(handler)
 
@@ -81,7 +83,7 @@ class MultiProcessor:
     def run_trial(self, **kwargs):
 
         qh = QueueHandler(self.log_queue)
-        logger = logging.getLogger()
+        logger = logger.getLogger()
         logger.addHandler(qh)
 
         mh_dict = kwargs["mh_dict"]
@@ -117,12 +119,12 @@ class MultiProcessor:
         with self.n_tasks.get_lock():
             self.n_tasks.value += n_tasks
 
-        logging.info("Added {0} trials to queue. Now processing.".format(n_tasks))
+        logger.info("Added {0} trials to queue. Now processing.".format(n_tasks))
 
         while self.n_tasks.value > 0.:
-            logging.info("{0} tasks remaining.".format(self.n_tasks.value))
+            logger.info("{0} tasks remaining.".format(self.n_tasks.value))
             time.sleep(30)
-        logging.info("Finished processing {0} tasks.".format(n_tasks))
+        logger.info("Finished processing {0} tasks.".format(n_tasks))
 
     def terminate(self):
         """ wait until queue is empty and terminate processes """
@@ -152,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--n_cpu", default=min(os.cpu_count()-1, 32))
     cfg = parser.parse_args()
 
-    logging.info("N CPU available {0}".format(os.cpu_count()))
+    logger.info("N CPU available {0}".format(os.cpu_count()))
 
     with open(cfg.file, "rb") as f:
         mh_dict = pickle.load(f)
