@@ -65,13 +65,12 @@ def get_kcc_rate(kcc_name=None):
     return kcc
 
 
-def get_local_ccsn_rate(rate_name=None, kcc_name=None, sn_subclass=None, fraction=1.0):
+def get_local_ccsn_rate(rate_name=None, kcc_name=None, sn_subclass=None):
     """Returns a local rate of core-collapse supernovae (CCSNe).
 
     :param rate_name: Name of local Star Formation Rate (sfr) to be used
     :param kcc_name: Name of kcc (sn per unit star formation) to be used
     :param sn_subclass: Name of subclass of CCSNe to use
-    :param fraction: Fraction of specified rate to include
     :return: Local rate
     """
 
@@ -85,7 +84,7 @@ def get_local_ccsn_rate(rate_name=None, kcc_name=None, sn_subclass=None, fractio
 
     subclass_fraction = get_sn_fraction(sn_subclass)
 
-    return sfr_rate * kcc * subclass_fraction * fraction
+    return sfr_rate * kcc * subclass_fraction
 
 def get_ccsn_rate(evolution_name=None, rate_name=None, kcc_name=None, sn_subclass=None, **kwargs):
     """Returns a local rate of core-collapse supernovae (CCSNe) as a function of redshift.
@@ -94,7 +93,6 @@ def get_ccsn_rate(evolution_name=None, rate_name=None, kcc_name=None, sn_subclas
     :param rate_name: Name of local Star Formation Rate (sfr) to be used
     :param kcc_name: Name of kcc (sn per unit star formation) to be used
     :param sn_subclass: Name of subclass of CCSNe to use
-    :param fraction: Fraction of specified rate to include
     :return: Rate as a function of redshift
     """
 
