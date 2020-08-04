@@ -5,7 +5,8 @@ from astropy import units as u
 from flarestack.cosmo.rates.sfr_rates import get_sfr_evolution
 
 local_fbot_rates = {
-    "ho_20": (7  * 10**-7.  / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/2003.01222"),
+    "ho_20_high": (7.  * 10**-7.  / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/2003.01222"),
+    "ho_20_low": (4.  * 10**-7.  / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/2003.01222"),
 }
 
 def get_local_fbot_rate(rate_name=None):
@@ -17,7 +18,7 @@ def get_local_fbot_rate(rate_name=None):
 
     if rate_name is None:
         logging.info("No rate specified. Assuming default rate.")
-        rate_name = "ho_20"
+        rate_name = "ho_20_high"
 
     if rate_name not in local_fbot_rates.keys():
         raise Exception(f"Rate name '{rate_name}' not recognised. "
