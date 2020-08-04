@@ -126,7 +126,7 @@ nt_16 = {
         best_fit_flux,
         best_fit_gamma,
         contour_68,
-        contour_68,
+        contour_95,
         e_range,
         "https://arxiv.org/abs/1607.08006"
     )
