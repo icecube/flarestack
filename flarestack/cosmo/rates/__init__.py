@@ -49,6 +49,6 @@ def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, **k
     f = sources[source_name](evolution_name, rate_name, **kwargs)
 
     if fraction != 1.0:
-        logger.info(f"Assuming a modified rate that is {100.*fraction:.2f} of that total.")
+        logger.info(f"Assuming a modified rate that is {100.*fraction:.2f}% of that total.")
 
     return lambda z: f(z) * fraction
