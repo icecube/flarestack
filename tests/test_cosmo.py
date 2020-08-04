@@ -56,34 +56,34 @@ class TestUtilCosmo(unittest.TestCase):
             logging.info("Calculated values {0}".format(res_100_tev))
             logging.info("Reference  values {0}".format(default_flux_100TeV[i]))
 
-    # def test_neutrino_cosmology(self):
-    #
-    #     fit = "joint_15"
-    #     bestfit = get_diffuse_flux_at_100TeV(fit)
-    #
-    #     e_pdf_dict = {
-    #      "energy_pdf_name": "power_law",
-    #      'source_energy_erg': 1.e48 * u.erg,
-    #      "gamma": bestfit[1]
-    #     }
-    #
-    #     # Use Supernova rate
-    #
-    #     key = "strolger_15"
-    #
-    #     ccsn_rate = get_rate("ccsn", evolution_name=key, rate_name=key)
-    #
-    #     res = calculate_transient_cosmology(
-    #      e_pdf_dict, ccsn_rate, "test_CCSN", zmax=8.0,
-    #      diffuse_fit=fit
-    #     )
-    #
-    #     self.assertAlmostEqual(res.value/true_cosmology.value, 1.0, delta=0.1)
+    def test_neutrino_cosmology(self):
+
+        fit = "joint_15"
+        bestfit = get_diffuse_flux_at_100TeV(fit)
+
+        e_pdf_dict = {
+         "energy_pdf_name": "power_law",
+         'source_energy_erg': 1.e48 * u.erg,
+         "gamma": bestfit[1]
+        }
+
+        # Use Supernova rate
+
+        key = "strolger_15"
+
+        ccsn_rate = get_rate("ccsn", evolution_name=key, rate_name=key)
+
+        res = calculate_transient_cosmology(
+         e_pdf_dict, ccsn_rate, "test_CCSN", zmax=8.0,
+         diffuse_fit=fit
+        )
+
+        self.assertAlmostEqual(res.value/true_cosmology.value, 1.0, delta=0.1)
 
     def test_plotting(self):
 
-        for label, (_, _, contour_68, contour_95, e_range, _) in contours.items():
-            plot_diffuse_flux(label, contour_68, contour_95, e_range)
+        for label in contours.keys():
+            plot_diffuse_flux(label)
 
 if __name__ == '__main__':
     unittest.main()
