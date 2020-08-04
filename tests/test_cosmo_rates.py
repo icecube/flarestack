@@ -7,6 +7,7 @@ from flarestack.cosmo.rates.tde_rates import tde_evolutions, local_tde_rates
 from flarestack.cosmo.rates.sfr_rates import sfr_evolutions, local_sfr_rates
 from flarestack.cosmo.rates.ccsn_rates import kcc_rates, sn_types
 from flarestack.cosmo.rates.grb_rates import grb_evolutions, local_grb_rates
+from flarestack.cosmo.rates.fbot_rates import local_fbot_rates
 
 class TestCosmoRates(unittest.TestCase):
 
@@ -63,6 +64,17 @@ class TestCosmoRates(unittest.TestCase):
 
         f = get_rate("grb", evolution_name="lien_14")
         true = 1.7635240284867526e-09 / (u.Mpc**3 * u.yr)
+
+        self.assertAlmostEqual(f(1.0)/true, 1.0, delta=0.05)
+
+    def test_fbot_rates(self):
+
+        for evolution in sfr_evolutions.keys():
+            for rate in local_fbot_rates.keys():
+                get_rate("fbot", evolution_name=evolution, rate_name=rate)
+
+        f = get_rate("fbot")
+        true = 4.054209955837081e-06/ (u.Mpc**3 * u.yr)
 
         self.assertAlmostEqual(f(1.0)/true, 1.0, delta=0.05)
 
