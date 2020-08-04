@@ -54,6 +54,16 @@ def get_diffuse_flux_at_1GeV(fit="joint_15"):
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_100TeV(fit)
     return diffuse_flux * (10 ** 5) ** diffuse_gamma, diffuse_gamma
 
+def get_diffuse_flux(e_gev=1., fit="joint_15"):
+    """Returns the IceCube diffuse flux at a given energy.
+
+    :param e_gev: Energy to evaluate flux at
+    :param fit: Fit of diffuse flux to be used
+    :return: Best fit diffuse flux at 1 GeV, and best fit spectral index
+    """
+    diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(fit)
+    return diffuse_flux * e_gev ** -diffuse_gamma, diffuse_gamma
+
 def flux_f(energy, norm, index):
     """Flux function
 
