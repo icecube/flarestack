@@ -3,6 +3,7 @@ from flarestack.cosmo.rates.sfr_rates import get_sfr_rate
 from flarestack.cosmo.rates.ccsn_rates import get_ccsn_rate
 from flarestack.cosmo.rates.tde_rates import get_tde_rate
 from flarestack.cosmo.rates.grb_rates import get_grb_rate
+from flarestack.cosmo.rates.fbot_rates import get_fbot_rate
 
 logger = logging.getLogger(__name__)
 
@@ -10,14 +11,16 @@ source_maps = {
     "tde": ["TDE", "tidal_disruption_event"],
     "sfr": ["SFR", "star_formation_rate"],
     "ccsn": ["CCSN", "sn", "supernova", "core_collapse_supernova"],
-    "grb": ["GRB", "gamma_ray_burst"]
+    "grb": ["GRB", "gamma_ray_burst"],
+    "fbot": ["FBOT", "fast_blue_optical_transient"]
 }
 
 sources = {
     "tde": get_tde_rate,
     "sfr": get_sfr_rate,
     "ccsn": get_ccsn_rate,
-    "grb": get_grb_rate
+    "grb": get_grb_rate,
+    "fbot": get_fbot_rate
 }
 
 def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, **kwargs):
@@ -49,6 +52,6 @@ def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, **k
     f = sources[source_name](evolution_name, rate_name, **kwargs)
 
     if fraction != 1.0:
-        logger.info(f"Assuming a modified rate that is {100.*fraction:.2f} of that total.")
+        logger.info(f"Assuming a modified rate that is {100.*fraction:.2f}% of that total.")
 
     return lambda z: f(z) * fraction

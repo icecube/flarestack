@@ -133,7 +133,7 @@ nt_17 = {
         best_fit_flux,
         best_fit_gamma,
         contour_68,
-        contour_68,
+        contour_95,
         e_range,
         "https://doi.org/10.22323/1.301.1005"
     )

@@ -107,44 +107,37 @@ def get_diffuse_flux_contour(fit="joint_15", contour_name="68"):
 
     return best_f, upper_f, lower_f, e_range
 
-def plot_diffuse_flux(label, contour_68, contour_95, e_range):
-
-
+def plot_diffuse_flux(fit="joint_15"):
     plt.figure()
 
-    # Plot 68% contour
+    best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range = load_fit(fit)
 
-    for (index, norm) in contour_68:
+    for i, contour in enumerate([68., 95.]):
+        all_c = [contour_68, contour_95][i]
+
+        best_f, upper_f, lower_f, e_range = get_diffuse_flux_contour(fit=fit, contour_name=contour)
+
         plt.plot(e_range,
-                 e_range ** 2 * flux_f(e_range, norm, index),
-                 alpha=0.6)
-    plt.plot(
-        e_range,
-        e_range ** 2 * upper_contour(e_range, contour_68),
-        color="k", label="68% contour", linestyle="-"
-    )
-    plt.plot(
-        e_range,
-        e_range ** 2 * lower_contour(e_range, contour_68),
-        color="k", linestyle="-",
-    )
+                 e_range ** 2 * best_f(e_range),
+                 alpha=1.0, color="k")
 
-    # Plot 95% contour
-
-    for (index, norm) in contour_95:
         plt.plot(e_range,
-                 e_range ** 2 * flux_f(e_range, norm, index),
-                 alpha=0.3)
-    plt.plot(
-        e_range,
-        e_range ** 2 * upper_contour(e_range, contour_95),
-        color="k", linestyle="--", label="95% contour"
-    )
-    plt.plot(
-        e_range,
-        e_range ** 2 * lower_contour(e_range, contour_95),
-        color="k", linestyle="--"
-    )
+                 e_range ** 2 * lower_f(e_range),
+                 color=f"C{i}",
+                 label=f"{contour} %",
+                 )
+
+        plt.plot(e_range,
+                 e_range ** 2 * upper_f(e_range),
+                 color=f"C{i}",
+                 )
+
+        for (index, norm) in all_c:
+
+            plt.plot(e_range,
+                     e_range**2 * flux_f(e_range, norm, index),
+                     alpha=0.15
+                     )
 
     plt.yscale("log")
     plt.xscale("log")
@@ -152,6 +145,10 @@ def plot_diffuse_flux(label, contour_68, contour_95, e_range):
     plt.title(r"Diffuse Flux Global Best Fit ($\nu_{\mu} + \bar{\nu}_{\mu})$")
     plt.ylabel(r"$E^{2}\frac{dN}{dE}$[GeV cm$^{-2}$ s$^{-1}$ sr$^{-1}$]")
     plt.xlabel(r"$E_{\nu}$ [GeV]")
-    savepath = illustration_dir + "diffuse_flux_global_fit.pdf"
+    plt.tight_layout()
+    savepath = f"{illustration_dir}diffuse_flux_global_fit_{fit}.pdf"
+
+    logger.info(f"Saving to {savepath}")
+
     plt.savefig(savepath)
     plt.close()

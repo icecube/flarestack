@@ -3,7 +3,8 @@ IceCube data (IC86_1).
 """
 import logging
 import unittest
-from flarestack.cosmo import get_diffuse_flux_at_1GeV, get_diffuse_flux_at_100TeV, calculate_transient_cosmology, get_rate
+from flarestack.cosmo import get_diffuse_flux_at_1GeV, get_diffuse_flux_at_100TeV, \
+    get_diffuse_flux, calculate_transient_cosmology, get_rate
 from flarestack.cosmo.icecube_diffuse_flux import contours, plot_diffuse_flux
 from astropy import units as u
 
@@ -37,6 +38,9 @@ class TestUtilCosmo(unittest.TestCase):
 
             self.assertEqual(expected_1_gev, res_1_gev[0])
 
+            ratio = (res_1_gev[0]/get_diffuse_flux(1., fit=fit)[0]).to("").value
+            self.assertAlmostEqual(ratio, 1.0, places=3)
+
             self.assertEqual(res_100_tev[1], res_1_gev[1])
 
         fits = ["joint_15", "northern_tracks_17", "northern_tracks_19"]
@@ -45,6 +49,9 @@ class TestUtilCosmo(unittest.TestCase):
             res_100_tev = get_diffuse_flux_at_100TeV(fit)
 
             self.assertEqual(res_100_tev, default_flux_100TeV[i])
+
+            ratio = (res_100_tev[0]/get_diffuse_flux(10.**5, fit=fit)[0]).to("").value
+            self.assertAlmostEqual(ratio, 1.0, places=3)
 
             logging.info("Calculated values {0}".format(res_100_tev))
             logging.info("Reference  values {0}".format(default_flux_100TeV[i]))
@@ -75,8 +82,8 @@ class TestUtilCosmo(unittest.TestCase):
 
     def test_plotting(self):
 
-        for label, (_, _, contour_68, contour_95, e_range, _) in contours.items():
-            plot_diffuse_flux(label, contour_68, contour_95, e_range)
+        for label in contours.keys():
+            plot_diffuse_flux(label)
 
 if __name__ == '__main__':
     unittest.main()

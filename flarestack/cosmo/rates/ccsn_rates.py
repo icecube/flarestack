@@ -6,16 +6,40 @@ from flarestack.cosmo.rates.sfr_rates import get_local_sfr_rate, get_sfr_evoluti
 
 # Taken from https://arxiv.org/pdf/1509.06574.pdf
 
-sn_types = {
-    "IIn": 0.064,
-    "IIP": 0.52,
-    "Ib": 0.069,
-    "Ic": 0.176,
-    "Ibc": 0.069 + 0.176,
-    "all": 1.0
+sn_subclass_rates = {
+    "li_11": ({
+        "IIn": 0.064,
+        "IIP": 0.52,
+        "IIL": 0.073,
+        "II": 0.064 + 0.52 + 0.073,
+        "Ib": 0.069,
+        "Ic": 0.176,
+        "Ibc": 0.069 + 0.176,
+    }, "https://arxiv.org/abs/1006.4612")
 }
 
-def get_sn_fraction(sn_subclass=None):
+def get_sn_subfraction(sn_subclass_fractions_name=None):
+    """Return a value of kcc (SN per unit star formation)
+
+    :param sn_subclass_fractions_name: Name of kcc to be used
+    :return: Value of kcc
+    """
+
+    if sn_subclass_fractions_name is None:
+        logging.info("No specified sn_subclass_fractions_name. Assuming default.")
+        sn_subclass_fractions_name = "li_11"
+
+    if sn_subclass_fractions_name not in sn_subclass_rates.keys():
+        raise Exception(f"Subclass name '{sn_subclass_fractions_name}' not recognised. "
+                        f"The following kcc values are available: {sn_subclass_rates.keys()}")
+    else:
+        sn_rates, ref = sn_subclass_rates[sn_subclass_fractions_name]
+        logging.info(f"Loaded SN subclass fractions '{sn_subclass_fractions_name}' ({ref})")
+
+    return sn_rates
+
+
+def get_sn_fraction(sn_subclass=None, sn_subclass_fractions_name=None):
     """Return SN rates for specific types. These are taken from
     https://arxiv.org/pdf/1509.06574.pdf, and are assumed to be fixed
     fractions of the overall SN rate. Acceptable types are:
@@ -26,18 +50,24 @@ def get_sn_fraction(sn_subclass=None):
         SNIbc (equal to Ib + Ic)
 
     :param sn_subclass: Type of SN
+    :param sn_subclass_fractions_name: Name of estimates to use for relative rates of each subclass
     :return: fraction represented by that subtype
     """
     if sn_subclass is None:
         logging.info("No specified subclass of supernova. Assuming overall CCSN rate.")
-        sn_subclass = "all"
+        return 1.0
 
-    if sn_subclass in sn_types.keys():
-        logging.info(f"Subclass '{sn_subclass}' is equal to {100.*sn_types[sn_subclass]:.2f}% of the CCSN rate.")
-        return sn_types[sn_subclass]
     else:
-        raise Exception(f"Supernova type '{sn_subclass}' not recognised. "
-                        f"The following types are available: {sn_types.keys()}")
+
+        sn_types = get_sn_subfraction(sn_subclass_fractions_name)
+
+        if sn_subclass in sn_types.keys():
+            logging.info(f"Subclass '{sn_subclass}' is equal to "
+                         f"{100.*sn_types[sn_subclass]:.2f}% of the CCSN rate.")
+            return sn_types[sn_subclass]
+        else:
+            raise Exception(f"Supernova type '{sn_subclass}' not recognised. "
+                            f"The following types are available: {sn_types.keys()}")
 
 kcc_rates = {
     "madau_14": (0.0068 / u.solMass, "http://arxiv.org/abs/1403.0007v3"),
@@ -65,13 +95,12 @@ def get_kcc_rate(kcc_name=None):
     return kcc
 
 
-def get_local_ccsn_rate(rate_name=None, kcc_name=None, sn_subclass=None, fraction=1.0):
+def get_local_ccsn_rate(rate_name=None, kcc_name=None, sn_subclass=None):
     """Returns a local rate of core-collapse supernovae (CCSNe).
 
     :param rate_name: Name of local Star Formation Rate (sfr) to be used
     :param kcc_name: Name of kcc (sn per unit star formation) to be used
     :param sn_subclass: Name of subclass of CCSNe to use
-    :param fraction: Fraction of specified rate to include
     :return: Local rate
     """
 
@@ -85,7 +114,7 @@ def get_local_ccsn_rate(rate_name=None, kcc_name=None, sn_subclass=None, fractio
 
     subclass_fraction = get_sn_fraction(sn_subclass)
 
-    return sfr_rate * kcc * subclass_fraction * fraction
+    return sfr_rate * kcc * subclass_fraction
 
 def get_ccsn_rate(evolution_name=None, rate_name=None, kcc_name=None, sn_subclass=None, **kwargs):
     """Returns a local rate of core-collapse supernovae (CCSNe) as a function of redshift.
@@ -94,7 +123,6 @@ def get_ccsn_rate(evolution_name=None, rate_name=None, kcc_name=None, sn_subclas
     :param rate_name: Name of local Star Formation Rate (sfr) to be used
     :param kcc_name: Name of kcc (sn per unit star formation) to be used
     :param sn_subclass: Name of subclass of CCSNe to use
-    :param fraction: Fraction of specified rate to include
     :return: Rate as a function of redshift
     """
 
