@@ -379,9 +379,6 @@ class ResultsHandler(object):
 
                 self.make_plots(scale)
 
-        if len(np.where(np.array(y) < 0.95)[0]) < 2:
-            raise OverfluctuationError(f"Not enough points with overfluctuations under 95%, lower injection scale!")
-
         x = np.array(x_acc)
 
         x_flux = k_to_flux(x)
@@ -441,6 +438,9 @@ class ResultsHandler(object):
 
         fig.savefig(savepath)
         plt.close()
+
+        if len(np.where(np.array(y) < 0.95)[0]) < 2:
+            raise OverfluctuationError(f"Not enough points with overfluctuations under 95%, lower injection scale!")
 
         sens_err = np.array([fit - lower, upper - fit]).T[0]
 
