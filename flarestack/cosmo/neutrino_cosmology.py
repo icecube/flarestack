@@ -125,14 +125,6 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
                         "Assuming source has spectral index matching diffuse flux")
         e_pdf_dict["gamma"] = diffuse_gamma
 
-    energy_pdf = EnergyPDF.create(e_pdf_dict)
-    nu_e = e_pdf_dict["source_energy_erg"]
-    gamma = e_pdf_dict["gamma"]
-
-    logger.info(name)
-    logger.info("Neutrino Energy is {0}".format(nu_e))
-    logger.info("Rate is {0}".format(rate(0.0)))
-
     savedir = plots_dir + "cosmology/" + name + "/"
 
     try:
@@ -140,32 +132,44 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
     except OSError:
         pass
 
+    energy_pdf = EnergyPDF.create(e_pdf_dict)
     fluence_conversion = energy_pdf.fluence_integral() * u.GeV ** 2
 
-    nu_e = nu_e.to("GeV") / fluence_conversion
+    if "nu_flux_at_1_gev" in e_pdf_dict.keys():
+        nu_flux_at_1_gev = e_pdf_dict["nu_flux_at_1_gev"].to("GeV-1")
+        nu_e = (nu_flux_at_1_gev * fluence_conversion).to("erg")
+
+    else:
+        nu_e = e_pdf_dict["source_energy_erg"]
+        nu_flux_at_1_gev = nu_e.to("GeV") / fluence_conversion
+
+    gamma = e_pdf_dict["gamma"]
+
+    logger.info(f"Neutrino Energy is {nu_e:.2g}")
+    logger.info(f"Neutrino Flux at 1 GeV is {nu_flux_at_1_gev:.2g}")
+    logger.info(f"Local rate is {rate(0.0):.2g}")
 
     zrange, step = np.linspace(0.0, zmax, int(1 + 1e3), retstep=True)
 
     rate_per_z, nu_flux_per_z, nu_flux_per_source, cumulative_nu_flux = \
-        define_cosmology_functions(rate, nu_e, gamma, nu_bright_fraction)
+        define_cosmology_functions(rate, nu_flux_at_1_gev, gamma, nu_bright_fraction)
 
-    logger.info("Cumulative sources at z=8.0: {:.3E}".format(cumulative_z(rate_per_z, 8.0)[-1].value))
+    logger.info(f"Cumulative sources at z=8.0: {cumulative_z(rate_per_z, 8.0)[-1].value:.2g}")
 
     nu_at_horizon = cumulative_nu_flux(8)[-1]
 
-    logger.info("Cumulative flux at z=8.0 (1 GeV): {:.3E}".format(nu_at_horizon))
-    logger.info("Cumulative annual flux at z=8.0 (1 GeV): {:.3E}".format((
-        nu_at_horizon * u.yr).to("GeV-1 cm-2 sr-1")))
+    logger.info(f"Cumulative flux at z=8.0 (1 GeV): {nu_at_horizon:.2g}")
+    logger.info(f"Cumulative annual flux at z=8.0 (1 GeV): {(nu_at_horizon * u.yr).to('GeV-1 cm-2 sr-1'):.2g}")
 
     ratio = nu_at_horizon.value / diffuse_flux.value
-    logger.info("Fraction of diffuse flux at 1GeV: {0:.2g}".format(ratio))
-    logger.info("Cumulative neutrino flux {0}".format(nu_at_horizon))
-    logger.debug("Diffuse neutrino flux {0}".format(diffuse_flux))
+    logger.info(f"Fraction of diffuse flux at 1GeV: {ratio:.2g}")
+    logger.info(f"Cumulative neutrino flux {nu_at_horizon:.2g}")
+    logger.debug(f"Diffuse neutrino flux {diffuse_flux:.2g}")
 
     if diffuse_fraction is not None:
-        logger.info("Scaling flux so that, at z=8, the contribution is equal to {0}".format(diffuse_fraction))
-        nu_e *= diffuse_fraction / ratio
-        logger.info("Neutrino Energy rescaled to {0}".format((nu_e * fluence_conversion).to("erg")))
+        logger.info(f"Scaling flux so that, at z=8, the contribution is equal to {diffuse_fraction:.2g}")
+        nu_flux_at_1_gev *= diffuse_fraction / ratio
+        logger.info(f"Neutrino Energy rescaled to {(nu_flux_at_1_gev * fluence_conversion).to('erg'):.2g}")
 
     plt.figure()
     plt.plot(zrange, rate(zrange))
@@ -196,10 +200,7 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
     for nearby in [0.1, 0.3]:
 
         logger.info(
-            "Fraction from nearby (z<{0}) sources: {1}".format(
-                nearby, cumulative_nu_flux(nearby)[-1] / nu_at_horizon
-            )
-        )
+            f"Fraction of flux from nearby (z<{nearby}) sources: {cumulative_nu_flux(nearby)[-1] / nu_at_horizon:.2g}")
 
     plt.figure()
     plt.plot(zrange, rate_per_z(zrange))
