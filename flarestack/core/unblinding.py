@@ -190,6 +190,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
             try:
                 ul_dir = os.path.join(self.plot_dir, "upper_limits/")
+
                 try:
                     os.makedirs(ul_dir)
                 except OSError:
@@ -220,7 +221,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     savepath = ul_dir + subdir + ".pdf"
 
-                    ul, extrapolated, err = rh.set_upper_limit(self.ts, savepath)
+                    ul, extrapolated, err = rh.find_overfluctuations(self.ts, savepath)
 
                     flux_uls.append(ul)
 
@@ -241,7 +242,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     astro_dict = rh.nu_astronomy(ul, e_pdf_dict)
 
-                    key = "Energy Flux (GeV cm^{-2} s^{-1})"  # old version: "Total Fluence (GeV cm^{-2} s^{-1})"
+                    key = "Energy Flux (GeV cm^{-2} s^{-1})"
 
                     fluence_uls.append(
                         astro_dict[key]
@@ -254,7 +255,6 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     energy_flux.append(astro_dict[key])
                     x_axis.append(float(subdir))
-
 
                 plt.figure()
                 ax = plt.subplot(111)
