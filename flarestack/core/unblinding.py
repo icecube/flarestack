@@ -221,7 +221,12 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     savepath = ul_dir + subdir + ".pdf"
 
-                    ul, extrapolated, err = rh.find_overfluctuations(self.ts, savepath)
+                    if self.ts < rh.bkg_median:
+                        logging.warning(f"Specified TS ({self.ts}) less than the background median ({rh.bkg_median}). "
+                                        f"There was thus a background n underfluctuation. "
+                                        f"Using the sensitivity for an upper limit.")
+
+                    ul, extrapolated, err = rh.find_overfluctuations(max(self.ts, rh.bkg_median), savepath)
 
                     flux_uls.append(ul)
 
