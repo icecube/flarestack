@@ -61,7 +61,7 @@ def get_tde_evolution(evolution_name=None, **kwargs):
 local_tde_rates = {
     "sun_15_jetted": (3 * 10 **-11 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1706.00391"),
     "van_velzen_18": (8 * 10**-7 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1707.03458"),
-    "biehl_jetted_18": (10**-10 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1711.03555"),
+    "biehl_18_jetted": (10**-10 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1711.03555"),
     "kochanek_16": (1.5 * 10**-6 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1601.06787")
 }
 
