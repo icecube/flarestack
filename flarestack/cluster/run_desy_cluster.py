@@ -38,11 +38,16 @@ def wait_for_cluster(job_ids=None):
     if not job_ids:
         wait_for_job()
     else:
-        for i, job_id in enumerate(job_ids):
+        try:
+            for i, job_id in enumerate(job_ids):
 
-            logging.debug(f'waiting for job {job_id}')
-            prog_str = f'{i}/{len(job_ids)}'
-            wait_for_job(job_id, prog_str)
+                logging.debug(f'waiting for job {job_id}')
+                prog_str = f'{i}/{len(job_ids)}'
+                wait_for_job(job_id, prog_str)
+
+        except TypeError:
+            logging.debug('Only waiting for one job')
+            wait_for_job(job_ids)
 
 
 def wait_for_job(job_id=None, progress_str=None):
