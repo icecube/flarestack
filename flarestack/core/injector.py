@@ -350,8 +350,13 @@ class MCInjector(BaseInjector):
             else:
                 n_s = int(n_inj)
 
+            try:
+                f_n_inj = float(n_inj[0])
+            except TypeError:
+                f_n_inj = float(n_inj)
+
             logging.debug("Injected {0} events with an expectation of {1:.2f} events for {2}".format(
-                n_s, n_inj if isinstance(n_inj, float) else float(n_inj[0]), source["source_name"]
+                n_s, f_n_inj, source["source_name"]
             ))
 
             #  If n_s = 0, skips simulation step.
