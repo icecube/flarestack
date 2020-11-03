@@ -217,7 +217,10 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins):
     # Sets bin centers, and order of spline (for x and y)
     sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
     log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.
-    _order = os.environ.get(environment_smoothing_key, 2)
+
+    default_order = 2
+
+    _order = os.environ.get(environment_smoothing_key, default_order)
     order = None if _order == 'None' else int(_order)
 
     if isinstance(order, type(None)):
