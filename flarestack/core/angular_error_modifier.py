@@ -10,8 +10,8 @@ from flarestack.utils.dynamic_pull_correction import \
     create_pull_1d, create_pull_1d_e, create_pull_2d, create_pull_2d_e
 import pickle as Pickle
 from scipy.interpolate import interp1d, RectBivariateSpline
-from flarestack.utils.make_SoB_splines import gamma_support_points, \
-    gamma_precision, _around
+from flarestack.utils.make_SoB_splines import get_gamma_support_points, \
+    get_gamma_precision, _around
 import numexpr
 import inspect
 
@@ -243,7 +243,7 @@ class BaseAngularErrorModifier(object):
     def create_spatial_cache(self, cut_data, SoB_pdf):
         if len(inspect.getfullargspec(SoB_pdf)[0]) == 2:
             SoB = dict()
-            for gamma in gamma_support_points:
+            for gamma in get_gamma_support_points():
                 SoB[gamma] = np.log(SoB_pdf(cut_data, gamma))
         else:
             SoB = SoB_pdf(cut_data)
@@ -271,7 +271,7 @@ class BaseAngularErrorModifier(object):
             # val = spatial_cache[gamma]
         else:
             g1 = _around(gamma)
-            dg = gamma_precision
+            dg = get_gamma_precision()
 
             g0 = _around(g1 - dg)
             g2 = _around(g1 + dg)
