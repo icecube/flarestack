@@ -45,7 +45,7 @@ unblind_dict = {
 # deterministic, these values should be returned every time this test is run.
 
 true_parameters = [
-    2.455898474578693,
+    2.5458326101373157,
     3.764204148466931,
     55761.7435891,
     55764.59807937,

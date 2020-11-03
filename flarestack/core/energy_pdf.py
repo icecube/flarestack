@@ -7,6 +7,9 @@ import numpy as np
 import pickle as Pickle
 import logging
 
+logger = logging.getLogger(__name__)
+
+
 gamma_range = [1., 4.]
 
 default_emin = 100
@@ -35,7 +38,7 @@ def read_e_pdf_dict(e_pdf_dict):
         for (old_key, new_key) in maps:
 
             if old_key in list(e_pdf_dict.keys()):
-                logging.warning("Deprecated e_pdf_key '{0}' was used. "
+                logger.warning("Deprecated e_pdf_key '{0}' was used. "
                                 "Please use '{1}' in future.".format(old_key, new_key))
                 e_pdf_dict[new_key] = e_pdf_dict[old_key]
 
@@ -47,7 +50,7 @@ def read_e_pdf_dict(e_pdf_dict):
 
         for (old_key, new_key) in name_maps:
             if e_pdf_dict["energy_pdf_name"] == old_key:
-                logging.warning("Deprecated energy_pdf_name '{0}' was used. "
+                logger.warning("Deprecated energy_pdf_name '{0}' was used. "
                                 "Please use '{1}' in future.".format(old_key, new_key))
                 e_pdf_dict["energy_pdf_name"] = new_key
 
@@ -63,14 +66,14 @@ class EnergyPDF(object):
 
         if "e_min_gev" in list(e_pdf_dict.keys()):
             self.e_min = e_pdf_dict["e_min_gev"]
-            logging.info("Minimum Energy is {0} GeV.".format(self.e_min))
+            logger.info(f"Minimum Energy is {self.e_min:.2g} GeV.")
             self.integral_e_min = self.e_min
         else:
             self.integral_e_min = default_emin
 
         if "e_max_gev" in list(e_pdf_dict.keys()):
             self.e_max = e_pdf_dict["e_max_gev"]
-            logging.info("Maximum Energy is {0} GeV".format(self.e_max))
+            logger.info(f"Maximum Energy is {self.e_max:.2g} GeV.")
             self.integral_e_max = self.e_max
         else:
             self.integral_e_max = default_emax

@@ -1,24 +1,22 @@
 import logging
 import numexpr
 import os
-import flarestack.core.astro
 import numpy as np
 import scipy.interpolate
 from scipy import sparse
 import pickle
 from flarestack.shared import acceptance_path, llh_energy_hash_pickles, \
-    SoB_spline_path, bkg_spline_path
+    SoB_spline_path
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
-from flarestack.utils.make_SoB_splines import load_spline, \
-    load_bkg_spatial_spline
+from flarestack.utils.make_SoB_splines import load_spline
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import SpatialPDF
 from flarestack.utils.create_acceptance_functions import dec_range,\
     make_acceptance_season
-from flarestack.icecube_utils.dataset_loader import data_loader
 from flarestack.utils.make_SoB_splines import create_2d_ratio_hist, \
-    make_2d_spline_from_hist, \
-    make_background_spline, make_individual_spline_set
+    make_2d_spline_from_hist, make_individual_spline_set
+
+logger = logging.getLogger(__name__)
 
 spatial_mask_threshold = 1e-21
 
@@ -42,7 +40,7 @@ def read_llh_dict(llh_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(llh_dict.keys()):
-            logging.warning("Deprecated llh_dict key'{0}' was used. Please use '{1}' in future.".format(
+            logger.warning("Deprecated llh_dict key'{0}' was used. Please use '{1}' in future.".format(
                 old_key, new_key))
             llh_dict[new_key] = llh_dict[old_key]
 
@@ -61,7 +59,7 @@ def read_llh_dict(llh_dict):
         llh_dict["llh_spatial_pdf"] = {}
 
     if "llh_bkg_time_pdf" not in llh_dict.keys():
-        logging.warning("No 'llh_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
+        logger.warning("No 'llh_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
         llh_dict["llh_bkg_time_pdf"] = {
             "time_pdf_name": "steady"
         }
@@ -495,7 +493,7 @@ class FixedEnergyLLH(LLH):
         if not os.path.isfile(acc_path):
             self.create_acceptance_function(acc_path)
 
-        logging.debug("Loading from {0}".format(acc_path))
+        logger.debug("Loading from {0}".format(acc_path))
 
         with open(acc_path, "rb") as f:
             [dec_vals, acc] = pickle.load(f)
@@ -511,7 +509,7 @@ class FixedEnergyLLH(LLH):
         if not os.path.isfile(SoB_path):
             self.create_energy_weighting_function(SoB_path)
 
-        logging.debug("Loading from {0}".format(SoB_path))
+        logger.debug("Loading from {0}".format(SoB_path))
 
         with open(SoB_path, "rb") as f:
             [dec_vals, ratio_hist] = pickle.load(f)
@@ -525,7 +523,7 @@ class FixedEnergyLLH(LLH):
         return acc_f, energy_weight_f
 
     def create_acceptance_function(self, acc_path):
-        logging.info("Building acceptance functions in sin(dec) bins "
+        logger.info("Building acceptance functions in sin(dec) bins "
                      "(with fixed energy weighting)")
 
         mc = self.season.get_pseudo_mc()
@@ -557,7 +555,7 @@ class FixedEnergyLLH(LLH):
         except OSError:
             pass
 
-        logging.info("Saving to {0}".format(acc_path))
+        logger.info("Saving to {0}".format(acc_path))
 
         with open(acc_path, "wb") as f:
             pickle.dump([dec_range, acc], f)
@@ -565,7 +563,7 @@ class FixedEnergyLLH(LLH):
         return f
 
     def create_energy_weighting_function(self, SoB_path):
-        logging.info("Building energy-weighting functions in sin(dec) vs log E bins "
+        logger.info("Building energy-weighting functions in sin(dec) vs log E bins "
                      "(with fixed energy weighting)")
 
         # dec_range = self.season["sinDec bins"]
@@ -583,7 +581,7 @@ class FixedEnergyLLH(LLH):
         except OSError:
             pass
 
-        logging.info("Saving to {0}".format(SoB_path))
+        logger.info("Saving to {0}".format(SoB_path))
 
         with open(SoB_path, "wb") as f:
             pickle.dump([dec_range, ratio_hist], f)
@@ -678,9 +676,11 @@ class StandardLLH(FixedEnergyLLH):
         self.SoB_spline_2Ds = load_spline(self.season)
 
         if self.SoB_spline_2Ds:
-            logging.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
+            logger.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
         else:
-            logging.warning("Didn\'t load SoB splines!!!")
+            logger.warning("Didn\'t load SoB splines!!!")
+
+        logger.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
 
         self.acceptance_f = self.create_acceptance_function()
         self.acceptance = self.new_acceptance
@@ -714,7 +714,7 @@ class StandardLLH(FixedEnergyLLH):
         if not os.path.isfile(acc_path):
             make_acceptance_season(self.season, acc_path)
 
-        logging.debug("Loading from {0}".format(acc_path))
+        logger.debug("Loading from {0}".format(acc_path))
 
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)

@@ -5,6 +5,8 @@ import scipy.optimize, scipy.stats
 from scipy.stats import norm
 import logging
 
+logger = logging.getLogger(__name__)
+
 raw_five_sigma = norm.cdf(5)
 n_bins = 100
 
@@ -275,7 +277,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
     ts_array = ts_array[~np.isnan(ts_array)]
 
     if np.sum(np.isnan(ts_array)) > 0:
-        logging.warning("TS distribution has", np.sum(np.isnan(ts_array)), "nan entries.")
+        logger.warning("TS distribution has", np.sum(np.isnan(ts_array)), "nan entries.")
 
     if np.median(ts_array) < 0.:
         plot_expanded_negative(ts_array, path)
@@ -326,7 +328,7 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
             ts_val = float(ts_val[0])
 
 
-        logging.info(f"Quantifying TS: {ts_val:.2f}")
+        logger.info(f"Quantifying TS: {ts_val:.2f}")
 
         if ts_val > np.median(ts_array):
 
@@ -341,8 +343,8 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
             cdf = 0.
             sig = 0.
 
-        logging.info(f"Pre-trial P-value is {1-cdf:.2E}")
-        logging.info(f"Significance is {sig:.2f} Sigma")
+        logger.info(f"Pre-trial P-value is {1-cdf:.2E}")
+        logger.info(f"Significance is {sig:.2f} Sigma")
 
         plt.axvline(ts_val, color="purple",
                     label="{:.2f}".format(ts_val) + " TS/" +

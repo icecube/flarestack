@@ -29,6 +29,8 @@ import numpy as np
 from flarestack.shared import log_dir, fs_dir
 from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file, submit_file
 
+logger = logging.getLogger(__name__)
+
 username = os.path.basename(os.environ['HOME'])
 
 cmd = 'qstat -u ' + username
@@ -41,12 +43,12 @@ def wait_for_cluster(job_ids=None):
         try:
             for i, job_id in enumerate(job_ids):
 
-                logging.debug(f'waiting for job {job_id}')
+                logger.debug(f'waiting for job {job_id}')
                 prog_str = f'{i}/{len(job_ids)}'
                 wait_for_job(job_id, prog_str)
 
         except TypeError:
-            logging.debug('Only waiting for one job')
+            logger.debug('Only waiting for one job')
             wait_for_job(job_ids)
 
 
@@ -89,7 +91,7 @@ def wait_for_job(job_id=None, progress_str=None):
             else:
                 n_running = 0
 
-            logging.info(f'{time.asctime(time.localtime())} - Job{job_id_str}:'
+            logger.info(f'{time.asctime(time.localtime())} - Job{job_id_str}:'
                          f' {n_total} entries in queue. '
                          f'Of these, {n_running} are running tasks, and '
                          f'{n_total-n_running} are tasks still waiting to be executed.')
@@ -97,7 +99,7 @@ def wait_for_job(job_id=None, progress_str=None):
             j += 1
 
         if j > 7:
-            logging.info(str(tmp))
+            logger.info(str(tmp))
             j = 0
 
         time.sleep(30)

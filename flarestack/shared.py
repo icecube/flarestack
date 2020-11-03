@@ -7,6 +7,8 @@ import zlib
 import logging
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 # ==============================================================================
 # Directory substructure creation
 # ==============================================================================
@@ -19,11 +21,11 @@ try:
     fs_scratch_dir = os.environ['FLARESTACK_SCRATCH_DIR']
 except KeyError:
     fs_scratch_dir = str(Path.home())
-    logging.warning("No scratch directory has been set. Using home directory as default.")
+    logger.warning("No scratch directory has been set. Using home directory as default.")
 
 fs_scratch_dir = os.path.join(fs_scratch_dir, "flarestack__data/")
 
-logging.info("Scratch Directory is: {0}".format(fs_scratch_dir))
+logger.info("Scratch Directory is: {0}".format(fs_scratch_dir))
 
 input_dir = fs_scratch_dir + "input/"
 storage_dir = fs_scratch_dir + "storage/"
@@ -76,10 +78,10 @@ all_dirs = [
 
 for dirname in all_dirs:
     if not os.path.isdir(dirname):
-        logging.info("Making Directory: {0}".format(dirname))
+        logger.info("Making Directory: {0}".format(dirname))
         os.makedirs(dirname)
     else:
-        logging.info("Found Directory: {0}".format(dirname))
+        logger.info("Found Directory: {0}".format(dirname))
 
 # ==============================================================================
 # Check host and specify path to dataset storage
@@ -158,7 +160,7 @@ def band_mask_hash_dir(catalogue):
 def band_mask_cache_name(season, catalogue):
     n_chunks = int((len(catalogue) + band_mask_chunk_size - 1) \
                / band_mask_chunk_size)
-    logging.info("Breaking catalogue into {0} chunks of {1}".format(n_chunks, band_mask_chunk_size))
+    logger.info("Breaking catalogue into {0} chunks of {1}".format(n_chunks, band_mask_chunk_size))
 
     cats = []
     mask_indices = []

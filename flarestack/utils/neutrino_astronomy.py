@@ -7,6 +7,8 @@ from astropy.coordinates import Distance
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.utils.catalogue_loader import calculate_source_weight
 
+logger = logging.getLogger(__name__)
+
 e_0 = 1 * u.GeV
 
 # Set parameters for conversion from CR luminosity to nu luminosity
@@ -46,7 +48,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = tot_fluence.value
 
-    logging.debug("Energy Flux:{0}".format(tot_fluence))
+    logger.debug("Energy Flux:{0}".format(tot_fluence))
 
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
@@ -56,9 +58,9 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     astro_res["Flux from nearest source"] = si
 
-    logging.debug("Total flux: {0}".format(flux))
-    logging.debug("Fraction from nearest source: {0}".format(frac))
-    logging.debug("Flux from nearest source: {0}".format(flux * frac))
+    logger.debug("Total flux: {0}".format(flux))
+    logger.debug("Fraction from nearest source: {0}".format(frac))
+    logger.debug("Flux from nearest source: {0}".format(flux * frac))
 
     lumdist = src_1["distance_mpc"] * u.Mpc
 
@@ -70,8 +72,8 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     N = dNdA * area
 
-    logging.debug("There would be {:.3g} neutrinos emitted.".format(N))
-    logging.debug("The energy range was assumed to be between {0} and {1}".format(
+    logger.debug("There would be {:.3g} neutrinos emitted.".format(N))
+    logger.debug("The energy range was assumed to be between {0} and {1}".format(
         energy_PDF.integral_e_min, energy_PDF.integral_e_max
     ))
     # Energy requires a 1/(1+z) factor
@@ -81,11 +83,11 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     astro_res["Mean Luminosity (erg/s)"] = etot.value
 
-    logging.debug("The required neutrino luminosity was {0}".format(etot))
+    logger.debug("The required neutrino luminosity was {0}".format(etot))
 
     cr_e = etot / f_cr_to_nu
 
-    logging.debug(
+    logger.debug(
         "Assuming {0:.3g}% was transferred from CR to neutrinos, we would require a total CR luminosity of {1}".format(
         100 * f_cr_to_nu, cr_e
         )

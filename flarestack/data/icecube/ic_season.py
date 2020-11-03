@@ -8,12 +8,14 @@ from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
 from scipy.interpolate import interp1d
 import logging
 
+logger = logging.getLogger(__name__)
+
 try:
     icecube_dataset_dir = os.environ['FLARESTACK_DATASET_DIR']
 
     if os.path.isdir(icecube_dataset_dir + "mirror-7year-PS-sens/"):
         ref_dir_7yr = icecube_dataset_dir + "mirror-7year-PS-sens/"
-    logging.info(f"Loading datasets from {icecube_dataset_dir} (local)")
+    logger.info(f"Loading datasets from {icecube_dataset_dir} (local)")
 except KeyError:
     icecube_dataset_dir = None
 
@@ -22,12 +24,12 @@ if icecube_dataset_dir is None:
         icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
         ref_dir_7yr = icecube_dataset_dir + "ref_sensitivity/mirror-7year-PS-sens/"
         ref_10yr = icecube_dataset_dir + "ref_sensitivity/TenYr_E2andE3_sensitivity_and_discpot.npy"
-        logging.info(f"Loading datasets from {icecube_dataset_dir} (DESY)")
+        logger.info(f"Loading datasets from {icecube_dataset_dir} (DESY)")
     elif host_server == "WIPAC":
         icecube_dataset_dir = "/data/ana/analyses/"
         ref_dir_7yr = "/data/user/steinrob/mirror-7year-PS-sens/"
         ref_10yr = "/data/user/tcarver/skylab_scripts/skylab_trunk/doc/analyses/combined_tracks/TenYr_E2andE3_sensitivity_and_discpot.npy"
-        logging.info(f"Loading datasets from {icecube_dataset_dir} (WIPAC)")
+        logger.info(f"Loading datasets from {icecube_dataset_dir} (WIPAC)")
     else:
         raise ImportError("No IceCube data directory found. Run: \n"
                           "export FLARESTACK_DATA_DIR=/path/to/IceCube/data")
@@ -36,7 +38,7 @@ def get_published_sens_ref_dir():
     try:
         return ref_dir_7yr, ref_10yr
     except NameError:
-        logging.error(
+        logger.error(
             "No reference sensitivity directory found. "
             "Please create one at {0}".format(
             icecube_dataset_dir + "mirror-7year-PS-sens/"
@@ -52,8 +54,8 @@ class IceCubeRunList(DetectorOnOffList):
     def parse_list(self):
 
         if list(self.on_off_list["run"]) != sorted(list(self.on_off_list["run"])):
-            logging.error("Error in ordering GoodRunList!")
-            logging.error("Runs are out of order!")
+            logger.error("Error in ordering GoodRunList!")
+            logger.error("Runs are out of order!")
             self.on_off_list = np.sort(self.on_off_list, order="run")
 
         mask = self.on_off_list["stop"][:-1] == self.on_off_list["start"][1:]
@@ -62,17 +64,17 @@ class IceCubeRunList(DetectorOnOffList):
 
             first_run = self.on_off_list["run"][:-1][mask][0]
 
-            logging.error("The IceCube GoodRunList was not produced correctly.")
-            logging.error("Some runs in the GoodRunList start immediately after the preceding run ends.")
-            logging.error("There should be gaps between every run due to detector downtime, but some are missing here.")
-            logging.error(f"The first missing gap is between runs {first_run} and {first_run+1}.")
-            logging.error("Any livetime estimates using this GoodRunList will not be accurate.")
-            logging.error("This is a known problem affecting older IceCube GoodRunLists.")
-            logging.error("You should use a newer, corrected GoodRunList.")
-            logging.error("Flarestack will attempt to stitch these runs together.")
-            logging.error("However, livetime estimates may be off by several percentage points, "
+            logger.error("The IceCube GoodRunList was not produced correctly.")
+            logger.error("Some runs in the GoodRunList start immediately after the preceding run ends.")
+            logger.error("There should be gaps between every run due to detector downtime, but some are missing here.")
+            logger.error(f"The first missing gap is between runs {first_run} and {first_run+1}.")
+            logger.error("Any livetime estimates using this GoodRunList will not be accurate.")
+            logger.error("This is a known problem affecting older IceCube GoodRunLists.")
+            logger.error("You should use a newer, corrected GoodRunList.")
+            logger.error("Flarestack will attempt to stitch these runs together.")
+            logger.error("However, livetime estimates may be off by several percentage points, "
                           "or even more for very short timescales.")
-            logging.error("You have been warned!")
+            logger.error("You have been warned!")
 
             while np.sum(mask) > 0:
 
@@ -94,17 +96,17 @@ class IceCubeRunList(DetectorOnOffList):
 
             first_run = self.on_off_list["run"][:-1][~mask][0]
 
-            logging.error("The IceCube GoodRunList was not produced correctly.")
-            logging.error("Some runs in the GoodRunList start before the preceding run has ended.")
-            logging.error("Under no circumstances should runs overlap.")
-            logging.error(f"The first overlap is between runs {first_run} and {first_run+1}.")
-            logging.error("Any livetime estimates using this GoodRunList will not be accurate.")
-            logging.error("This is a known problem affecting older IceCube GoodRunLists.")
-            logging.error("You should use a newer, corrected GoodRunList.")
-            logging.error("Flarestack will attempt to stitch these runs together.")
-            logging.error("However, livetime estimates may be off by several percentage points, "
+            logger.error("The IceCube GoodRunList was not produced correctly.")
+            logger.error("Some runs in the GoodRunList start before the preceding run has ended.")
+            logger.error("Under no circumstances should runs overlap.")
+            logger.error(f"The first overlap is between runs {first_run} and {first_run+1}.")
+            logger.error("Any livetime estimates using this GoodRunList will not be accurate.")
+            logger.error("This is a known problem affecting older IceCube GoodRunLists.")
+            logger.error("You should use a newer, corrected GoodRunList.")
+            logger.error("Flarestack will attempt to stitch these runs together.")
+            logger.error("However, livetime estimates may be off by several percentage points, "
                           "or even more for very short timescales.")
-            logging.error("You have been warned!")
+            logger.error("You have been warned!")
 
             while np.sum(~mask) > 0:
 
@@ -151,8 +153,8 @@ class IceCubeRunList(DetectorOnOffList):
         stitch_f = f
 
         if stitch_t != sorted(stitch_t):
-            logging.error("Error in ordering GoodRunList somehow!")
-            logging.error("Runs are out of order!")
+            logger.error("Error in ordering GoodRunList somehow!")
+            logger.error("Runs are out of order!")
 
             for i, t in enumerate(stitch_t):
                 if t != sorted(stitch_t)[i]:

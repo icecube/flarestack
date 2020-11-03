@@ -15,6 +15,7 @@ from flarestack.utils.make_SoB_splines import get_gamma_support_points, \
 import numexpr
 import inspect
 
+logger = logging.getLogger(__name__)
 
 class BaseFloorClass(object):
     subclasses = {}
@@ -104,7 +105,7 @@ class StaticFloor(BaseStaticFloor):
         except KeyError:
             self.min_error = min_angular_err
 
-        logging.debug("Applying an angular error floor of {0} degrees".format(np.degrees(self.min_error)))
+        logger.debug("Applying an angular error floor of {0} degrees".format(np.degrees(self.min_error)))
 
     def floor(self, data):
         return np.array([self.min_error for _ in data])
@@ -122,12 +123,12 @@ class BaseQuantileFloor(BaseFloorClass):
 
         BaseFloorClass.__init__(self, floor_dict)
 
-        logging.debug("Applying an angular error floor using quantile {0}".format(self.floor_quantile))
+        logger.debug("Applying an angular error floor using quantile {0}".format(self.floor_quantile))
 
         if not os.path.isfile(self.pickle_name):
             self.create_pickle()
         else:
-            logging.debug("Loading from".format(self.pickle_name))
+            logger.debug("Loading from".format(self.pickle_name))
 
         with open(self.pickle_name, "r") as f:
             pickled_data = Pickle.load(f)
@@ -307,7 +308,7 @@ class BaseMedianAngularErrorModifier(BaseAngularErrorModifier):
         if not os.path.isfile(self.pull_name):
             self.create_pickle()
         else:
-            logging.debug("Loading from".format(self.pull_name))
+            logger.debug("Loading from".format(self.pull_name))
 
         with open(self.pull_name, "r") as f:
             self.pickled_data = Pickle.load(f)

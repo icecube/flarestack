@@ -1,7 +1,7 @@
 """Script to convert the Diffuse Flux contour to a format where it can be
 plotted as a 'butterfly contour'.
 
-The values are taken from https://arxiv.org/pdf/1507.03991, tracing the 68%
+The values are taken from https://arxiv.org/abs/1507.03991, tracing the 68%
 and 95% contours in Figure 1.
 
 C
@@ -108,6 +108,13 @@ best_fit_gamma = 2.5
 e_range = np.logspace(np.log10(25) + 3, np.log10(2.8) + 6, 100)
 
 joint_15 = {
-    "joint_15": (best_fit_flux, best_fit_gamma, contour_68, contour_95, e_range)
+    "joint_15": (
+        best_fit_flux,
+        best_fit_gamma,
+        contour_68,
+        contour_95,
+        e_range,
+        "https://arxiv.org/abs/1507.03991"
+    )
 }
 

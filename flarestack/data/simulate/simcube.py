@@ -6,6 +6,8 @@ from flarestack.data.public import icecube_ps_3_year
 from flarestack.core.energy_pdf import EnergyPDF
 from flarestack.data.simulate import SimSeason, SimDataset
 
+logger = logging.getLogger(__name__)
+
 
 class IceCubeBackgroundFluxModel:
 
@@ -98,7 +100,7 @@ class SimCubeSeason(SimSeason):
         )
 
     def generate_sim_data(self, fluence):
-        logging.info("Simulating events:")
+        logger.info("Simulating events:")
         sim_events = np.empty((0,),
                               dtype=self.event_dtype)
 
@@ -107,7 +109,7 @@ class SimCubeSeason(SimSeason):
             new_events = self.simulate_dec_range(
                 fluence,lower_sin_dec, upper_sin_dec)
 
-            logging.info("Simulated {0} events between sin(dec)={1} and "
+            logger.info("Simulated {0} events between sin(dec)={1} and "
                   "sin(dec)={2}".format(
                 len(new_events), lower_sin_dec, upper_sin_dec))
 
@@ -116,7 +118,7 @@ class SimCubeSeason(SimSeason):
 
         sim_events = np.array(sim_events)
 
-        logging.info("Simulated {0} events in total".format(len(sim_events)))
+        logger.info("Simulated {0} events in total".format(len(sim_events)))
 
         return sim_events
 

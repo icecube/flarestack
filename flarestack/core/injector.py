@@ -4,14 +4,15 @@ import numpy as np
 import random
 import zipfile
 import zlib
-from flarestack.shared import k_to_flux, scale_shortener, band_mask_cache_name
+from flarestack.shared import band_mask_cache_name
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.core.spatial_pdf import SpatialPDF
-from flarestack.icecube_utils.dataset_loader import data_loader
 from flarestack.utils.catalogue_loader import calculate_source_weight
 from scipy import sparse, interpolate
 from flarestack.shared import k_to_flux
+
+logger = logging.getLogger(__name__)
 
 def read_injector_dict(inj_dict):
     """Ensures that injection dictionaries remain backwards-compatible
@@ -35,7 +36,7 @@ def read_injector_dict(inj_dict):
         for (old_key, new_key) in maps:
 
             if old_key in list(inj_dict.keys()):
-                logging.warning("Deprecated inj_dict key '{0}' was used. Please use '{1}' in future.".format(
+                logger.warning("Deprecated inj_dict key '{0}' was used. Please use '{1}' in future.".format(
                     old_key, new_key))
                 inj_dict[new_key] = inj_dict[old_key]
 
@@ -52,7 +53,7 @@ def read_injector_dict(inj_dict):
             inj_dict["injection_spatial_pdf"] = {}
 
         # if "injection_bkg_time_pdf" not in inj_dict.keys():
-        #     logging.warning("No 'injection_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
+        #     logger.warning("No 'injection_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
         #     inj_dict["injection_bkg_time_pdf"] = {"time_pdf_name": "steady"}
 
     return inj_dict
@@ -69,7 +70,7 @@ class BaseInjector:
         kwargs = read_injector_dict(kwargs)
         self.inj_kwargs = kwargs
 
-        logging.info("Initialising Injector for {0}".format(season.season_name))
+        logger.info("Initialising Injector for {0}".format(season.season_name))
         self.injection_band_mask = dict()
         self.season = season
         self.season.load_background_model()
@@ -200,14 +201,14 @@ class BaseInjector:
     @staticmethod
     def get_dec_and_omega(source):
         # Sets half width of band
-        dec_width = np.deg2rad(2.)
+        dec_width = np.sin(np.deg2rad(0.5))
 
-        # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2., source['dec_rad'] - dec_width)
-        max_dec = min(np.pi / 2., source['dec_rad'] + dec_width)
+        # Sets a declination band above and below the source
+        min_dec = max(-1, np.sin(source['dec_rad']) - dec_width)
+        max_dec = min(1., np.sin(source['dec_rad']) + dec_width)
         # Gives the solid angle coverage of the sky for the band
-        omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
-        return dec_width, min_dec, max_dec, omega
+        omega = 2. * np.pi * (max_dec - min_dec)
+        return np.arcsin(dec_width), np.arcsin(min_dec), np.arcsin(max_dec), omega
 
 
 class MCInjector(BaseInjector):
@@ -228,7 +229,7 @@ class MCInjector(BaseInjector):
             self.n_exp = self.calculate_n_exp()
 
         except KeyError:
-            logging.warning("No Injection Arguments. Are you unblinding?")
+            logger.warning("No Injection Arguments. Are you unblinding?")
             pass
 
     def select_mc_band(self, source):
@@ -355,7 +356,7 @@ class MCInjector(BaseInjector):
             except TypeError:
                 f_n_inj = float(n_inj)
 
-            logging.debug("Injected {0} events with an expectation of {1:.2f} events for {2}".format(
+            logger.debug("Injected {0} events with an expectation of {1:.2f} events for {2}".format(
                 n_s, f_n_inj, source["source_name"]
             ))
 
@@ -421,7 +422,7 @@ class LowMemoryInjector(MCInjector):
         self.injection_band_paths = paths
 
         if np.sum([not os.path.isfile(x) for x in self.injection_band_paths]) > 0.:
-            logging.info("No saved band masks found. These will have to be made first.")
+            logger.info("No saved band masks found. These will have to be made first.")
             self.make_injection_band_mask()
 
         self.n_exp = np.empty((len(self.sources), 1), dtype=np.dtype(
@@ -461,11 +462,11 @@ class LowMemoryInjector(MCInjector):
 
             del injection_band_mask
 
-            logging.info(f"Saving to {path}")
+            logger.info(f"Saving to {path}")
 
     def load_band_mask(self, index):
         path = self.injection_band_paths[index]
-        # logging.debug(f'type(band_mask_cache) = {type(self.band_mask_cache)}')
+        # logger.debug(f'type(band_mask_cache) = {type(self.band_mask_cache)}')
         del self.band_mask_cache
         self.band_mask_cache = sparse.load_npz(path)
         self.band_mask_index = index
@@ -535,7 +536,7 @@ class EffectiveAreaInjector(BaseInjector):
             else:
                 n_s = int(n_inj)
 
-            logging.debug("Injected {0} events with an expectation of {1:.2f} events for {2}".format(
+            logger.debug("Injected {0} events with an expectation of {1:.2f} events for {2}".format(
                 n_s, n_inj if isinstance(n_inj, float) else float(n_inj[0]), source["source_name"]
             ))
 

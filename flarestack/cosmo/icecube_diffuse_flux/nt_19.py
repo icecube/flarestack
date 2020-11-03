@@ -1,7 +1,7 @@
 """Script to convert the Diffuse Flux contour to a format where it can be
 plotted as a 'butterfly contour'.
 
-The values are taken from https://arxiv.org/pdf/1908.09551.pdf
+The values are taken from https://arxiv.org/abs/1908.09551
 for the 9.5years Northern Track sample, tracing the 68% and 95% contours in Figure 5.
 
 
@@ -111,6 +111,13 @@ best_fit_flux = 1.44 * units * (
 best_fit_gamma = 2.28
 
 nt_19 = {
-    "northern_tracks_19": (best_fit_flux, best_fit_gamma, contour_68, contour_68, e_range)
+    "northern_tracks_19": (
+        best_fit_flux,
+        best_fit_gamma,
+        contour_68,
+        contour_95,
+        e_range,
+        "https://arxiv.org/abs/1908.09551"
+    )
 }
 

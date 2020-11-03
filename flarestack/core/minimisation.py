@@ -21,6 +21,8 @@ from flarestack.utils.catalogue_loader import load_catalogue, \
     calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
 
+logger = logging.getLogger(__name__)
+
 def time_smear(inj):
     inj_time = inj["injection_sig_time_pdf"]
     max_length = inj_time["max_offset"] - inj_time["min_offset"]
@@ -47,7 +49,7 @@ def read_mh_dict(mh_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(mh_dict.keys()):
-            logging.warning("Deprecated mh_dict key '{0}' was used. Please use '{1}' in future.".format(
+            logger.warning("Deprecated mh_dict key '{0}' was used. Please use '{1}' in future.".format(
                 old_key, new_key))
             mh_dict[new_key] = mh_dict[old_key]
 
@@ -126,7 +128,7 @@ class MinimisationHandler(object):
 
         try:
             self.inj_seasons = mh_dict["inj_dict"]["injection_dataset"]
-            logging.debug("Using independent injection dataset.")
+            logger.debug("Using independent injection dataset.")
 
             if self.inj_seasons.keys() != self.seasons.keys():
                 raise Exception("Key mismatch between injection and llh "
@@ -148,7 +150,7 @@ class MinimisationHandler(object):
                              "selected MinimisationHandler".format(
                               self.llh_dict["llh_name"]))
         else:
-            logging.info("Using '{0}' LLH class".format(self.llh_dict["llh_name"]))
+            logger.info("Using '{0}' LLH class".format(self.llh_dict["llh_name"]))
 
         # Checks if negative n_s is specified for use, and whether this is
         # compatible with the chosen MinimisationHandler
@@ -355,7 +357,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         """
 
         if self.name == " /":
-            logging.warning("No field 'name' was specified in mh_dict object. "
+            logger.warning("No field 'name' was specified in mh_dict object. "
                             "Cannot save results without a unique directory"
                             " name being specified.")
 
@@ -371,7 +373,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             file_name = os.path.join(write_dir, str(seed) + ".pkl")
 
-            logging.debug("Saving to {0}".format(file_name))
+            logger.debug("Saving to {0}".format(file_name))
 
             with open(file_name, "wb") as f:
                 Pickle.dump(results, f)
@@ -397,7 +399,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             file_name = os.path.join(inj_dir, scale_shortener(scale) + ".pkl")
 
-            logging.debug(f"Dumping Injection values to {file_name}")
+            logger.debug(f"Dumping Injection values to {file_name}")
 
             with open(file_name, "wb") as f:
                 Pickle.dump(inj_dict, f)
@@ -485,7 +487,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         mem_use = str(
             float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        logging.debug('Memory usage max: {0} (Gb)'.format(mem_use))
+        logger.debug('Memory usage max: {0} (Gb)'.format(mem_use))
 
         results = {
             "TS": ts_vals,
@@ -516,7 +518,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         ts_vals = []
         flags = []
 
-        logging.info("Generating {0} trials!".format(n_trials))
+        logger.info("Generating {0} trials!".format(n_trials))
 
         for i in range(int(n_trials)):
 
@@ -533,20 +535,20 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             inj = self.get_injector(season)
             n_inj += np.sum(inj.n_exp["n_exp"] * scale)
 
-        logging.info("Injected with an expectation of {0} events.".format(n_inj))
+        logger.info("Injected with an expectation of {0} events.".format(n_inj))
 
-        logging.info("FIT RESULTS:")
+        logger.info("FIT RESULTS:")
 
         for (key, param) in sorted(param_vals.items()):
             if len(param) > 0:
-                logging.info("Parameter {0}: {1} {2} {3}".format(key, np.mean(param),
+                logger.info("Parameter {0}: {1} {2} {3}".format(key, np.mean(param),
                       np.median(param), np.std(param)))
-        logging.info("Test Statistic: {0} {1} {2}".format(np.mean(ts_vals),
+        logger.info("Test Statistic: {0} {1} {2}".format(np.mean(ts_vals),
               np.median(ts_vals), np.std(ts_vals)))
 
-        logging.info("FLAG STATISTICS:")
+        logger.info("FLAG STATISTICS:")
         for i in sorted(np.unique(flags)):
-            logging.info("Flag {0}:{1}".format(i, flags.count(i)))
+            logger.info("Flag {0}:{1}".format(i, flags.count(i)))
 
         results = {
             "TS": ts_vals,
@@ -730,35 +732,35 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             plt.xlabel(self.param_names[i])
             plt.ylabel(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$")
 
-            logging.info(f"PARAM: {self.param_names[i]}")
+            logger.info(f"PARAM: {self.param_names[i]}")
             min_y = np.min(y)
 
             min_index = y.index(min_y)
             min_n = n_range[min_index]
 
-            logging.info(f"Minimum value of {min_y} at {min_n}")
+            logger.info(f"Minimum value of {min_y} at {min_n}")
 
-            logging.info("One Sigma interval between")
+            logger.info("One Sigma interval between")
 
             l_y = np.array(y[:min_index])
             try:
                 l_y = min(l_y[l_y > (min_y + 0.5)])
                 l_lim = n_range[y.index(l_y)]
-                logging.info(l_lim)
+                logger.info(l_lim)
             except ValueError:
                 l_lim = min(n_range)
-                logging.info(f"<{l_lim}")
+                logger.info(f"<{l_lim}")
 
-            logging.info("and")
+            logger.info("and")
 
             u_y = np.array(y[min_index:])
             try:
                 u_y = min(u_y[u_y > (min_y + 0.5)])
                 u_lim = n_range[y.index(u_y)]
-                logging.info(u_lim)
+                logger.info(u_lim)
             except ValueError:
                 u_lim = max(n_range)
-                logging.info(f">{u_lim}")
+                logger.info(f">{u_lim}")
 
             ax.axvspan(l_lim, u_lim, facecolor="grey",
                         alpha=0.2)
@@ -780,7 +782,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         plt.savefig(path)
         plt.close()
 
-        logging.info("Saved to {0}".format(path))
+        logger.info("Saved to {0}".format(path))
 
         # Scan 2D likelihood
 
@@ -886,7 +888,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 plt.savefig(path)
                 plt.close()
 
-                logging.info("Saved to {0}".format(path))
+                logger.info("Saved to {0}".format(path))
 
         return res_dict
 
@@ -981,7 +983,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             except OSError:
                 pass
 
-            logging.info(f"Saving to {path}")
+            logger.info(f"Saving to {path}")
 
             plt.savefig(path)
             plt.close()
@@ -1309,7 +1311,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # If there is are no pairs meeting this criteria, skip
 
             if len(pairs) == 0:
-                logging.debug("Continuing because no pairs")
+                logger.debug("Continuing because no pairs")
                 continue
 
             all_res = []
@@ -1605,7 +1607,7 @@ if __name__ == '__main__':
     trials = [mh_dict["n_trials"] for _ in seeds]
     loop_args = zip(trials, scales, seeds)
 
-    logging.info("N CPUs:{0}".format(cfg.n_cpu))
+    logger.info("N CPUs:{0}".format(cfg.n_cpu))
 
     with Pool(int(cfg.n_cpu)) as p:
         p.starmap(mh.run, loop_args)

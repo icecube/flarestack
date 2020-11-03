@@ -1,8 +1,8 @@
 import logging
 import numpy as np
 from scipy.interpolate import interp1d
-from scipy.integrate import quad
-from flarestack.icecube_utils.dataset_loader import data_loader
+
+logger = logging.getLogger(__name__)
 
 
 def box_func(t, t0, t1):
@@ -63,7 +63,7 @@ def read_t_pdf_dict(t_pdf_dict):
     for (old_key, new_key) in maps:
 
         if old_key in list(t_pdf_dict.keys()):
-            logging.warning("Deprecated t_pdf_key '{0}' was used. "
+            logger.warning("Deprecated t_pdf_key '{0}' was used. "
                             "Please use '{1}' in future.".format(old_key, new_key))
             t_pdf_dict[new_key] = t_pdf_dict[old_key]
 
@@ -76,7 +76,7 @@ def read_t_pdf_dict(t_pdf_dict):
 
     for (old_key, new_key) in name_maps:
         if t_pdf_dict["time_pdf_name"] == old_key:
-            logging.warning("Deprecated time_pdf_name '{0}' was used. "
+            logger.warning("Deprecated time_pdf_name '{0}' was used. "
                             "Please use '{1}' in future.".format(old_key, new_key))
             t_pdf_dict["time_pdf_name"] = new_key
 
@@ -355,7 +355,7 @@ class Box(TimePDF):
 
         try:
             if self.t_dict["livetime"] is True:
-                logging.debug("Using time PDF as a detector livetime PDF.")
+                logger.debug("Using time PDF as a detector livetime PDF.")
                 self.mjd_to_livetime = lambda x: x - self.sig_t0([])
                 self.livetime_to_mjd = lambda x: x + self.sig_t0([])
                 self.livetime = self.t_dict["post_window"] + self.t_dict["pre_window"]
@@ -653,7 +653,7 @@ class DecayPDF(TimePDF):
         self.decay_time = self.t_dict['decay_time']
         self.decay_length = self.t_dict['decay_length'] if 'decay_time' in self.t_dict else np.inf
         if not 'decay_time' in self.t_dict:
-            logging.warning('No decay length given! Assuming endless decay')
+            logger.warning('No decay length given! Assuming endless decay')
 
     def decay_function(self, t, t0):
         return decay_fct(t, t0, self.decay_time, self.decay_length)
@@ -742,7 +742,7 @@ class DecayPDF(TimePDF):
         else:
             # the normalization factor should always be greater than zero,
             # so here something went wrong.
-            logging.error(f'\nintegrating from {a:.2f} to {b:.2f}. \n'
+            logger.error(f'\nintegrating from {a:.2f} to {b:.2f}. \n'
                           f't = {t} \n'
                           f't0 = {t0:.2f} \n'
                           f't_pp={self.decay_time:.2f} \n'
