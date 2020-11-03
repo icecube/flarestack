@@ -1,11 +1,12 @@
 import numpy as np
+import os
 import pickle as Pickle
 from flarestack.icecube_utils.dataset_loader import data_loader
 from flarestack.core.energy_pdf import EnergyPDF
 import matplotlib.pyplot as plt
 from flarestack.shared import weighted_quantile, floor_pickle, pull_pickle
 from flarestack.core.astro import angular_distance
-from flarestack.utils.make_SoB_splines import gamma_support_points
+from flarestack.utils.make_SoB_splines import get_gamma_support_points
 
 
 def get_mc(floor_dict):
@@ -224,7 +225,7 @@ def create_pull_0d_e(pull_dict):
 
     res_dict = dict()
 
-    x_range = np.array(sorted(list(gamma_support_points)))
+    x_range = np.array(sorted(list(get_gamma_support_points())))
 
     y_range = []
 
@@ -314,7 +315,7 @@ def create_pull_1d_e(floor_dict):
                         "but selected energy pdf gave the following parameters:"
                         " {} {} {}".format(name, default, bounds))
 
-    e_range = np.array(sorted(list(gamma_support_points)))
+    e_range = np.array(sorted(list(get_gamma_support_points())))
 
     bins = np.linspace(2., 6., 5)
     x_range = 0.5 * (bins[1:] + bins[:-1])
@@ -457,7 +458,7 @@ def create_pull_2d_e(pull_dict):
 
     res_dict = dict()
 
-    e_range = np.array(sorted(list(gamma_support_points)))
+    e_range = np.array(sorted(list(get_gamma_support_points())))
 
     for e in e_range:
 
