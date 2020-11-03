@@ -184,7 +184,7 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins):
     # Sets bin centers, and order of spline (for x and y)
     sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
     log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.
-    order = 1
+    order = 2
 
     # Fits a 2D spline function to the log of ratio array
     # This is 2nd order in both dimensions
