@@ -4,7 +4,6 @@ import os
 import shutil
 import scipy.interpolate
 import pickle as Pickle
-import pandas as pd
 from flarestack.shared import gamma_precision, SoB_spline_path, \
     bkg_spline_path, dataset_plot_dir, get_base_sob_plot_dir, SoB_spline_dir, bkg_spline_dir, acc_f_dir
 from flarestack.core.energy_pdf import PowerLaw
