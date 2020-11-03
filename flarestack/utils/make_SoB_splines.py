@@ -18,6 +18,8 @@ energy_pdf = PowerLaw()
 
 
 def get_gamma_precision():
+    """Returns the precision in gamma that is used.
+    Returns default value if the environment_precision_key is not present in th environ dictionary"""
     prec = float(os.environ.get(environment_precision_key, gamma_precision))
     logger.debug(f'gamma precision is {prec}')
     return prec
@@ -35,6 +37,7 @@ def _around(value):
 
 
 def get_gamma_support_points():
+    """Return the gamma support points based on the gamma precision"""
     gamma_points = np.arange(0.7, 4.3, get_gamma_precision())
     return set([_around(i) for i in gamma_points])
 
@@ -218,17 +221,22 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins):
     sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
     log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.
 
+    # the order of the splines defaults to 2
     default_order = 2
 
+    # if the environment_smoothing_key is present in the environ dictionary use the corresponding value instead
     _order = os.environ.get(environment_smoothing_key, default_order)
     order = None if _order == 'None' else int(_order)
 
+    # when setting the emviron value to 'None', order will be None and no splines will be produced
     if isinstance(order, type(None)):
         logger.warning(f'{environment_smoothing_key} is None! Not making splines!')
         return
 
     # Fits a 2D spline function to the log of ratio array
+    # If the splines are of order one the RegularGridInterpolator is used to match the SkyLab behavior
     if order == 1:
+
         sin_bin_center[0], sin_bin_center[-1] = sin_dec_bins[0], sin_dec_bins[-1]
         # log_e_bins[0], log_e_bins[-1] = log_e_bins[0], log_e_bins[-1]
 
@@ -239,11 +247,14 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins):
             method="linear",
             bounds_error=False,
             fill_value=0.)
+
+    # If the interpolating splines are of order greater than 1, use RectBivariateSpline
     else:
         # This is order-th order in both dimensions
         spline = scipy.interpolate.RectBivariateSpline(
             log_e_bin_center, sin_bin_center, np.log(ratio),
             kx=order, ky=order, s=0)
+
     return spline
 
 
@@ -501,6 +512,8 @@ def load_bkg_spatial_spline(season):
 
 
 def delete_old_splines():
+    """Deletes previously produced splines of the SoB energy PDF histogram, the spatial background PDF and the
+    acceptance function"""
     logging.info('Deleting old splines!')
     directories_to_clear = [SoB_spline_dir, bkg_spline_dir, acc_f_dir]
     for d in directories_to_clear:
@@ -510,6 +523,11 @@ def delete_old_splines():
 
 
 def use_precision(mode='flarestack'):
+    """
+    Configures the current environment to use the desired precision in gamma.
+    Deletes previously produced splines if precision changes.
+    :param mode: float or 'flarestack' or 'skyLab', default:'flarestack'
+    """
 
     old_precision = os.environ.get(environment_precision_key, None)
     new_precision = '0.025' if mode in ['flaresatck', 'Flarestack', 'default'] else \
@@ -518,7 +536,7 @@ def use_precision(mode='flarestack'):
         None
 
     if not new_precision:
-        logger.warning(f'Mode {mode} not known! Use "Flarestack", "SkyLab" or an integer '
+        logger.warning(f'Mode {mode} not known! Use "Flarestack", "SkyLab" or a float '
                        f'to specify the order of the interpolating spline.')
 
     if not new_precision or (new_precision != old_precision):
@@ -532,6 +550,11 @@ def use_precision(mode='flarestack'):
 
 
 def use_smoothing(mode='flarestack'):
+    """
+    Configures the current environment to use the desired smoothing order when building energy PDFs
+    Deletes previously produced splines if precision changes.
+    :param mode: int or 'flarestack' or 'skyLab', default:'flarestack'
+    """
 
     old_smoothing_order = os.environ.get(environment_smoothing_key, None)
     new_smoothing_order = '2' if mode in ['default', 'flarestack', 'Flarestack'] else \
