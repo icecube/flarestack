@@ -677,7 +677,10 @@ class StandardLLH(FixedEnergyLLH):
 
         self.SoB_spline_2Ds = load_spline(self.season)
 
-        logging.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
+        if self.SoB_spline_2Ds:
+            logging.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
+        else:
+            logging.warning("Didn\'t load SoB splines!!!")
 
         self.acceptance_f = self.create_acceptance_function()
         self.acceptance = self.new_acceptance
@@ -930,8 +933,11 @@ class StandardLLH(FixedEnergyLLH):
         energy_SoB_cache = dict()
 
         for gamma in list(self.SoB_spline_2Ds.keys()):
-            energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma].ev(
-                cut_data["logE"], cut_data["sinDec"])
+            try:
+                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma].ev(
+                    cut_data["logE"], cut_data["sinDec"])
+            except:  # this is in case the splines were produced using the RegularGridInterpolator
+                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma]((cut_data["logE"], cut_data["sinDec"]))
 
         return energy_SoB_cache
 
