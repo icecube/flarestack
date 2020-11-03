@@ -13,6 +13,7 @@ from flarestack.shared import name_pickle_output_dir, \
     inj_dir_name, plot_output_dir, scale_shortener, flux_to_k
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from matplotlib.colors import Normalize, ListedColormap
 import matplotlib as mpl
 from flarestack.core.time_pdf import TimePDF, Box, Steady
 from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
@@ -797,7 +798,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             for j, bound in enumerate(n_s_bounds):
                 best = list(res.x)
-                plt.figure()
+                plt.figure(figsize=(5.85, 3.6154988341868854))
                 ax = plt.subplot(111)
 
                 index = np.arange(len(self.param_names))[mask][j]
@@ -805,8 +806,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 plt.xlabel(r"Spectral Index ($\gamma$)")
 
                 param_name = np.array(self.param_names)[mask][j]
-
-                plt.ylabel(param_name)
+                ylabel = 'n$_{\mathrm{signal}}$' if param_name == 'n_s' else param_name
+                plt.ylabel(ylabel)
 
                 y = np.linspace(
                     float(max(bound[0], -100)),
@@ -831,9 +832,22 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                 levels = 0.5 * np.array([1.0, 2.0, 5.0])**2
 
-                plt.imshow(Z, aspect="auto", cmap="jet_r",
+                N = 2560
+                mmax = np.max(Z)
+                mmin = np.min(Z)
+                break_ind = int(round(N / (1 + mmax / abs(mmin))))
+                top = cm.get_cmap('gray')
+                bottom = cm.get_cmap('jet_r', N)
+                colorlist = np.empty((N, 4))
+                colorlist[break_ind:] = bottom(np.linspace(0, 1, N - break_ind))
+                colorlist[:break_ind] = top(np.linspace(1, 0, break_ind))
+                cmap = ListedColormap(colorlist)
+                norm = Normalize(vmin=mmin, vmax=mmax, clip=True)
+
+                plt.imshow(Z, aspect="auto", cmap=cmap, norm=norm,
                            extent=(x[0], x[-1], y[0], y[-1]),
                            interpolation='bilinear')
+
                 cbar = plt.colorbar()
                 CS = ax.contour(X, Y, Z, levels=levels, colors="white")
 
@@ -848,6 +862,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 except TypeError:
                     ax.clabel(CS, levels, fmt=fmt, inline=1, fontsize=10, #levels=levels,
                               colors="white")
+
+                ax.set_xlim((min(x), max(x)))
+                ax.set_ylim((min(y), max(y)))
 
                 cbar.set_label(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
                                rotation=90)
@@ -864,8 +881,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                 plt.grid(color="white", linestyle="--", alpha=0.5)
 
-                plt.suptitle(title)
-
+                #plt.suptitle(title)
+                plt.tight_layout()
                 plt.savefig(path)
                 plt.close()
 
