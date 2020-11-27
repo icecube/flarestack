@@ -531,7 +531,7 @@ class FixedEnergyLLH(LLH):
             [dec_vals, ratio_hist] = pickle.load(f)
 
         spline = make_2d_spline_from_hist(np.array(ratio_hist), dec_vals,
-                                          self.season.log_e_bins)
+                                          self.season.log_e_bins, self.smoothing_order)
 
         def energy_weight_f(event, params=None):
             return np.exp(spline(event["logE"], event["sinDec"], grid=False))
@@ -844,9 +844,7 @@ class StandardLLH(FixedEnergyLLH):
                     SoB_pdf = lambda x: self.signal_pdf(source, x) / \
                                         self.background_pdf(source, x)
 
-                    spatial_cache = pull_corrector.create_spatial_cache(
-                        coincident_data, SoB_pdf, gamma_precision=self.precision
-                    )
+                    spatial_cache = pull_corrector.create_spatial_cache(coincident_data, SoB_pdf)
 
                     SoB_spacetime.append(spatial_cache)
 
@@ -1068,9 +1066,7 @@ class StandardOverlappingLLH(StandardLLH):
                 for i, source in enumerate(self.sources)], axis=0
             ) / np.sum(season_weight(gamma))
 
-        SoB_spacetime = pull_corrector.create_spatial_cache(
-            coincident_data, joint_SoB, gamma_precision=self.precision
-        )
+        SoB_spacetime = pull_corrector.create_spatial_cache(coincident_data, joint_SoB)
 
         kwargs["n_coincident"] = np.sum(~assumed_background_mask)
         kwargs["SoB_spacetime_cache"] = SoB_spacetime

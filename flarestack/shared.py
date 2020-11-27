@@ -226,7 +226,7 @@ def get_base_sob_plot_dir(season):
                          season.sample_name + "/" + season.season_name + "/"
 
 
-def smoothing_precision_string(smoothing_order, gamma_precision):
+def smoothing_precision_string(smoothing_order='flarestack', gamma_precision='skylab'):
 
     if isinstance(smoothing_order, str):
         if smoothing_order in default_smoothing_order.keys():
