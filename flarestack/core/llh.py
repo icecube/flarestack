@@ -1196,9 +1196,7 @@ class StandardMatrixLLH(StandardOverlappingLLH):
 
             return return_value
 
-        SoB_spacetime = pull_corrector.create_spatial_cache(
-            coincident_data, joint_SoB, gamma_precision=self.precision
-        )
+        SoB_spacetime = pull_corrector.create_spatial_cache(coincident_data, joint_SoB)
 
         kwargs["n_coincident"] = np.sum(coincident_nu_mask)
         kwargs["SoB_spacetime_cache"] = SoB_spacetime
