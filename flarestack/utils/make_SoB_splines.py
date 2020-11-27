@@ -4,7 +4,7 @@ import os
 import shutil
 import scipy.interpolate
 import pickle as Pickle
-from flarestack.shared import gamma_precision, SoB_spline_path, \
+from flarestack.shared import default_gamma_precision, SoB_spline_path, default_smoothing_order, \
     bkg_spline_path, dataset_plot_dir, get_base_sob_plot_dir, SoB_spline_dir, bkg_spline_dir, acc_f_dir
 from flarestack.core.energy_pdf import PowerLaw
 import matplotlib.pyplot as plt
@@ -15,16 +15,25 @@ logger = logging.getLogger(__name__)
 energy_pdf = PowerLaw()
 
 
-
-def get_gamma_precision():
+def get_gamma_precision(precision):
     """Returns the precision in gamma that is used.
-    Returns default value if the environment_precision_key is not present in th environ dictionary"""
-    prec = float(os.environ.get(environment_precision_key, gamma_precision))
-    logger.debug(f'gamma precision is {prec}')
-    return prec
+    # Returns default value if the environment_precision_key is not present in th environ dictionary"""
+    # prec = float(os.environ.get(environment_precision_key, default_gamma_precision[precision_str]))
+    if isinstance(precision, float):
+        return precision
+
+    elif isinstance(precision, str):
+        if precision in default_gamma_precision:
+            return default_gamma_precision[precision]
+        else:
+            raise ValueError(f'No gamma precision value defined for {precision}!'
+                             f'Choose: {default_gamma_precision.keys()}')
+
+    else:
+        raise TypeError(f'Type {type(precision)} of {precision} not understood for variable gamma precision')
 
 
-def _around(value):
+def _around(value, precision='flarestack'):
     """Produces an array in which the precision of the value
     is rounded to the nearest integer. This is then multiplied
     by the precision, and the new value is returned.
@@ -32,13 +41,13 @@ def _around(value):
     :param value: value to be processed
     :return: value after processed
     """
-    return np.around(float(value) / get_gamma_precision()) * get_gamma_precision()
+    return np.around(float(value) / get_gamma_precision(precision)) * get_gamma_precision(precision)
 
 
-def get_gamma_support_points():
+def get_gamma_support_points(gamma_precision):
     """Return the gamma support points based on the gamma precision"""
-    gamma_points = np.arange(0.7, 4.3, get_gamma_precision())
-    return set([_around(i) for i in gamma_points])
+    gamma_points = np.arange(0.7, 4.3, get_gamma_precision(precision=gamma_precision))
+    return set([_around(i, precision=gamma_precision) for i in gamma_points])
 
 
 def create_2d_hist(sin_dec, log_e, sin_dec_bins, log_e_bins, weights):
@@ -185,7 +194,7 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     return ratio
 
 
-def create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, weight_function):
+def create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, weight_function, smoothing_order):
     """Creates 2D histograms for both data and MC, in which the seasons
     are binned by Sin(Declination) and Log(Energy/GeV). Each histogram is
     normalised in Sin(Declination) bands. Then creates a histogram of the
@@ -209,32 +218,34 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     ratio = create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins,
                                  weight_function)
 
-    spline = make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins)
+    spline = make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order)
 
     return spline
 
 
-def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins):
+def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order):
 
     # Sets bin centers, and order of spline (for x and y)
     sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
     log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.
 
     # the order of the splines defaults to 2
-    default_order = 2
+    # default_order = 2
+    if not isinstance(smoothing_order, int):
+        smoothing_order = default_smoothing_order[smoothing_order]
 
     # if the environment_smoothing_key is present in the environ dictionary use the corresponding value instead
-    _order = os.environ.get(environment_smoothing_key, default_order)
-    order = None if _order == 'None' else int(_order)
+    # _order = os.environ.get(environment_smoothing_key, default_order)
+    # order = None if _order == 'None' else int(_order)
 
     # when setting the emviron value to 'None', order will be None and no splines will be produced
-    if isinstance(order, type(None)):
+    if isinstance(smoothing_order, type(None)):
         logger.warning(f'{environment_smoothing_key} is None! Not making splines!')
         return
 
     # Fits a 2D spline function to the log of ratio array
     # If the splines are of order one the RegularGridInterpolator is used to match the SkyLab behavior
-    if order == 1:
+    if smoothing_order == 1:
 
         sin_bin_center[0], sin_bin_center[-1] = sin_dec_bins[0], sin_dec_bins[-1]
         # log_e_bins[0], log_e_bins[-1] = log_e_bins[0], log_e_bins[-1]
@@ -252,12 +263,12 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins):
         # This is order-th order in both dimensions
         spline = scipy.interpolate.RectBivariateSpline(
             log_e_bin_center, sin_bin_center, np.log(ratio),
-            kx=order, ky=order, s=0)
+            kx=smoothing_order, ky=smoothing_order, s=0)
 
     return spline
 
 
-def create_gamma_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, gamma):
+def create_gamma_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order):
     """Creates a 2D gamma ratio spline by creating a function that weights MC
     assuming a power law of spectral index gamma.
 
@@ -272,10 +283,10 @@ def create_gamma_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, gamma):
         return energy_pdf.weight_mc(sig_mc, gamma)
 
     return create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins,
-                                  weight_function)
+                                  weight_function, smoothing_order)
 
 
-def create_2d_splines(exp, mc, sin_dec_bins, log_e_bins):
+def create_2d_splines(exp, mc, sin_dec_bins, log_e_bins, **kwargs):
     """If gamma will not be fit, then calculates the Log(Signal/Background)
     2D PDF for the fixed value self.default_gamma. Fits a spline to each
     histogram, and saves the spline in a dictionary.
@@ -292,11 +303,14 @@ def create_2d_splines(exp, mc, sin_dec_bins, log_e_bins):
     :return: Dictionary of 2D Log(Signal/Background) splines
     """
     splines = dict()
-    gamma_support_points = get_gamma_support_points()
+    gamma_precision = kwargs['gamma_precision']
+    smoothing_order = kwargs['smoothing_order']
+    gamma_support_points = get_gamma_support_points(gamma_precision=gamma_precision)
+
 
     for gamma in gamma_support_points:
         splines[gamma] = create_gamma_2d_ratio_spline(
-            exp, mc, sin_dec_bins, log_e_bins, gamma)
+            exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order)
 
     if not np.any(list(splines.values())):
         logger.warning('No splines!')
@@ -330,15 +344,15 @@ def create_bkg_spatial_spline(exp, sin_dec_bins):
     return bkg_spline
 
 
-def make_spline(seasons):
+def make_spline(seasons, **kwargs):
 
     logger.info("Splines will be made to calculate the Signal/Background ratio of " \
           "the MC to data. The MC will be weighted with a power law, for each" \
-          " gamma in: {0}".format(list(get_gamma_support_points())))
+          " gamma in: {0}".format(list(get_gamma_support_points(**kwargs))))
 
     for season in seasons.values():
-        SoB_path = SoB_spline_path(season)
-        make_individual_spline_set(season, SoB_path)
+        SoB_path = SoB_spline_path(season, **kwargs)
+        make_individual_spline_set(season, SoB_path, **kwargs)
         make_background_spline(season)
 
 
@@ -369,7 +383,7 @@ def make_plot(hist, savepath, x_bins, y_bins, normed=True, log_min=5,
     plt.close()
 
 
-def make_individual_spline_set(season, SoB_path):
+def make_individual_spline_set(season, SoB_path, **kwargs):
     try:
         logger.info("Making splines for {0}".format(season.season_name))
         # path = SoB_spline_path(season)
@@ -380,7 +394,7 @@ def make_individual_spline_set(season, SoB_path):
         sin_dec_bins = season.sin_dec_bins
         log_e_bins = season.log_e_bins
 
-        splines = create_2d_splines(exp, mc, sin_dec_bins, log_e_bins)
+        splines = create_2d_splines(exp, mc, sin_dec_bins, log_e_bins, **kwargs)
 
         logger.info("Saving to {0}".format(SoB_path))
 
@@ -402,7 +416,8 @@ def make_individual_spline_set(season, SoB_path):
         # Generate plots
         for gamma in np.linspace(1.0, 4.0, 7):
 
-            plot_path = base_plot_path + "gamma=" + str(gamma) + "/"
+            plot_path = base_plot_path + "gamma=" + str(gamma) + "/" + \
+                        f'precision{kwargs["gamma_precision"]}_smoothing{kwargs["smoothing_order"]}'
 
             try:
                 os.makedirs(plot_path)
@@ -488,8 +503,8 @@ def make_background_spline(season):
     plt.close()
 
 
-def load_spline(season):
-    path = SoB_spline_path(season)
+def load_spline(season, **kwargs):
+    path = SoB_spline_path(season, **kwargs)
 
     logger.debug("Loading from {0}".format(path))
 
@@ -510,66 +525,66 @@ def load_bkg_spatial_spline(season):
     return res
 
 
-def delete_old_splines():
-    """Deletes previously produced splines of the SoB energy PDF histogram, the spatial background PDF and the
-    acceptance function"""
-    logging.info('Deleting old splines!')
-    directories_to_clear = [SoB_spline_dir, bkg_spline_dir, acc_f_dir]
-    for d in directories_to_clear:
-        logging.debug(f'clearing {d}')
-        shutil.rmtree(d)
-        os.mkdir(d)
+# def delete_old_splines():
+#     """Deletes previously produced splines of the SoB energy PDF histogram, the spatial background PDF and the
+#     acceptance function"""
+#     logging.info('Deleting old splines!')
+#     directories_to_clear = [SoB_spline_dir, bkg_spline_dir, acc_f_dir]
+#     for d in directories_to_clear:
+#         logging.debug(f'clearing {d}')
+#         shutil.rmtree(d)
+#         os.mkdir(d)
 
 
-def use_precision(mode='flarestack'):
-    """
-    Configures the current environment to use the desired precision in gamma.
-    Deletes previously produced splines if precision changes.
-    :param mode: float or 'flarestack' or 'skyLab', default:'flarestack'
-    """
+# def use_precision(mode='flarestack'):
+#     """
+#     Configures the current environment to use the desired precision in gamma.
+#     Deletes previously produced splines if precision changes.
+#     :param mode: float or 'flarestack' or 'skyLab', default:'flarestack'
+#     """
+#
+#     old_precision = os.environ.get(environment_precision_key, None)
+#     new_precision = '0.025' if mode in ['flaresatck', 'Flarestack', 'default'] else \
+#         '0.1' if (mode in ['SkyLab', 'skylab', 'skylab_splines']) or ('skylab_splines' in mode) else \
+#         mode if isinstance(mode, float) else \
+#         None
+#
+#     if not new_precision:
+#         logger.warning(f'Mode {mode} not known! Use "Flarestack", "SkyLab" or a float '
+#                        f'to specify the order of the interpolating spline.')
+#
+#     if not new_precision or (new_precision != old_precision):
+#         logger.info(f'Gamma precision has changed from {old_precision} to {new_precision}')
+#         delete_old_splines()
+#         os.environ[environment_precision_key] = str(new_precision)
+#     else:
+#         logging.info(f'New precision {new_precision} same as old precision {old_precision}.')
+#
+#     logging.info(f'Gamma precision is now {os.environ[environment_precision_key]}')
 
-    old_precision = os.environ.get(environment_precision_key, None)
-    new_precision = '0.025' if mode in ['flaresatck', 'Flarestack', 'default'] else \
-        '0.1' if (mode in ['SkyLab', 'skylab', 'skylab_splines']) or ('skylab_splines' in mode) else \
-        mode if isinstance(mode, float) else \
-        None
 
-    if not new_precision:
-        logger.warning(f'Mode {mode} not known! Use "Flarestack", "SkyLab" or a float '
-                       f'to specify the order of the interpolating spline.')
-
-    if not new_precision or (new_precision != old_precision):
-        logger.info(f'Gamma precision has changed from {old_precision} to {new_precision}')
-        delete_old_splines()
-        os.environ[environment_precision_key] = str(new_precision)
-    else:
-        logging.info(f'New precision {new_precision} same as old precision {old_precision}.')
-
-    logging.info(f'Gamma precision is now {os.environ[environment_precision_key]}')
-
-
-def use_smoothing(mode='flarestack'):
-    """
-    Configures the current environment to use the desired smoothing order when building energy PDFs
-    Deletes previously produced splines if precision changes.
-    :param mode: int or 'flarestack' or 'skyLab', default:'flarestack'
-    """
-
-    old_smoothing_order = os.environ.get(environment_smoothing_key, None)
-    new_smoothing_order = '2' if mode in ['default', 'flarestack', 'Flarestack'] else \
-        '1' if mode in ['SkyLab', 'skylab', 'skylab_splines'] else \
-        str(mode) if isinstance(mode, int) else \
-        None
-
-    if not new_smoothing_order:
-        logger.warning(f'Mode {mode} not known! Use "Flarestack", "SkyLab" or an integer '
-                       f'to specify the order of the interpolating spline.')
-
-    if not old_smoothing_order or (old_smoothing_order != new_smoothing_order):
-        logger.info(f'Smoothing order changed from {old_smoothing_order} to {new_smoothing_order}')
-        delete_old_splines()
-        os.environ[environment_smoothing_key] = str(new_smoothing_order)
-    else:
-        logging.info(f'New PDF smoothing order {new_smoothing_order} is the same as old one {old_smoothing_order}')
-
-    logging.info(f'Smoothing order is now {os.environ[environment_smoothing_key]}')
+# def use_smoothing(mode='flarestack'):
+#     """
+#     Configures the current environment to use the desired smoothing order when building energy PDFs
+#     Deletes previously produced splines if precision changes.
+#     :param mode: int or 'flarestack' or 'skyLab', default:'flarestack'
+#     """
+#
+#     old_smoothing_order = os.environ.get(environment_smoothing_key, None)
+#     new_smoothing_order = '2' if mode in ['default', 'flarestack', 'Flarestack'] else \
+#         '1' if mode in ['SkyLab', 'skylab', 'skylab_splines'] else \
+#         str(mode) if isinstance(mode, int) else \
+#         None
+#
+#     if not new_smoothing_order:
+#         logger.warning(f'Mode {mode} not known! Use "Flarestack", "SkyLab" or an integer '
+#                        f'to specify the order of the interpolating spline.')
+#
+#     if not old_smoothing_order or (old_smoothing_order != new_smoothing_order):
+#         logger.info(f'Smoothing order changed from {old_smoothing_order} to {new_smoothing_order}')
+#         delete_old_splines()
+#         os.environ[environment_smoothing_key] = str(new_smoothing_order)
+#     else:
+#         logging.info(f'New PDF smoothing order {new_smoothing_order} is the same as old one {old_smoothing_order}')
+#
+#     logging.info(f'Smoothing order is now {os.environ[environment_smoothing_key]}')

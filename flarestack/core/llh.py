@@ -6,7 +6,7 @@ import scipy.interpolate
 from scipy import sparse
 import pickle
 from flarestack.shared import acceptance_path, llh_energy_hash_pickles, \
-    SoB_spline_path
+    SoB_spline_path, default_gamma_precision, default_smoothing_order
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.utils.make_SoB_splines import load_spline
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
@@ -475,6 +475,22 @@ class FixedEnergyLLH(LLH):
                            "dictionary to the LLH dictionary, and try "
                            "again.")
 
+        # defines the order of the splines used in the building of the energy PDF
+        self.smoothing_order = None
+        smoothing_order = llh_dict.get("smoothing_order", 'flarestack')
+        if isinstance(smoothing_order, str):
+            self.smoothing_order = default_smoothing_order[smoothing_order]
+        else:
+            self.smoothing_order = smoothing_order
+
+        # used to construct the support points in gamma when the energy PDF is built
+        self.precision = None
+        precision = llh_dict.get('gamma_precision', 'flarestack')
+        if isinstance(precision, str):
+            self.precision = default_gamma_precision[precision]
+        else:
+            self.precision = precision
+
         LLH.__init__(self, season, sources, llh_dict)
 
     def create_energy_functions(self):
@@ -671,9 +687,11 @@ class StandardLLH(FixedEnergyLLH):
         self.energy_bins = np.linspace(1., 10., 40 + 1)
 
         # Sets precision for energy SoB
-        self.precision = .1
+        # self.precision = .1
 
-        self.SoB_spline_2Ds = load_spline(self.season)
+        self.SoB_spline_2Ds = load_spline(self.season,
+                                          smoothing_order=self.smoothing_order,
+                                          gamma_precision=self.precision)
 
         if self.SoB_spline_2Ds:
             logger.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
@@ -705,7 +723,7 @@ class StandardLLH(FixedEnergyLLH):
         :return: Acceptance function, energy_weighting_function
         """
 
-        SoB_path = SoB_spline_path(self.season)
+        SoB_path = SoB_spline_path(self.season, smoothing_order=self.smoothing_order, gamma_precision=self.precision)
         acc_path = acceptance_path(self.season)
 
         # Set up acceptance function, creating values if they have not been
@@ -730,7 +748,8 @@ class StandardLLH(FixedEnergyLLH):
         # Checks if energy weighting functions have been created
 
         if not os.path.isfile(SoB_path):
-            make_individual_spline_set(self.season, SoB_path)
+            make_individual_spline_set(self.season, SoB_path,
+                                       smoothing_order=self.smoothing_order, gamma_precision=self.precision)
 
         return acc_f, None
 
@@ -826,7 +845,7 @@ class StandardLLH(FixedEnergyLLH):
                                         self.background_pdf(source, x)
 
                     spatial_cache = pull_corrector.create_spatial_cache(
-                        coincident_data, SoB_pdf
+                        coincident_data, SoB_pdf, gamma_precision=self.precision
                     )
 
                     SoB_spacetime.append(spatial_cache)
@@ -1050,7 +1069,7 @@ class StandardOverlappingLLH(StandardLLH):
             ) / np.sum(season_weight(gamma))
 
         SoB_spacetime = pull_corrector.create_spatial_cache(
-            coincident_data, joint_SoB
+            coincident_data, joint_SoB, gamma_precision=self.precision
         )
 
         kwargs["n_coincident"] = np.sum(~assumed_background_mask)
@@ -1178,7 +1197,7 @@ class StandardMatrixLLH(StandardOverlappingLLH):
             return return_value
 
         SoB_spacetime = pull_corrector.create_spatial_cache(
-            coincident_data, joint_SoB
+            coincident_data, joint_SoB, gamma_precision=self.precision
         )
 
         kwargs["n_coincident"] = np.sum(coincident_nu_mask)

@@ -215,6 +215,8 @@ def create_pull_0d_e(pull_dict):
     mc = get_mc(pull_dict)
     pulls = get_pulls(mc)
     e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
+    # gamma_precision = pull_dict.get('gamma_precision', 'flarestack')
+    gamma_precision = pull_dict['gamma_precision']
 
     default, bounds, name = e_pdf.return_energy_parameters()
 
@@ -225,7 +227,7 @@ def create_pull_0d_e(pull_dict):
 
     res_dict = dict()
 
-    x_range = np.array(sorted(list(get_gamma_support_points())))
+    x_range = np.array(sorted(list(get_gamma_support_points(gamma_precision=gamma_precision))))
 
     y_range = []
 
@@ -307,6 +309,7 @@ def create_pull_1d_e(floor_dict):
     mc = get_mc(floor_dict)
     pulls = get_pulls(mc)
     e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
+    gamma_precision = floor_dict.get('gamma_precision', 'flarestack')
 
     default, bounds, name = e_pdf.return_energy_parameters()
 
@@ -315,7 +318,7 @@ def create_pull_1d_e(floor_dict):
                         "but selected energy pdf gave the following parameters:"
                         " {} {} {}".format(name, default, bounds))
 
-    e_range = np.array(sorted(list(get_gamma_support_points())))
+    e_range = np.array(sorted(list(get_gamma_support_points(gamma_precision=gamma_precision))))
 
     bins = np.linspace(2., 6., 5)
     x_range = 0.5 * (bins[1:] + bins[:-1])
@@ -447,6 +450,7 @@ def create_pull_2d_e(pull_dict):
     mc = get_mc(pull_dict)
     pulls = get_pulls(mc)
     e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
+    gamma_precision = pull_dict.get('gamma_precision', 'flarestack')
 
     x_bins = np.linspace(2., 6., n_ebins)
     ymax = pull_dict["season"]["sinDec bins"][-1]
@@ -458,7 +462,7 @@ def create_pull_2d_e(pull_dict):
 
     res_dict = dict()
 
-    e_range = np.array(sorted(list(get_gamma_support_points())))
+    e_range = np.array(sorted(list(get_gamma_support_points(gamma_precision=gamma_precision))))
 
     for e in e_range:
 

@@ -97,7 +97,17 @@ else:
     host_server = None
 
 # gamma_range = [1., 4.]
-gamma_precision = .025
+# gamma_precision = .025
+
+default_gamma_precision = {
+    'flarestack': .025,
+    'skylab': .1
+}
+
+default_smoothing_order = {
+    'flarestack': 2,
+    'skylab': 1
+}
 
 
 def deterministic_hash(hash_dict):
@@ -142,9 +152,13 @@ def pull_pickle(pull_dict):
 def llh_energy_hash_pickles(llh_dict, season):
     hash_dict = dict(llh_dict["llh_energy_pdf"])
     hash_dict["llh_name"] = llh_dict["llh_name"]
+
+    precision = llh_dict.get('gamma_precision', 'flarestack')
+    smoothing_order = llh_dict.get('smoothing_order', 'flarestack')
+
     key = deterministic_hash(hash_dict)
     season_path = str(key) + "/" + season.sample_name + "/" + \
-                  season.season_name + ".pkl"
+                  season.season_name + smoothing_precision_string(smoothing_order, precision) + ".pkl"
     SoB_path = SoB_spline_dir + season_path
     acc_path = acc_f_dir + season_path
     return SoB_path, acc_path
@@ -206,9 +220,33 @@ def sim_dataset_dir_path(sample_name, season_name, bkg_flux_model):
     return f"{sim_dataset_dir}{sample_name}/" \
            f"{season_name}/{bkg_flux_model.unique_name()}/"
 
+
 def get_base_sob_plot_dir(season):
     return dataset_plot_dir + "Signal_over_background/" + \
                          season.sample_name + "/" + season.season_name + "/"
+
+
+def smoothing_precision_string(smoothing_order, gamma_precision):
+
+    if isinstance(smoothing_order, str):
+        if smoothing_order in default_smoothing_order.keys():
+            smoothing_order = default_smoothing_order[smoothing_order]
+        else:
+            raise ValueError(f"Smoothing order for {smoothing_order} not known!")
+
+    if isinstance(gamma_precision, str):
+        if gamma_precision in default_gamma_precision.keys():
+            gamma_precision = default_gamma_precision[gamma_precision]
+        else:
+            raise ValueError(f"Smoothing order for {smoothing_order} not known!")
+
+    logger.debug(f"smoothing order is {smoothing_order}, gamma precision is {gamma_precision}")
+    s = ''
+    if smoothing_order != default_smoothing_order['flarestack']:
+        s += f'_smoothing{smoothing_order}'
+    if gamma_precision != default_gamma_precision['flarestack']:
+        s += f'_precision{gamma_precision}'
+    return s
 
 
 def acceptance_path(season):
@@ -216,9 +254,9 @@ def acceptance_path(season):
            season.season_name + '.pkl'
 
 
-def SoB_spline_path(season):
+def SoB_spline_path(season, *args, **kwargs):
     return SoB_spline_dir + season.sample_name + "/" + \
-           season.season_name + '.pkl'
+           season.season_name + smoothing_precision_string(*args, **kwargs) + '.pkl'
 
 
 def bkg_spline_path(season):
@@ -239,6 +277,7 @@ def med_ang_res_path(season):
 def ang_res_plot_path(season):
     return ang_res_plot_dir + season.sample_name + "/" + \
            season.season_name + ".pdf"
+
 
 def energy_proxy_plot_path(season):
     return energy_proxy_plot_dir + season.sample_name + "/" + \
