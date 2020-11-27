@@ -25,7 +25,7 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        "numpy>=1.16.0",
+        "numpy>=1.17.0",
         "numexpr",
         "healpy",
         "scipy",
