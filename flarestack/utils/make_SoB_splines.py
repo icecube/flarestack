@@ -303,8 +303,8 @@ def create_2d_splines(exp, mc, sin_dec_bins, log_e_bins, **kwargs):
     :return: Dictionary of 2D Log(Signal/Background) splines
     """
     splines = dict()
-    gamma_precision = kwargs['gamma_precision']
-    smoothing_order = kwargs['smoothing_order']
+    gamma_precision = kwargs.get('gamma_precision', 'flarestack')
+    smoothing_order = kwargs.get('smoothing_order', 'flarestack')
     gamma_support_points = get_gamma_support_points(gamma_precision=gamma_precision)
 
 
@@ -417,7 +417,8 @@ def make_individual_spline_set(season, SoB_path, **kwargs):
         for gamma in np.linspace(1.0, 4.0, 7):
 
             plot_path = base_plot_path + "gamma=" + str(gamma) + "/" + \
-                        f'precision{kwargs["gamma_precision"]}_smoothing{kwargs["smoothing_order"]}'
+                        f'precision{kwargs.get("gamma_precision", "flarestack")}_' \
+                        f'smoothing{kwargs.get("smoothing_order", "flarestack")}'
 
             try:
                 os.makedirs(plot_path)
