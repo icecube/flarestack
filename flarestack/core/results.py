@@ -36,6 +36,8 @@ class ResultsHandler(object):
         self.plot_dir = plot_output_dir(self.name)
         self.merged_dir = os.path.join(self.pickle_output_dir, "merged")
 
+        self.allow_extrapolation = rh_dict.get("allow_extrapolated_sensitivity", True)
+
         # Checks if the code should search for flares. By default, this is
         # not done.
         # try:
@@ -405,9 +407,13 @@ class ResultsHandler(object):
         fit = k_to_flux((1./best_a) * np.log(b / (1 - threshold)))
 
         if fit > max(x_flux):
-            logger.warning("The sensitivity is beyond the range of the tested scales."
-                            "The number is probably not good.")
-            extrapolated = True
+            extrapolation_msg = "The sensitivity is beyond the range of the tested scales." \
+                                "The number is probably not good."
+            if self.allow_extrapolation:
+                logger.warning(extrapolation_msg)
+                extrapolated = True
+            else:
+                raise OverfluctuationError(extrapolation_msg)
         else:
             extrapolated = False
 
@@ -734,12 +740,26 @@ class ResultsHandler(object):
                 true = self.inj[scale][param]
                 trues.append(true)
 
+            do_ns_scale = False
+
             if "n_s" in param:
                 x = trues
                 x_label = r"$n_{injected}$" + param.replace("n_s", "")
             else:
                 x = base_x
                 x_label = base_x_label
+
+            # decide wether to plot a second x axis on the top axis indicating the number of injected neutrinos instead
+            # of the flux
+            if "gamma" in param:
+                if not isinstance(self.flux_to_ns, type(None)):
+                    do_ns_scale = True
+
+            ns_scale = ns_scale_label = None
+
+            if do_ns_scale:
+                ns_scale = self.flux_to_ns * k_to_flux(max(base_x))
+                ns_scale_label = r"Number of neutrinos"
 
             plt.scatter(x, meds, color="orange")
             plt.plot(x, meds, color="black")
@@ -749,6 +769,12 @@ class ResultsHandler(object):
             ax.set_xlim(left=0.0, right=max(x))
             if min(trues) == 0.0:
                 ax.set_ylim(bottom=0.0)
+
+            if do_ns_scale:
+                ax2 = ax.twiny()
+                ax2.grid(0)
+                ax2.set_xlim(0., ns_scale)
+                ax2.set_xlabel(ns_scale_label)
 
             plt.xlabel(x_label)
             plt.ylabel(param)
