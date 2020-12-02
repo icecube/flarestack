@@ -353,7 +353,7 @@ class MCInjector(BaseInjector):
 
             try:
                 f_n_inj = float(n_inj[0])
-            except TypeError:
+            except (TypeError, IndexError):
                 f_n_inj = float(n_inj)
 
             logger.debug("Injected {0} events with an expectation of {1:.2f} events for {2}".format(
