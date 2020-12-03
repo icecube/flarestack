@@ -1,9 +1,3 @@
-numpy>=1.17.0
-numexpr
-healpy
-scipy
-matplotlib
-astropy
-sphinx
-jupyter
-python-coveralls
+--index-url https://pypi.python.org/simple/
+
+-e .
