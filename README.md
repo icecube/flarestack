@@ -1,5 +1,5 @@
 # flarestack
-[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/IceCubeOpenSource/flarestack/badge.svg?branch=master)](https://coveralls.io/github/IceCubeOpenSource/flarestack?branch=master) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master) [![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
+[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/IceCubeOpenSource/flarestack/badge.svg?branch=master)](https://coveralls.io/github/IceCubeOpenSource/flarestack?branch=master) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/icecube/flarestack/master) [![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
 
 
 Code for unbinned likelihood analysis of astroparticle physics data, created by [@robertdstein](https://github.com/robertdstein).
@@ -13,7 +13,7 @@ Also performs stacking analyses where the signal strength of each source is fit 
 
 The easiest way to start using Flarestack is to play with the introductory ipython notebooks, which can be opened with the following link:
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/icecube/flarestack/master)
 
 The notebooks themselves are found under *examples/ipython_notebooks/*.
 
