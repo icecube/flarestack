@@ -1,5 +1,5 @@
 # flarestack
-[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/IceCubeOpenSource/flarestack/badge.svg?branch=master)](https://coveralls.io/github/IceCubeOpenSource/flarestack?branch=master) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master) [![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
+[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/IceCubeOpenSource/flarestack/badge.svg?branch=master)](https://coveralls.io/github/IceCubeOpenSource/flarestack?branch=master) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/IceCubeOpenSource/flarestack/master) [![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
 
 
 Code for unbinned likelihood analysis of astroparticle physics data, created by [@robertdstein](https://github.com/robertdstein).
@@ -40,24 +40,12 @@ The entire package can simply be pip installed, and this will automatically inst
 
 ```bash
 git clone git@github.com:IceCubeOpenSource/flarestack.git
-export PYTHONPATH=/path/to/flarestack
+pip install -e flarestack/
 ```
  
 This will give you the very latest copy of the code, update the installed version if you git pull or modify scripts yourself, and still enable you to import flarestack.
 
-### What actually are the dependencies, by the way?
 
-Flarestack is compatible with python 3.6, 3.7 and 3.8, and requires the following packages:
-
-* numpy
-* scipy
-* astropy
-* healpy=1.10.1
-* matplotlib
-* numexpr
-
-All required dependencies can be found using the IceCube py3-v4 environment. They can collectively be installed with ```pip install -r requirements.txt```, if you don't want to install flarestack via pip.
- 
 ### Right, anyway, I've now downloaded Flarestack. Can I use it right away?
  
 You can get started with flarestack immediatly using public IceCube datasets provided as part of the code. You can simply run scripts such as those under /flarestack/analyses/, and do your science!
@@ -96,11 +84,11 @@ If you want to contribute to flarestack, please remember to add new tests!
 
 Flarestack runs with Travis CI, a Continuous Integration Service (https://travis-ci.org/). After each commit, the suite of tests is run, to ensure that the commit did not break anything. You can see the results of these tests at:
 
-[![Build Status](https://travis-ci.org/IceCubeOpenSource/flarestack.svg?branch=master)](https://travis-ci.org/IceCubeOpenSource/flarestack)
+[![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack)
 
 # Using Flarestack for IceCube analysis
 
-Flarestack is currently used for internal IceCube analysis based on MC-based methods, as outlined in analysis READMEs. Additional analysis of public IceCube data using effective areas would be possible with this code, but this feature **has not been tested or fully developed**. Any use of this code for public data is done without the endorsement of the IceCube collaboration.
+Flarestack is currently used for internal IceCube analysis using unpublished Monte Carlo simulations, as outlined in analysis READMEs. Additional analysis of public IceCube data using effective areas would be possible with this code, but this feature **has not been tested or fully developed**. Any use of this code for public data is done without the endorsement of the IceCube collaboration.
 
 # Citing Flarestack
 
