@@ -39,7 +39,7 @@ The entire package can simply be pip installed, and this will automatically inst
  Now you will need a couple of extra code lines:
 
 ```bash
-git clone git@github.com:IceCubeOpenSource/flarestack.git
+git clone git@github.com:icecube/flarestack.git
 pip install -e flarestack/
 ```
  
