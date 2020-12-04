@@ -1,5 +1,5 @@
 # flarestack
-[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/IceCubeOpenSource/flarestack/badge.svg?branch=master)](https://coveralls.io/github/IceCubeOpenSource/flarestack?branch=master) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/icecube/flarestack/master) [![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
+[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/icecube/flarestack/badge.svg?branch=master)](https://coveralls.io/github/icecube/flarestack?branch=master)[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/icecube/flarestack/master) [![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
 
 
 Code for unbinned likelihood analysis of astroparticle physics data, created by [@robertdstein](https://github.com/robertdstein).
@@ -85,6 +85,10 @@ If you want to contribute to flarestack, please remember to add new tests!
 Flarestack runs with Travis CI, a Continuous Integration Service (https://travis-ci.org/). After each commit, the suite of tests is run, to ensure that the commit did not break anything. You can see the results of these tests at:
 
 [![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack)
+
+It is also good practice to add new tests, if you add new features to the code. After Travis has checked the code, Coveralls (https://coveralls.io) checks to see if the code coverage has increased or decreased. As a rule of thumb, it's good to have at least 80% code coverage, or better yet >90%. The current code coverage is:
+
+[![Coverage Status](https://coveralls.io/repos/github/icecube/flarestack/badge.svg?branch=master)](https://coveralls.io/github/icecube/flarestack?branch=master)
 
 # Using Flarestack for IceCube analysis
 
