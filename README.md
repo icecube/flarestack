@@ -74,17 +74,19 @@ A folder `flarestack__data` will be created in that directory. This is where you
 
 # Testing Flarestack
 
-Is flarestack actually working? If you've already run the precomputation, you can check the functionality of flarestack with *unit tests*. There are a suite of unit tests to cover flarestack functionality, which can be run from the base flarestack directory with:
+Is flarestack actually working? You can check the functionality of flarestack with *unit tests*. There are a suite of unit tests to cover flarestack functionality, which can be run from the base flarestack directory with:
 
  ```bash
  python -m unittest discover tests/
 ```
 
-If you want to contribute to flarestack, please remember to add new tests!
-
 Flarestack runs with Travis CI, a Continuous Integration Service (https://travis-ci.org/). After each commit, the suite of tests is run, to ensure that the commit did not break anything. You can see the results of these tests at:
 
 [![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack)
+
+If you want to contribute to flarestack, please remember to add new tests! The fraction of code presently covered by tests is measured using Coveralls (https://coveralls.io/). As a rule of thumb, at least 80% of the core code should be covered, but >90% would be even better. The current code coverage is:
+
+[![Coverage Status](https://coveralls.io/repos/github/icecube/flarestack/badge.svg?branch=master)](https://coveralls.io/github/icecube/flarestack?branch=master)
 
 # Using Flarestack for IceCube analysis
 
