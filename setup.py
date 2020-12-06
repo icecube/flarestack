@@ -37,7 +37,7 @@ setuptools.setup(
         "coveralls"
     ],
     package_data={'flarestack': [
-        'data/icecube/public/all_sky_point_source/raw_data/*.zip']},
+        'data/public/icecube/all_sky_point_source/raw_data/3year-data-release.zip']},
     include_package_data=True
 )
 
