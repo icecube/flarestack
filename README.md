@@ -45,6 +45,8 @@ pip install -e flarestack/
  
 This will give you the very latest copy of the code, update the installed version if you git pull or modify scripts yourself, and still enable you to import flarestack.
 
+If you do want to contribute to _flarestack_, you can check out some guidelines [here](https://github.com/icecube/flarestack/blob/master/.github/CONTRIBUTING.md).
+
 
 ### Right, anyway, I've now downloaded *flarestack*. Can I use it right away?
  
