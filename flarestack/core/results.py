@@ -19,8 +19,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class OverfluctuationError(Exception):
     pass
+
 
 class ResultsHandler(object):
 
@@ -30,6 +32,7 @@ class ResultsHandler(object):
 
         self.name = rh_dict["name"]
         self.mh_name = rh_dict['mh_name']
+        self.scale = rh_dict["scale"]
 
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(self.name)
@@ -128,6 +131,40 @@ class ResultsHandler(object):
         except ValueError as e:
             logger.warning("TypeError for discovery potential: \n {0}".format(e))
 
+    @property
+    def scales(self):
+        """directly return the injected scales"""
+        x = sorted(self.results.keys())
+        scales = [scale_shortener(i) for i in sorted([float(j) for j in x])]
+        logger.debug(f'scales  are {scales} of type {type(scales)}')
+        return scales
+
+    @property
+    def ns(self):
+        """returns the injection scales converted to number of signal neutrinos"""
+        ns = np.array([k_to_flux(float(s)) for s in self.scales]) * self.flux_to_ns
+        logger.debug(f"ns is {ns}")
+        return ns
+
+    @property
+    def ts_arrays(self):
+        return [np.array(self.results[scale]['TS']) for scale in self.scales]
+
+    @property
+    def ns_injected(self):
+        """returns the median of the injected number of signal neutrinos for each injection step"""
+        ns_arrays = np.array([
+            np.array(
+                [np.median(self.results[scale]['Parameters'][key])
+                 for key in self.results[scale]['Parameters']
+                 if 'n_s' in key]
+            )
+            for scale in self.scales
+        ])
+
+        # In the case of fitted weights there will be a number of injected neutrinos for each source thus we have
+        # to take the sum. If this is not the case this won't do anything as ns_array will only have one entry.
+        return [sum(a) for a in ns_arrays]
 
     def astro_values(self, e_pdf_dict):
         """Function to convert the values calculated for sensitivity and
@@ -262,16 +299,15 @@ class ResultsHandler(object):
         """Find the number of neturinos corresponding to flux
         """
         x = sorted([float(x) for x in self.results.keys()])
-        raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
 
         try:
             # if weights were not fitted, number of neutrinos is stored in just one parameter
-            if not 'fit' in self.mh_name:
-                self.flux_to_ns = self.inj[raw_x[1]]["n_s"] / k_to_flux(float(x[1]))
+            if 'fit' not in self.mh_name:
+                self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(float(x[1]))
 
             # if weights were fitted, there is one n_s for each fitted source
             else:
-                sc_dict = self.inj[raw_x[1]]
+                sc_dict = self.inj[self.scales[1]]
                 self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(float(x[1]))
 
             logger.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
