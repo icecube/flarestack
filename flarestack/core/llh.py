@@ -19,7 +19,7 @@ from flarestack.utils.make_SoB_splines import create_2d_ratio_hist, \
 logger = logging.getLogger(__name__)
 
 spatial_mask_threshold = 1e-21
-default_spacial_box_width = 10.  # box width around source positions in degrees
+default_spacial_box_width = 5.  # box width around source positions in degrees
 
 
 def read_llh_dict(llh_dict):
@@ -78,7 +78,7 @@ class LLH(object):
         self.sources = sources
         self.llh_dict = llh_dict
         self.spatial_pdf = SpatialPDF(llh_dict["llh_spatial_pdf"], season)
-        self.spatial_box_width = llh_dict.get('spaial_box_width', default_spacial_box_width)
+        self.spatial_box_width = llh_dict.get('spatial_box_width', default_spacial_box_width)
 
         try:
             time_dict = llh_dict["llh_sig_time_pdf"]
