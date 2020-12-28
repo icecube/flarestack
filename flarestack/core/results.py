@@ -148,6 +148,7 @@ class ResultsHandler(object):
 
     @property
     def ts_arrays(self):
+        """returns the generated test statistic distributions as arrays for each injection step"""
         return [np.array(self.results[scale]['TS']) for scale in self.scales]
 
     @property
