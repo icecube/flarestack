@@ -751,7 +751,8 @@ class StandardLLH(FixedEnergyLLH):
 
         if not os.path.isfile(SoB_path):
             make_individual_spline_set(self.season, SoB_path,
-                                       smoothing_order=self.smoothing_order, gamma_precision=self.precision)
+                                       smoothing_order=self.smoothing_order,
+                                       gamma_precision=self.precision)
 
         return acc_f, None
 
