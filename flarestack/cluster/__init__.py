@@ -1,9 +1,14 @@
-import os
+import os, logging
 from flarestack.shared import host_server, make_analysis_pickle
 from flarestack.cluster.run_desy_cluster import submit_to_cluster,\
     wait_for_cluster
 from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file
 from flarestack.core.multiprocess_wrapper import run_multiprocess
+from .submitter import Submitter
+
+
+logger = logging.getLogger(__name__)
+
 
 if host_server == "DESY":
     submit_cluster = submit_to_cluster
@@ -33,22 +38,34 @@ def analyse(mh_dict, cluster=False, n_cpu=None, **kwargs):
     :param n_cpu: Number of CPUs to run with. Should be 1 for submit to cluster
     :param kwargs: Optional kwargs
     """
+    logger.warning('The analyse function is deprecated! Use the Submitter class instead.')
+    if cluster and ("n_jobs" in kwargs):
+        logger.warning('The Submitter class determines the number of jobs '
+                       'from the number of trials and the number of trials per job. '
+                       'So it is not necessary anymore to specifically give the number of jobs!')
+        ntrials_orig = mh_dict['n_trials']
+        mh_dict['n_trials'] = ntrials_orig * kwargs['n_jobs']
+        kwargs['trials_per_task'] = ntrials_orig
 
-    path = make_analysis_pickle(mh_dict)
+    submitter = Submitter.get_submitter(mh_dict, cluster, n_cpu, **kwargs)
+    submitter.analyse()
+    return submitter.job_id
 
-    job_id = None
-
-    if cluster:
-
-        if n_cpu is None:
-            n_cpu = 1
-
-        job_id = submit_cluster(path, n_cpu=n_cpu, **kwargs)
-    else:
-        if n_cpu is None:
-            n_cpu = min(os.cpu_count() - 1, 32)
-        else:
-            n_cpu = min(n_cpu, os.cpu_count() -1)
-        submit_local(mh_dict, n_cpu=n_cpu)
-
-    return job_id
+    # path = make_analysis_pickle(mh_dict)
+    #
+    # job_id = None
+    #
+    # if cluster:
+    #
+    #     if n_cpu is None:
+    #         n_cpu = 1
+    #
+    #     job_id = submit_cluster(path, n_cpu=n_cpu, **kwargs)
+    # else:
+    #     if n_cpu is None:
+    #         n_cpu = min(os.cpu_count() - 1, 32)
+    #     else:
+    #         n_cpu = min(n_cpu, os.cpu_count() -1)
+    #     submit_local(mh_dict, n_cpu=n_cpu)
+    #
+    # return job_id
