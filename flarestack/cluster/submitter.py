@@ -30,7 +30,7 @@ class Submitter(object):
         """
         self.mh_dict = mh_dict
         self.use_cluster = use_cluster
-        self.n_cpu = n_cpu
+        self.n_cpu = os.cpu_count() - 1 if isinstance(n_cpu, type(None)) else n_cpu
         self.job_id = None
         self.remove_old_results = remove_old_results
         self.do_sensitivity_scale_estimation = do_sensitivity_scale_estimation
