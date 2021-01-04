@@ -230,11 +230,24 @@ class MinimisationHandler(object):
 
         if "fixed_scale" in list(mh_dict.keys()):
             scale_range = [mh_dict["fixed_scale"]]
+
+        # elif mh_dict.get("background_only", False):
+        #     # Only do the background trials
+        #     # In this case only n_trials background trials are performed, not 10x n_trials!
+        #     scale_range = np.array([0])
+        #
+        # elif mh_dict.get("injection_only", False):
+        #     # Only do trials with signal injection
+        #     scale = mh_dict["scale"]
+        #     steps = int(mh_dict["n_steps"])
+        #     scale_range = np.array(list(np.linspace(0., scale, steps)[1:]))
+
         else:
             scale = mh_dict["scale"]
             steps = int(mh_dict["n_steps"])
+            background_ntrials_factor = mh_dict.get('background_ntrials_factor', 10)
             scale_range = np.array(
-                [0. for _ in range(10)] +
+                [0. for _ in range(background_ntrials_factor)] +
                 list(np.linspace(0., scale, steps)[1:])
             )
 
