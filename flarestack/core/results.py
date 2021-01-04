@@ -26,7 +26,7 @@ class OverfluctuationError(Exception):
 
 class ResultsHandler(object):
 
-    def __init__(self, rh_dict):
+    def __init__(self, rh_dict, do_sens=True, do_disc=True):
 
         self.sources = load_catalogue(rh_dict["catalogue"])
 
@@ -117,33 +117,38 @@ class ResultsHandler(object):
 
         self.plot_bias()
 
-        try:
-            self.find_sensitivity()
-        except ValueError as e:
-            logger.warning("RuntimeError for discovery potential: \n {0}".format(e))
+        if do_sens:
+            try:
+                self.find_sensitivity()
+            except ValueError as e:
+                logger.warning("RuntimeError for discovery potential: \n {0}".format(e))
 
-        try:
-            self.find_disc_potential()
-        except RuntimeError as e:
-            logger.warning("RuntimeError for discovery potential: \n {0}".format(e))
-        except TypeError as e:
-            logger.warning("TypeError for discovery potential: \n {0}".format(e))
-        except ValueError as e:
-            logger.warning("TypeError for discovery potential: \n {0}".format(e))
+        if do_disc:
+            try:
+                self.find_disc_potential()
+            except RuntimeError as e:
+                logger.warning("RuntimeError for discovery potential: \n {0}".format(e))
+            except TypeError as e:
+                logger.warning("TypeError for discovery potential: \n {0}".format(e))
+            except ValueError as e:
+                logger.warning("TypeError for discovery potential: \n {0}".format(e))
+
+    @property
+    def scales_float(self):
+        """directly return the injected scales as floats"""
+        x = sorted(self.results.keys())
+        return sorted([float(j) for j in x])
 
     @property
     def scales(self):
         """directly return the injected scales"""
-        x = sorted(self.results.keys())
-        scales = [scale_shortener(i) for i in sorted([float(j) for j in x])]
-        logger.debug(f'scales  are {scales} of type {type(scales)}')
+        scales = [scale_shortener(i) for i in self.scales_float]
         return scales
 
     @property
     def ns(self):
         """returns the injection scales converted to number of signal neutrinos"""
         ns = np.array([k_to_flux(float(s)) for s in self.scales]) * self.flux_to_ns
-        logger.debug(f"ns is {ns}")
         return ns
 
     @property
@@ -315,6 +320,71 @@ class ResultsHandler(object):
 
         except KeyError:
             logger.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!")
+
+    def estimate_sens_disc_scale(self):
+        results = []
+
+        logger.debug('scale   avg_sigma     avg_TS')
+        logger.debug('----------------------------')
+
+        for scale, ts_array in zip(self.scales_float, self.ts_arrays):
+
+            # calculate averages
+            avg_ts = ts_array.sum() / ts_array.size
+            avg_sigma = np.sqrt(avg_ts)
+
+            # error on average sigma is 1 sigma/sqrt(trials.size)
+            err_sigma = 1. / np.sqrt(ts_array.size)
+
+            # collect all sigma > 0
+            if avg_sigma >= 0:
+                logger.debug(f'{scale:.4f}   {avg_sigma:.2f}+/-{err_sigma:.2f}  {avg_ts:.4f}')
+                results.append([scale, avg_sigma, err_sigma, avg_ts])
+            else:
+                pass
+
+        results = np.transpose(results)
+
+        # linear fit
+        p = np.polyfit(results[0],    # x = scale
+                       results[1],    # y = avg. sigma
+                       1,             # 1st order poly
+                       w=results[2])  # error = error on avg. sigma
+
+        # discovery threshold is 5 sigma
+        disc_scale_guess = (5 - p[1]) / p[0]
+
+        # sensitivity threshold is usually ~0.3 x discovery
+        sens_scale_guess = 0.3 * disc_scale_guess
+
+        # make a plot
+        fig, ax = plt.subplots()
+        # plot injection results
+        ax.errorbar(results[0], results[1], yerr=results[2], ls='', color='k', label='quick injections')
+        # plot the linear fit
+        xplot = np.linspace(min(results[0]), max(results[0]), 100)
+        yplot = xplot * p[0] + p[1]
+        ax.plot(xplot, yplot, marker='', label='linear fit')
+        # plot guessed scales
+        ax.axvline(disc_scale_guess, ls='--', color='red', label='DP scale guess')
+        ax.axvline(sens_scale_guess, ls='--', color='blue', label='Sens scale guess')
+        ax.set_xlabel('flux scale')
+        ax.set_ylabel('$\sigma_{mean}$')
+        ax.legend()
+        fn = os.path.join(self.plot_dir, "quick_injection_scale_guess.pdf")
+        fig.savefig(fn)
+        logger.debug(f'saved figure under {fn}')
+        plt.close()
+
+        # the guessed scale should be higher than the guessed actual value to get a test scale range
+        # that includes the sensitivity / discovery potential. For that, let's divide by
+        # the characteristic probability (0.9 for sensitivity and 0.5 for discovery potential)
+        disc_scale_guess /= 0.5
+        sens_scale_guess /= 0.9
+
+        logger.debug(f'disc scale guess: {disc_scale_guess}; sens scale guess: {sens_scale_guess}')
+
+        return disc_scale_guess, sens_scale_guess
 
     def find_sensitivity(self):
         """Uses the results of the background trials to find the median TS
