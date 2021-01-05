@@ -75,8 +75,8 @@ class TestSubmitter(unittest.TestCase):
         sb.run_quick_injections_to_estimate_sensitivity_scale()
         estimated_sensitivity_scale = sb.mh_dict['scale']
         true_value = flux_to_k(public_sens_3yr)
-        self.assertAlmostEqual(estimated_sensitivity_scale, true_value/0.9, delta=true_value*0.5)
-        self.assertGreater(estimated_sensitivity_scale, true_value / 0.9)
+        self.assertAlmostEqual(estimated_sensitivity_scale, true_value / 0.9, delta=true_value / 0.9 * 0.6)
+        self.assertGreater(estimated_sensitivity_scale, true_value)
 
 
 if __name__ == '__main__':
