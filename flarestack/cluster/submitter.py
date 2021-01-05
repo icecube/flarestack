@@ -162,7 +162,7 @@ class Submitter(object):
 @Submitter.register_submitter_class("local")
 class LocalSubmitter(Submitter):
 
-    def __init__(self, mh_dict, use_cluster, n_cpu, do_sensitivity_scale_estimation=False, **cluster_kwargs):
+    def __init__(self, mh_dict, use_cluster, n_cpu=None, do_sensitivity_scale_estimation=False, **cluster_kwargs):
         if use_cluster:
             raise NotImplementedError('No cluster operation implemented because you are using the LocalSubmitter!')
 
@@ -177,7 +177,7 @@ class DESYSubmitter(Submitter):
     cluster_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
     submit_file = cluster_dir + "SubmitDESY.sh"
 
-    def __init__(self, mh_dict, use_cluster, n_cpu, **cluster_kwargs):
+    def __init__(self, mh_dict, use_cluster, n_cpu=None, **cluster_kwargs):
         super(DESYSubmitter, self).__init__(mh_dict, use_cluster, n_cpu, **cluster_kwargs)
 
         # extract information that will be used by the cluster script
