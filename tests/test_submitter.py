@@ -1,11 +1,9 @@
-"""simle script to test the scale estimation implemented in the Submitter class"""
+"""simple script to test the scale estimation implemented in the Submitter class"""
 
 import unittest
-import numpy as np
 from flarestack.shared import flux_to_k
 from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster.submitter import Submitter
 
 
@@ -40,7 +38,7 @@ base_name = "test/test_submitter/"
 
 sindec = 0.
 cat_path = ps_catalogue_name(sindec)
-scale = flux_to_k(reference_sensitivity(sindec)) * 5
+scale = 0.39370132 * 5
 mh_dict = {
     "name": base_name,
     "mh_name": "fixed_weights",
@@ -49,8 +47,6 @@ mh_dict = {
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
     "scale": scale
-    # "n_trials": 50,
-    # "n_steps": 10
 }
 
 public_sens_3yr = 4.533328532314386e-10
