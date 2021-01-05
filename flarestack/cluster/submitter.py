@@ -14,7 +14,7 @@ class Submitter(object):
 
     submitter_dict = dict()
 
-    def __init__(self, mh_dict, use_cluster, n_cpu,
+    def __init__(self, mh_dict, use_cluster, n_cpu=None,
                  do_sensitivity_scale_estimation=False, remove_old_results=False,
                  **cluster_kwargs):
         """
@@ -183,7 +183,7 @@ class DESYSubmitter(Submitter):
         # extract information that will be used by the cluster script
         self.h_cpu = self.cluster_kwargs.get("h_cpu", "23:59:00")
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
-        self.cluster_cpu = self.cluster_kwargs.get('cluster_cpu', n_cpu)
+        self.cluster_cpu = self.cluster_kwargs.get('cluster_cpu', self.n_cpu)
         self.ram_per_core = self.cluster_kwargs.get(
             "ram_per_core",
             "{0:.1f}G".format(6. / float(self.cluster_cpu) + 2.)
