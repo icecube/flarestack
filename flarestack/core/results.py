@@ -377,10 +377,9 @@ class ResultsHandler(object):
         plt.close()
 
         # the guessed scale should be higher than the guessed actual value to get a test scale range
-        # that includes the sensitivity / discovery potential. For that, let's divide by
-        # the characteristic probability (0.9 for sensitivity and 0.5 for discovery potential)
+        # that includes the sensitivity / discovery potential. For that, let's divide by 0.5
         disc_scale_guess /= 0.5
-        sens_scale_guess /= 0.9
+        sens_scale_guess /= 0.5
 
         logger.debug(f'disc scale guess: {disc_scale_guess}; sens scale guess: {sens_scale_guess}')
 
