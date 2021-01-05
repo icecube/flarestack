@@ -46,7 +46,8 @@ mh_dict = {
     "catalogue": cat_path,
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
-    "scale": scale
+    "scale": scale,
+    "n_steps": 3
 }
 
 public_sens_3yr = 4.533328532314386e-10
@@ -63,18 +64,19 @@ class TestSubmitter(unittest.TestCase):
         this_mh_dict = dict(mh_dict)
         this_mh_dict['name'] += 'test_submitter/'
         this_mh_dict['n_trials'] = 10
-        this_mh_dict['n_steps'] = 3
-        sb = Submitter.get_submitter(mh_dict, use_cluster=False)
+        sb = Submitter.get_submitter(this_mh_dict, use_cluster=False, n_cpu=15)
         sb.analyse()
 
     def test_scale_estimation(self):
         this_mh_dict = dict(mh_dict)
         this_mh_dict['name'] += 'test_scale_estimation/'
-        sb = Submitter.get_submitter(mh_dict, use_cluster=False, do_sensitivity_scale_estimation='quick_injections')
+        sb = Submitter.get_submitter(this_mh_dict, use_cluster=False, n_cpu=15,
+                                     do_sensitivity_scale_estimation='quick_injections')
         sb.run_quick_injections_to_estimate_sensitivity_scale()
         estimated_sensitivity_scale = sb.mh_dict['scale']
-        true_value = flux_to_k(public_sens_3yr / 0.5)
-        self.assertAlmostEqual(estimated_sensitivity_scale, true_value, delta=0.1)
+        true_value = flux_to_k(public_sens_3yr)
+        self.assertAlmostEqual(estimated_sensitivity_scale, true_value/0.9, delta=true_value*0.5)
+        self.assertGreater(estimated_sensitivity_scale, true_value / 0.9)
 
 
 if __name__ == '__main__':
