@@ -34,8 +34,23 @@ class Submitter(object):
         self.job_id = None
         self.remove_old_results = remove_old_results
         self.do_sensitivity_scale_estimation = do_sensitivity_scale_estimation
+        self.sens_guess = self.disc_guess = None
         self.successful_guess_by_quick_injections = False
         self.cluster_kwargs = cluster_kwargs
+
+    def __str__(self):
+        s = f'\n----- Submitter for {self.mh_dict["name"]} -----\n' \
+            f'{"" if self.use_cluster else "not "}using cluster \n' \
+            f'using {self.n_cpu} CPUs locally\n' \
+            f'job-id: {self.job_id} \n' \
+            f'{self.do_sensitivity_scale_estimation if self.do_sensitivity_scale_estimation else "no"} ' \
+            f'scale estimation \n'
+
+        if self.cluster_kwargs:
+            s += 'cluster kwargs: \n'
+            for k, v in self.cluster_kwargs.items():
+                s += f'{k}: {v} \n'
+        return s
 
     def submit_cluster(self, mh_dict):
         """Splits the trials into jobs and submits them to be calculated on the cluster"""
@@ -72,6 +87,10 @@ class Submitter(object):
         Note that a scale still has to be given in the mh_dict as a first estimate.
         """
         logger.info(f'doing quick trials to estimate scale')
+        if self.mh_dict['mh_name'] == 'fit_weights':
+            raise NotImplementedError('This method does not work with the fit_weights MinimizationHandler '
+                                      'because it assumes a background TS distribution median of zero! '
+                                      'Be the hero to think of something!')
 
         # repeat the guessing until success:
         while not self.successful_guess_by_quick_injections:
@@ -89,25 +108,25 @@ class Submitter(object):
             quick_injections_rh = ResultsHandler(quick_injections_mh_dict, do_sens=False, do_disc=False)
 
             # guess the disc and sens scale
-            disc_guess, sens_guess = quick_injections_rh.estimate_sens_disc_scale()
+            self.disc_guess, self.sens_guess = quick_injections_rh.estimate_sens_disc_scale()
 
-            if any((guess < 0) or (guess > initial_guess) for guess in [disc_guess, sens_guess]):
+            if any((guess < 0) or (guess > initial_guess) for guess in [self.disc_guess, self.sens_guess]):
                 logger.info(f'Could not perform scale guess because '
                             f'at least one guess outside [0, {initial_guess}]! '
                             f'Adjusting accordingly.')
-                self.mh_dict['scale'] = max((sens_guess, disc_guess)) * 1.5
+                self.mh_dict['scale'] = max((self.sens_guess, self.disc_guess)) * 1.5
 
-            elif initial_guess > 5 * disc_guess:
+            elif initial_guess > 5 * self.disc_guess:
                 logger.info(f'Could not perform scale guess beause '
                             f'initial scale guess {initial_guess} much larger than '
-                            f'disc scale guess {disc_guess}. '
-                            f'Adjusting initial guess to {4 * disc_guess} and retry.')
-                self.mh_dict['scale'] = 4 * disc_guess
+                            f'disc scale guess {self.disc_guess}. '
+                            f'Adjusting initial guess to {4 * self.disc_guess} and retry.')
+                self.mh_dict['scale'] = 4 * self.disc_guess
 
             else:
                 logger.info('Scale guess successful. Adjusting injection scale.')
                 self.successful_guess_by_quick_injections = True
-                self.mh_dict['scale'] = sens_guess
+                # self.mh_dict['scale'] = self.sens_guess
 
             self._clean_injection_values_and_pickled_results(quick_injections_rh.name)
 
@@ -128,15 +147,23 @@ class Submitter(object):
         mh = MinimisationHandler.create(self.mh_dict)
         scale_estimate = mh.guess_scale()
         logger.debug(f'estimated scale: {scale_estimate}')
-        self.mh_dict['scale'] = scale_estimate
+        self.disc_guess = scale_estimate
+        self.sens_guess = 0.3 * self.disc_guess
 
-    def analyse(self):
+    def analyse(self, do_disc=False):
+
         if self.do_sensitivity_scale_estimation:
+
             if 'asimov' in self.do_sensitivity_scale_estimation:
                 self.do_asimov_scale_estimation()
 
             if 'quick_injections' in self.do_sensitivity_scale_estimation:
                 self.run_quick_injections_to_estimate_sensitivity_scale()
+
+            if not do_disc:
+                self.mh_dict['scale'] = self.sens_guess
+            else:
+                self.mh_dict['scale'] = self.disc_guess
 
         self.submit(self.mh_dict)
 
