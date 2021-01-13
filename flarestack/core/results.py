@@ -302,19 +302,20 @@ class ResultsHandler(object):
             sys.exit()
 
     def find_ns_scale(self):
-        """Find the number of neturinos corresponding to flux
-        """
-        x = sorted([float(x) for x in self.results.keys()])
+        """Find the number of neutrinos corresponding to flux"""
+        # x = sorted([float(x) for x in self.results.keys()])
 
         try:
             # if weights were not fitted, number of neutrinos is stored in just one parameter
             if 'fit' not in self.mh_name:
-                self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(float(x[1]))
+                # self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(float(x[1]))
+                self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(self.scales_float[1])
 
             # if weights were fitted, there is one n_s for each fitted source
             else:
                 sc_dict = self.inj[self.scales[1]]
-                self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(float(x[1]))
+                # self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(float(x[1]))
+                self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(self.scales_float[1])
 
             logger.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
 
@@ -324,8 +325,8 @@ class ResultsHandler(object):
     def estimate_sens_disc_scale(self):
         results = []
 
-        logger.debug('scale   avg_sigma     avg_TS')
-        logger.debug('----------------------------')
+        logger.debug('  scale   avg_sigma     avg_TS')
+        logger.debug('  ----------------------------')
 
         for scale, ts_array in zip(self.scales_float, self.ts_arrays):
 
@@ -338,7 +339,7 @@ class ResultsHandler(object):
 
             # collect all sigma > 0
             if avg_sigma >= 0:
-                logger.debug(f'{scale:.4f}   {avg_sigma:.2f}+/-{err_sigma:.2f}  {avg_ts:.4f}')
+                logger.debug(f'  {scale:.4f}   {avg_sigma:.2f}+/-{err_sigma:.2f}  {avg_ts:.4f}')
                 results.append([scale, avg_sigma, err_sigma, avg_ts])
             else:
                 pass
@@ -375,11 +376,6 @@ class ResultsHandler(object):
         fig.savefig(fn)
         logger.debug(f'saved figure under {fn}')
         plt.close()
-
-        # the guessed scale should be higher than the guessed actual value to get a test scale range
-        # that includes the sensitivity / discovery potential. For that, let's divide by 0.5
-        disc_scale_guess /= 0.5
-        sens_scale_guess /= 0.5
 
         logger.debug(f'disc scale guess: {disc_scale_guess}; sens scale guess: {sens_scale_guess}')
 
