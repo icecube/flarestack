@@ -27,6 +27,7 @@ import logging
 import argparse
 import numpy as np
 from flarestack.shared import log_dir, fs_dir
+from flarestack.cluster.submitter import Submitter
 from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file, submit_file
 
 logger = logging.getLogger(__name__)
@@ -37,19 +38,23 @@ cmd = 'qstat -u ' + username
 
 
 def wait_for_cluster(job_ids=None):
-    if not job_ids:
-        wait_for_job()
-    else:
-        try:
-            for i, job_id in enumerate(job_ids):
+    logger.warning('The wait_for_cluster function is deprecated! '
+                   'Use the Submitter class instead.')
+    Submitter.wait_for_cluster(job_ids)
 
-                logger.debug(f'waiting for job {job_id}')
-                prog_str = f'{i}/{len(job_ids)}'
-                wait_for_job(job_id, prog_str)
-
-        except TypeError:
-            logger.debug('Only waiting for one job')
-            wait_for_job(job_ids)
+    # if not job_ids:
+    #     wait_for_job()
+    # else:
+    #     try:
+    #         for i, job_id in enumerate(job_ids):
+    #
+    #             logger.debug(f'waiting for job {job_id}')
+    #             prog_str = f'{i}/{len(job_ids)}'
+    #             wait_for_job(job_id, prog_str)
+    #
+    #     except TypeError:
+    #         logger.debug('Only waiting for one job')
+    #         wait_for_job(job_ids)
 
 
 def wait_for_job(job_id=None, progress_str=None):
