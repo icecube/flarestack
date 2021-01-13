@@ -75,6 +75,14 @@ class Submitter(object):
         """Waits until the cluster is finished processing the job with the ID self.job_id"""
         raise NotImplementedError
 
+    @staticmethod
+    def _wait_for_cluster(job_ids=None):
+        raise NotImplementedError
+
+    @staticmethod
+    def wait_for_cluster(job_ids=None):
+        Submitter.get_submitter_class()._wait_for_cluster(job_ids)
+
     @property
     def _quick_injections_name(self):
         name = self.mh_dict['name']
@@ -92,16 +100,19 @@ class Submitter(object):
                                       'because it assumes a background TS distribution median of zero! '
                                       'Be the hero to think of something!')
 
+        # The given scale will serve as an initial guess
+        guess = self.mh_dict['scale']
+
         # repeat the guessing until success:
         while not self.successful_guess_by_quick_injections:
 
-            # The given scale will serve as an initial guess
-            initial_guess = self.mh_dict['scale']
+
 
             quick_injections_mh_dict = dict(self.mh_dict)
             quick_injections_mh_dict['name'] = self._quick_injections_name
             quick_injections_mh_dict['background_ntrials_factor'] = 1
-            quick_injections_mh_dict['n_trials'] = 20
+            quick_injections_mh_dict['n_trials'] = 10
+            quick_injections_mh_dict['scale'] = guess
             self.submit_local(quick_injections_mh_dict)
 
             # collect the quick injections
@@ -110,23 +121,22 @@ class Submitter(object):
             # guess the disc and sens scale
             self.disc_guess, self.sens_guess = quick_injections_rh.estimate_sens_disc_scale()
 
-            if any((guess < 0) or (guess > initial_guess) for guess in [self.disc_guess, self.sens_guess]):
+            if any((g < 0) or (g > guess) for g in [self.disc_guess, self.sens_guess]):
                 logger.info(f'Could not perform scale guess because '
-                            f'at least one guess outside [0, {initial_guess}]! '
+                            f'at least one guess outside [0, {guess}]! '
                             f'Adjusting accordingly.')
-                self.mh_dict['scale'] = max((self.sens_guess, self.disc_guess)) * 1.5
+                guess = max((self.sens_guess, self.disc_guess)) * 1.5
 
-            elif initial_guess > 5 * self.disc_guess:
+            elif guess > 5 * self.disc_guess:
                 logger.info(f'Could not perform scale guess beause '
-                            f'initial scale guess {initial_guess} much larger than '
+                            f'initial scale guess {guess} much larger than '
                             f'disc scale guess {self.disc_guess}. '
                             f'Adjusting initial guess to {4 * self.disc_guess} and retry.')
-                self.mh_dict['scale'] = 4 * self.disc_guess
+                guess = 4 * self.disc_guess
 
             else:
                 logger.info('Scale guess successful. Adjusting injection scale.')
                 self.successful_guess_by_quick_injections = True
-                # self.mh_dict['scale'] = self.sens_guess
 
             self._clean_injection_values_and_pickled_results(quick_injections_rh.name)
 
@@ -161,9 +171,9 @@ class Submitter(object):
                 self.run_quick_injections_to_estimate_sensitivity_scale()
 
             if not do_disc:
-                self.mh_dict['scale'] = self.sens_guess
+                self.mh_dict['scale'] = self.sens_guess / 0.5
             else:
-                self.mh_dict['scale'] = self.disc_guess
+                self.mh_dict['scale'] = self.disc_guess / 0.5
 
         self.submit(self.mh_dict)
 
@@ -177,13 +187,17 @@ class Submitter(object):
 
     @classmethod
     def get_submitter(cls, *args, **kwargs):
+        return Submitter.get_submitter_class()(*args, **kwargs)
+
+    @classmethod
+    def get_submitter_class(cls):
 
         if host_server not in cls.submitter_dict:
             logger.warning(f'No submitter implemented for host server {host_server}! '
                            f'Using LocalSubmitter but you wont\'t be able to use cluster operations!')
-            return cls.submitter_dict['local'](*args, **kwargs)
+            return cls.submitter_dict['local']
 
-        return cls.submitter_dict[host_server](*args, **kwargs)
+        return cls.submitter_dict[host_server]
 
 
 @Submitter.register_submitter_class("local")
@@ -203,6 +217,10 @@ class DESYSubmitter(Submitter):
 
     cluster_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
     submit_file = cluster_dir + "SubmitDESY.sh"
+    username = os.path.basename(os.environ['HOME'])
+    status_cmd = f'qstat -u {username}'
+    submit_cmd = 'qsub '
+    root_dir = os.path.dirname(fs_dir[:-1])
 
     def __init__(self, mh_dict, use_cluster, n_cpu=None, **cluster_kwargs):
         super(DESYSubmitter, self).__init__(mh_dict, use_cluster, n_cpu, **cluster_kwargs)
@@ -216,41 +234,43 @@ class DESYSubmitter(Submitter):
             "{0:.1f}G".format(6. / float(self.cluster_cpu) + 2.)
         )
 
-        self.username = os.path.basename(os.environ['HOME'])
-        self.status_cmd = f'qstat -u {self.username}'
-        self.submit_cmd = 'qsub '
-        self.root_dir = os.path.dirname(fs_dir[:-1])
-
     @staticmethod
     def _qstat_output(qstat_command):
         """return the output of the qstat_command"""
         # start a subprocess to query the cluster
         process = subprocess.Popen(qstat_command, stdout=subprocess.PIPE, shell=True)
-        # read the ouput
+        # read the output
         tmp = process.stdout.read().decode()
         return str(tmp)
 
-    def _ntasks_from_qstat_command(self, qstat_command):
-        """Returns the number of tasks from the output of qstat_command"""
-        # get the ouput of qstat_command
-        st = self._qstat_output(qstat_command)
+    @staticmethod
+    def get_ids(qstat_command):
+        """Takes a command that queries the DESY cluster and returns a list of job IDs"""
+        st = DESYSubmitter._qstat_output(qstat_command)
         # If the output is an empty string there are no tasks left
         if st == '':
-            return 0
+            ids = list()
         else:
-            # Extract the number of tasks with my job_id
+            # Extract the list of job IDs
             ids = np.array([int(s.split(' ')[2]) for s in st.split('\n')[2:-1]])
-            return len(ids[ids == self.job_id])
+        return ids
+
+    def _ntasks_from_qstat_command(self, qstat_command):
+        """Returns the number of tasks from the output of qstat_command"""
+        # get the output of qstat_command
+        ids = self.get_ids(qstat_command)
+        ntasks = 0 if len(ids) == 0 else len(ids[ids == self.job_id])
+        return ntasks
 
     @property
     def ntasks_total(self):
         """Returns the total number of tasks"""
-        return self._ntasks_from_qstat_command(self.status_cmd)
+        return self._ntasks_from_qstat_command(DESYSubmitter.status_cmd)
 
     @property
     def ntasks_running(self):
         """Returns the number of running tasks"""
-        return self._ntasks_from_qstat_command(self.status_cmd + " -s r")
+        return self._ntasks_from_qstat_command(DESYSubmitter.status_cmd + " -s r")
 
     def wait_for_job(self):
         """
@@ -301,7 +321,7 @@ class DESYSubmitter(Submitter):
                "#$ -j y \n" \
                "## \n" \
                "## name of the job \n" \
-               "## -N Flarestack script " + self.username + " \n" \
+               "## -N Flarestack script " + DESYSubmitter.username + " \n" \
                "## \n" \
                "##(redirect output to:) \n" \
                "#$ -o /dev/null \n" \
@@ -310,7 +330,7 @@ class DESYSubmitter(Submitter):
                'exec > "$TMPDIR"/${JOB_ID}_stdout.txt ' \
                '2>"$TMPDIR"/${JOB_ID}_stderr.txt \n' \
                'eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/setup.sh) \n' \
-               'export PYTHONPATH=' + self.root_dir + '/ \n' \
+               'export PYTHONPATH=' + DESYSubmitter.root_dir + '/ \n' \
                'export FLARESTACK_SCRATCH_DIR=' + flarestack_scratch_dir + " \n" \
                'python ' + fs_dir + 'core/multiprocess_wrapper.py -f $1 -n $2 \n' \
                'cp $TMPDIR/${JOB_ID}_stdout.txt ' + log_dir + '\n' \
@@ -340,7 +360,7 @@ class DESYSubmitter(Submitter):
         path = make_analysis_pickle(mh_dict)
 
         # assemble the submit command
-        submit_cmd = self.submit_cmd
+        submit_cmd = DESYSubmitter.submit_cmd
         if self.cluster_cpu > 1:
             submit_cmd += " -pe multicore {0} -R y ".format(self.cluster_cpu)
         submit_cmd += f"-t 1-{n_tasks}:1 {DESYSubmitter.submit_file} {path} {self.cluster_cpu}"
@@ -353,3 +373,17 @@ class DESYSubmitter(Submitter):
         msg = process.stdout.read().decode()
         logger.info(str(msg))
         self.job_id = int(str(msg).split('job-array')[1].split('.')[0])
+
+    @staticmethod
+    def _wait_for_cluster(job_ids=None):
+        """Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs"""
+        # If no job IDs are specified, get all IDs currently listed for this user
+        if not job_ids:
+            job_ids = np.unique(DESYSubmitter.get_ids(DESYSubmitter.status_cmd))
+
+        for id in job_ids:
+            logger.info(f'waiting for job {id}')
+            # create a submitter, it does not need the mh_dict when no functions are calles
+            s = DESYSubmitter(None, None)
+            s.job_id = id     # set the right job_id
+            s.wait_for_job()  # use the built-in function to wait for completion of that job
