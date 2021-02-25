@@ -178,7 +178,7 @@ class BaseInjector:
         "energy_pdf_name".
         """
         def decorator(subclass):
-            cls.subclasses[inj_name] = subclass
+            BaseInjector.subclasses[inj_name] = subclass
             return subclass
 
         return decorator
@@ -193,24 +193,28 @@ class BaseInjector:
 
         inj_name = inj_dict["injector_name"]
 
-        if inj_name not in cls.subclasses:
-            raise ValueError('Bad Injector name {}'.format(inj_name))
+        if inj_name not in BaseInjector.subclasses:
+            raise ValueError(f'Bad Injector name {inj_name}. '
+                             f'Available options are {BaseInjector.subclasses.keys()}')
         else:
-            return cls.subclasses[inj_name](season, sources, **inj_dict)
+            return BaseInjector.subclasses[inj_name](season, sources, **inj_dict)
 
     @staticmethod
-    def get_dec_and_omega(source):
+    def get_dec_and_omega(source, bandwidth):
         # Sets half width of band
-        dec_width = np.sin(np.deg2rad(0.5))
+        dec_width = np.sin(np.deg2rad(bandwidth))
+
+        sinDec = np.sin(source['dec_rad'])
 
         # Sets a declination band above and below the source
-        min_dec = max(-1, np.sin(source['dec_rad']) - dec_width)
-        max_dec = min(1., np.sin(source['dec_rad']) + dec_width)
+        min_dec = max(-1, sinDec - dec_width)
+        max_dec = min(1., sinDec + dec_width)
         # Gives the solid angle coverage of the sky for the band
         omega = 2. * np.pi * (max_dec - min_dec)
         return np.arcsin(dec_width), np.arcsin(min_dec), np.arcsin(max_dec), omega
 
 
+@BaseInjector.register_subclass('mc_injector')
 class MCInjector(BaseInjector):
     """Core Injector Class, returns a dataset on which calculations can be
     performed. This base class is tailored for injection of MC into mock
@@ -223,6 +227,8 @@ class MCInjector(BaseInjector):
         kwargs = read_injector_dict(kwargs)
         self._mc = season.get_mc()
         BaseInjector.__init__(self, season, sources, **kwargs)
+
+        self.injection_declination_bandwidth = self.inj_kwargs.pop('injection_declination_bandwidth', 1.5)
 
         try:
             self.mc_weights = self.energy_pdf.weight_mc(self._mc)
@@ -243,7 +249,7 @@ class MCInjector(BaseInjector):
         :return: band_mask: The mask which removes events outside band
         """
 
-        dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
+        dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source, self.injection_declination_bandwidth)
 
         band_mask = self.get_band_mask(source, min_dec, max_dec)
 
@@ -385,7 +391,6 @@ class MCInjector(BaseInjector):
 
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.
-
             sim_ev["time"] = self.sig_time_pdf.simulate_times(source, n_s)
 
             # Joins the new events to the signal events
@@ -425,7 +430,7 @@ class LowMemoryInjector(MCInjector):
             logger.info("No saved band masks found. These will have to be made first.")
             self.make_injection_band_mask()
 
-        self.n_exp = np.empty((len(self.sources), 1), dtype=np.dtype(
+        self.n_exp = np.zeros((len(self.sources), 1), dtype=np.dtype(
             [('source_name', 'a30'), ('n_exp', np.float),
              ('mask_index', np.int), ("source_index", np.int)]))
 
@@ -453,7 +458,8 @@ class LowMemoryInjector(MCInjector):
             injection_band_mask = sparse.lil_matrix((len(cat),
                                                      len(self._mc)), dtype=bool)
             for i, source in enumerate(cat):
-                dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source)
+                dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source,
+                                                                            self.injection_declination_bandwidth)
                 band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
                                            np.less(self._mc["trueDec"], max_dec))
                 injection_band_mask[i, :] = band_mask
@@ -468,6 +474,7 @@ class LowMemoryInjector(MCInjector):
         path = self.injection_band_paths[index]
         # logger.debug(f'type(band_mask_cache) = {type(self.band_mask_cache)}')
         del self.band_mask_cache
+        logger.debug(f'loading bandmask from {path}')
         self.band_mask_cache = sparse.load_npz(path)
         self.band_mask_index = index
         # return sparse.load_npz(path)
@@ -475,9 +482,12 @@ class LowMemoryInjector(MCInjector):
     def get_band_mask(self, source, min_dec, max_dec):
 
         entry = self.get_n_exp_single(source)
+        if len(entry) != 1:
+            raise ValueError(f"Length of found entries for {source['source_name']} "
+                             f"is {len(entry)} but should be 1!")
         mask_index = entry["mask_index"]
 
-        if not np.logical_and(self.band_mask_cache is not None,
+        if not np.logical_and(not isinstance(self.band_mask_cache, type(None)),
                               self.band_mask_index == mask_index):
             try:
                 self.load_band_mask(mask_index[0])
@@ -494,6 +504,7 @@ class LowMemoryInjector(MCInjector):
         )[0]
 
 
+@MCInjector.register_subclass("effective_area_injector")
 class EffectiveAreaInjector(BaseInjector):
     """Class for injecting signal events by relying on effective areas rather
     than pre-existing Monte Carlo simulation. This Injector should be used
