@@ -49,7 +49,7 @@ class Submitter(object):
         if self.cluster_kwargs:
             s += 'cluster kwargs: \n'
             for k, v in self.cluster_kwargs.items():
-                s += f'{k}: {v} \n'
+                s += f'  {k}: {v} \n'
         return s
 
     def submit_cluster(self, mh_dict):
@@ -101,12 +101,13 @@ class Submitter(object):
                                       'Be the hero to think of something!')
 
         # The given scale will serve as an initial guess
-        guess = self.mh_dict['scale']
+        guess = self.mh_dict['scale'] if not self.disc_guess else self.disc_guess
+
+        # make sure
+        self._clean_injection_values_and_pickled_results(self._quick_injections_name)
 
         # repeat the guessing until success:
         while not self.successful_guess_by_quick_injections:
-
-
 
             quick_injections_mh_dict = dict(self.mh_dict)
             quick_injections_mh_dict['name'] = self._quick_injections_name
@@ -125,14 +126,14 @@ class Submitter(object):
                 logger.info(f'Could not perform scale guess because '
                             f'at least one guess outside [0, {guess}]! '
                             f'Adjusting accordingly.')
-                guess = max((self.sens_guess, self.disc_guess)) * 1.5
+                guess = abs(max((self.sens_guess, self.disc_guess)) * 1.5)
 
             elif guess > 5 * self.disc_guess:
                 logger.info(f'Could not perform scale guess beause '
                             f'initial scale guess {guess} much larger than '
                             f'disc scale guess {self.disc_guess}. '
                             f'Adjusting initial guess to {4 * self.disc_guess} and retry.')
-                guess = 4 * self.disc_guess
+                guess = 4 * abs(self.disc_guess)
 
             else:
                 logger.info('Scale guess successful. Adjusting injection scale.')
@@ -282,24 +283,28 @@ class DESYSubmitter(Submitter):
         completion of job, terminates function process and allows the script to
         continue.
         """
-        time.sleep(10)
-        i = 31
-        j = 6
-        while self.ntasks_total != 0:
-            if i > 3:
-                logger.info(f'{time.asctime(time.localtime())} - Job{self.job_id}:'
-                            f' {self.ntasks_total} entries in queue. '
-                            f'Of these, {self.ntasks_running} are running tasks, and '
-                            f'{self.ntasks_total - self.ntasks_running} are tasks still waiting to be executed.')
-                i = 0
-                j += 1
+        if self.job_id:
+            time.sleep(10)
+            i = 31
+            j = 6
+            while self.ntasks_total != 0:
+                if i > 3:
+                    logger.info(f'{time.asctime(time.localtime())} - Job{self.job_id}:'
+                                f' {self.ntasks_total} entries in queue. '
+                                f'Of these, {self.ntasks_running} are running tasks, and '
+                                f'{self.ntasks_total - self.ntasks_running} are tasks still waiting to be executed.')
+                    i = 0
+                    j += 1
 
-            if j > 7:
-                logger.info(self._qstat_output(self.status_cmd))
-                j = 0
+                if j > 7:
+                    logger.info(self._qstat_output(self.status_cmd))
+                    j = 0
 
-            time.sleep(30)
-            i += 1
+                time.sleep(30)
+                i += 1
+
+        else:
+            logger.info(f'No Job ID!')
 
     def make_cluster_submission_script(self):
         flarestack_scratch_dir = os.path.dirname(fs_scratch_dir[:-1]) + "/"
