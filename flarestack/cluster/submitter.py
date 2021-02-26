@@ -1,7 +1,7 @@
 import os, subprocess, time, logging, shutil
 import numpy as np
 from flarestack.shared import fs_dir, log_dir, fs_scratch_dir, make_analysis_pickle, host_server, \
-    inj_dir_name, name_pickle_output_dir
+    inj_dir_name, name_pickle_output_dir, cluster_dir
 from flarestack.core.multiprocess_wrapper import run_multiprocess
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
@@ -392,3 +392,135 @@ class DESYSubmitter(Submitter):
             s = DESYSubmitter(None, None)
             s.job_id = id     # set the right job_id
             s.wait_for_job()  # use the built-in function to wait for completion of that job
+
+
+@Submitter.register_submitter_class('WIPAC')
+class WIPACSubmitter(Submitter):
+
+    wipac_cluster_dir = os.path.join(cluster_dir, 'WIPAC')
+    username = os.path.basename(os.environ['HOME'])
+    status_cmd = f'condor_q {username}'
+    root_dir = os.path.dirname(fs_dir[:-1])
+    scratch_on_nodes = f"/scratch/{username}"
+
+    def __init__(self, *args, **kwargs):
+        logger.warning(f'THIS HAS NOT BEEN TESTED SO FAR! '
+                       f'HANDLE WITH CARE!')
+        super(WIPACSubmitter, self).__init__(*args, **kwargs)
+
+        self.trials_per_task = self.kwargs.get("trials_per_task", 1)
+        self.cluster_cpu = self.kwargs.get('cluster_cpu', self.n_cpu)
+        self.ram_per_core = self.kwargs.get(
+            "ram_per_core",
+            "{0:.1f}G".format(6. / float(self.cluster_cpu) + 2.)
+        )
+
+        self.submit_file = os.path.join(
+            WIPACSubmitter.wipac_cluster_dir,
+            self.mh_dict["name"],
+            "job.submit"
+        )
+        self.executable_file = os.path.join(
+            WIPACSubmitter.wipac_cluster_dir,
+            self.mh_dict["name"],
+            "job.sh"
+        )
+
+        self.submit_cmd = f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu " \
+                          f"'condor_submit " + self.submit_file + "'"
+
+        self._status_output = None
+
+    def make_executable_file(self, path):
+        flarestack_scratch_dir = os.path.dirname(fs_scratch_dir[:-1]) + "/"
+
+        txt = f'#!/bin/sh \n' \
+              f'eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/setup.sh) \n' \
+              f'export PYTHONPATH={WIPACSubmitter.root_dir}/ \n' \
+              f'export FLARESTACK_SCRATCH_DIR={flarestack_scratch_dir} \n' \
+              f'python {fs_dir}core/multiprocess_wrapper.py -f {path} -n {self.cluster_cpu}'
+
+        logger.debug('writing executable to ' + self.executable_file)
+        with open(self.executable_file, "w") as f:
+            f.write(txt)
+
+    def make_submit_file(self, n_tasks):
+        text = f'executable = {self.executable_file} \n' \
+               f'log = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.log \n' \
+               f'output = {log_dir}/$(cluster)job.out \n' \
+               f'error = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.err \n' \
+               f'should_transfer_files   = YES \n' \
+               f'when_to_transfer_output = ON_EXIT \n' \
+               f'arguments = $(process) \n' \
+               f'RequestMemory = {self.ram_per_core} \n' \
+               f'\n' \
+               f'queue {n_tasks}'
+
+        logger.debug('writing submitfile at ' + self.submit_file)
+        with open(self.submit_file, "w") as f:
+            f.write(text)
+
+    def submit_cluster(self, mh_dict):
+        """Submits the job to the cluster"""
+        # Get the number of tasks that will have to be submitted in order to get ntrials
+        ntrials = self.mh_dict['n_trials']
+        n_tasks = int(ntrials / self.trials_per_task)
+        logger.debug(f'running {ntrials} trials in {n_tasks} tasks')
+
+        # The mh_dict will be submitted n_task times and will perform mh_dict['n_trials'] each time.
+        # Therefore we have to adjust mh_dict['n_trials'] in order to actually perform the number
+        # specified in self.mh_dict['n_trials']
+        mh_dict['n_trials'] = self.trials_per_task
+        path = make_analysis_pickle(mh_dict)
+
+        # make the executable and the submit file
+        self.make_executable(path)
+        self.make_submit_file(n_tasks)
+
+        cmd = f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu " \
+              f"'condor_submit {self.submit_file}'"
+        prc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        msg = prc.stdout.read().decode()
+        logger.info(msg)
+
+        self.job_id = str(msg).split('cluster ')[-1].split('.')[0]
+
+    def collect_condor_status(self):
+        cmd = ["ssh", "jnecker@submit-1.icecube.wisc.edu", "'condor_q'"]
+        self._status_output = subprocess.check_output(cmd)
+
+    @property
+    def condor_status(self):
+        status_list = [[y for y in ii.split(' ') if y] for ii in self._status_output.split('\n')[4:-6]]
+        done = running = waiting = total = held = None
+
+        for li in status_list:
+            if li[2] == self.job_id:
+                done, running, waiting = li[5:8]
+                held = 0 if len(li) == 10 else li[8]
+                total = li[-2]
+
+        return done, running, waiting, total, held
+
+    def wait_for_job(self):
+
+        if self.job_id:
+            logger.info('waiting for job with ID ' + str(self.job_id))
+            time.sleep(5)
+
+            self.collect_condor_status()
+            j = 0
+            while not np.all(np.array(self.condor_status) == None):
+                d, r, w, t, h = self.condor_status
+                logger.info('{0} done, {1} running, {2} waiting, {3} held of total {4}'.format(d, r, w, h, t))
+                j += 1
+                if j > 7:
+                    logger.info(self._status_output)
+                    j = 0
+                time.sleep(90)
+                self.collect_condor_status()
+
+            logger.info('Done waiting for jon with ID ' + str(self.job_id))
+
+        else:
+            logger.info(f'No Job ID!')
