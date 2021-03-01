@@ -1,4 +1,4 @@
-import os, subprocess, time, logging, shutil
+import os, subprocess, time, logging, shutil, copy
 import numpy as np
 from flarestack.shared import fs_dir, log_dir, fs_scratch_dir, make_analysis_pickle, host_server, \
     inj_dir_name, name_pickle_output_dir, cluster_dir
@@ -28,7 +28,7 @@ class Submitter(object):
                                          results from previous trials
         :param cluster_kwargs: keyword arguments used by the cluster
         """
-        self.mh_dict = mh_dict
+        self.mh_dict = copy.deepcopy(mh_dict)
         self.use_cluster = use_cluster
         self.n_cpu = os.cpu_count() - 1 if isinstance(n_cpu, type(None)) else n_cpu
         self.job_id = None
