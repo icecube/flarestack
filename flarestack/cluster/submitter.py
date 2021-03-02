@@ -96,7 +96,7 @@ class Submitter(object):
         for id in job_ids:
             logger.info(f'waiting for job {id}')
             # create a submitter, it does not need the mh_dict when no functions are calles
-            s = DESYSubmitter(None, None)
+            s = cls(None, None)
             s.job_id = id  # set the right job_id
             s.wait_for_job()  # use the built-in function to wait for completion of that job
 
@@ -419,7 +419,8 @@ class DESYSubmitter(Submitter):
 class WIPACSubmitter(Submitter):
 
     wipac_cluster_dir = os.path.join(cluster_dir, 'WIPAC')
-    username = os.path.basename(os.environ['HOME'])
+    home_dir = os.environ['HOME']
+    username = os.path.basename(home_dir)
     status_cmd = f'condor_q {username}'
     root_dir = os.path.dirname(fs_dir[:-1])
     scratch_on_nodes = f"/scratch/{username}"
@@ -431,21 +432,15 @@ class WIPACSubmitter(Submitter):
 
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
         self.cluster_cpu = self.cluster_kwargs.get('cluster_cpu', self.n_cpu)
-        self.ram_per_core = self.cluster_kwargs.get(
-            "ram_per_core",
-            "{0:.1f}G".format(6. / float(self.cluster_cpu) + 2.)
-        )
-
-        self.submit_file = os.path.join(
+        self.ram_per_core = self.cluster_kwargs.get("ram_per_core", "2000")
+        
+        self.cluster_files_directory = os.path.join(
             WIPACSubmitter.wipac_cluster_dir,
-            self.mh_dict["name"],
-            "job.submit"
+            self.mh_dict["name"] if self.mh_dict else ''
         )
-        self.executable_file = os.path.join(
-            WIPACSubmitter.wipac_cluster_dir,
-            self.mh_dict["name"],
-            "job.sh"
-        )
+        
+        self.submit_file = os.path.join(self.cluster_files_directory, "job.submit")
+        self.executable_file = os.path.join(self.cluster_files_directory, "job.sh")
 
         self.submit_cmd = f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu " \
                           f"'condor_submit " + self.submit_file + "'"
@@ -459,6 +454,8 @@ class WIPACSubmitter(Submitter):
               f'eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/setup.sh) \n' \
               f'export PYTHONPATH={WIPACSubmitter.root_dir}/ \n' \
               f'export FLARESTACK_SCRATCH_DIR={flarestack_scratch_dir} \n' \
+              f'export HOME={WIPACSubmitter.home_dir} \n ' \
+              f'conda activate flarestack \n' \
               f'python {fs_dir}core/multiprocess_wrapper.py -f {path} -n {self.cluster_cpu}'
 
         logger.debug('writing executable to ' + self.executable_file)
@@ -468,7 +465,7 @@ class WIPACSubmitter(Submitter):
     def make_submit_file(self, n_tasks):
         text = f'executable = {self.executable_file} \n' \
                f'log = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.log \n' \
-               f'output = {log_dir}/$(cluster)job.out \n' \
+               f'output = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.out \n' \
                f'error = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.err \n' \
                f'should_transfer_files   = YES \n' \
                f'when_to_transfer_output = ON_EXIT \n' \
@@ -495,11 +492,16 @@ class WIPACSubmitter(Submitter):
         path = make_analysis_pickle(mh_dict)
 
         # make the executable and the submit file
-        self.make_executable(path)
+        if not os.path.isdir(self.cluster_files_directory):
+            logger.debug(f'making directory {self.cluster_files_directory}')
+            os.makedirs(self.cluster_files_directory)
+            
+        self.make_executable_file(path)
         self.make_submit_file(n_tasks)
 
         cmd = f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu " \
               f"'condor_submit {self.submit_file}'"
+        logger.debug(f'command is {cmd}')
         prc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         msg = prc.stdout.read().decode()
         logger.info(msg)
@@ -509,7 +511,7 @@ class WIPACSubmitter(Submitter):
     @staticmethod
     def get_condor_status():
         cmd = ["ssh", "jnecker@submit-1.icecube.wisc.edu", "'condor_q'"]
-        return subprocess.check_output(cmd)
+        return subprocess.check_output(cmd).decode()
 
     def collect_condor_status(self):
         self._status_output = self.get_condor_status()
@@ -537,7 +539,8 @@ class WIPACSubmitter(Submitter):
             j = 0
             while not np.all(np.array(self.condor_status) == None):
                 d, r, w, t, h = self.condor_status
-                logger.info('{0} done, {1} running, {2} waiting, {3} held of total {4}'.format(d, r, w, h, t))
+                logger.info(f'{time.asctime(time.localtime())} - Job{self.job_id}: ' \
+                            f'{d} done, {r} running, {w} waiting, {h} held of total {t}')
                 j += 1
                 if j > 7:
                     logger.info(self._status_output)
