@@ -27,7 +27,7 @@ if icecube_dataset_dir is None:
         logger.info(f"Loading datasets from {icecube_dataset_dir} (DESY)")
     elif host_server == "WIPAC":
         icecube_dataset_dir = "/data/ana/analyses/"
-        ref_dir_7yr = "/data/user/steinrob/mirror-7year-PS-sens/"
+        ref_dir_7yr = "/data/ana/PointSource/PS/version-002-p01/results/time_integrated_fullsky/"
         ref_10yr = "/data/user/tcarver/skylab_scripts/skylab_trunk/doc/analyses/combined_tracks/TenYr_E2andE3_sensitivity_and_discpot.npy"
         logger.info(f"Loading datasets from {icecube_dataset_dir} (WIPAC)")
     else:
