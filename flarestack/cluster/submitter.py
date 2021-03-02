@@ -429,9 +429,9 @@ class WIPACSubmitter(Submitter):
                        f'HANDLE WITH CARE!')
         super(WIPACSubmitter, self).__init__(*args, **kwargs)
 
-        self.trials_per_task = self.kwargs.get("trials_per_task", 1)
-        self.cluster_cpu = self.kwargs.get('cluster_cpu', self.n_cpu)
-        self.ram_per_core = self.kwargs.get(
+        self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
+        self.cluster_cpu = self.cluster_kwargs.get('cluster_cpu', self.n_cpu)
+        self.ram_per_core = self.cluster_kwargs.get(
             "ram_per_core",
             "{0:.1f}G".format(6. / float(self.cluster_cpu) + 2.)
         )
