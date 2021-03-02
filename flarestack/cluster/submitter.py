@@ -75,13 +75,30 @@ class Submitter(object):
         """Waits until the cluster is finished processing the job with the ID self.job_id"""
         raise NotImplementedError
 
+    # @staticmethod
+    # def _wait_for_cluster(job_ids=None):
+    #     raise NotImplementedError
+
     @staticmethod
-    def _wait_for_cluster(job_ids=None):
+    def get_pending_ids():
         raise NotImplementedError
 
     @staticmethod
     def wait_for_cluster(job_ids=None):
-        Submitter.get_submitter_class()._wait_for_cluster(job_ids)
+        """Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs"""
+
+        # If no job IDs are specified, get all IDs currently listed for this user
+        cls = Submitter.get_submitter_class()
+        if not job_ids:
+            # job_ids = np.unique(cls.get_ids(DESYSubmitter.status_cmd))
+            job_ids = cls.get_pending_ids()
+
+        for id in job_ids:
+            logger.info(f'waiting for job {id}')
+            # create a submitter, it does not need the mh_dict when no functions are calles
+            s = DESYSubmitter(None, None)
+            s.job_id = id  # set the right job_id
+            s.wait_for_job()  # use the built-in function to wait for completion of that job
 
     @property
     def _quick_injections_name(self):
@@ -379,19 +396,23 @@ class DESYSubmitter(Submitter):
         logger.info(str(msg))
         self.job_id = int(str(msg).split('job-array')[1].split('.')[0])
 
-    @staticmethod
-    def _wait_for_cluster(job_ids=None):
-        """Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs"""
-        # If no job IDs are specified, get all IDs currently listed for this user
-        if not job_ids:
-            job_ids = np.unique(DESYSubmitter.get_ids(DESYSubmitter.status_cmd))
+    # @staticmethod
+    # def _wait_for_cluster(job_ids=None):
+    #     """Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs"""
+    #     # If no job IDs are specified, get all IDs currently listed for this user
+    #     if not job_ids:
+    #         job_ids = np.unique(DESYSubmitter.get_ids(DESYSubmitter.status_cmd))
+    #
+    #     for id in job_ids:
+    #         logger.info(f'waiting for job {id}')
+    #         # create a submitter, it does not need the mh_dict when no functions are calles
+    #         s = DESYSubmitter(None, None)
+    #         s.job_id = id     # set the right job_id
+    #         s.wait_for_job()  # use the built-in function to wait for completion of that job
 
-        for id in job_ids:
-            logger.info(f'waiting for job {id}')
-            # create a submitter, it does not need the mh_dict when no functions are calles
-            s = DESYSubmitter(None, None)
-            s.job_id = id     # set the right job_id
-            s.wait_for_job()  # use the built-in function to wait for completion of that job
+    @staticmethod
+    def get_pending_ids():
+        return np.unique(np.unique(DESYSubmitter.get_ids(DESYSubmitter.status_cmd)))
 
 
 @Submitter.register_submitter_class('WIPAC')
@@ -485,9 +506,13 @@ class WIPACSubmitter(Submitter):
 
         self.job_id = str(msg).split('cluster ')[-1].split('.')[0]
 
-    def collect_condor_status(self):
+    @staticmethod
+    def get_condor_status():
         cmd = ["ssh", "jnecker@submit-1.icecube.wisc.edu", "'condor_q'"]
-        self._status_output = subprocess.check_output(cmd)
+        return subprocess.check_output(cmd)
+
+    def collect_condor_status(self):
+        self._status_output = self.get_condor_status()
 
     @property
     def condor_status(self):
@@ -524,3 +549,9 @@ class WIPACSubmitter(Submitter):
 
         else:
             logger.info(f'No Job ID!')
+
+    @staticmethod
+    def get_pending_ids():
+        condor_status = WIPACSubmitter.get_condor_status()
+        ids = np.array([ii.split(' ')[2] for ii in condor_status.split('\n')[4:-6]])
+        return ids
