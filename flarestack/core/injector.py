@@ -421,7 +421,7 @@ class LowMemoryInjector(MCInjector):
     def calculate_n_exp(self):
 
         cats, paths, m_index, s_index = band_mask_cache_name(
-            self.season, self.sources
+            self.season, self.sources, self.injection_declination_bandwidth
         )
         self.split_cats = cats
         self.injection_band_paths = paths

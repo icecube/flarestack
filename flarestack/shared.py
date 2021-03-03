@@ -171,7 +171,7 @@ def band_mask_hash_dir(catalogue):
     return cat_cache_dir + str(zlib.adler32(catalogue)) + "/"
 
 
-def band_mask_cache_name(season, catalogue):
+def band_mask_cache_name(season, catalogue, injection_bandwidth):
     n_chunks = int((len(catalogue) + band_mask_chunk_size - 1) \
                / band_mask_chunk_size)
     logger.info("Breaking catalogue into {0} chunks of {1}".format(n_chunks, band_mask_chunk_size))
@@ -186,7 +186,8 @@ def band_mask_cache_name(season, catalogue):
         mask_indices += [i for _ in range(band_mask_chunk_size)]
         source_indices += [x for x in range(band_mask_chunk_size)]
 
-    paths = [band_mask_hash_dir(cat) + season.sample_name + "/" +
+    paths = [band_mask_hash_dir(cat) + season.sample_name +
+             f"_{injection_bandwidth:.8f}/" +
              season.season_name + ".npz" for cat in cats]
 
     mask_indices = mask_indices[:len(catalogue)]
