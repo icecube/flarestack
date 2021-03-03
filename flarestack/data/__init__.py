@@ -13,6 +13,9 @@ from flarestack.core.time_pdf import TimePDF, DetectorOnOffList, FixedEndBox, \
 import flarestack
 
 
+logger = logging.getLogger(__name__)
+
+
 class DatasetHolder:
 
     def __init__(self, sample_name):
@@ -35,9 +38,9 @@ class DatasetHolder:
         if self.current is not None:
             return self.datasets[self.current]
         else:
-            logging.warning("Warning: no file listed as current.")
+            logger.warning("Warning: no file listed as current.")
             key = sorted(list(self.datasets.keys()))
-            logging.warning("Using key {0} out of {1}".format(
+            logger.warning("Using key {0} out of {1}".format(
                 key, self.datasets.keys())
             )
             return self.datasets[key]
@@ -197,11 +200,11 @@ class Season:
 
     def use_data_for_trials(self):
         if self.__class__.get_background_model == Season.get_background_model:
-            logging.warning("This season is already set to generate trials using scrambled data. "
+            logger.warning("This season is already set to generate trials using scrambled data. "
                            "No need to set it again!")
         else:
             self.get_trial_model = self.get_exp_data
-            logging.info("Set trial model to use scrambled data.")
+            logger.info("Set trial model to use scrambled data.")
 
     def pseudo_background(self):
         """Scrambles the raw dataset to "blind" the data. Assigns a flat Right
