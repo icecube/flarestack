@@ -426,8 +426,6 @@ class WIPACSubmitter(Submitter):
     scratch_on_nodes = f"/scratch/{username}"
 
     def __init__(self, *args, **kwargs):
-        logger.warning(f'THIS HAS NOT BEEN TESTED SO FAR! '
-                       f'HANDLE WITH CARE!')
         super(WIPACSubmitter, self).__init__(*args, **kwargs)
 
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
