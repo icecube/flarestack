@@ -88,6 +88,11 @@ class ResultsHandler(object):
         # if cleanup:
         #     self.clean_merged_data()
 
+        # this will have the TS threshold values as keys and a tuple containing
+        # (injection scale, relative overfluctuations, error on overfluctuations)
+        # as values
+        self.overfluctuations = dict()
+
         self.sensitivity = np.nan
         self.sensitivity_err = np.nan
         self.bkg_median = np.nan
@@ -401,8 +406,11 @@ class ResultsHandler(object):
 
         savepath = os.path.join(self.plot_dir, "sensitivity.pdf")
 
-        self.sensitivity, self.extrapolated_sens, self.sensitivity_err = self.find_overfluctuations(
-            bkg_median, savepath)
+        self.find_overfluctuations(bkg_median)
+        self.sensitivity_fit(savepath, bkg_median)
+        # self.sensitivity, self.extrapolated_sens, self.sensitivity_err = self.find_overfluctuations(
+        #     bkg_median, savepath, bkg_median
+        # )
 
         msg = ""
 
@@ -443,7 +451,7 @@ class ResultsHandler(object):
     #     print "Upper limit is", "{0:.3g}".format(ul)
     #     return ul, extrapolated
 
-    def find_overfluctuations(self, ts_val, savepath):
+    def find_overfluctuations(self, ts_val, savepath=None):
         """Uses the values of injection trials to fit an 1-exponential decay
         function to the overfluctuations, allowing for calculation of the
         sensitivity. Where the injected flux was not sufficient to reach the
@@ -484,7 +492,11 @@ class ResultsHandler(object):
                 self.make_plots(scale)
 
         x = np.array(x_acc)
+        self.overfluctuations[ts_val] = x, y, yerr
 
+    def sensitivity_fit(self, savepath, ts_val):
+
+        x, y, yerr = self.overfluctuations[ts_val]
         x_flux = k_to_flux(x)
 
         threshold = 0.9
@@ -551,6 +563,10 @@ class ResultsHandler(object):
             raise OverfluctuationError(f"Not enough points with overfluctuations under 95%, lower injection scale!")
 
         sens_err = np.array([fit - lower, upper - fit]).T[0]
+
+        self.sensitivity = fit
+        self.extrapolated_sens = extrapolated
+        self.sensitivity_err = sens_err
 
         return fit, extrapolated, sens_err
 
