@@ -406,8 +406,8 @@ class ResultsHandler(object):
 
         savepath = os.path.join(self.plot_dir, "sensitivity.pdf")
 
-        self.find_overfluctuations(bkg_median)
-        self.sensitivity_fit(savepath, bkg_median)
+        self.find_overfluctuations(bkg_median, savepath)
+        # self.sensitivity_fit(savepath, bkg_median)
         # self.sensitivity, self.extrapolated_sens, self.sensitivity_err = self.find_overfluctuations(
         #     bkg_median, savepath, bkg_median
         # )
@@ -493,6 +493,8 @@ class ResultsHandler(object):
 
         x = np.array(x_acc)
         self.overfluctuations[ts_val] = x, y, yerr
+
+        return self.sensitivity_fit(savepath, ts_val)
 
     def sensitivity_fit(self, savepath, ts_val):
 
