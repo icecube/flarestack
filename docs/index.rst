@@ -62,7 +62,12 @@ IceCube Utils
 .. automodule:: flarestack.utils
     :members:
 
+###############
+Submitter
+###############
 
+.. automodule:: flarestack.cluster.submitter
+    :members:
 
 Indices and tables
 ==================

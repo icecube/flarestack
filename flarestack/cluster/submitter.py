@@ -85,7 +85,11 @@ class Submitter(object):
 
     @staticmethod
     def wait_for_cluster(job_ids=None):
-        """Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs"""
+        """
+        Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs
+
+        :param job_ids: list, optional, if given, specifies the IDs of the obs that will be waited on
+        """
 
         # If no job IDs are specified, get all IDs currently listed for this user
         cls = Submitter.get_submitter_class()
@@ -160,7 +164,10 @@ class Submitter(object):
 
     @staticmethod
     def _clean_injection_values_and_pickled_results(name):
-        """Removes directories containing injection values and pickled results"""
+        """
+        Removes directories containing injection values and pickled results
+        :param name: str, the path used in the minimisation handler dictionary (mh_dict)
+        """
         directories = [name_pickle_output_dir(name), inj_dir_name(name)]
         for d in directories:
             if os.path.isdir(d):
@@ -179,6 +186,12 @@ class Submitter(object):
         self.sens_guess = 0.3 * self.disc_guess
 
     def analyse(self, do_disc=False):
+        """
+        Submits the minimisation handler dictionary (self.mh_dict) to be analysed.
+        This happens locally if self.use_cluster == False.
+        :param do_disc: bool, if True, use the estimated discovery potential as
+                the injection scale instead of the sensitivity.
+        """
 
         if self.do_sensitivity_scale_estimation:
 
@@ -205,11 +218,18 @@ class Submitter(object):
 
     @classmethod
     def get_submitter(cls, *args, **kwargs):
+        """
+        Get an initialised instance of the Submitter class suited for the
+        used server.
+        :param args: arguments passed to teh submitter
+        :param kwargs: keyword arguments passed to the submitter
+        :return: instance of Submitter subclass
+        """
         return Submitter.get_submitter_class()(*args, **kwargs)
 
     @classmethod
     def get_submitter_class(cls):
-
+        """Get the Submitter class suited for the used server."""
         if host_server not in cls.submitter_dict:
             logger.warning(f'No submitter implemented for host server {host_server}! '
                            f'Using LocalSubmitter but you wont\'t be able to use cluster operations!')
@@ -291,15 +311,6 @@ class DESYSubmitter(Submitter):
         return self._ntasks_from_qstat_command(DESYSubmitter.status_cmd + " -s r")
 
     def wait_for_job(self):
-        """
-        Runs the command cmd, which queries the status of the job on the
-        cluster, and reads the output. While the output is not an empty
-        string (indicating job completion), the cluster is re-queried
-        every 30 seconds. Occasionally outputs the number of remaining sub-tasks
-        on cluster, and outputs full table result every ~ 8 minutes. On
-        completion of job, terminates function process and allows the script to
-        continue.
-        """
         if self.job_id:
             time.sleep(10)
             i = 31
@@ -324,6 +335,7 @@ class DESYSubmitter(Submitter):
             logger.info(f'No Job ID!')
 
     def make_cluster_submission_script(self):
+        """Produces the shell script used to run on the DESY cluster."""
         flarestack_scratch_dir = os.path.dirname(fs_scratch_dir[:-1]) + "/"
 
         text = "#!/bin/zsh \n" \
@@ -446,6 +458,10 @@ class WIPACSubmitter(Submitter):
         self._status_output = None
 
     def make_executable_file(self, path):
+        """
+        Produces the executable that will be submitted to the NPX cluster.
+        :param path: str, path to the file
+        """
         flarestack_scratch_dir = os.path.dirname(fs_scratch_dir[:-1]) + "/"
 
         txt = f'#!/bin/sh \n' \
@@ -461,6 +477,10 @@ class WIPACSubmitter(Submitter):
             f.write(txt)
 
     def make_submit_file(self, n_tasks):
+        """
+        Produces the submit file that will be submitted to the NPX cluster.
+        :param n_tasks: Number of jobs that will be created
+        """
         text = f'executable = {self.executable_file} \n' \
                f'log = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.log \n' \
                f'output = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.out \n' \
@@ -508,14 +528,23 @@ class WIPACSubmitter(Submitter):
 
     @staticmethod
     def get_condor_status():
-        cmd = ["ssh", "jnecker@submit-1.icecube.wisc.edu", "'condor_q'"]
+        """
+        Queries condor to get cluster status.
+        :return: str, output of query command
+        """
+        cmd = ["ssh", f"{WIPACSubmitter.username}@submit-1.icecube.wisc.edu", "'condor_q'"]
         return subprocess.check_output(cmd).decode()
 
     def collect_condor_status(self):
+        """Gets the condor status and saves it to private attribute"""
         self._status_output = self.get_condor_status()
 
     @property
     def condor_status(self):
+        """
+        Get the status of jobs running on condor.
+        :return: number of jobs that are done, running, waiting, total, held
+        """
         status_list = [[y for y in ii.split(' ') if y] for ii in self._status_output.split('\n')[4:-6]]
         done = running = waiting = total = held = None
 
@@ -537,7 +566,7 @@ class WIPACSubmitter(Submitter):
             j = 0
             while not np.all(np.array(self.condor_status) == None):
                 d, r, w, t, h = self.condor_status
-                logger.info(f'{time.asctime(time.localtime())} - Job{self.job_id}: ' \
+                logger.info(f'{time.asctime(time.localtime())} - Job{self.job_id}: '
                             f'{d} done, {r} running, {w} waiting, {h} held of total {t}')
                 j += 1
                 if j > 7:
