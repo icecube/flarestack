@@ -507,10 +507,16 @@ def make_background_spline(season):
 def load_spline(season, **kwargs):
     path = SoB_spline_path(season, **kwargs)
 
-    logger.debug("Loading from {0}".format(path))
+    logger.debug(f"Loading from {path}")
 
-    with open(path, "rb") as f:
-        res = Pickle.load(f)
+    try:
+        with open(path, "rb") as f:
+            res = Pickle.load(f)
+    except FileNotFoundError:
+        logger.info(f"No cached spline found at {path}. Creating this file instead.")
+        make_spline(season)
+        with open(path, "rb") as f:
+            res = Pickle.load(f)
 
     return res
 
@@ -518,10 +524,16 @@ def load_spline(season, **kwargs):
 def load_bkg_spatial_spline(season):
     path = bkg_spline_path(season)
 
-    logger.debug("Loading from {0}".format(path))
+    logger.debug(f"Loading from {path}")
 
-    with open(path, "rb") as f:
-        res = Pickle.load(f)
+    try:
+        with open(path, "rb") as f:
+            res = Pickle.load(f)
+    except FileNotFoundError:
+        logger.info(f"No cached spline found at {path}. Creating this file instead.")
+        make_background_spline(season)
+        with open(path, "rb") as f:
+            res = Pickle.load(f)
 
     return res
 
