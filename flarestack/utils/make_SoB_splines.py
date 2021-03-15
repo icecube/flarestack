@@ -355,16 +355,19 @@ def create_bkg_spatial_spline(exp, sin_dec_bins):
 
 
 def make_spline(seasons, **kwargs):
+    """Make the S/B splines for each season, as well as the background spline.
 
-    logger.info("Splines will be made to calculate the Signal/Background ratio of " \
-          "the MC to data. The MC will be weighted with a power law, for each" \
-          " gamma in: {0}".format(list(get_gamma_support_points(**kwargs))))
+    :param seasons: Seasons to iterate over
+    """
+
+    logger.info(f"Splines will be made to calculate the Signal/Background ratio of "
+                "the MC to data. The MC will be weighted with a power law, for each"
+                " gamma in: {list(get_gamma_support_points(**kwargs))}")
 
     for season in seasons.values():
         SoB_path = SoB_spline_path(season, **kwargs)
         make_individual_spline_set(season, SoB_path, **kwargs)
         make_background_spline(season)
-
 
 def make_plot(hist, savepath, x_bins, y_bins, normed=True, log_min=5,
               label_x=r"$\sin(\delta)$", label_y="log(Energy)"):
@@ -524,7 +527,7 @@ def load_spline(season, **kwargs):
             res = Pickle.load(f)
     except FileNotFoundError:
         logger.info(f"No cached spline found at {path}. Creating this file instead.")
-        make_spline(season)
+        make_individual_spline_set(season, path, **kwargs)
         with open(path, "rb") as f:
             res = Pickle.load(f)
 
