@@ -1,6 +1,5 @@
 import logging
-from .submitter import Submitter
-
+from flarestack.cluster.submitter import Submitter
 
 logger = logging.getLogger(__name__)
 
