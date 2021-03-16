@@ -64,7 +64,7 @@ def read_t_pdf_dict(t_pdf_dict):
 
         if old_key in list(t_pdf_dict.keys()):
             logger.warning("Deprecated t_pdf_key '{0}' was used. "
-                            "Please use '{1}' in future.".format(old_key, new_key))
+                           "Please use '{1}' in future.".format(old_key, new_key))
             t_pdf_dict[new_key] = t_pdf_dict[old_key]
 
     name_maps = [
