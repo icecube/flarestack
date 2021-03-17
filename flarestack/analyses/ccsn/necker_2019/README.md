@@ -52,3 +52,7 @@ the `.npy` catalogue files.
 * `make_ratio_plots.py`: produces plots of the sensitivity ratios of the results reproduced with _Flarestack_, 
 the original sensitivities and the ones produced with the corrected catalogue.
 * `unblind_updated_ccsn.py`: script to unblind the analysis.
+* `plot_sensitivity_fluxes.py`: loads the previously calculated sensitivities and uses `flarestack.cosmo` 
+to calculate the contribution to the diffuse flux
+* `compare_sensitivity_SN2009hd.ipynb`: a jupyter notebook that compares the sensitivity for the 
+supernova IIP catalogue with and without SN2009hd
