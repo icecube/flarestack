@@ -8,6 +8,8 @@ from flarestack.utils.prepare_catalogue import ps_catalogue_name
 import unittest
 from flarestack.core.unblinding import create_unblinder
 
+logging.basicConfig(level=logging.INFO)
+
 # Initialise Injectors/LLHs
 
 # Shared
@@ -68,7 +70,10 @@ class TestFlareSearch(unittest.TestCase):
         logging.info("Reference best fit {0}".format(true_parameters))
 
         for i, x in enumerate(res):
-            self.assertAlmostEqual(x, true_parameters[i], places=1)
+            if i < 2:
+                self.assertAlmostEqual(x/true_parameters[i], 1., places=1)
+            else:
+                self.assertEqual(x, true_parameters[i])
 
 
 if __name__ == '__main__':
