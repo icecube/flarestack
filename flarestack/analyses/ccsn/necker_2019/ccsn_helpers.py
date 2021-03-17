@@ -1,6 +1,9 @@
 import os
 import logging
+from astropy import units as u
 from flarestack.shared import limits_dir, limit_output_path
+from flarestack.cosmo.neutrino_cosmology import define_cosmology_functions
+from flarestack.core.energy_pdf import EnergyPDF
 
 
 raw_output_dir = 'analyses/ccsn/necker_2019'
@@ -144,3 +147,21 @@ def limit_sens(mh_name, pdf_type):
             os.mkdir(p)
 
     return limit_output_path(base)
+
+
+def get_cosmology(nu_e, rate, gamma):
+    energy_pdf_dict = {
+        'energy_pdf_name': 'power_law',
+        'gamma': gamma,
+    }
+    energy_pdf = EnergyPDF.create(energy_pdf_dict)
+    fluence_conversion = energy_pdf.fluence_integral() * u.GeV ** 2
+    nu_e = nu_e.to("GeV") / fluence_conversion
+    functions = define_cosmology_functions(rate, nu_e, gamma)
+    return functions
+
+
+def get_population_flux(nu_e, rate, gamma, redshift):
+    functions = get_cosmology(nu_e, rate, gamma)
+    cumulative_flux = functions[3]
+    return cumulative_flux(redshift)[-1]
