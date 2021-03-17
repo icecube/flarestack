@@ -1605,11 +1605,6 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
     def add_likelihood(self, season):
         return generate_dynamic_flare_class(season, self.sources, self.llh_dict)
 
-
-def g(x):
-    return x * x
-
-
 if __name__ == '__main__':
     from multiprocessing import Pool
 
