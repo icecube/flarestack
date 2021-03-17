@@ -288,6 +288,6 @@ if __name__ == '__main__':
                     logging.debug(f'adding these previously missed ones: \n {to_add_to_cat}')
                     combined_catalogue = np.array(list(combined_catalogue) + list(to_add_to_cat), dtype=dt_comb)
 
-                sname_combined = updated_sn_catalogue_name(sn_type, flagged=flag, nearby=False, z_conservative=z_add)
+                sname_combined = updated_sn_catalogue_name(sn_type, flagged=flag, z_conservative=z_add)
                 logging.info(f'saving the combined catalogue for {sn_type} {msg} to {sname_combined}')
                 np.save(sname_combined, combined_catalogue)
