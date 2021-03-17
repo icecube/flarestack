@@ -8,8 +8,6 @@ from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.core.unblinding import create_unblinder
 
-logging.basicConfig(level=logging.INFO)
-
 # Initialise Injectors/LLHs
 
 # Shared
