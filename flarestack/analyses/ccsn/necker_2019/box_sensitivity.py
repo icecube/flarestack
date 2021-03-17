@@ -37,7 +37,7 @@ llh_energy = {
 cluster = 500
 
 # Spectral indices to loop over
-gammas = [2.]
+gammas = [2.0, 2.5]
 
 # minimizer to use
 mh_name = 'fit_weights'
@@ -126,6 +126,8 @@ if __name__ == '__main__':
                     scale *= 0.5
                 if cat == 'IIn' and gamma == 2.5 and pdf_time == 1000:
                     scale *= 1.4
+                if cat == 'IIP' and gamma == 2.5:
+                    scale *= 0.6
 
                 # set up an injection dictionary and set the desired spectral index
                 injection_energy = dict(llh_energy)

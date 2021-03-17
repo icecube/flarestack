@@ -2,6 +2,7 @@
 """
 import numpy as np
 from flarestack.core.results import ResultsHandler
+from flarestack.core.experimental_results import ExperimentalResultHandler
 from flarestack.data.icecube import ps_v002_p01
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
@@ -37,7 +38,7 @@ llh_energy = {
 cluster = 500
 
 # Spectral indices to loop over
-gammas = [2.]
+gammas = [2, 2.5]
 
 # minimizer to use
 mh_name = 'fit_weights'
@@ -121,6 +122,10 @@ if __name__ == '__main__':
                 # to get a good sensitivity, adjust the scale in these cases
                 if (gamma == 2.5) and (cat == 'IIn'):
                     scale *= 1.8
+                if (gamma == 2.5) and (cat == 'IIP'):
+                    scale *= 0.15
+                if (gamma == 2.0) and (cat == 'IIP'):
+                    scale *= 0.5
                 if cat == 'IIn':
                     scale *= 5
 
