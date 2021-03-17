@@ -312,7 +312,7 @@ class ResultsHandler(object):
 
         try:
             # if weights were not fitted, number of neutrinos is stored in just one parameter
-            if 'fit' not in self.mh_name:
+            if np.logical_and('fit' not in self.mh_name, "flare" not in self.mh_name):
                 # self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(float(x[1]))
                 self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(self.scales_float[1])
 
