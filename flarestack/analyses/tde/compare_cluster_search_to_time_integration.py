@@ -2,19 +2,20 @@
 with negative n_s, and also to the flare search method, which looks for
 temporal clustering. The script runs for all individual TDEs to be analysed.
 """
-from __future__ import division
-from builtins import str
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
 from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
-from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
+from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.utils.custom_dataset import custom_dataset
+from flarestack.utils import load_catalogue, custom_dataset
+from flarestack.cluster import analyse, wait_cluster
 import matplotlib.pyplot as plt
 from flarestack.analyses.tde.shared_TDE import individual_tdes, \
     individual_tde_cat
-import flarestack.cluster.run_desy_cluster as rd
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 name_root = "analyses/tde/compare_cluster_search_to_time_integration/"
 
@@ -23,12 +24,16 @@ cat_res = dict()
 # Initialise Injectors/LLHs
 
 injection_energy = {
-    "Name": "Power Law",
-    "Gamma": 2.0,
+    "energy_pdf_name": "power_law",
+    "gamma": 2.0,
 }
 
 llh_time = {
-    "Name": "FixedEndBox",
+    "time_pdf_name": "custom_source_box"
+}
+
+llh_bkg_time = {
+    "time_pdf_name": "steady"
 }
 
 llh_energy = injection_energy
@@ -36,61 +41,54 @@ llh_energy = injection_energy
 # A standard time integration, with n_s >=0
 
 time_integrated = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": False,
-    "Fit Negative n_s?": False
+    "llh_name": "standard",
+    "llh_energy_pdf": llh_energy,
+    "llh_sig_time_pdf": llh_time,
+    "llh_bkg_time_pdf": llh_bkg_time,
+    "negative_ns_bool": False
 }
 
 # Time integration where n_s can be fit as negative or positive
 
 time_integrated_negative_n_s = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": False,
-    "Fit Negative n_s?": True
+    "llh_name": "standard",
+    "llh_energy_pdf": llh_energy,
+    "llh_sig_time_pdf": llh_time,
+    "llh_bkg_time_pdf": llh_bkg_time,
+    "negative_ns_bool": True
 }
 
-# A flare search, looking for clustering in time and space
+configs = [
+    # (time_integrated, "fixed_weights", "fixed_box", "Time-Integrated (n_s > 0)"),
+    (time_integrated_negative_n_s, "fixed_weights", "fixed_box_negative", "Time-Integrated"),
+    (time_integrated, "flare", "flare", "Cluster Search")
+]
 
-flare = {
-    "LLH Energy PDF": llh_energy,
-    "LLH Time PDF": llh_time,
-    "Fit Gamma?": True,
-    "Flare Search?": True,
-    "Fit Negative n_s?": False
-}
+cluster = True
 
-for j, cat in enumerate(individual_tdes):
+job_ids = []
+
+for j, cat in enumerate(individual_tdes[-1:]):
 
     name = name_root + cat.replace(" ", "") + "/"
 
     cat_path = individual_tde_cat(cat)
-    catalogue = np.load(cat_path)
+    catalogue = load_catalogue(cat_path)
 
-    t_start = catalogue["Start Time (MJD)"]
-    t_end = catalogue["End Time (MJD)"]
+    t_start = catalogue["start_time_mjd"]
+    t_end = catalogue["end_time_mjd"]
 
     max_window = float(t_end - t_start)
 
     src_res = dict()
 
-    lengths = np.logspace(-2, 0, 5) * max_window
+    lengths = np.logspace(-2, 0, 2) * max_window
 
     # Loop over likelihood methods
 
-    for i, llh_kwargs in enumerate([time_integrated,
-                                    time_integrated_negative_n_s,
-                                    flare
-                                    ]):
+    for (llh_dict, mh_name, f_name, label) in configs:
 
         # Set plot labels and subdirectory names
-
-        label = ["Time-Integrated (n_s > 0)", "Time-Integrated",
-                 "Cluster Search"][i]
-        f_name = ["fixed_box", "fixed_box_negative", "flare"][i]
 
         flare_name = name + f_name + "/"
 
@@ -107,54 +105,50 @@ for j, cat in enumerate(individual_tdes):
             # livetime fluctuations/detector seasons.
 
             injection_time = {
-                "Name": "FixedRefBox",
-                "Fixed Ref Time (MJD)": t_start,
-                "Pre-Window": 0,
-                "Post-Window": flare_length,
-                "Time Smear?": True,
-                "Min Offset": 0.,
-                "Max Offset": max_window - flare_length
+                "time_pdf_name": "fixed_ref_box",
+                "fixed_ref_time_mjd": t_start,
+                "pre_window": 0.,
+                "post_window": flare_length,
+                "time_smear_bool": True,
+                "min_offset": 0.,
+                "max_offset": max_window - flare_length
             }
 
-            inj_kwargs = {
-                "Injection Energy PDF": injection_energy,
-                "Injection Time PDF": injection_time,
-                "Poisson Smear?": True,
+            inj_dict = {
+                "injection_energy_pdf": injection_energy,
+                "injection_sig_time_pdf": injection_time,
             }
 
             # Sets a default flux scale for signal injection
 
-            scale = flux_to_k(reference_sensitivity(np.sin(catalogue["dec"]))
+            scale = flux_to_k(reference_sensitivity(np.sin(catalogue["dec_rad"]))
                               * (50 * max_window / flare_length))
 
             if cat != "AT2018cow":
                 dataset = custom_dataset(txs_sample_v2, catalogue,
-                                           llh_kwargs["LLH Time PDF"])
+                                         llh_dict["llh_sig_time_pdf"])
             else:
                 dataset = gfu_v002_p04
 
             mh_dict = {
                 "name": full_name,
-                "datasets": dataset,
+                "mh_name": mh_name,
+                "dataset": dataset,
                 "catalogue": cat_path,
-                "inj kwargs": inj_kwargs,
-                "llh kwargs": llh_kwargs,
+                "inj_dict": inj_dict,
+                "llh_dict": llh_dict,
                 "scale": scale,
-                "n_trials": 1,
+                "n_trials": 10,
                 "n_steps": 15
             }
 
-            pkl_file = make_analysis_pickle(mh_dict)
-
             # Run jobs on cluster
 
-            # rd.submit_to_cluster(pkl_file, n_jobs=5000)
-
-            # Run locally
-            #
-            # mh = MinimisationHandler(mh_dict)
-            # mh.iterate_run(mh_dict["scale"], n_steps=10, n_trials=3)
-            # mh.clear()
+            job_id = analyse(mh_dict,
+                             cluster=cluster,
+                             n_cpu=1 if cluster else 32,
+                             h_cpu='00:59:59')
+            job_ids.append(job_id)
 
             res[flare_length] = mh_dict
 
@@ -162,9 +156,9 @@ for j, cat in enumerate(individual_tdes):
 
     cat_res[cat] = src_res
 
-# Wait for cluster jobs to finish
+wait_cluster(job_ids)
 
-rd.wait_for_cluster()
+# Wait for cluster jobs to finish
 
 for (cat, src_res) in cat_res.items():
 
@@ -197,9 +191,9 @@ for (cat, src_res) in cat_res.items():
                 # Convert flux to fluence and source energy
 
                 astro_sens, astro_disc = rh.astro_values(
-                    rh_dict["inj kwargs"]["Injection Energy PDF"])
+                    rh_dict["inj_dict"]["injection_energy_pdf"])
 
-                key = "Total Fluence (GeV cm^{-2} s^{-1})"
+                key = "Energy Flux (GeV cm^{-2} s^{-1})"
 
                 e_key = "Mean Luminosity (erg/s)"
 
@@ -263,6 +257,10 @@ for (cat, src_res) in cat_res.items():
 
         ax1.legend(loc='upper left', fancybox=True)
         plt.tight_layout()
-        plt.savefig(plot_output_dir(name) + "/flare_vs_box_" +
-                    ["sens", "disc"][j] + ".pdf")
+
+        path = plot_output_dir(name) + "/flare_vs_box_" + ["sens", "disc"][j] + ".pdf"
+
+        logging.info(f"Saving to {path}")
+
+        plt.savefig(path)
         plt.close()
