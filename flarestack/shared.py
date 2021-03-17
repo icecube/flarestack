@@ -98,9 +98,10 @@ else:
 
 # gamma_range = [1., 4.]
 # gamma_precision = .025
+flarestack_gamma_precision = .025
 
 default_gamma_precision = {
-    'flarestack': .025,
+    'flarestack': flarestack_gamma_precision,
     'skylab': .1
 }
 

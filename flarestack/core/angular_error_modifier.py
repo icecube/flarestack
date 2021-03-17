@@ -247,7 +247,7 @@ class BaseAngularErrorModifier(object):
     def create_spatial_cache(self, cut_data, SoB_pdf):
         if len(inspect.getfullargspec(SoB_pdf)[0]) == 2:
             SoB = dict()
-            for gamma in get_gamma_support_points(gamma_precision=self.precision):
+            for gamma in get_gamma_support_points(precision=self.precision):
                 SoB[gamma] = np.log(SoB_pdf(cut_data, gamma))
         else:
             SoB = SoB_pdf(cut_data)

@@ -1559,9 +1559,22 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             name = source["source_name"]
             key = self.source_param_name("n_s", source)
             n_inj = 0
-            for inj in self.injectors.values():
+
+            for season_name in self.seasons.keys():
+
                 try:
-                    n_inj += inj.ref_fluxes[scale_shortener(scale)][name]
+
+                    names = [x[0] for x in self.get_injector(season_name).n_exp["source_name"]]
+
+                    if isinstance(names[0], bytes):
+                        names = [x.decode() for x in names]
+
+                    if isinstance(name, bytes):
+                        name = name.decode()
+
+                    mask = np.array([x == name for x in names])
+
+                    n_inj += np.sum(self.get_injector(season_name).n_exp["n_exp"][mask] * scale)
 
                 # If source not overlapping season, will not be in dict
                 except KeyError:
@@ -1569,10 +1582,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
             inj_params[key] = n_inj
 
-            ts = min([inj.time_pdf.sig_t0(source)
-                      for inj in self.injectors.values()])
-            te = max([inj.time_pdf.sig_t1(source)
-                      for inj in self.injectors.values()])
+            ts = min([self.get_injector(season_name).sig_time_pdf.sig_t0(source)
+                      for season_name in self.seasons.keys()])
+            te = max([self.get_injector(season_name).sig_time_pdf.sig_t1(source)
+                      for season_name in self.seasons.keys()])
 
             inj_params[self.source_param_name("length", source)] = te - ts
 
@@ -1580,8 +1593,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 inj_params[self.source_param_name("t_start", source)] = np.nan
                 inj_params[self.source_param_name("t_end", source)] = np.nan
             else:
-                inj_params[[self.source_param_name("t_start", source)]] = ts
-                inj_params[[self.source_param_name("t_end", source)]] = te
+                inj_params[self.source_param_name("t_start", source)] = ts
+                inj_params[self.source_param_name("t_end", source)] = te
 
             for (key, val) in LLH.get_injected_parameters(
                     self.mh_dict).items():
@@ -1591,11 +1604,6 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
     def add_likelihood(self, season):
         return generate_dynamic_flare_class(season, self.sources, self.llh_dict)
-
-
-def g(x):
-    return x * x
-
 
 if __name__ == '__main__':
     from multiprocessing import Pool

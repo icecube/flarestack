@@ -227,7 +227,7 @@ def create_pull_0d_e(pull_dict):
 
     res_dict = dict()
 
-    x_range = np.array(sorted(list(get_gamma_support_points(gamma_precision=gamma_precision))))
+    x_range = np.array(sorted(list(get_gamma_support_points(precision=gamma_precision))))
 
     y_range = []
 
@@ -318,7 +318,7 @@ def create_pull_1d_e(floor_dict):
                         "but selected energy pdf gave the following parameters:"
                         " {} {} {}".format(name, default, bounds))
 
-    e_range = np.array(sorted(list(get_gamma_support_points(gamma_precision=gamma_precision))))
+    e_range = np.array(sorted(list(get_gamma_support_points(precision=gamma_precision))))
 
     bins = np.linspace(2., 6., 5)
     x_range = 0.5 * (bins[1:] + bins[:-1])
@@ -462,7 +462,7 @@ def create_pull_2d_e(pull_dict):
 
     res_dict = dict()
 
-    e_range = np.array(sorted(list(get_gamma_support_points(gamma_precision=gamma_precision))))
+    e_range = np.array(sorted(list(get_gamma_support_points(precision=gamma_precision))))
 
     for e in e_range:
 

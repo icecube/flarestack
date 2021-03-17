@@ -2,10 +2,10 @@
 process is deterministic, so the same flare should be found each time.
 """
 import logging
-import numpy as np
+import unittest
+from flarestack import MinimisationHandler, analyse
 from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-import unittest
 from flarestack.core.unblinding import create_unblinder
 
 # Initialise Injectors/LLHs
@@ -59,7 +59,7 @@ class TestFlareSearch(unittest.TestCase):
         pass
 
     def test_flare(self):
-        logging.info("Testing 'flare' LLH class")
+        logging.info("Testing 'flare' MinimisationHandler class")
 
         ub = create_unblinder(unblind_dict, full_plots=True)
         res = [x for x in ub.res_dict["Parameters"].values()]
@@ -68,7 +68,33 @@ class TestFlareSearch(unittest.TestCase):
         logging.info("Reference best fit {0}".format(true_parameters))
 
         for i, x in enumerate(res):
-            self.assertAlmostEqual(x, true_parameters[i], places=1)
+            if i < 2:
+                self.assertAlmostEqual(x/true_parameters[i], 1., places=1)
+            else:
+                self.assertEqual(x, true_parameters[i])
+
+        inj_dict = {
+            "injection_sig_time_pdf": {
+                "time_pdf_name": "steady"
+            },
+            "injection_bkg_time_pdf": {
+                "time_pdf_name": "steady",
+            },
+            "injection_energy_pdf": {
+                "energy_pdf_name": "power_law",
+                "gamma": 2.0
+            }
+        }
+
+        mh_dict = dict(unblind_dict)
+        mh_dict["inj_dict"] = inj_dict
+        mh_dict["n_trials"] = 1.
+        mh_dict["n_steps"] = 3.
+        mh_dict["scale"] = 5.
+
+        mh = MinimisationHandler.create(mh_dict)
+        res = mh.simulate_and_run(5.)
+        analyse(mh_dict, cluster=False)
 
 
 if __name__ == '__main__':

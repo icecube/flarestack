@@ -5,7 +5,7 @@ import shutil
 import scipy.interpolate
 import pickle as Pickle
 from flarestack.shared import default_gamma_precision, SoB_spline_path, default_smoothing_order, \
-    bkg_spline_path, dataset_plot_dir, get_base_sob_plot_dir, SoB_spline_dir, bkg_spline_dir, acc_f_dir
+    bkg_spline_path, get_base_sob_plot_dir, flarestack_gamma_precision
 from flarestack.core.energy_pdf import PowerLaw
 import matplotlib.pyplot as plt
 
@@ -15,10 +15,14 @@ logger = logging.getLogger(__name__)
 energy_pdf = PowerLaw()
 
 
-def get_gamma_precision(precision):
+def get_gamma_precision(precision=flarestack_gamma_precision):
     """Returns the precision in gamma that is used.
-    # Returns default value if the environment_precision_key is not present in th environ dictionary"""
-    # prec = float(os.environ.get(environment_precision_key, default_gamma_precision[precision_str]))
+    Returns default value if the environment_precision_key is not present in th environ dictionary
+
+    :param precision: Specify which precision to use. Default to the standard precision.
+    Can also provide default of llh codes by name, either 'skylab' or 'flarestack'.
+    :return: Precision as a float
+    """
     if isinstance(precision, float):
         return precision
 
@@ -33,21 +37,27 @@ def get_gamma_precision(precision):
         raise TypeError(f'Type {type(precision)} of {precision} not understood for variable gamma precision')
 
 
-def _around(value, precision='flarestack'):
+def _around(value, precision=flarestack_gamma_precision):
     """Produces an array in which the precision of the value
     is rounded to the nearest integer. This is then multiplied
     by the precision, and the new value is returned.
 
-    :param value: value to be processed
+    :param precision: Specify which precision to use. Default to the standard precision.
+    Can also provide default of llh codes by name, either 'skylab' or 'flarestack'.
     :return: value after processed
     """
     return np.around(float(value) / get_gamma_precision(precision)) * get_gamma_precision(precision)
 
 
-def get_gamma_support_points(gamma_precision):
-    """Return the gamma support points based on the gamma precision"""
-    gamma_points = np.arange(0.7, 4.3, get_gamma_precision(precision=gamma_precision))
-    return set([_around(i, precision=gamma_precision) for i in gamma_points])
+def get_gamma_support_points(precision=flarestack_gamma_precision):
+    """Return the gamma support points based on the gamma precision
+
+    :param precision: Specify which precision to use. Default to the standard precision.
+    Can also provide default of llh codes by name, either 'skylab' or 'flarestack'.
+    :return: Gamma support points
+    """
+    gamma_points = np.arange(0.7, 4.3, get_gamma_precision(precision=precision))
+    return set([_around(i, precision=precision) for i in gamma_points])
 
 
 def create_2d_hist(sin_dec, log_e, sin_dec_bins, log_e_bins, weights):
@@ -305,7 +315,7 @@ def create_2d_splines(exp, mc, sin_dec_bins, log_e_bins, **kwargs):
     splines = dict()
     gamma_precision = kwargs.get('gamma_precision', 'flarestack')
     smoothing_order = kwargs.get('smoothing_order', 'flarestack')
-    gamma_support_points = get_gamma_support_points(gamma_precision=gamma_precision)
+    gamma_support_points = get_gamma_support_points(precision=gamma_precision)
 
 
     for gamma in gamma_support_points:
@@ -345,16 +355,19 @@ def create_bkg_spatial_spline(exp, sin_dec_bins):
 
 
 def make_spline(seasons, **kwargs):
+    """Make the S/B splines for each season, as well as the background spline.
 
-    logger.info("Splines will be made to calculate the Signal/Background ratio of " \
-          "the MC to data. The MC will be weighted with a power law, for each" \
-          " gamma in: {0}".format(list(get_gamma_support_points(**kwargs))))
+    :param seasons: Seasons to iterate over
+    """
+
+    logger.info(f"Splines will be made to calculate the Signal/Background ratio of "
+                "the MC to data. The MC will be weighted with a power law, for each"
+                " gamma in: {list(get_gamma_support_points(**kwargs))}")
 
     for season in seasons.values():
         SoB_path = SoB_spline_path(season, **kwargs)
         make_individual_spline_set(season, SoB_path, **kwargs)
         make_background_spline(season)
-
 
 def make_plot(hist, savepath, x_bins, y_bins, normed=True, log_min=5,
               label_x=r"$\sin(\delta)$", label_y="log(Energy)"):
@@ -507,10 +520,16 @@ def make_background_spline(season):
 def load_spline(season, **kwargs):
     path = SoB_spline_path(season, **kwargs)
 
-    logger.debug("Loading from {0}".format(path))
+    logger.debug(f"Loading from {path}")
 
-    with open(path, "rb") as f:
-        res = Pickle.load(f)
+    try:
+        with open(path, "rb") as f:
+            res = Pickle.load(f)
+    except FileNotFoundError:
+        logger.info(f"No cached spline found at {path}. Creating this file instead.")
+        make_individual_spline_set(season, path, **kwargs)
+        with open(path, "rb") as f:
+            res = Pickle.load(f)
 
     return res
 
@@ -518,10 +537,16 @@ def load_spline(season, **kwargs):
 def load_bkg_spatial_spline(season):
     path = bkg_spline_path(season)
 
-    logger.debug("Loading from {0}".format(path))
+    logger.debug(f"Loading from {path}")
 
-    with open(path, "rb") as f:
-        res = Pickle.load(f)
+    try:
+        with open(path, "rb") as f:
+            res = Pickle.load(f)
+    except FileNotFoundError:
+        logger.info(f"No cached spline found at {path}. Creating this file instead.")
+        make_background_spline(season)
+        with open(path, "rb") as f:
+            res = Pickle.load(f)
 
     return res
 

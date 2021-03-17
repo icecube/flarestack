@@ -274,10 +274,11 @@ def plot_background_ts_distribution(ts_array, path, ts_type="Standard",
         pass
 
     ts_array = np.array(ts_array)
-    ts_array = ts_array[~np.isnan(ts_array)]
-
+    
     if np.sum(np.isnan(ts_array)) > 0:
         logger.warning("TS distribution has", np.sum(np.isnan(ts_array)), "nan entries.")
+
+    ts_array = ts_array[~np.isnan(ts_array)]
 
     if np.median(ts_array) < 0.:
         plot_expanded_negative(ts_array, path)
