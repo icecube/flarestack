@@ -1,4 +1,4 @@
-import matplotlib
+import matplotlib, os
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,6 +9,9 @@ from flarestack.shared import plot_output_dir
 
 
 plot_dir = plot_output_dir(raw_output_dir+'/catalogue_visualization/difference_stasik/')
+
+if not os.path.isdir(plot_dir):
+    os.makedirs(plot_dir)
 
 
 def autolabel(rects, axis):
@@ -105,7 +108,6 @@ def plot_difference_individual(sn_types, filename):
 
     fig.savefig(filename)
     plt.close()
-
 
 plot_difference_tot(plot_dir + 'total.pdf')
 plot_difference_individual(['Ibc', 'IIn'], plot_dir + 'individual.pdf')
