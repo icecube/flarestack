@@ -312,14 +312,14 @@ class ResultsHandler(object):
 
         try:
             # if weights were not fitted, number of neutrinos is stored in just one parameter
-            if np.logical_and('fit' not in self.mh_name, "flare" not in self.mh_name):
-                # self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(float(x[1]))
+
+            if "n_s" in self.inj[self.scales[1]]:
+
                 self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(self.scales_float[1])
 
-            # if weights were fitted, there is one n_s for each fitted source
+            # if weights were fitted, or for cluster search, there is one n_s for each fitted source
             else:
                 sc_dict = self.inj[self.scales[1]]
-                # self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(float(x[1]))
                 self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(self.scales_float[1])
 
             logger.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
