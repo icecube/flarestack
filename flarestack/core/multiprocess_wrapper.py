@@ -157,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--n_cpu", default=min(max(1, os.cpu_count()-1), 32))
     cfg = parser.parse_args()
 
-    logger.info(f"N CPU available {os.cpu_count()}. Using {cfg.n_ncpu}")
+    logger.info(f"N CPU available {os.cpu_count()}. Using {cfg.n_cpu}")
 
     with open(cfg.file, "rb") as f:
         mh_dict = pickle.load(f)
