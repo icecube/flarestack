@@ -61,14 +61,9 @@ class MultiProcessor:
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter("%(levelname)s: %(asctime)s - %(process)s - %(message)s"))
         # ql gets records from the queue and sends them to the handler
+
         ql = QueueListener(self.log_queue, handler)
         ql.start()
-        # logger = logger.getLogger()
-        # logger.getLogger().setLevel("DEBUG")
-        # # add the handler to the logger so records from this process are handled
-        # logger.addHandler(handler)
-
-        # self.results = dict()
 
         for p in self.processes:
             p.start()
