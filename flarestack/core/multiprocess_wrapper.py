@@ -139,24 +139,27 @@ class MultiProcessor:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.terminate()
 
+
 def run_multiprocess(n_cpu, mh_dict):
     with MultiProcessor(n_cpu=n_cpu, mh_dict=mh_dict) as r:
         r.fill_queue()
         r.terminate()
         del r
 
+
 if __name__ == '__main__':
     import os
 
+    logging.basicConfig(level=logging.INFO)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="Path for analysis pkl_file")
-    parser.add_argument("-n", "--n_cpu", default=min(os.cpu_count()-1, 32))
+    parser.add_argument("-n", "--n_cpu", default=min(max(1, os.cpu_count()-1), 32))
     cfg = parser.parse_args()
 
-    logger.info("N CPU available {0}".format(os.cpu_count()))
+    logger.info(f"N CPU available {os.cpu_count()}. Using {cfg.n_ncpu}")
 
     with open(cfg.file, "rb") as f:
         mh_dict = pickle.load(f)
-
 
     run_multiprocess(n_cpu=cfg.n_cpu, mh_dict=mh_dict)
