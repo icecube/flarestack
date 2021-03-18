@@ -156,14 +156,14 @@ class TimePDF(object):
         min_int = self.product_integral(self.sig_t0(source), source)
         fraction = max_int - min_int
 
-        t_range = np.linspace(self.sig_t0(source), self.sig_t1(source),
+        t_range = np.linspace(float(self.sig_t0(source)), float(self.sig_t1(source)),
                               int(1e4))
         cumu = (self.product_integral(t_range, source) - min_int) / fraction
 
         # Checks to ensure the cumulative fraction spans 0 to 1
-        if max(cumu) > 1:
+        if max(cumu) > 1.:
             raise Exception("Cumulative Distribution exceeds 1.")
-        elif min(cumu) < 0:
+        elif min(cumu) < 0.:
             raise Exception("Cumulative Distribution extends below 0.")
 
         return interp1d(cumu, t_range, kind='linear')

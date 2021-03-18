@@ -352,7 +352,7 @@ class MCInjector(BaseInjector):
 
             # Simulates poisson noise around the expectation value n_inj.
             if self.poisson_smear:
-                n_s = np.random.poisson(n_inj)
+                n_s = int(np.random.poisson(n_inj))
             # If there is no poisson noise, rounds n_s down to nearest integer
             else:
                 n_s = int(n_inj)
@@ -542,7 +542,7 @@ class EffectiveAreaInjector(BaseInjector):
 
             # Simulates poisson noise around the expectation value n_inj.
             if self.poisson_smear:
-                n_s = np.random.poisson(n_inj)
+                n_s = int(np.random.poisson(n_inj))
             # If there is no poisson noise, rounds n_s to nearest integer
             else:
                 n_s = int(n_inj)
