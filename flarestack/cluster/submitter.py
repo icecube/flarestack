@@ -253,8 +253,7 @@ class LocalSubmitter(Submitter):
 @Submitter.register_submitter_class("DESY")
 class DESYSubmitter(Submitter):
 
-    cluster_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
-    submit_file = cluster_dir + "SubmitDESY.sh"
+    submit_file = os.path.join(cluster_dir, "SubmitDESY.sh")
     username = os.path.basename(os.environ['HOME'])
     status_cmd = f'qstat -u {username}'
     submit_cmd = 'qsub '
@@ -271,6 +270,7 @@ class DESYSubmitter(Submitter):
             "ram_per_core",
             "{0:.1f}G".format(6. / float(self.cluster_cpu) + 2.)
         )
+        self.remove_old_logs = self.cluster_kwargs.get('remove_old_logs', True)
 
     @staticmethod
     def _qstat_output(qstat_command):
@@ -382,6 +382,10 @@ class DESYSubmitter(Submitter):
 
     def submit_cluster(self, mh_dict):
         """Submits the job to the cluster"""
+        # if specified, remove old logs from log directory
+        if self.remove_old_logs:
+            self.clear_log_dir()
+
         # Get the number of tasks that will have to be submitted in order to get ntrials
         ntrials = mh_dict['n_trials']
         n_tasks = int(ntrials / self.trials_per_task)
@@ -426,6 +430,12 @@ class DESYSubmitter(Submitter):
     def get_pending_ids():
         return np.unique(np.unique(DESYSubmitter.get_ids(DESYSubmitter.status_cmd)))
 
+    @staticmethod
+    def clear_log_dir():
+        for f in os.listdir(log_dir):
+            ff = f'{log_dir}/{f}'
+            logger.debug(f'removing {ff}')
+            os.remove(ff)
 
 @Submitter.register_submitter_class('WIPAC')
 class WIPACSubmitter(Submitter):
