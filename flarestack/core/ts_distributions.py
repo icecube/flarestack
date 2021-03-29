@@ -10,6 +10,22 @@ logger = logging.getLogger(__name__)
 raw_five_sigma = norm.cdf(5)
 n_bins = 100
 
+
+def get_ts_fit_type(mh_dict):
+    """Function to select the best method for fitting the TS distribution resulting
+    from a particular minimisation_handler.
+
+    :param mh_dict: MinimisationHandler or ResultsHandler dictionary
+    :return: name for ts_type
+    """
+    if mh_dict["mh_name"] == "flare":
+        ts_fit_type = "flare"
+    else:
+        ts_fit_type = "standard"
+
+    return ts_fit_type
+
+
 # Taken via Alex Stasik from Thomas Kintscher
 
 

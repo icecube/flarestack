@@ -10,7 +10,7 @@ from flarestack.core.time_pdf import TimePDF
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
     analysis_pickle_path, limit_output_path, unblinding_output_path
 import pickle
-from flarestack.core.ts_distributions import plot_background_ts_distribution
+from flarestack.core.ts_distributions import plot_background_ts_distribution, get_ts_fit_type
 import matplotlib.pyplot as plt
 from flarestack.utils.catalogue_loader import load_catalogue
 
@@ -144,8 +144,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
             # Quantify the TS value significance
             self.ts = np.array([self.res_dict["TS"]])[0]
-            self.ts_type = unblind_dict.get('ts_type', 'standard')
             self.sigma = np.nan
+            self.ts_type = get_ts_fit_type(unblind_dict)
 
             logger.info("Test Statistic of: {0}".format(self.ts))
 

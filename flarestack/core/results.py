@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
     k_to_flux, inj_dir_name, scale_shortener, flux_to_k
 from flarestack.core.ts_distributions import plot_background_ts_distribution, \
-    plot_fit_results
+    plot_fit_results, get_ts_fit_type
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.utils.catalogue_loader import load_catalogue
@@ -43,7 +43,7 @@ class ResultsHandler(object):
 
         # Checks if the code should search for flares. By default, this is
         # not done.
-        self.flare = self.mh_name == "flare"
+        # self.flare = self.mh_name == "flare"
 
         # if self.flare:
         #     self.make_plots = self.flare_plots
@@ -71,10 +71,7 @@ class ResultsHandler(object):
         # elif self.negative_n_s:
         #     self.ts_type = "Negative n_s"
         # else:
-        if self.flare:
-            self.ts_type = "flare"
-        else:
-            self.ts_type = "standard"
+        self.ts_type = get_ts_fit_type(rh_dict)
 
         # print "negative_ns", self.negative_n_s
 
