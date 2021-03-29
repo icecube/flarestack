@@ -43,10 +43,7 @@ class ResultsHandler(object):
 
         # Checks if the code should search for flares. By default, this is
         # not done.
-        # try:
-        #     self.flare = llh_kwargs["Flare Search?"]
-        # except KeyError:
-        #     self.flare = False
+        self.flare = self.mh_name == "flare"
 
         # if self.flare:
         #     self.make_plots = self.flare_plots
@@ -74,8 +71,11 @@ class ResultsHandler(object):
         # elif self.negative_n_s:
         #     self.ts_type = "Negative n_s"
         # else:
-        self.ts_type = "Standard"
-        #
+        if self.flare:
+            self.ts_type = "flare"
+        else:
+            self.ts_type = "standard"
+
         # print "negative_ns", self.negative_n_s
 
         p0, bounds, names = MinimisationHandler.find_parameter_info(rh_dict)
