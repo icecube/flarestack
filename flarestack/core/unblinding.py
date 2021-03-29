@@ -74,7 +74,7 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
             unblind_dict["unblind_bool"] = True
             unblind_dict["mock_unblind_bool"] = mock_unblind
             unblind_dict["inj_dict"] = {}
-
+            self.background_median = np.nan
 
             if np.logical_and(not mock_unblind, not disable_warning):
                 self.check_unblind()
@@ -221,12 +221,12 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                     savepath = ul_dir + subdir + ".pdf"
 
-                    if self.ts < rh.bkg_median:
-                        logging.warning(f"Specified TS ({self.ts}) less than the background median ({rh.bkg_median}). "
-                                        f"There was thus a background n underfluctuation. "
+                    if self.ts < self.bkg_median:
+                        logging.warning(f"Specified TS ({self.ts}) less than the background median ({self.bkg_median}). "
+                                        f"There was thus a background underfluctuation. "
                                         f"Using the sensitivity for an upper limit.")
 
-                    ul, extrapolated, err = rh.find_overfluctuations(max(self.ts, rh.bkg_median), savepath)
+                    ul, extrapolated, err = rh.find_overfluctuations(max(self.ts, self.bkg_median), savepath)
 
                     flux_uls.append(ul)
 
@@ -346,6 +346,8 @@ def create_unblinder(unblind_dict, mock_unblind=True, full_plots=False,
 
                 self.sigma = plot_background_ts_distribution(
                     ts_array, self.output_file, self.ts_type, self.ts, self.mock_unblind)
+
+                self.background_median = np.median(ts_array)
 
             except (IOError, OSError):
 
