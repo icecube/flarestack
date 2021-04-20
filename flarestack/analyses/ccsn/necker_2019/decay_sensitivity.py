@@ -3,12 +3,13 @@
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.core.experimental_results import ExperimentalResultHandler
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.icecube import ps_v002_p01, ps_v002_p03
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits, get_figure_limits, p_vals
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import sn_cats, updated_sn_catalogue_name, \
     sn_time_pdfs, raw_output_dir, pdf_names, limit_sens
+from flarestack.core.time_pdf import TimePDF
 from flarestack.analyses.ccsn import get_sn_color
 from flarestack.cluster import analyse
 from flarestack.cluster.run_desy_cluster import wait_for_cluster
@@ -47,7 +48,7 @@ mh_name = 'fit_weights'
 pdf_type = 'decay'
 
 # Base name
-raw = raw_output_dir + f"/calculate_sensitivity/{mh_name}/{pdf_type}/"
+raw = raw_output_dir + f"/calculate_sensitivity_ps-v002p03/{mh_name}/{pdf_type}/"
 
 # set up emtpy dictionary to store the minimizer information in
 full_res = dict()
@@ -114,7 +115,7 @@ if __name__ == '__main__':
 
                 # try to estimate a good scale based on the sensitivity from the 7-yr PS sensitivity
                 # at the declination of the closest source
-                scale = 0.025 * (flux_to_k(reference_sensitivity(
+                scale = 0.00025 * (flux_to_k(reference_sensitivity(
                     np.sin(closest_src["dec_rad"]), gamma=gamma
                 ) * 40 * math.sqrt(float(len(catalogue)))) * 200.) / length
 
@@ -128,6 +129,8 @@ if __name__ == '__main__':
                     scale *= 0.5
                 if cat == 'IIn':
                     scale *= 5
+                if length > 700:
+                    scale *= 2
 
                 # set up an injection dictionary and set the desired spectral index
                 injection_energy = dict(llh_energy)
@@ -143,13 +146,13 @@ if __name__ == '__main__':
                 mh_dict = {
                     "name": full_name,
                     "mh_name": mh_name,
-                    "dataset": custom_dataset(ps_v002_p01, catalogue,
+                    "dataset": custom_dataset(ps_v002_p03, catalogue,
                                               llh_dict["llh_sig_time_pdf"]),
                     "catalogue": cat_path,
                     "inj_dict": inj_dict,
                     "llh_dict": llh_dict,
                     "scale": scale,
-                    "n_trials": 500/cluster if cluster else 1000,
+                    "n_trials": 100/cluster if cluster else 100,
                     "n_steps": 10
                 }
 
@@ -159,7 +162,7 @@ if __name__ == '__main__':
                                  cluster=True if cluster else False,
                                  n_cpu=1 if cluster else 32,
                                  n_jobs=cluster,
-                                 h_cpu='00:59:59')
+                                 h_cpu='01:59:59')
                 job_ids.append(job_id)
 
                 time_res[gamma] = mh_dict
@@ -202,10 +205,18 @@ if __name__ == '__main__':
                 # calling ResultsHandler will calculate the overfluctuations and sensitivities
                 rh = ResultsHandler(rh_dict)
 
-                # get the injection time and convert it to seconds
-                inj = rh_dict["inj_dict"]["injection_sig_time_pdf"]
-                injection_length = inj["decay_length"]
-                inj_time = injection_length * 60 * 60 * 24
+                # get the injection time in seconds
+                # the median of the raw injection time is used for this
+                # for each source the contributions of each season are summed up
+                inj_time_list = list()
+                cat = np.load(rh_dict['catalogue'])
+                for src in cat:
+                    single_inj_time = 0
+                    for s in ps_v002_p03.seasons.values():
+                        tpdf = TimePDF.create(rh_dict["inj_dict"]["injection_sig_time_pdf"], s.get_time_pdf())
+                        single_inj_time += tpdf.raw_injection_time(src)
+                    inj_time_list.append(single_inj_time)
+                inj_time = np.median(inj_time_list)
 
                 # Convert IceCube numbers to astrophysical quantities
                 astro_sens, astro_disc = rh.astro_values(
@@ -278,7 +289,7 @@ if __name__ == '__main__':
 
     # ================================       save sensitivities        ============================== #
 
-    with open(limit_sens(mh_name, pdf_type), 'wb') as f:
+    with open(limit_sens(raw), 'wb') as f:
         pickle.dump(stacked_sens_flux, f)
 
     # =================================        make final plots       =============================== #
