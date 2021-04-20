@@ -26,6 +26,7 @@ sources = {
     "frb": get_frb_rate
 }
 
+
 def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, **kwargs):
     """Get rate of astrophysical object, as a function of redshift
 
@@ -48,7 +49,7 @@ def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, **k
             source_name = new
         else:
             raise Exception(f"Source class '{source_name}' not recognised. "
-                            f"The following source evolutions are available: {source_name.keys()}")
+                            f"The following source evolutions are available: {sources.keys()}")
 
     logger.info(f"Loading source class '{source_name}'")
 

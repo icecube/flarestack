@@ -23,7 +23,6 @@ def analyse(mh_dict, cluster=False, n_cpu=None, **kwargs):
     :param n_cpu: Number of CPUs to run with. Should be 1 for submit to cluster
     :param kwargs: Optional kwargs
     """
-    logger.warning('The analyse function is deprecated! Use the Submitter class instead.')
     if cluster and ("n_jobs" in kwargs):
         logger.warning('The Submitter class determines the number of jobs '
                        'from the number of trials and the number of trials per job. '
@@ -32,9 +31,9 @@ def analyse(mh_dict, cluster=False, n_cpu=None, **kwargs):
         mh_dict['n_trials'] = ntrials_orig * kwargs['n_jobs']
         kwargs['trials_per_task'] = ntrials_orig
 
-    submitter = Submitter.get_submitter(mh_dict, cluster, n_cpu, **kwargs)
-    submitter.analyse()
-    return submitter.job_id
+    s = Submitter.get_submitter(mh_dict, cluster, n_cpu, **kwargs)
+    s.analyse()
+    return s.job_id
 
 
 def wait_cluster(job_ids=None):

@@ -10,6 +10,22 @@ logger = logging.getLogger(__name__)
 raw_five_sigma = norm.cdf(5)
 n_bins = 100
 
+
+def get_ts_fit_type(mh_dict):
+    """Function to select the best method for fitting the TS distribution resulting
+    from a particular minimisation_handler.
+
+    :param mh_dict: MinimisationHandler or ResultsHandler dictionary
+    :return: name for ts_type
+    """
+    if mh_dict["mh_name"] == "flare":
+        ts_fit_type = "flare"
+    else:
+        ts_fit_type = "standard"
+
+    return ts_fit_type
+
+
 # Taken via Alex Stasik from Thomas Kintscher
 
 
@@ -182,7 +198,7 @@ def fit_background_ts(ts_array, ts_type):
              density=True,
              stacked=True)
 
-    if ts_type == "Flare":
+    if ts_type == "flare":
 
         chi2 = Chi2_LeftTruncated(ts_array)
 
@@ -206,7 +222,7 @@ def fit_background_ts(ts_array, ts_type):
                 loc = 0.
                 scale = 1.
 
-    elif ts_type == "Fit Weights":
+    elif ts_type == "fit_weight":
 
         chi2 = Chi2_one_side_free(ts_array[ts_array > 0.])
 
@@ -231,7 +247,7 @@ def fit_background_ts(ts_array, ts_type):
             else:
                 frac_over = 1.
 
-    elif ts_type in ["Standard", "Negative n_s"]:
+    elif ts_type in ["standard", "negative_ns"]:
 
         chi2 = Chi2_one_side(ts_array[ts_array > 0.])
 

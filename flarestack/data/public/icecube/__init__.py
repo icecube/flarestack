@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import csv
 import scipy.interpolate
+import logging
 from flarestack.data import SeasonWithoutMC, Season
 from flarestack.icecube_utils.dataset_loader import data_loader
 import matplotlib.pyplot as plt
@@ -10,6 +11,8 @@ from matplotlib.colors import LogNorm
 import matplotlib.ticker as ticker
 from flarestack.shared import eff_a_plot_dir, energy_proxy_path, \
     med_ang_res_path, energy_proxy_plot_path
+
+logger = logging.getLogger(__name__)
 
 
 class PublicICSeason(SeasonWithoutMC):
@@ -108,13 +111,8 @@ class PublicICSeason(SeasonWithoutMC):
         locs, labels = plt.xticks()
         labels = [10**float(item) for item in locs]
         plt.xticks(locs, labels)
-
-        f = ticker.ScalarFormatter(useOffset=False, useMathText=True)
-        g = lambda x, pos: "${}$".format(f._formatSciNotation('%1.10e' % 10**x))
-        fmt = ticker.FuncFormatter(g)
-        ax.xaxis.set_major_formatter(fmt)
         plt.xlabel(r"$E_{\nu}$")
-        print("Saving to", savepath)
+        logger.info(f"Saving to {savepath}")
         plt.savefig(savepath)
         if show:
             plt.show()
