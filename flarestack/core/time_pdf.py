@@ -42,7 +42,7 @@ def decay_fct_integral(tstart, tend, t0, decay_time, truncation=np.inf):
     :return: float
     """
     val = decay_time * \
-          np.log((decay_time + np.minimum(tend - t0, truncation)) / (decay_time + np.maximum(tstart - t0, 0)))
+          np.log((decay_time + np.maximum(0, np.minimum(tend - t0, truncation))) / (decay_time + np.maximum(tstart - t0, 0)))
     return val
 
 
@@ -118,7 +118,8 @@ class TimePDF(object):
         t_pdf_name = t_pdf_dict["time_pdf_name"]
 
         if t_pdf_name not in cls.subclasses:
-            raise ValueError('Bad time PDF name {}'.format(t_pdf_name))
+            raise ValueError(f'Bad time PDF name {t_pdf_name}. '
+                             f'Available PDFs are {cls.subclasses.keys()}')
 
         return cls.subclasses[t_pdf_name](t_pdf_dict, livetime_pdf)
 
@@ -688,8 +689,8 @@ class DecayPDF(TimePDF):
         :return: float
         """
 
-        integration_result = self.decay_integral(self.t0, t, self.sig_t0(source))
-        normalization_factor = self.decay_integral(self.t0, self.t1, self.sig_t0(source))
+        integration_result = self.decay_integral(self.t0, t, source['ref_time_mjd'])
+        normalization_factor = self.decay_integral(self.t0, self.t1, source['ref_time_mjd'])
         return integration_result / normalization_factor
 
     def effective_injection_time(self, source=None):
@@ -699,11 +700,19 @@ class DecayPDF(TimePDF):
         :param source: Source to be considered
         :return: Effective Livetime in seconds
         """
-        t0 = self.mjd_to_livetime(self.sig_t0(source))
-        t1 = self.mjd_to_livetime(self.sig_t1(source))
-        time = (t1 - t0) * 60 * 60 * 24
+        sig_t0 = self.sig_t0(source)
+        sig_t1 = self.sig_t1(source)
+        complete_integral = self.decay_integral(source['ref_time_mjd'],
+                                                source['ref_time_mjd'] + self.decay_length,
+                                                source['ref_time_mjd'])
+        portion = self.decay_integral(sig_t0, sig_t1, source['ref_time_mjd'])
+        weight = portion / complete_integral
 
-        return max(time, 0.)
+        t0 = self.mjd_to_livetime(sig_t0)
+        t1 = self.mjd_to_livetime(sig_t1)
+        livetime_weight = (t1 - t0) / (sig_t1 - sig_t0)
+
+        return self.decay_length * weight * livetime_weight * 60 * 60 * 24
 
     def raw_injection_time(self, source):
         """Calculates the 'raw injection time' which is the injection time
@@ -714,8 +723,15 @@ class DecayPDF(TimePDF):
         :return: Time in seconds for 100% uptime
         """
 
-        diff = max(self.sig_t1(source) - self.sig_t0(source), 0)
-        return diff * (60 * 60 * 24)
+        sig_t0 = self.sig_t0(source)
+        sig_t1 = self.sig_t1(source)
+        complete_integral = self.decay_integral(source['ref_time_mjd'],
+                                                source['ref_time_mjd'] + self.decay_length,
+                                                source['ref_time_mjd'])
+        portion = self.decay_integral(sig_t0, sig_t1, source['ref_time_mjd'])
+        weight = portion / complete_integral
+
+        return self.decay_length * weight * 60 * 60 * 24
 
     def f(self, t, source=None):
         """
@@ -733,10 +749,12 @@ class DecayPDF(TimePDF):
 
         # to normalize the function, integrate over the whole livetime
         a, b = self.mjd_to_livetime(t0), self.mjd_to_livetime(t1)
-        normalization_factor = self.decay_integral(a, b, self.mjd_to_livetime(t0))
+        normalization_factor = self.decay_integral(
+            a, b, source['ref_time_mjd'] - self.livetime_to_mjd(0)
+        )
 
         if normalization_factor > 0.:
-            r = self.decay_function(self.mjd_to_livetime(t), self.mjd_to_livetime(t0))
+            r = self.decay_function(t, source['ref_time_mjd'])
             return r / normalization_factor
 
         else:
