@@ -114,7 +114,7 @@ def sn_time_pdfs(sn_type, pdf_type='box'):
             pdf_dict = {
                 'time_pdf_name': pdf_type,
                 'decay_time': i * 364.25,  # convert to days
-                'decay_length': (10 - 1) * i * 364.25
+                'decay_length': (1000 - 1) * i * 364.25
             }
 
             time_pdfs.append(pdf_dict)
@@ -132,9 +132,9 @@ def pdf_names(pdf_type, pdf_time):
     return f'{pdf_type}{pdf_time}'
 
 
-def limit_sens(mh_name, pdf_type):
+def limit_sens(base):
 
-    base = f'{raw_output_dir}/calculate_sensitivity/{mh_name}/{pdf_type}/'
+    # base = f'{raw_output_dir}/calculate_sensitivity/{mh_name}/{pdf_type}/'
     sub_base = base.split(os.sep)
 
     for i, _ in enumerate(sub_base):
