@@ -491,6 +491,9 @@ class ResultsHandler(object):
 
                 self.make_plots(scale)
 
+        if len(np.where(np.array(y) < 0.95)[0]) < 2:
+            raise OverfluctuationError(f"Not enough points with overfluctuations under 95%, lower injection scale!")
+
         x = np.array(x_acc)
         self.overfluctuations[ts_val] = x, y, yerr
 
