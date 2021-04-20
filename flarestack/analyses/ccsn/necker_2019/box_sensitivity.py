@@ -2,7 +2,7 @@
 """
 import numpy as np
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube import ps_v002_p01
+from flarestack.data.icecube import ps_v002_p01, ps_v002_p03
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits, get_figure_limits, p_vals
@@ -46,7 +46,7 @@ mh_name = 'fit_weights'
 pdf_type = 'box'
 
 # base name
-raw = raw_output_dir + f"/calculate_sensitivity/{mh_name}/{pdf_type}/"
+raw = raw_output_dir + f"/calculate_sensitivity_ps-v002p03/{mh_name}/{pdf_type}/"
 
 # set up emtpy dictionary to store the minimizer information in
 full_res = dict()
@@ -143,13 +143,13 @@ if __name__ == '__main__':
                 mh_dict = {
                     "name": full_name,
                     "mh_name": mh_name,
-                    "dataset": custom_dataset(ps_v002_p01, catalogue,
+                    "dataset": custom_dataset(ps_v002_p03, catalogue,
                                               llh_dict["llh_sig_time_pdf"]),
                     "catalogue": cat_path,
                     "inj_dict": inj_dict,
                     "llh_dict": llh_dict,
                     "scale": scale,
-                    "n_trials": 500/cluster if cluster else 500,
+                    "n_trials": 1000/cluster if cluster else 500,
                     "n_steps": 10
                 }
 
@@ -277,7 +277,7 @@ if __name__ == '__main__':
 
     # ================================       save sensitivities        ============================== #
 
-    with open(limit_sens(mh_name, pdf_type), 'wb') as f:
+    with open(limit_sens(raw), 'wb') as f:
         pickle.dump(stacked_sens_flux, f)
 
     # =================================        make final plots       =============================== #
