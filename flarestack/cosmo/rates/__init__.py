@@ -27,13 +27,14 @@ sources = {
 }
 
 
-def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, **kwargs):
+def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, with_range=False, **kwargs):
     """Get rate of astrophysical object, as a function of redshift
 
     :param source_name: Name of source class to use
     :param evolution_name: Name of source evolution for that class to be used
     :param rate_name: Name of local rate for that class to be used
     :param fraction: Fraction of rate to use
+    :param with_range: Boolean to return +/- one sigma range functions alongside central rate
     :return: Rate function
     """
 
@@ -53,9 +54,20 @@ def get_rate(source_name, evolution_name=None, rate_name=None, fraction=1.0, **k
 
     logger.info(f"Loading source class '{source_name}'")
 
-    f = sources[source_name](evolution_name, rate_name, **kwargs)
-
     if fraction != 1.0:
         logger.info(f"Assuming a modified rate that is {100.*fraction:.2f}% of that total.")
 
-    return lambda z: f(z) * fraction
+    f = sources[source_name](
+        evolution_name=evolution_name,
+        rate_name=rate_name,
+        with_range=with_range,
+        **kwargs
+    )
+
+    if with_range:
+        return lambda z: f[0](z) * fraction,\
+               lambda z: f[1](z) * fraction,\
+               lambda z: f[2](z) * fraction
+    else:
+        return lambda z: f(z) * fraction
+

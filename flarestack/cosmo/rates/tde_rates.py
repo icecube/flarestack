@@ -55,21 +55,51 @@ def get_tde_evolution(evolution_name=None, **kwargs):
         evolution, ref = tde_evolutions[evolution_name]
         logging.info(f"Loaded evolution '{evolution_name}' ({ref})")
 
-    normed_evolution = lambda x: evolution(x, **kwargs)/evolution(0.0, **kwargs)
+    def normed_evolution(z):
+        """Normalised redshift evolution, defined such that f(z=0.0) = 1..
+
+        :param z: Redshift
+        :return: Rate relative to f(z=0.0(
+        """
+        return evolution(z, **kwargs)/evolution(0.0, **kwargs)
+
     return normed_evolution
 
+
 local_tde_rates = {
-    "sun_15_jetted": (3 * 10 **-11 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1706.00391"),
-    "van_velzen_18": (8 * 10**-7 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1707.03458"),
-    "biehl_18_jetted": (10**-10 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1711.03555"),
-    "kochanek_16": (1.5 * 10**-6 / (u.Mpc**3 * u.yr), "https://arxiv.org/abs/1601.06787")
+    "sun_15_jetted": (
+        3. * 10 ** -11. / (u.Mpc**3 * u.yr),
+        1. * 10 ** -11. / (u.Mpc**3 * u.yr),
+        7. * 10 ** -11. / (u.Mpc**3 * u.yr),
+        "https://arxiv.org/abs/1509.01592"
+    ),
+    "van_velzen_18": (
+        8. * 10**-7 / (u.Mpc**3 * u.yr),
+        4. * 10 ** -7 / (u.Mpc ** 3 * u.yr),
+        12. * 10 ** -7 / (u.Mpc ** 3 * u.yr),
+        "https://arxiv.org/abs/1707.03458"
+    ),
+    "biehl_18_jetted": (
+        10**-10 / (u.Mpc**3 * u.yr),
+        None,
+        None,
+        "https://arxiv.org/abs/1711.03555"
+    ),
+    "kochanek_16": (
+        1.5 * 10**-6 / (u.Mpc**3 * u.yr),
+        None,
+        None,
+        "https://arxiv.org/abs/1601.06787"
+    )
 }
 
-def get_local_tde_rate(rate_name=None):
+
+def get_local_tde_rate(rate_name=None, with_range=False):
     """Returns local TDE rate
 
     :param rate_name: Name of chosen evolution
-    :return: Normalised evolution, equal to 1 at z=0
+    :param with_range: Boolean to return +/- one sigma range functions alongside central rate
+    :return: TDE local rate(s)
     """
 
     if rate_name is None:
@@ -80,19 +110,36 @@ def get_local_tde_rate(rate_name=None):
         raise Exception(f"Rate name '{rate_name}' not recognised. "
                         f"The following source evolutions are available: {local_tde_rates.keys()}")
     else:
-        local_rate, ref = local_tde_rates[rate_name]
+        local_rate, lower_lim, upper_lim, ref = local_tde_rates[rate_name]
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
-    return local_rate.to("Mpc-3 yr-1")
+    if with_range:
 
-def get_tde_rate(evolution_name=None, rate_name=None, **kwargs):
+        if lower_lim is None:
+            raise Exception(f"No one sigma rate range found for rate '{rate_name}'. "
+                            f"Use a different rate, or set 'with_range=False'.")
+
+        return local_rate.to("Mpc-3 yr-1"), lower_lim.to("Mpc-3 yr-1"), upper_lim.to("Mpc-3 yr-1")
+
+    else:
+        return local_rate.to("Mpc-3 yr-1")
+
+
+def get_tde_rate(evolution_name=None, rate_name=None, with_range=False, **kwargs):
     """Load a TDE rate as a function of redshift. This is a product of
     a TDE evolution and a TDE local rate.
 
     :param evolution_name: Name of TDE evolution to use
     :param rate_name: Name of TDE local rate to use
-    :return: TDE Rate function
+    :param with_range: Boolean to return +/- one sigma range functions alongside central rate
+    :return: TDE Rate function(s)
     """
-    normed_evolution = get_tde_evolution(evolution_name, **kwargs)
-    local_rate = get_local_tde_rate(rate_name)
-    return lambda z: local_rate*normed_evolution(z)
+    normed_evolution = get_tde_evolution(evolution_name=evolution_name, **kwargs)
+    local_rate = get_local_tde_rate(rate_name=rate_name, with_range=with_range)
+
+    if with_range:
+        return lambda z: local_rate[0] * normed_evolution(z), \
+               lambda z: local_rate[1] * normed_evolution(z), \
+               lambda z: local_rate[2] * normed_evolution(z)
+    else:
+        return lambda z: local_rate*normed_evolution(z)
