@@ -1,11 +1,6 @@
 import logging
 import numpy as np
-from astropy.cosmology import Planck15 as cosmo
 from astropy import units as u
-from flarestack.cosmo.rates.sfr_rates import get_local_sfr_rate, get_sfr_evolution, sfr_evolutions, local_sfr_rates
-
-# Assumed source evolution is highly negative
-eta = -2
 
 
 def grb_evolution_lien_14(z, z1=3.6, n1=2.07, n2=-0.7):
@@ -34,6 +29,7 @@ def grb_evolution_lien_14(z, z1=3.6, n1=2.07, n2=-0.7):
 
     return res
 
+
 def lien_14_lower(z):
     """Lower limit GRB redshift evolution from Lien et. al. 2014 (https://arxiv.org/abs/1311.4567).
     Parameterisation is Equation 1, lower-limit parameters in Table 5.
@@ -42,6 +38,7 @@ def lien_14_lower(z):
     :return: f(z)
     """
     return grb_evolution_lien_14(z, z1=3.6, n1=2.1, n2=-3.5)
+
 
 def lien_14_upper(z):
     """Upper limit GRB redshift evolution from Lien et. al. 2014 (https://arxiv.org/abs/1311.4567).
@@ -52,17 +49,22 @@ def lien_14_upper(z):
     """
     return grb_evolution_lien_14(z, z1=3.6, n1=1.95, n2=0.0)
 
+
 grb_evolutions = {
-    "lien_14": (grb_evolution_lien_14, "https://arxiv.org/abs/1311.4567"),
-    "lien_14_lower": (lien_14_lower, "https://arxiv.org/abs/1311.4567"),
-    "lien_14_upper": (lien_14_upper, "https://arxiv.org/abs/1311.4567"),
+    "lien_14": (
+        grb_evolution_lien_14,
+        lien_14_lower,
+        lien_14_upper,
+        "https://arxiv.org/abs/1311.4567"
+    ),
 }
 
 
-def get_grb_evolution(evolution_name=None, **kwargs):
+def get_grb_evolution(evolution_name=None, with_range=False, **kwargs):
     """Returns a GRB evolution as a function of redshift
 
     :param evolution_name: Name of chosen evolution
+    :param with_range: Boolean to return +/- one sigma range functions alongside central rate
     :return: Normalised evolution, equal to 1 at z=0
     """
 
@@ -74,22 +76,44 @@ def get_grb_evolution(evolution_name=None, **kwargs):
         raise Exception(f"Evolution name '{evolution_name}' not recognised. "
                         f"The following source evolutions are available: {grb_evolutions.keys()}")
     else:
-        evolution, ref = grb_evolutions[evolution_name]
+        evolution, lower_ev, upper_ev, ref = grb_evolutions[evolution_name]
         logging.info(f"Loaded evolution '{evolution_name}' ({ref})")
 
-    normed_evolution = lambda x: evolution(x, **kwargs)/evolution(0.0, **kwargs)
-    return normed_evolution
+    def normed_evolution(z):
+        """Normalised redshift evolution, defined such that f(z=0.0) = 1..
+
+        :param z: Redshift
+        :return: Rate relative to f(z=0.0(
+        """
+        return evolution(z, **kwargs)/evolution(0.0, **kwargs)
+
+    if with_range:
+
+        if lower_ev is None:
+            raise Exception(f"No one sigma evolution range found for evolution '{evolution_name}'. "
+                            f"Use a different rate, or set 'with_range=False'.")
+
+        return normed_evolution, lambda z: lower_ev(z)/lower_ev(0.0), lambda z: upper_ev(z)/upper_ev(0.0)
+
+    else:
+        return normed_evolution
+
 
 local_grb_rates = {
-    "lien_14": (0.42/ (u.Gpc**3 * u.yr), "https://arxiv.org/abs/1706.00391"),
-    "lien_14_lower": (0.38/ (u.Gpc**3 * u.yr), "https://arxiv.org/abs/1706.00391"),
-    "lien_14_upper": (0.51/ (u.Gpc**3 * u.yr), "https://arxiv.org/abs/1706.00391"),
+    "lien_14": (
+        0.42 / (u.Gpc**3 * u.yr),
+        0.38 / (u.Gpc**3 * u.yr),
+        0.51 / (u.Gpc**3 * u.yr),
+        "https://arxiv.org/abs/1706.00391"
+    ),
 }
 
-def get_local_grb_rate(rate_name=None):
+
+def get_local_grb_rate(rate_name=None, with_range=False):
     """Returns local grb rate
 
     :param rate_name: Name of chosen evolution
+    :param with_range: Boolean to return +/- one sigma range functions alongside central rate
     :return: Normalised evolution, equal to 1 at z=0
     """
 
@@ -101,19 +125,43 @@ def get_local_grb_rate(rate_name=None):
         raise Exception(f"Rate name '{rate_name}' not recognised. "
                         f"The following source evolutions are available: {local_grb_rates.keys()}")
     else:
-        local_rate, ref = local_grb_rates[rate_name]
+        local_rate, lower_lim, upper_lim, ref = local_grb_rates[rate_name]
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
-    return local_rate.to("Mpc-3 yr-1")
+    if with_range:
 
-def get_grb_rate(evolution_name=None, rate_name=None, **kwargs):
+        if lower_lim is None:
+            raise Exception(f"No one sigma rate range found for rate '{rate_name}'. "
+                            f"Use a different rate, or set 'with_range=False'.")
+
+        return local_rate.to("Mpc-3 yr-1"), lower_lim.to("Mpc-3 yr-1"), upper_lim.to("Mpc-3 yr-1")
+
+    else:
+        return local_rate.to("Mpc-3 yr-1")
+
+
+def get_grb_rate(evolution_name=None, rate_name=None, with_range=False, **kwargs):
     """Load a GRB rate as a function of redshift. This is a product of
     a GRB evolution and a GRB local rate.
 
-    :param evolution_name: Name of TDE evolution to use
-    :param rate_name: Name of TDE local rate to use
-    :return: TDE Rate function
+    :param evolution_name: Name of GRB evolution to use
+    :param rate_name: Name of GRB local rate to use
+    :param with_range: Boolean to return +/- one sigma range functions alongside central rate
+    :return: GRB Rate function
     """
-    normed_evolution = get_grb_evolution(evolution_name, **kwargs)
-    local_rate = get_local_grb_rate(rate_name)
-    return lambda z: local_rate*normed_evolution(z)
+    normed_evolution = get_grb_evolution(
+        evolution_name=evolution_name,
+        with_range=with_range,
+        **kwargs
+    )
+    local_rate = get_local_grb_rate(
+        rate_name=rate_name,
+        with_range=with_range
+    )
+
+    if with_range:
+        return lambda z: local_rate[0] * normed_evolution[0](z), \
+               lambda z: local_rate[1] * normed_evolution[1](z), \
+               lambda z: local_rate[2] * normed_evolution[2](z)
+    else:
+        return lambda z: local_rate * normed_evolution(z)
