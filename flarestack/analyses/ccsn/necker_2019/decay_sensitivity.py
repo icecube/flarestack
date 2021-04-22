@@ -206,17 +206,7 @@ if __name__ == '__main__':
                 rh = ResultsHandler(rh_dict)
 
                 # get the injection time in seconds
-                # the median of the raw injection time is used for this
-                # for each source the contributions of each season are summed up
-                inj_time_list = list()
-                cat = np.load(rh_dict['catalogue'])
-                for src in cat:
-                    single_inj_time = 0
-                    for s in ps_v002_p03.seasons.values():
-                        tpdf = TimePDF.create(rh_dict["inj_dict"]["injection_sig_time_pdf"], s.get_time_pdf())
-                        single_inj_time += tpdf.raw_injection_time(src)
-                    inj_time_list.append(single_inj_time)
-                inj_time = np.median(inj_time_list)
+                inj_time = rh_dict["inj_dict"]["injection_sig_time_pdf"]["decay_length"] * 60 * 60 * 24
 
                 # Convert IceCube numbers to astrophysical quantities
                 astro_sens, astro_disc = rh.astro_values(
