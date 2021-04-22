@@ -40,7 +40,8 @@ def plot_diffuse_flux_measurement(axes, **kwargs):
 
 
 def get_stacked_sens_dict(pdf_type):
-    file = limit_sens(mh_name, pdf_type)
+    base = raw_output_dir + f"/calculate_sensitivity_ps-v002p03/{mh_name}/{pdf_type}/"
+    file = limit_sens(base)
     logging.debug(f'loading {file}')
     with open(file, 'rb') as f:
         stacked_sens_flux_dictionary = pickle.load(f)
@@ -64,7 +65,7 @@ def add_population_flux(axis, sn_type, pdf_type, gamma_dict, gamma, time_key, **
     logging.debug(f'percentage of diffuse flux: {perc.value * 100:.2f}%')
     default_label += f': {perc.value * 100:.1f}%'
 
-    sens_flux_time_esquared = pop_sens_flux * energy_range_gev ** (-1 * energy_gamma) * \
+    sens_flux_time_esquared = pop_sens_flux * energy_range_gev ** (-1 * gamma) * \
                               energy_range_gev ** 2
 
     axis.plot(energy_range_gev, sens_flux_time_esquared,
