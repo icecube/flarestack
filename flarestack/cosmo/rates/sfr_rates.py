@@ -50,10 +50,12 @@ def get_sfr_evolution(evolution_name=None, **kwargs):
     normed_evolution = lambda x: evolution(x, **kwargs)/evolution(0.0, **kwargs)
     return normed_evolution
 
+
 local_sfr_rates = {
     "madau_14": (0.015 * u.solMass / (u.Mpc**3 * u.year), "http://arxiv.org/abs/1403.0007v3"),
     "strolger_15": (0.015 * u.solMass/ (u.Mpc**3 * u.year), "https://arxiv.org/abs/1509.06574")
 }
+
 
 def get_local_sfr_rate(rate_name=None):
     """Returns local SFR rate
@@ -74,6 +76,7 @@ def get_local_sfr_rate(rate_name=None):
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
     return local_rate.to("solMass Mpc-3 yr-1")
+
 
 def get_sfr_rate(evolution_name=None, rate_name=None, **kwargs):
     """Load a Star Formation Rate as a function of redshift. This is a product of
