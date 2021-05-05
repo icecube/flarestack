@@ -257,7 +257,7 @@ class LLH(object):
         :param sources: Sources to be tested
         :return: Mask to remove
         """
-        veto = np.ones_like(data["ra"], dtype=np.bool)
+        veto = np.ones_like(data["ra"], dtype=bool)
 
         for source in sources:
 

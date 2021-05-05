@@ -1344,8 +1344,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 flare_time = np.array(
                     (t_start, t_end),
                     dtype=[
-                        ("start_time_mjd", np.float),
-                        ("end_time_mjd", np.float),
+                        ("start_time_mjd", float),
+                        ("end_time_mjd", float),
                     ]
                 )
 
@@ -1467,8 +1467,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             best_time = np.array(
                 (best_start, best_end),
                 dtype=[
-                    ("start_time_mjd", np.float),
-                    ("end_time_mjd", np.float),
+                    ("start_time_mjd", float),
+                    ("end_time_mjd", float),
                 ]
             )
 
