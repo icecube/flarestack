@@ -24,12 +24,12 @@ def data_loader(data_path, floor=True, cut_fields=True):
 
     if "sinDec" not in dataset.dtype.names:
 
-        new_dtype = np.dtype([("sinDec", np.float)])
+        new_dtype = np.dtype([("sinDec", float)])
 
         sinDec = np.array(np.sin(dataset["dec"]), dtype=new_dtype)
 
         dataset = append_fields(
-            dataset, 'sinDec', sinDec, usemask=False, dtypes=[np.float]
+            dataset, 'sinDec', sinDec, usemask=False, dtypes=[float]
         )
 
     # Check if 'run' or 'Run'
@@ -51,7 +51,7 @@ def data_loader(data_path, floor=True, cut_fields=True):
 
     if "raw_sigma" not in dataset.dtype.names:
         dataset = append_fields(
-            dataset, 'raw_sigma', dataset["sigma"], usemask=False, dtypes=[np.float]
+            dataset, 'raw_sigma', dataset["sigma"], usemask=False, dtypes=[float]
         )
 
     # Apply a minimum angular error "floor"

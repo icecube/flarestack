@@ -38,7 +38,7 @@ def load_catalogue(path):
 
         sources = append_fields(
             sources, 'base_weight', base_weight,
-            usemask=False, dtypes=[np.float]
+            usemask=False, dtypes=[float]
         )
 
     # Check that ra and dec are really in radians!

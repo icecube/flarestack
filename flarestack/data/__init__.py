@@ -183,7 +183,7 @@ class Season:
         exp = self.get_exp_data(**kwargs)
         weight = np.ones(len(exp))
         exp = append_fields(
-            exp, 'weight', weight, usemask=False, dtypes=[np.float]
+            exp, 'weight', weight, usemask=False, dtypes=[float]
         ).copy()
         return exp
 

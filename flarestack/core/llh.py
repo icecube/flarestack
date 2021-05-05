@@ -391,7 +391,7 @@ class SpatialLLH(LLH):
         n_all = float(len(data))
         SoB_spacetime = []
 
-        assumed_bkg_mask = np.ones(len(data), dtype=np.bool)
+        assumed_bkg_mask = np.ones(len(data), dtype=bool)
 
         for i, source in enumerate(self.sources):
 
@@ -546,7 +546,7 @@ class FixedEnergyLLH(LLH):
 
         mc = self.season.get_pseudo_mc()
 
-        acc = np.ones_like(dec_range, dtype=np.float)
+        acc = np.ones_like(dec_range, dtype=float)
 
         for i, dec in enumerate(dec_range):
 
@@ -614,7 +614,7 @@ class FixedEnergyLLH(LLH):
         kwargs["n_all"] = float(len(data))
         SoB = []
 
-        assumed_bkg_mask = np.ones(len(data), dtype=np.bool)
+        assumed_bkg_mask = np.ones(len(data), dtype=bool)
 
         for i, source in enumerate(self.sources):
 
@@ -819,7 +819,7 @@ class StandardLLH(FixedEnergyLLH):
         SoB_spacetime = []
         SoB_energy_cache = []
 
-        assumed_background_mask = np.ones(len(data), dtype=np.bool)
+        assumed_background_mask = np.ones(len(data), dtype=bool)
 
         for i, source in enumerate(self.sources):
 
@@ -1037,7 +1037,7 @@ class StandardOverlappingLLH(StandardLLH):
 
         kwargs["n_all"] = float(len(data))
 
-        assumed_background_mask = np.ones(len(data), dtype=np.bool)
+        assumed_background_mask = np.ones(len(data), dtype=bool)
 
         for i, source in enumerate(self.sources):
 

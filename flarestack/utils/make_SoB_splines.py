@@ -167,7 +167,7 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     # bkg_norms[bkg_norms == 0.] = 1
     # bkg_hist /= bkg_norms
 
-    ratio = np.ones_like(bkg_hist, dtype=np.float)
+    ratio = np.ones_like(bkg_hist, dtype=float)
 
     # wSd = sig_hist > 0
     # wB_domain = bkg_hist > 0

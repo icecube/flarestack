@@ -29,7 +29,7 @@ def make_acceptance_season(season, acc_path):
 
     mc = season.get_pseudo_mc()
 
-    acc = np.ones((len(dec_range), len(gamma_vals)), dtype=np.float)
+    acc = np.ones((len(dec_range), len(gamma_vals)), dtype=float)
 
     for i, dec in enumerate(dec_range):
 
