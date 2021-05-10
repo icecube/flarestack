@@ -793,6 +793,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         except OSError:
             pass
 
+        plt.tight_layout()
         plt.savefig(path)
         plt.close()
 
