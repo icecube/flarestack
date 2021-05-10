@@ -104,7 +104,7 @@ class PublicICSeason(SeasonWithoutMC):
 
         vals = eff_a_f(X, Y)
 
-        cbar = ax.pcolormesh(X, Y, vals, norm=LogNorm())
+        cbar = ax.pcolormesh(X, Y, vals, norm=LogNorm(), shading='auto')
         cb = plt.colorbar(cbar, label="Effective Area [m]", ax=ax)
         plt.ylabel(r"$\sin(\delta)$")
 

@@ -167,7 +167,7 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     # bkg_norms[bkg_norms == 0.] = 1
     # bkg_hist /= bkg_norms
 
-    ratio = np.ones_like(bkg_hist, dtype=np.float)
+    ratio = np.ones_like(bkg_hist, dtype=float)
 
     # wSd = sig_hist > 0
     # wB_domain = bkg_hist > 0
@@ -469,7 +469,8 @@ def make_individual_spline_set(season, SoB_path, **kwargs):
             ax = plt.subplot(111)
             X, Y = np.meshgrid(sin_dec_bins, log_e_bins)
             cbar = ax.pcolormesh(X, Y, Z, cmap="seismic",
-                                 vmin=-max_col, vmax=max_col)
+                                 vmin=-max_col, vmax=max_col,
+                                 shading='auto')
             plt.colorbar(cbar, label="Log(Signal/Background)")
             plt.xlabel(r"$\sin(\delta)$")
             plt.ylabel("log(Energy)")

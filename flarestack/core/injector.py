@@ -109,7 +109,7 @@ class BaseInjector:
     def calculate_n_exp(self):
 
         all_n_exp = np.empty((len(self.sources), 1), dtype=np.dtype(
-            [('source_name', 'a30'), ('n_exp', np.float)]))
+            [('source_name', 'a30'), ('n_exp', float)]))
 
         for i, source in enumerate(self.sources):
             all_n_exp[i]["source_name"] = source["source_name"]
@@ -431,8 +431,8 @@ class LowMemoryInjector(MCInjector):
             self.make_injection_band_mask()
 
         self.n_exp = np.zeros((len(self.sources), 1), dtype=np.dtype(
-            [('source_name', 'a30'), ('n_exp', np.float),
-             ('mask_index', np.int), ("source_index", np.int)]))
+            [('source_name', 'a30'), ('n_exp', float),
+             ('mask_index', int), ("source_index", int)]))
 
         self.n_exp["mask_index"] = np.array(m_index).reshape(len(m_index), 1)
         self.n_exp["source_index"] = np.array(s_index).reshape(len(s_index), 1)
