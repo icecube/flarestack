@@ -28,7 +28,7 @@ setuptools.setup(
         "numpy==1.20.2",
         "numexpr==2.7.3",
         "healpy==1.14.0",
-        "scipy==1.6.1",
+        "scipy==1.6.3",
         "matplotlib==3.4.2",
         "astropy==4.2.1",
         "sphinx==4.0.1",
