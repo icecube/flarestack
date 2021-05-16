@@ -26,15 +26,15 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        "numpy=1.20.2",
-        "numexpr=2.7.3",
-        "healpy=1.14.0",
-        "scipy=1.6.1",
-        "matplotlib=3.4.2",
-        "astropy=4.2.1",
-        "sphinx=4.0.1",
-        "jupyter=1.0.0",
-        "coveralls=3.0.1"
+        "numpy==1.20.2",
+        "numexpr==2.7.3",
+        "healpy==1.14.0",
+        "scipy==1.6.1",
+        "matplotlib==3.4.2",
+        "astropy==4.2.1",
+        "sphinx==4.0.1",
+        "jupyter==1.0.0",
+        "coveralls==3.0.1"
     ],
     package_data={'flarestack': [
         'data/public/icecube/all_sky_point_source/raw_data/3year-data-release.zip']},
