@@ -122,7 +122,7 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
 
     if "gamma" not in e_pdf_dict:
         logger.warning("No spectral index has been specified. "
-                        "Assuming source has spectral index matching diffuse flux")
+                       "Assuming source has spectral index matching diffuse flux")
         e_pdf_dict["gamma"] = diffuse_gamma
 
     savedir = plots_dir + "cosmology/" + name + "/"
@@ -132,20 +132,25 @@ def calculate_transient_cosmology(e_pdf_dict, rate, name, zmax=8.,
     except OSError:
         pass
 
-    energy_pdf = EnergyPDF.create(e_pdf_dict)
-    fluence_conversion = energy_pdf.fluence_integral() * u.GeV ** 2
-
     if "nu_flux_at_1_gev" in e_pdf_dict.keys():
         nu_flux_at_1_gev = e_pdf_dict["nu_flux_at_1_gev"].to("GeV-1")
-        nu_e = (nu_flux_at_1_gev * fluence_conversion).to("erg")
 
     else:
         nu_e = e_pdf_dict["source_energy_erg"]
+
+        energy_pdf = EnergyPDF.create(e_pdf_dict)
+
+        logger.info(f"Neutrino Energy is {nu_e:.2g}.")
+        logger.info(f"Using provided Energy PDF to convert this, assuming"
+                    f"integration between {energy_pdf.integral_e_min} GeV"
+                    f"and {energy_pdf.integral_e_max} GeV.")
+
+        fluence_conversion = energy_pdf.fluence_integral() * u.GeV ** 2
+
         nu_flux_at_1_gev = nu_e.to("GeV") / fluence_conversion
 
     gamma = e_pdf_dict["gamma"]
 
-    logger.info(f"Neutrino Energy is {nu_e:.2g}")
     logger.info(f"Neutrino Flux at 1 GeV is {nu_flux_at_1_gev:.2g}")
     logger.info(f"Local rate is {rate(0.0):.2g}")
 
