@@ -68,7 +68,6 @@ jobs:
       - name: Build a binary wheel and a source tarball
         run: python -m build --sdist --wheel --outdir dist/ 0.
       - name: Publish distribution 📦 to PyPI
-        run: echo 'here we will deploy to PyPi when we have a token and name hehe'
         uses: pypa/gh-action-pypi-publish@master
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
