@@ -48,14 +48,16 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Test the code
         run: |
-          coverage run --concurrency=multiprocessing -m unittest discover tests/
+#          coverage run --concurrency=multiprocessing -m unittest discover tests/
+          coverage run --concurrency=multiprocessing -m unittest tests/test_cosmo_rates.py
           coverage combine
 
       - name: Run Coveralls
         if: ${{ success() }}
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
     needs: [build]
