@@ -5,10 +5,8 @@ name: CI
 # Controls when the action will run. 
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  [push, pull_request]
+
   # run the pipeline on the 0th minute of the 0th hour of day 1 and 15 every month
   schedule:
     - cron: '0 0 1,15 * *'
@@ -63,12 +61,12 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ success() }}
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Chekout repository
-        run: actions/checkout@v2
-
       - name: Echo tag name
         run: echo "Tag is ${{ github.ref }}"
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        run: actions/checkout@v2
 
       # Set up the python versions
       - name: Set up Python ${{ matrix.python-version }}
