@@ -58,8 +58,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Echo tag name
-          run: echo "Tag is ${{ github.ref }}"
+      - name: Echo tag name
+        run: echo "Tag is ${{ github.ref }}"
 
       - name: Install pypa/build
         run: >-
