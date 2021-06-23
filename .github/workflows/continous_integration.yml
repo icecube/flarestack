@@ -63,9 +63,11 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ success() }}
     steps:
-      - # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Chekout repository
         run: actions/checkout@v2
+      - name: Echo tag name
+        run: echo "Tag is ${{ github.ref }}"
       - name: Install pypa/build
         run: >-
           python -m
@@ -80,8 +82,6 @@ jobs:
           --wheel
           --outdir dist/
           .
-      - name: Echo tag name
-        run: echo "Tag is ${{ github.ref }}"
       - name: Publish distribution 📦 to Test PyPI
         uses: pypa/gh-action-pypi-publish@master
         with:
