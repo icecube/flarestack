@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Echo tag name
-        run: echo "Tag is ${{ github.ref }}, Deploy is ${{ startsWith(github.ref, 'refs/tags/') }}"
+        run: echo "Tag is ${{ github.ref }}, Deploy is ${{ success() && matrix.python-version == 3.9}}"
 
       - name: Install pypa/build
         run: >-
@@ -76,13 +76,6 @@ jobs:
           --wheel
           --outdir dist/
           .
-
-      - name: Publish distribution 📦 to Test PyPI
-        if: ${{ matrix.python-version == 3.9}}
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
 
       - name: Publish distribution 📦 to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') && success() && matrix.python-version == 3.9}}
