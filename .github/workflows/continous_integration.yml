@@ -63,6 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ success() }}
     steps:
+      - # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Chekout repository
+        run: actions/checkout@v2
       - name: Install pypa/build
         run: >-
           python -m
