@@ -64,17 +64,18 @@ class IceCubeRunList(DetectorOnOffList):
 
             first_run = self.on_off_list["run"][:-1][mask][0]
 
-            logger.error("The IceCube GoodRunList was not produced correctly.")
-            logger.error("Some runs in the GoodRunList start immediately after the preceding run ends.")
-            logger.error("There should be gaps between every run due to detector downtime, but some are missing here.")
-            logger.error(f"The first missing gap is between runs {first_run} and {first_run+1}.")
-            logger.error("Any livetime estimates using this GoodRunList will not be accurate.")
-            logger.error("This is a known problem affecting older IceCube GoodRunLists.")
-            logger.error("You should use a newer, corrected GoodRunList.")
-            logger.error("Flarestack will attempt to stitch these runs together.")
-            logger.error("However, livetime estimates may be off by several percentage points, "
-                          "or even more for very short timescales.")
-            logger.error("You have been warned!")
+            logger.warning("Maybe the IceCube GoodRunList was not produced correctly. \n"
+                           "Some runs in the GoodRunList start immediately after the preceding run ends. \n"
+                           "For older files, there should be gaps between every run due to detector downtime, "
+                           "but some are missing here. \n"
+                           f"The first missing gap is between runs {first_run} and {first_run+1}. \n"
+                           "Any livetime estimates using this GoodRunList will not be accurate. \n"
+                           "This is a known problem affecting older IceCube GoodRunLists. \n"
+                           "You should use a newer, corrected GoodRunList. \n"
+                           "Flarestack will attempt to stitch these runs together. \n"
+                           "However, livetime estimates may be off by several percentage points, "
+                           "or even more for very short timescales. \n"
+                           "You have been warned!")
 
             while np.sum(mask) > 0:
 
