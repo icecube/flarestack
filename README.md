@@ -1,5 +1,10 @@
 # flarestack
-[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack) [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) [![Coverage Status](https://coveralls.io/repos/github/icecube/flarestack/badge.svg?branch=master)](https://coveralls.io/github/icecube/flarestack?branch=master) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/icecube/flarestack/master) [![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
+[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) 
+[![CI](https://github.com/icecube/flarestack/actions/workflows/continous_integration.yml/badge.svg)](https://github.com/icecube/flarestack/actions/workflows/continous_integration.yml) 
+[![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) 
+[![Coverage Status](https://coveralls.io/repos/github/icecube/flarestack/badge.svg?branch=master)](https://coveralls.io/github/icecube/flarestack?branch=master) 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/icecube/flarestack/master) 
+[![DOI](https://zenodo.org/badge/127512114.svg)](https://zenodo.org/badge/latestdoi/127512114)
 
 
 Code for unbinned likelihood analysis of astroparticle physics data, created by [@robertdstein](https://github.com/robertdstein).
@@ -82,9 +87,9 @@ Is *flarestack* actually working? You can check the functionality of *flarestack
  python -m unittest discover tests/
 ```
 
-*flarestack* runs with Travis CI, a Continuous Integration Service (https://travis-ci.org/). After each commit, the suite of tests is run, to ensure that the commit did not break anything. You can see the results of these tests at:
+*flarestack* runs with Github Actions, a Continuous Integration Service. After each commit, the suite of tests is run, to ensure that the commit did not break anything. You can see the results of these tests at:
 
-[![Build Status](https://travis-ci.org/icecube/flarestack.svg?branch=master)](https://travis-ci.org/icecube/flarestack)
+[![CI](https://github.com/icecube/flarestack/actions/workflows/continous_integration.yml/badge.svg)](https://github.com/icecube/flarestack/actions/workflows/continous_integration.yml) 
 
 If you want to contribute to *flarestack*, please remember to add new tests! The fraction of code presently covered by tests is measured using Coveralls (https://coveralls.io/). As a rule of thumb, at least 80% of the core code should be covered, but >90% would be even better. The current code coverage is:
 

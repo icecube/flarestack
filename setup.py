@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flarestack",
-    version="2.3.0",
+    version="2.4.1",
     author="Robert Stein",
     author_email="robert.stein@desy.de",
     description="Package for unbinned likelihood analysis of physics data",
@@ -25,16 +25,16 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-        "setuptools==57.0.0",
-        "numpy==1.20.3",
+        "setuptools==57.4.0",
+        "numpy==1.21.1",
         "numexpr==2.7.3",
-        "healpy==1.14.0",
-        "scipy==1.6.3",
+        "healpy==1.15.0",
+        "scipy==1.7.0",
         "matplotlib==3.4.2",
         "astropy==4.2.1",
-        "sphinx==4.0.2",
+        "sphinx==4.1.1",
         "jupyter==1.0.0",
-        "coveralls==3.1.0"
+        "coveralls==3.2.0"
     ],
     package_data={'flarestack': [
         'data/public/icecube/all_sky_point_source/raw_data/3year-data-release.zip']},
