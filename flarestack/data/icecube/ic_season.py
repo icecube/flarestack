@@ -19,6 +19,16 @@ try:
 except KeyError:
     icecube_dataset_dir = None
 
+try:
+    ref_dir_7yr = os.environ['7YR_REF_SENS']
+except KeyError:
+    ref_dir_7yr = None
+
+try:
+    ref_10yr = os.environ['10YR_SENS_REF']
+except KeyError:
+    ref_10yr = None
+
 if icecube_dataset_dir is None:
     if host_server == "DESY":
         icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
@@ -64,7 +74,7 @@ class IceCubeRunList(DetectorOnOffList):
 
             first_run = self.on_off_list["run"][:-1][mask][0]
 
-            logger.warning("Maybe the IceCube GoodRunList was not produced correctly. \n"
+            logger.warning("\nMaybe the IceCube GoodRunList was not produced correctly. \n"
                            "Some runs in the GoodRunList start immediately after the preceding run ends. \n"
                            "For older files, there should be gaps between every run due to detector downtime, "
                            "but some are missing here. \n"
