@@ -20,7 +20,7 @@ except KeyError:
     icecube_dataset_dir = None
 
 try:
-    ref_dir_7yr = os.environ['7YR_REF_SENS']
+    ref_dir_7yr = os.environ['7YR_SENS_REF']
 except KeyError:
     ref_dir_7yr = None
 
