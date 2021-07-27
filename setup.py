@@ -31,7 +31,7 @@ setuptools.setup(
         "healpy==1.15.0",
         "scipy==1.7.0",
         "matplotlib==3.4.2",
-        "astropy==4.2.1",
+        "astropy==4.3.post1",
         "sphinx==4.1.1",
         "jupyter==1.0.0",
         "coveralls==3.2.0"
