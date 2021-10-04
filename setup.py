@@ -25,7 +25,7 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-        "setuptools==58.1.0",
+        "setuptools==58.2.0",
         "numpy==1.21.2",
         "numexpr==2.7.3",
         "healpy==1.15.0",
