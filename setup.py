@@ -34,7 +34,7 @@ setuptools.setup(
         "astropy==4.3.1",
         "sphinx==4.2.0",
         "jupyter==1.0.0",
-        "coveralls==3.2.0"
+        "coveralls==3.3.0"
     ],
     package_data={'flarestack': [
         'data/public/icecube/all_sky_point_source/raw_data/3year-data-release.zip']},
