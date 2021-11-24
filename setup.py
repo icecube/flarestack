@@ -29,7 +29,7 @@ setuptools.setup(
         "numpy==1.21.4",
         "numexpr==2.7.3",
         "healpy==1.15.0",
-        "scipy==1.7.2",
+        "scipy==1.7.3",
         "matplotlib==3.5.0",
         "astropy==4.3.1",
         "sphinx==4.3.0",
