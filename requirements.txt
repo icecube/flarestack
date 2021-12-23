@@ -1,4 +1,4 @@
-setuptools==60.0.4
+setuptools==60.0.5
 numpy==1.21.5
 numexpr==2.8.1
 healpy==1.15.0
