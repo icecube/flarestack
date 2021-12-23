@@ -32,7 +32,7 @@ setuptools.setup(
         "scipy==1.7.3",
         "matplotlib==3.5.1",
         "astropy==4.3.1",
-        "sphinx==4.3.1",
+        "sphinx==4.3.2",
         "jupyter==1.0.0",
         "coveralls==3.3.1"
     ],
