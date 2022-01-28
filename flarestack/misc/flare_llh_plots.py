@@ -24,7 +24,7 @@ y = np.concatenate((sig_y, bkg_y))
 s = (0.5 / np.pi) * np.exp(-(x**2 + y**2))
 bkg = 1. / (2 * w) ** 2
 
-z = old_div(s,bkg)
+z = s/bkg
 
 cmap = cm.get_cmap('jet')
 
@@ -35,20 +35,22 @@ plt.scatter(0., 0., color="k", marker="x", s=50)
 plt.xlim(-w, w)
 plt.ylim(-w, w)
 plt.title("Spatial")
-plt.savefig(spatial_path)
+plt.xlabel(r"$\Delta_{RA}$ [deg]")
+plt.ylabel(r"$\Delta_{Dec}$ [deg]")
+plt.savefig(spatial_path, bbox_inches='tight', pad_inches=0.5)
 plt.close()
 
 energy_path = illustration_dir + "energy.png"
 
-min_e = 10 ** 2
-max_e = 10 ** 7
+min_e = 10. ** 2
+max_e = 10. ** 7
 
 def ic_power_law(f, gamma):
 
     p = 1 - gamma
 
     if p == -2.:
-        e = min_e * (old_div(max_e,min_e))**f
+        e = min_e * (max_e /min_e)**f
     else:
         e = (f * (max_e ** p - min_e ** p) + min_e**p) ** (1./p)
 
@@ -59,8 +61,7 @@ b_g = 3.7
 
 def energy_ratio(e):
 
-    k = old_div((max_e ** (s_g - 1) - min_e ** (s_g - 1)), \
-        (max_e ** (b_g - 1) - min_e ** (b_g - 1)))
+    k = (max_e ** (s_g - 1) - min_e ** (s_g - 1)) / (max_e ** (b_g - 1) - min_e ** (b_g - 1))
 
     ratio = e ** (b_g - s_g)
 
@@ -75,7 +76,7 @@ all_e = np.concatenate((sig_e, bkg_e))
 fig = plt.figure()
 
 # Plot histogram.
-n, bins, patches = plt.hist(np.log(all_e), 10, color='green')
+n, bins, patches = plt.hist(np.log(all_e) - 2., 10, color='green')
 bin_centers = 0.5 * (bins[:-1] + bins[1:])
 
 # scale values to interval [0,1]
@@ -86,12 +87,12 @@ for c, p in zip(col, patches):
     plt.setp(p, 'facecolor', cmap(c))
 
 plt.yscale("log")
-plt.xlabel("Log(Energy)")
+plt.xlabel("Log(Reco Energy / GeV)")
 plt.title("Energy")
 
 fig.tight_layout(pad=2)
 
-plt.savefig(energy_path)
+plt.savefig(energy_path, bbox_inches='tight', pad_inches=0.5)
 plt.close()
 
 n_sig = 4
@@ -111,7 +112,7 @@ w_s = np.random.uniform(1.1, 3.5, n_sig)
 w_b = np.random.uniform(0.2, 0.9, n_bkg)
 
 all_sob = np.concatenate((w_s, w_b), axis=0)
-col = cmap(old_div(all_sob,max(all_sob)))
+col = cmap(all_sob / max(all_sob))
 
 time_path = illustration_dir + "time.pdf"
 
@@ -145,7 +146,7 @@ for i, t in enumerate(s_t):
 f.subplots_adjust(hspace=0)
 ax2.set_axis_off()
 # ax2.get_yaxis().set_visible(False)
-plt.savefig(time_path)
+plt.savefig(time_path, bbox_inches='tight', pad_inches=0.5)
 plt.close()
 
 
@@ -192,7 +193,7 @@ ax1.get_xaxis().set_visible(False)
 search_path = illustration_dir + "search1.pdf"
 
 fig.set_size_inches(8, 6)
-plt.savefig(search_path)
+plt.savefig(search_path, bbox_inches='tight', pad_inches=0.5)
 
 for tmax in [50, 90]:
     ax1.plot(x, box_func(x, tmax), color="red")
@@ -201,7 +202,7 @@ ax1.arrow(35, 0.04, 65, -0.02, head_width=0.005, head_length=10,
           length_includes_head=True, color="k", shape="full", lw=0.7)
 
 search_path = illustration_dir + "search2.pdf"
-plt.savefig(search_path)
+plt.savefig(search_path, bbox_inches='tight', pad_inches=0.5)
 plt.close()
 
 
