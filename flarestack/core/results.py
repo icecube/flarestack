@@ -13,6 +13,7 @@ from flarestack.core.ts_distributions import plot_background_ts_distribution, \
     plot_fit_results, get_ts_fit_type
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
 from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.time_pdf import TimePDF
 from flarestack.utils.catalogue_loader import load_catalogue
 import sys
 import logging
@@ -104,6 +105,8 @@ class ResultsHandler(object):
 
         # if self.show_inj:
         self.inj = self.load_injection_values()
+        self._inj_dict = rh_dict["inj_dict"]
+        self._dataset = rh_dict["dataset"]
         # else:
         #     self.inj = None
 
@@ -116,6 +119,8 @@ class ResultsHandler(object):
             self.find_ns_scale()
         except ValueError as e:
             logger.warning("RuntimeError for ns scale factor: \n {0}".format(e))
+        except IndexError as e:
+            logger.warning(f"IndexError for ns scale factor. Only background trials?")
 
         self.plot_bias()
 
@@ -173,6 +178,17 @@ class ResultsHandler(object):
         # In the case of fitted weights there will be a number of injected neutrinos for each source thus we have
         # to take the sum. If this is not the case this won't do anything as ns_array will only have one entry.
         return [sum(a) for a in ns_arrays]
+
+    def mean_injection_time(self):
+        inj_time_list = list()
+        for src in self.sources:
+            single_inj_time = 0
+            for s_name in self._dataset.keys():
+                s = self._dataset[s_name]
+                tpdf = TimePDF.create(self._inj_dict["injection_sig_time_pdf"], s.get_time_pdf())
+                single_inj_time += tpdf.raw_injection_time(src)
+            inj_time_list.append(single_inj_time)
+        return np.median(inj_time_list)
 
     def astro_values(self, e_pdf_dict):
         """Function to convert the values calculated for sensitivity and
@@ -240,8 +256,15 @@ class ResultsHandler(object):
         for file in os.listdir(load_dir):
             path = os.path.join(load_dir, file)
 
-            with open(path, "rb") as f:
-                inj_values[os.path.splitext(file)[0]] = Pickle.load(f)
+            if os.path.isfile(path):
+                try:
+                    with open(path, "rb") as f:
+                        inj_values[os.path.splitext(file)[0]] = Pickle.load(f)
+                except EOFError as e:
+                    logger.warning(f'{path}: EOFError: {e}! Can not use this scale!')
+
+            else:
+                logger.debug(f'Did not load {path}, not a file!')
 
         return inj_values
 
@@ -263,6 +286,7 @@ class ResultsHandler(object):
             merged_path = os.path.join(self.merged_dir, sub_dir_name + ".pkl")
 
             if os.path.isfile(merged_path):
+                logger.debug(f"loading merged data from {merged_path}")
                 with open(merged_path, "rb") as mp:
                     merged_data = Pickle.load(mp)
             else:
@@ -274,7 +298,7 @@ class ResultsHandler(object):
                 try:
                     with open(path, "rb") as f:
                         data = Pickle.load(f)
-                except EOFError:
+                except (EOFError, IsADirectoryError):
                     logger.warning("Failed loading: {0}".format(path))
                     continue
                 os.remove(path)
@@ -289,7 +313,7 @@ class ResultsHandler(object):
                             for (param_name, params) in info.items():
                                 try: merged_data[key][param_name] += params
                                 except KeyError as m:
-                                    logger.warning('Keys [{key}][{param_name}] not found in \n {merged_data}')
+                                    logger.warning(f'Keys [{key}][{param_name}] not found in \n {merged_data}')
                                     raise KeyError(m)
 
             with open(merged_path, "wb") as mp:
@@ -321,8 +345,8 @@ class ResultsHandler(object):
 
             logger.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
 
-        except KeyError:
-            logger.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!")
+        except KeyError as e:
+            logger.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!: {e}")
 
     def estimate_sens_disc_scale(self):
         results = []
@@ -619,6 +643,8 @@ class ResultsHandler(object):
 
             y_25.append(frac_25)
 
+            self.make_plots(scale)
+
         x = np.array([float(s) for s in x])
 
         x_flux = k_to_flux(x)
@@ -633,19 +659,25 @@ class ResultsHandler(object):
                 value = scipy.stats.gamma.cdf(x, a, b, c)
                 return value
 
-            res = scipy.optimize.curve_fit(
-                f, x, y_val,  p0=[6, -0.1 * max(x), 0.1 * max(x)])
+            best_f = None
 
-            best_a = res[0][0]
-            best_b = res[0][1]
-            best_c = res[0][2]
+            try:
+                res = scipy.optimize.curve_fit(
+                    f, x, y_val,  p0=[6, -0.1 * max(x), 0.1 * max(x)])
 
-            def best_f(x):
-                return f(x, best_a, best_b, best_c)
+                best_a = res[0][0]
+                best_b = res[0][1]
+                best_c = res[0][2]
 
-            sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
-            setattr(self, ["disc_potential", "disc_potential_25"][i],
-                    k_to_flux(sol))
+                def best_f(x):
+                    return f(x, best_a, best_b, best_c)
+
+                sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
+                setattr(self, ["disc_potential", "disc_potential_25"][i],
+                        k_to_flux(sol))
+
+            except RuntimeError as e:
+                logger.warning(f"RuntimeError for discovery potential!: {e}")
 
             xrange = np.linspace(0.0, 1.1 * max(x), 1000)
 
@@ -654,7 +686,10 @@ class ResultsHandler(object):
             fig = plt.figure()
             ax1 = fig.add_subplot(111)
             ax1.scatter(x_flux, y_val, color="black")
-            ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")
+
+            if not isinstance(best_f, type(None)):
+                ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")
+
             ax1.axhline(threshold, lw=1, color="red", linestyle="--")
             ax1.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
             ax1.axvline(self.disc_potential, lw=2, color="red")
@@ -693,10 +728,13 @@ class ResultsHandler(object):
         param_path = os.path.join(self.plot_dir, "params/" + str(scale) + ".pdf")
 
         # if self.show_inj:
-        inj = self.inj[str(scale)]
+        try:
+            inj = self.inj[str(scale)]
 
-        plot_fit_results(self.results[scale]["Parameters"], param_path,
-                         inj=inj)
+            plot_fit_results(self.results[scale]["Parameters"], param_path,
+                             inj=inj)
+        except KeyError as e:
+            logger.warning(f'KeyError for scale {scale}: {e}! Can not plot fit results!')
 
     def ts_evolution_gif(self, n_scale_steps=None, cmap_name='winter'):
 
@@ -840,76 +878,87 @@ class ResultsHandler(object):
 
         for i, param in enumerate(self.param_names):
 
-            plt.figure()
-
-            ax = plt.subplot(111)
-
-            meds = []
-            ulims = []
-            llims = []
-            trues = []
-
-            for scale in raw_x:
-                vals = self.results[scale]["Parameters"][param]
-                med = np.median(vals)
-                meds.append(med)
-                sig = np.std(vals)
-                ulims.append(med + sig)
-                llims.append(med - sig)
-
-                true = self.inj[scale][param]
-                trues.append(true)
-
-            do_ns_scale = False
-
-            if "n_s" in param:
-                x = trues
-                x_label = r"$n_{injected}$" + param.replace("n_s", "")
-            else:
-                x = base_x
-                x_label = base_x_label
-
-            # decide wether to plot a second x axis on the top axis indicating the number of injected neutrinos instead
-            # of the flux
-            if "gamma" in param:
-                if not isinstance(self.flux_to_ns, type(None)):
-                    do_ns_scale = True
-
-            ns_scale = ns_scale_label = None
-
-            if do_ns_scale:
-                ns_scale = self.flux_to_ns * k_to_flux(max(base_x))
-                ns_scale_label = r"Number of neutrinos"
-
-            plt.scatter(x, meds, color="orange")
-            plt.plot(x, meds, color="black")
-            plt.plot(x, trues, linestyle="--", color="red")
-            plt.fill_between(x, ulims, llims, alpha=0.5, color="orange")
-
-            ax.set_xlim(left=0.0, right=max(x))
-            if min(trues) == 0.0:
-                ax.set_ylim(bottom=0.0)
-
-            if do_ns_scale:
-                ax2 = ax.twiny()
-                ax2.grid(0)
-                ax2.set_xlim(0., ns_scale)
-                ax2.set_xlabel(ns_scale_label)
-
-            plt.xlabel(x_label)
-            plt.ylabel(param)
-            plt.title("Bias (" + param + ")")
-
-            savepath = os.path.join(self.plot_dir, "bias_" + param + ".pdf")
-            logger.info("Saving bias plot to {0}".format(savepath))
-
             try:
-                os.makedirs(os.path.dirname(savepath))
-            except OSError:
-                pass
 
-            plt.savefig(savepath)
-            plt.close()
+                plt.figure()
+
+                ax = plt.subplot(111)
+
+                meds = []
+                ulims = []
+                llims = []
+                trues = []
+
+                for scale in raw_x:
+                    vals = self.results[scale]["Parameters"][param]
+                    med = np.median(vals)
+                    meds.append(med)
+                    sig = np.std(vals)
+                    ulims.append(med + sig)
+                    llims.append(med - sig)
+
+                    true = self.inj[scale][param]
+                    trues.append(true)
+
+                do_ns_scale = False
+
+                if "n_s" in param:
+                    x = trues
+                    x_label = r"$n_{injected}$" + param.replace("n_s", "")
+                else:
+                    x = base_x
+                    x_label = base_x_label
+
+                # decide wether to plot a second x axis on the top axis indicating the number of injected
+                # neutrinos instead of the flux
+                if "gamma" in param:
+                    if not isinstance(self.flux_to_ns, type(None)):
+                        do_ns_scale = True
+
+                ns_scale = ns_scale_label = None
+
+                if do_ns_scale:
+                    ns_scale = self.flux_to_ns * max(base_x)
+                    ns_scale_label = "Number of neutrinos"
+
+                plt.scatter(x, meds, color="orange")
+                plt.plot(x, meds, color="black")
+                plt.plot(x, trues, linestyle="--", color="red")
+                plt.fill_between(x, ulims, llims, alpha=0.5, color="orange")
+
+                try:
+                    ax.set_xlim(left=0.0, right=max(x))
+                    if min(trues) == 0.0:
+                        ax.set_ylim(bottom=0.0)
+
+                    if do_ns_scale:
+                        ax2 = ax.twiny()
+                        ax2.grid(0)
+                        ax2.set_xlim(0., ns_scale)
+                        ax2.set_xlabel(ns_scale_label)
+                except ValueError as e:
+                    logger.warning(f"{param}: {e}")
+
+                ax.set_xlabel(x_label)
+                ax.set_ylabel(param)
+                plt.title("Bias (" + param + ")")
+
+                savepath = os.path.join(self.plot_dir, "bias_" + param + ".pdf")
+                logger.info("Saving bias plot to {0}".format(savepath))
+
+                try:
+                    os.makedirs(os.path.dirname(savepath))
+                except OSError:
+                    pass
+
+                plt.tight_layout()
+                plt.savefig(savepath)
+
+            except KeyError as e:
+                logger.warning(f'KeyError for {param}: {e}! Can not make bias plots!')
+
+            finally:
+                plt.close()
 
 
 
