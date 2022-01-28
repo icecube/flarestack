@@ -70,9 +70,10 @@ def read_mh_dict(mh_dict):
             mh_dict[key] = f(mh_dict[key])
 
     if np.logical_and("fixed_scale" in mh_dict.keys(), "n_steps" in mh_dict.keys()):
-        raise Exception(f"MinimisationHandler dictionary contained both 'fixed_scale' key for "
-                        f"set injection flux, and 'n_steps' key for stepped injection flux."
-                        f"Please use only one of these options. \n  mh_dict: \n {mh_dict}")
+        logger.warning(f"MinimisationHandler dictionary contained both 'fixed_scale' key for "
+                       f"set injection flux, and 'n_steps' key for stepped injection flux."
+                       f"Make sure you know what you are doing when using both of these options. "
+                       f"\n  mh_dict: \n {mh_dict}")
 
     return mh_dict
 
@@ -440,10 +441,24 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         vals = res.x
         flag = res.status
-        # If the minimiser does not converge, repeat with brute force
+        # If the minimiser does not converge, try different strategy
         if flag == 1:
-            vals = scipy.optimize.brute(llh_f, ranges=self.bounds,
-                                        finish=None)
+            Nparam = len(self.bounds)
+
+            if Nparam > 40:
+                # brute force with more than 40 parameters is unfeasible
+                # try differential evolution
+                logger.warning(f"Minimize failed with {Nparam} parameters. Can not brute force!"
+                               f"Trying with differential evolution")
+                res = scipy.optimize.differential_evolution(llh_f, bounds=self.bounds, polish=True)
+
+                if not res.success:
+                    raise ValueError(f"No success with differential evolution either: {res.message}")
+                logger.debug(f"success! {res.message}")
+
+            else:
+                # for less than 40 parameters try with brute force grid evaluation
+                vals = scipy.optimize.brute(llh_f, ranges=self.bounds, finish=None)
 
         best_llh = raw_f(vals)
 
