@@ -45,10 +45,6 @@ jobs:
           pip install --upgrade pip
           pip install -e .
 
-      - name: TEMPORARY FIX Install stable coverage version
-        run: |
-          pip install coverage==6.2
-
       # Runs a set of commands using the runners shell
       - name: Test the code
         run: |
