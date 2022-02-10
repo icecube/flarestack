@@ -23,7 +23,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
-    python_requires='>=3.8',
+    python_requires=">=3.8",
     install_requires=[
         "astropy==5.0.1",
         "black==22.1.0",
@@ -37,8 +37,10 @@ setuptools.setup(
         "setuptools==60.8.2",
         "sphinx==4.4.0",
     ],
-    package_data={'flarestack': [
-        'data/public/icecube/all_sky_point_source/raw_data/3year-data-release.zip']},
-    include_package_data=True
+    package_data={
+        "flarestack": [
+            "data/public/icecube/all_sky_point_source/raw_data/3year-data-release.zip"
+        ]
+    },
+    include_package_data=True,
 )
-

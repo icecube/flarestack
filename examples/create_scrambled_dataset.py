@@ -12,9 +12,9 @@ logging.getLogger().setLevel("INFO")
 
 injection_time = {
     "time_pdf_name": "fixed_ref_box",
-    "fixed_ref_time_mjd": 56679.2044683, # Random time in ~2013
-    "pre_window": 0., # Start 0 days before reference time
-    "post_window": 0.01, # End 0.01 days after reference time
+    "fixed_ref_time_mjd": 56679.2044683,  # Random time in ~2013
+    "pre_window": 0.0,  # Start 0 days before reference time
+    "post_window": 0.01,  # End 0.01 days after reference time
 }
 
 # Use a source following a power law with a spectral index of -2, using the
@@ -24,7 +24,7 @@ injection_energy = {
     "energy_pdf_name": "power_law",
     "gamma": 2.0,
     "e_min_gev": 10**2,
-    "e_max_gev": 10**7
+    "e_max_gev": 10**7,
 }
 
 # Fix injection time/energy PDFs, and use "Poisson Smearing" to simulate
@@ -52,11 +52,10 @@ inj = season.make_injector(sources, **inj_dict)
 # Flux scale is defined as 10^-9 Gev^-1 s^-1 sr^-1 cm^-2 at 1 GeV
 # This flux is injected into the dataset, multiplied by the time pdf.
 
-flux_scale = 1.
+flux_scale = 1.0
 
 # Creates a dataset using scrambled background, with MC added on top
 
 dataset = inj.create_dataset(flux_scale)
 
 print(dataset)
-
