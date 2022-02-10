@@ -31,7 +31,4 @@ def angular_distance(lon1, lat1, lon2, lat2):
     sd = np.sin(lon2 - lon1)
     cd = np.cos(lon2 - lon1)
 
-    return np.arctan2(
-        np.hypot(c2 * sd, c1 * s2 - s1 * c2 * cd),
-        s1 * s2 + c1 * c2 * cd
-    )
+    return np.arctan2(np.hypot(c2 * sd, c1 * s2 - s1 * c2 * cd), s1 * s2 + c1 * c2 * cd)

@@ -5,8 +5,7 @@ import os
 import matplotlib.pyplot as plt
 from flarestack.core.results import ResultsHandler
 import numpy as np
-from flarestack.data.icecube.public.all_sky_point_source.all_sky_3_year \
-    import ps_3_year
+from flarestack.data.icecube.public.all_sky_point_source.all_sky_3_year import ps_3_year
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_3_systematic_set
 from flarestack.cluster import analyse, wait_cluster
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
@@ -20,9 +19,7 @@ season = "IC86-2011"
 
 # Shared
 
-llh_time = {
-    "time_pdf_name": "Steady"
-}
+llh_time = {"time_pdf_name": "Steady"}
 
 llh_energy = {
     "energy_pdf_name": "PowerLaw",
@@ -32,25 +29,19 @@ llh_dict = {
     # "llh_name": "spatial",
     "llh_time_pdf": llh_time,
     "llh_name": "standard",
-    "llh_energy_pdf": llh_energy
+    "llh_energy_pdf": llh_energy,
 }
 
 inj_time = llh_time
-inj_energy_pdf = {
-    "energy_pdf_name": "PowerLaw",
-    "gamma": 2
-}
+inj_energy_pdf = {"energy_pdf_name": "PowerLaw", "gamma": 2}
 
 inj_dict = {
     "injection_dataset": ps_3_systematic_set.get_seasons(season),
     "injection_time_pdf": inj_time,
-    "injection_energy_pdf": inj_energy_pdf
+    "injection_energy_pdf": inj_energy_pdf,
 }
 
-datasets = [
-    ps_3_systematic_set.get_seasons(season),
-    ps_3_year.get_seasons(season)
-]
+datasets = [ps_3_systematic_set.get_seasons(season), ps_3_year.get_seasons(season)]
 
 base_name = "general/compare_public_data_sensitivity/"
 
@@ -73,7 +64,7 @@ for i, dataset in enumerate(datasets):
     for sindec in sindecs:
         cat_path = ps_catalogue_name(sindec)
 
-        subname = name + "sindec=" + '{0:.2f}'.format(sindec) + "/"
+        subname = name + "sindec=" + "{0:.2f}".format(sindec) + "/"
 
         mh_dict = {
             "name": subname,
@@ -83,11 +74,10 @@ for i, dataset in enumerate(datasets):
             "llh_dict": llh_dict,
             "inj_dict": inj_dict,
             "n_steps": 15,
-            "n_trials": 1000
+            "n_trials": 1000,
         }
 
-        mh_dict["scale"] = flux_to_k(
-            ae.guess_discovery_potential(cat_path) * 1.5)
+        mh_dict["scale"] = flux_to_k(ae.guess_discovery_potential(cat_path) * 1.5)
 
         # analyse(mh_dict, n_cpu=24)
 
@@ -120,24 +110,22 @@ for i, (label, dataset_res) in enumerate(all_res.items()):
 
     plot_range = np.linspace(-0.99, 0.99, 1000)
 
-    color=["orange", "blue"][i]
+    color = ["orange", "blue"][i]
 
     ax1.plot(sindecs, sens, color=color, label=label)
 
-    ax1.plot(
-        sindecs, disc_pots, color=color, linestyle="--")
+    ax1.plot(sindecs, disc_pots, color=color, linestyle="--")
 
     all_sens.append(sens)
     all_disc.append(disc_pots)
 
-ax1.set_xlim(xmin=-1., xmax=1.)
+ax1.set_xlim(xmin=-1.0, xmax=1.0)
 # ax1.set_ylim(ymin=1.e-13, ymax=1.e-10)
-ax1.grid(True, which='both')
-ax1.semilogy(nonposy='clip')
-ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]",
-               fontsize=12)
+ax1.grid(True, which="both")
+ax1.semilogy(nonposy="clip")
+ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]", fontsize=12)
 
-plt.title('Point Source Sensitivity {0}'.format(season))
+plt.title("Point Source Sensitivity {0}".format(season))
 
 ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 #
@@ -157,7 +145,7 @@ xticklabels = ax1.get_xticklabels()
 plt.setp(xticklabels, visible=False)
 plt.subplots_adjust(hspace=0.001)
 
-ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+ax1.legend(loc="upper right", fancybox=True, framealpha=1.0)
 
 savepath = plot_output_dir(base_name) + "/PS_comparison.pdf"
 

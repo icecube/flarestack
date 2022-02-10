@@ -18,10 +18,12 @@ logger = logging.getLogger(__name__)
 fs_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 try:
-    fs_scratch_dir = os.environ['FLARESTACK_SCRATCH_DIR']
+    fs_scratch_dir = os.environ["FLARESTACK_SCRATCH_DIR"]
 except KeyError:
     fs_scratch_dir = str(Path.home())
-    logger.warning("No scratch directory has been set. Using home directory as default.")
+    logger.warning(
+        "No scratch directory has been set. Using home directory as default."
+    )
 
 fs_scratch_dir = os.path.join(fs_scratch_dir, "flarestack__data/")
 
@@ -67,13 +69,37 @@ pull_dir = pc_dir + "pulls/"
 floor_dir = pc_dir + "floors/"
 
 all_dirs = [
-    fs_scratch_dir, input_dir, storage_dir, output_dir, cluster_dir, pc_dir,
-    log_dir, catalogue_dir, acc_f_dir, energy_spline_dir, pickle_dir, plots_dir,
-    SoB_spline_dir, analysis_dir, illustration_dir, transients_dir,
-    bkg_spline_dir, dataset_plot_dir, unbliding_dir, limits_dir, pull_dir, floor_dir,
-    cache_dir, cat_cache_dir, public_dataset_dir, energy_proxy_dir,
-    eff_a_plot_dir, med_ang_res_dir, ang_res_plot_dir, energy_proxy_plot_dir,
-    sim_dataset_dir
+    fs_scratch_dir,
+    input_dir,
+    storage_dir,
+    output_dir,
+    cluster_dir,
+    pc_dir,
+    log_dir,
+    catalogue_dir,
+    acc_f_dir,
+    energy_spline_dir,
+    pickle_dir,
+    plots_dir,
+    SoB_spline_dir,
+    analysis_dir,
+    illustration_dir,
+    transients_dir,
+    bkg_spline_dir,
+    dataset_plot_dir,
+    unbliding_dir,
+    limits_dir,
+    pull_dir,
+    floor_dir,
+    cache_dir,
+    cat_cache_dir,
+    public_dataset_dir,
+    energy_proxy_dir,
+    eff_a_plot_dir,
+    med_ang_res_dir,
+    ang_res_plot_dir,
+    energy_proxy_plot_dir,
+    sim_dataset_dir,
 ]
 
 for dirname in all_dirs:
@@ -98,17 +124,11 @@ else:
 
 # gamma_range = [1., 4.]
 # gamma_precision = .025
-flarestack_gamma_precision = .025
+flarestack_gamma_precision = 0.025
 
-default_gamma_precision = {
-    'flarestack': flarestack_gamma_precision,
-    'skylab': .1
-}
+default_gamma_precision = {"flarestack": flarestack_gamma_precision, "skylab": 0.1}
 
-default_smoothing_order = {
-    'flarestack': 2,
-    'skylab': 1
-}
+default_smoothing_order = {"flarestack": 2, "skylab": 1}
 
 
 def deterministic_hash(hash_dict):
@@ -120,6 +140,7 @@ def deterministic_hash(hash_dict):
     :return: A 32bit number representing the data
     """
     return zlib.adler32((json.dumps(hash_dict, sort_keys=True)).encode())
+
 
 # Sets the minimum angular error
 
@@ -154,12 +175,19 @@ def llh_energy_hash_pickles(llh_dict, season):
     hash_dict = dict(llh_dict["llh_energy_pdf"])
     hash_dict["llh_name"] = llh_dict["llh_name"]
 
-    precision = llh_dict.get('gamma_precision', 'flarestack')
-    smoothing_order = llh_dict.get('smoothing_order', 'flarestack')
+    precision = llh_dict.get("gamma_precision", "flarestack")
+    smoothing_order = llh_dict.get("smoothing_order", "flarestack")
 
     key = deterministic_hash(hash_dict)
-    season_path = str(key) + "/" + season.sample_name + "/" + \
-                  season.season_name + smoothing_precision_string(smoothing_order, precision) + ".pkl"
+    season_path = (
+        str(key)
+        + "/"
+        + season.sample_name
+        + "/"
+        + season.season_name
+        + smoothing_precision_string(smoothing_order, precision)
+        + ".pkl"
+    )
     SoB_path = SoB_spline_dir + season_path
     acc_path = acc_f_dir + season_path
     return SoB_path, acc_path
@@ -173,26 +201,34 @@ def band_mask_hash_dir(catalogue):
 
 
 def band_mask_cache_name(season, catalogue, injection_bandwidth):
-    n_chunks = int((len(catalogue) + band_mask_chunk_size - 1) \
-               / band_mask_chunk_size)
-    logger.info("Breaking catalogue into {0} chunks of {1}".format(n_chunks, band_mask_chunk_size))
+    n_chunks = int((len(catalogue) + band_mask_chunk_size - 1) / band_mask_chunk_size)
+    logger.info(
+        "Breaking catalogue into {0} chunks of {1}".format(
+            n_chunks, band_mask_chunk_size
+        )
+    )
 
     cats = []
     mask_indices = []
     source_indices = []
 
     for i in range(n_chunks):
-        cat = catalogue[(i*band_mask_chunk_size):((i+1) * band_mask_chunk_size)]
+        cat = catalogue[(i * band_mask_chunk_size) : ((i + 1) * band_mask_chunk_size)]
         cats.append(cat)
         mask_indices += [i for _ in range(band_mask_chunk_size)]
         source_indices += [x for x in range(band_mask_chunk_size)]
 
-    paths = [band_mask_hash_dir(cat) + season.sample_name +
-             f"_{injection_bandwidth:.8f}/" +
-             season.season_name + ".npz" for cat in cats]
+    paths = [
+        band_mask_hash_dir(cat)
+        + season.sample_name
+        + f"_{injection_bandwidth:.8f}/"
+        + season.season_name
+        + ".npz"
+        for cat in cats
+    ]
 
-    mask_indices = mask_indices[:len(catalogue)]
-    source_indices = source_indices[:len(catalogue)]
+    mask_indices = mask_indices[: len(catalogue)]
+    source_indices = source_indices[: len(catalogue)]
 
     return cats, paths, mask_indices, source_indices
 
@@ -213,22 +249,31 @@ def unblinding_output_path(name):
     path = os.path.join(unbliding_dir, name + "unblinding_results.pkl")
     return path
 
+
 def limit_output_path(name):
     path = os.path.join(limits_dir, name + "limit.pkl")
     return path
 
 
 def sim_dataset_dir_path(sample_name, season_name, bkg_flux_model):
-    return f"{sim_dataset_dir}{sample_name}/" \
-           f"{season_name}/{bkg_flux_model.unique_name()}/"
+    return (
+        f"{sim_dataset_dir}{sample_name}/"
+        f"{season_name}/{bkg_flux_model.unique_name()}/"
+    )
 
 
 def get_base_sob_plot_dir(season):
-    return dataset_plot_dir + "Signal_over_background/" + \
-                         season.sample_name + "/" + season.season_name + "/"
+    return (
+        dataset_plot_dir
+        + "Signal_over_background/"
+        + season.sample_name
+        + "/"
+        + season.season_name
+        + "/"
+    )
 
 
-def smoothing_precision_string(smoothing_order='flarestack', gamma_precision='skylab'):
+def smoothing_precision_string(smoothing_order="flarestack", gamma_precision="skylab"):
 
     if isinstance(smoothing_order, str):
         if smoothing_order in default_smoothing_order.keys():
@@ -242,56 +287,59 @@ def smoothing_precision_string(smoothing_order='flarestack', gamma_precision='sk
         else:
             raise ValueError(f"Smoothing order for {smoothing_order} not known!")
 
-    logger.debug(f"smoothing order is {smoothing_order}, gamma precision is {gamma_precision}")
-    s = ''
-    if smoothing_order != default_smoothing_order['flarestack']:
-        s += f'_smoothing{smoothing_order}'
-    if gamma_precision != default_gamma_precision['flarestack']:
-        s += f'_precision{gamma_precision}'
+    logger.debug(
+        f"smoothing order is {smoothing_order}, gamma precision is {gamma_precision}"
+    )
+    s = ""
+    if smoothing_order != default_smoothing_order["flarestack"]:
+        s += f"_smoothing{smoothing_order}"
+    if gamma_precision != default_gamma_precision["flarestack"]:
+        s += f"_precision{gamma_precision}"
     return s
 
 
 def acceptance_path(season):
-    return acc_f_dir + season.sample_name + "/" + \
-           season.season_name + '.pkl'
+    return acc_f_dir + season.sample_name + "/" + season.season_name + ".pkl"
 
 
 def SoB_spline_path(season, *args, **kwargs):
-    return SoB_spline_dir + season.sample_name + "/" + \
-           season.season_name + smoothing_precision_string(*args, **kwargs) + '.pkl'
+    return (
+        SoB_spline_dir
+        + season.sample_name
+        + "/"
+        + season.season_name
+        + smoothing_precision_string(*args, **kwargs)
+        + ".pkl"
+    )
 
 
 def bkg_spline_path(season):
-    return bkg_spline_dir + season.sample_name + "/" + \
-           season.season_name + '.pkl'
+    return bkg_spline_dir + season.sample_name + "/" + season.season_name + ".pkl"
 
 
 def energy_proxy_path(season):
-    return energy_proxy_dir + season.sample_name + "/" + \
-           season.season_name + ".pkl"
+    return energy_proxy_dir + season.sample_name + "/" + season.season_name + ".pkl"
 
 
 def med_ang_res_path(season):
-    return med_ang_res_dir + season.sample_name + "/" + \
-           season.season_name + ".pkl"
+    return med_ang_res_dir + season.sample_name + "/" + season.season_name + ".pkl"
 
 
 def ang_res_plot_path(season):
-    return ang_res_plot_dir + season.sample_name + "/" + \
-           season.season_name + ".pdf"
+    return ang_res_plot_dir + season.sample_name + "/" + season.season_name + ".pdf"
 
 
 def energy_proxy_plot_path(season):
-    return energy_proxy_plot_dir + season.sample_name + "/" + \
-           season.season_name + ".pdf"
+    return (
+        energy_proxy_plot_dir + season.sample_name + "/" + season.season_name + ".pdf"
+    )
 
 
 def effective_area_plot_path(season):
-    return eff_a_plot_dir + season.sample_name + "/" + \
-           season.season_name + ".pdf"
+    return eff_a_plot_dir + season.sample_name + "/" + season.season_name + ".pdf"
 
 
-k_flux_factor = 10 ** -9
+k_flux_factor = 10**-9
 
 
 def k_to_flux(k):
@@ -321,7 +369,7 @@ def scale_shortener(scale):
     :param scale: Flux Scale
     :return: Flux Scale to 4.s.f
     """
-    return '{0:.4G}'.format(float(scale))
+    return "{0:.4G}".format(float(scale))
 
 
 def analysis_pickle_path(mh_dict=None, name=None):
@@ -340,17 +388,21 @@ def analysis_pickle_path(mh_dict=None, name=None):
         try:
 
             if np.logical_and(name is not None, name != mh_dict["name"]):
-                raise Exception(f"Both name and mh_dict arguments provided. "
-                                f"There is a conflict between: \n"
-                                f"'name' parameter: {name} \n"
-                                f"'mh_dict'-derived name: {mh_dict['name']} \n"
-                                f"Please resolve this conflict, by specifying the correct name.")
+                raise Exception(
+                    f"Both name and mh_dict arguments provided. "
+                    f"There is a conflict between: \n"
+                    f"'name' parameter: {name} \n"
+                    f"'mh_dict'-derived name: {mh_dict['name']} \n"
+                    f"Please resolve this conflict, by specifying the correct name."
+                )
 
             name = mh_dict["name"]
         except KeyError:
-            raise Exception("No field 'name' was specified in mh_dict object. "
-                            "Cannot save results without a unique directory"
-                            " name being specified.")
+            raise Exception(
+                "No field 'name' was specified in mh_dict object. "
+                "Cannot save results without a unique directory"
+                " name being specified."
+            )
 
         if "fixed_scale" in mh_dict.keys():
             dict_name = f"fixed_scale_{mh_dict['fixed_scale']}_dict.pkl"
@@ -364,6 +416,7 @@ def analysis_pickle_path(mh_dict=None, name=None):
 
     pkl_file = os.path.join(analysis_path, dict_name)
     return pkl_file
+
 
 def make_analysis_pickle(mh_dict):
     """Takes a Minimisation Handler Dictionary, finds the corresponding

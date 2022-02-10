@@ -10,10 +10,15 @@ sources are used, the closest percentage to 70% is used for splitting.
 from __future__ import print_function
 from __future__ import absolute_import
 from builtins import zip
-from flarestack.analyses.agn_cores.shared_agncores import raw_cat_dir,\
-    agn_catalogue_name, agn_cores_output_dir
-from flarestack.analyses.agn_cores.shared_agncores import create_random_src, \
-    plot_catalogue
+from flarestack.analyses.agn_cores.shared_agncores import (
+    raw_cat_dir,
+    agn_catalogue_name,
+    agn_cores_output_dir,
+)
+from flarestack.analyses.agn_cores.shared_agncores import (
+    create_random_src,
+    plot_catalogue,
+)
 from flarestack.utils.prepare_catalogue import cat_dtype
 import astropy.io.fits as pyfits
 from astropy.table import Table
@@ -36,24 +41,33 @@ def select_nrandom_sources(cat, n_random=100):
     return cat_new
 
 
-'''Open original (complete) catalogue'''
-raw_cat = pyfits.open(raw_cat_dir+'radioloud_rxs_allwise_nvss_no3LACbll.fits')
+"""Open original (complete) catalogue"""
+raw_cat = pyfits.open(raw_cat_dir + "radioloud_rxs_allwise_nvss_no3LACbll.fits")
 raw_cat = Table(raw_cat[1].data, masked=True)
 
-raw_cat = raw_cat[raw_cat['DEC']>0]   # Select Northen sky sources only
-raw_cat = raw_cat.group_by('2RXS_SRC_FLUX')  # order catalog by flux
+raw_cat = raw_cat[raw_cat["DEC"] > 0]  # Select Northen sky sources only
+raw_cat = raw_cat.group_by("2RXS_SRC_FLUX")  # order catalog by flux
 #####################################
 #    Select 100 brightest sources   #
 #####################################
-raw_cat= raw_cat[-100:]
+raw_cat = raw_cat[-100:]
 
 #####################################
 #      Select two close sources     #
 #####################################
-raw_cat = raw_cat[(raw_cat['RA_DEG']>220)&(raw_cat['RA_DEG']<240)&(raw_cat['DEC_DEG']>7.1)&(raw_cat['DEC_DEG']<15)]
-plot_catalogue(raw_cat["RA_DEG"], raw_cat["DEC_DEG"], src_weight= np.ones(len(raw_cat)),
-               filename = 'NorthSky_close_sources',
-               plot_path = agn_cores_output_dir('catalogues'))
+raw_cat = raw_cat[
+    (raw_cat["RA_DEG"] > 220)
+    & (raw_cat["RA_DEG"] < 240)
+    & (raw_cat["DEC_DEG"] > 7.1)
+    & (raw_cat["DEC_DEG"] < 15)
+]
+plot_catalogue(
+    raw_cat["RA_DEG"],
+    raw_cat["DEC_DEG"],
+    src_weight=np.ones(len(raw_cat)),
+    filename="NorthSky_close_sources",
+    plot_path=agn_cores_output_dir("catalogues"),
+)
 
 #####################################
 #      Create 100 random sources    #
@@ -61,7 +75,7 @@ plot_catalogue(raw_cat["RA_DEG"], raw_cat["DEC_DEG"], src_weight= np.ones(len(ra
 #
 new_cat = np.empty(len(raw_cat), dtype=cat_dtype)
 new_cat["ra"] = np.deg2rad(raw_cat["RA_DEG"])  # NVSS RA in radians
-new_cat["dec"] = np.deg2rad(raw_cat["DEC_DEG"]) # NVSS DEC in radians
+new_cat["dec"] = np.deg2rad(raw_cat["DEC_DEG"])  # NVSS DEC in radians
 
 # new_cat["ra"] = np.deg2rad(random_ra)
 # new_cat["dec"] = np.deg2rad(random_dec)
@@ -72,8 +86,8 @@ new_cat["Relative Injection Weight"] = np.ones(len(raw_cat))  # set equal weight
 
 # save name of source (if given)
 src_name = []
-for vv10, rxs in zip(raw_cat['NAME_vv10'], raw_cat['2RXS_ID']):
-    if (vv10!='N/A'):
+for vv10, rxs in zip(raw_cat["NAME_vv10"], raw_cat["2RXS_ID"]):
+    if vv10 != "N/A":
         src_name.append(vv10)
     else:
         src_name.append(rxs)

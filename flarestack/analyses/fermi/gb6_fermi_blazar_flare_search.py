@@ -45,7 +45,7 @@ catalogue = custom_sources(
     name="GB6_J1040_0617",
     ra=ra,
     dec=dec,
-    weight=1.,
+    weight=1.0,
     distance=lumdist,
     start_time=t_start,
     end_time=t_end,
@@ -56,7 +56,7 @@ np.save(cat_path, catalogue)
 
 
 search_window = float(t_end - t_start)
-max_window = 150.
+max_window = 150.0
 # Initialise Injectors/LLHs
 
 injection_energy = {
@@ -67,9 +67,9 @@ injection_energy = {
 llh_time = {
     "time_pdf_name": "FixedRefBox",
     "fixed_ref_time_mjd": t_start,
-    "pre_window": 0.,
+    "pre_window": 0.0,
     "post_window": search_window,
-    "max_flare": max_window
+    "max_flare": max_window,
 }
 
 llh_energy = injection_energy
@@ -84,7 +84,7 @@ no_flare_negative = {
     "llh_name": "standard",
     "llh_energy_pdf": llh_energy,
     "llh_time_pdf": llh_time,
-    "negative_ns_bool": True
+    "negative_ns_bool": True,
 }
 
 flare = no_flare
@@ -93,14 +93,11 @@ src_res = dict()
 
 lengths = np.logspace(-2, 0, 2) * max_window
 
-for i, llh_kwargs in enumerate([
-                                no_flare,
-                                no_flare_negative,
-                                flare
-                                ]):
+for i, llh_kwargs in enumerate([no_flare, no_flare_negative, flare]):
 
-    label = ["Time-Independent", "Time-Independent (negative n_s)",
-             "Time-Clustering"][i]
+    label = ["Time-Independent", "Time-Independent (negative n_s)", "Time-Clustering"][
+        i
+    ]
     f_name = ["fixed_box", "fixed_box_negative", "flare_fit_gamma"][i]
     mh_name = ["fixed_weights", "fixed_weights", "flare"][i]
 
@@ -118,8 +115,8 @@ for i, llh_kwargs in enumerate([
             "pre_window": 0,
             "post_window": flare_length,
             "time_smear_bool": True,
-            "min_offset": 0.,
-            "max_offset": search_window - flare_length
+            "min_offset": 0.0,
+            "max_offset": search_window - flare_length,
         }
 
         inj_kwargs = {
@@ -127,24 +124,26 @@ for i, llh_kwargs in enumerate([
             "injection_time_pdf": injection_time,
         }
 
-        scale = flux_to_k(reference_sensitivity(np.sin(dec))
-                          * (50 * search_window/ flare_length))
+        scale = flux_to_k(
+            reference_sensitivity(np.sin(dec)) * (50 * search_window / flare_length)
+        )
 
         mh_dict = {
             "name": full_name,
             "mh_name": mh_name,
-            "datasets": custom_dataset(txs_sample_v1, catalogue,
-                                       llh_kwargs["llh_time_pdf"]),
+            "datasets": custom_dataset(
+                txs_sample_v1, catalogue, llh_kwargs["llh_time_pdf"]
+            ),
             "catalogue": cat_path,
             "inj_dict": inj_kwargs,
             "llh_dict": llh_kwargs,
             "scale": scale,
             "n_trials": 100,
-            "n_steps": 15 #number of flux values
+            "n_steps": 15,  # number of flux values
         }
 
         # if mh_name == "flare":
-            
+
         analyse(mh_dict, n_cpu=24, cluster=False)
 
         # raw_input("prompt")
@@ -153,7 +152,7 @@ for i, llh_kwargs in enumerate([
 
     src_res[label] = res
 
-wait_for_cluster() #for cluster
+wait_for_cluster()  # for cluster
 
 sens = [[] for _ in src_res]
 fracs = [[] for _ in src_res]
@@ -171,7 +170,8 @@ for i, (f_type, res) in enumerate(sorted(src_res.items())):
         inj_time = length * (60 * 60 * 24)
 
         astro_sens, astro_disc = rh.astro_values(
-            rh_dict["inj_dict"]["injection_energy_pdf"])
+            rh_dict["inj_dict"]["injection_energy_pdf"]
+        )
 
         e_key = "Mean Luminosity (erg/s)"
 
@@ -184,29 +184,25 @@ for i, (f_type, res) in enumerate(sorted(src_res.items())):
     labels.append(f_type)
     # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-for j, [fluence, energy] in enumerate([[sens, sens_e],
-                                       [disc_pots, disc_e]]):
+for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
 
     plt.figure()
     ax1 = plt.subplot(111)
 
     ax2 = ax1.twinx()
 
-    cols = ["#F79646","#00A6EB",  "g", "r"]
+    cols = ["#F79646", "#00A6EB", "g", "r"]
     linestyle = ["-", "-"][j]
 
     for i, f in enumerate(fracs):
 
         print(fluence[i], labels[i])
 
-        ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                 color=cols[i])
-        ax2.plot(f, energy[i], linestyle=linestyle,
-                 color=cols[i])
+        ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle, color=cols[i])
+        ax2.plot(f, energy[i], linestyle=linestyle, color=cols[i])
 
-    ax1.grid(True, which='both')
-    ax1.set_ylabel(r"Time-Integrated Flux[ GeV$^{-1}$ cm$^{-2}$]",
-                   fontsize=12)
+    ax1.grid(True, which="both")
+    ax1.set_ylabel(r"Time-Integrated Flux[ GeV$^{-1}$ cm$^{-2}$]", fontsize=12)
     ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
     ax1.set_xlabel(r"Flare Length (days)")
     ax1.set_yscale("log")
@@ -215,15 +211,21 @@ for j, [fluence, energy] in enumerate([[sens, sens_e],
     for k, ax in enumerate([ax1, ax2]):
         y = [fluence, energy][k]
 
-        ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
-                    1.1 * max([max(x) for x in y if len(x) > 0]))
+        ax.set_ylim(
+            0.95 * min([min(x) for x in y if len(x) > 0]),
+            1.1 * max([max(x) for x in y if len(x) > 0]),
+        )
 
     plt.title("Flare in " + str(int(search_window)) + " day window")
 
-    ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
+    ax1.legend(loc="upper left", fancybox=True, framealpha=0.0)
     plt.tight_layout()
-    plt.savefig(plot_output_dir(name) + "/flare_vs_box_" +
-                catalogue["source_name"][0].decode() + "_" + ["sens", "disc"][
-                    j] +
-                ".pdf")
+    plt.savefig(
+        plot_output_dir(name)
+        + "/flare_vs_box_"
+        + catalogue["source_name"][0].decode()
+        + "_"
+        + ["sens", "disc"][j]
+        + ".pdf"
+    )
     plt.close()

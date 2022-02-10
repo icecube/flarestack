@@ -18,13 +18,13 @@ injection_energy = {
     "Gamma": 2.0,
 }
 
-max_window = 100.
+max_window = 100.0
 
 llh_time = {
     "Name": "FixedRefBox",
-    "Fixed Ref Time (MJD)": 56100.,
-    "Pre-Window": 0.,
-    "Post-Window": max_window
+    "Fixed Ref Time (MJD)": 56100.0,
+    "Pre-Window": 0.0,
+    "Post-Window": max_window,
 }
 
 llh_energy = injection_energy
@@ -34,7 +34,7 @@ zero_bound = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Flare Search?": False,
-    "Fit Negative n_s?": False
+    "Fit Negative n_s?": False,
 }
 
 negative_bound = {
@@ -42,7 +42,7 @@ negative_bound = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Flare Search?": False,
-    "Fit Negative n_s?": True
+    "Fit Negative n_s?": True,
 }
 
 name = "benchmarks/negative_n_s/"
@@ -51,7 +51,7 @@ sindecs = np.linspace(0.90, -0.90, 13)
 # sindecs = np.linspace(0.5, -0.5, 3)
 # sindecs = [0.0]
 
-length = 100.
+length = 100.0
 
 analyses = dict()
 
@@ -65,7 +65,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
 
         cat_path = ps_catalogue_name(sindec)
 
-        decname = name + "sindec=" + '{0:.2f}'.format(sindec) + "/"
+        decname = name + "sindec=" + "{0:.2f}".format(sindec) + "/"
 
         full_name = decname + label + "/"
 
@@ -88,7 +88,7 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 10,
-            "n_steps": 10
+            "n_steps": 10,
         }
 
         analysis_path = analysis_dir + full_name
@@ -135,7 +135,7 @@ for i, (label, src_res) in enumerate(analyses.items()):
     for (sindec, rh_dict) in sorted(src_res.items()):
 
         try:
-        #
+            #
             rh = ResultsHandler(rh_dict)
             sens.append(rh.sensitivity)
             disc_pots.append(rh.disc_potential)
@@ -156,14 +156,13 @@ for i, (label, src_res) in enumerate(analyses.items()):
 
     all_sens.append(sens)
 
-ax1.grid(True, which='both')
+ax1.grid(True, which="both")
 ax1.set_yscale("log")
-ax1.set_xlim(xmin=-1., xmax=1.)
+ax1.set_xlim(xmin=-1.0, xmax=1.0)
 yticks = ax1.yaxis.get_major_ticks()
 yticks[1].label1.set_visible(False)
 
-ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]",
-               fontsize=12)
+ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]", fontsize=12)
 
 ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
@@ -186,7 +185,7 @@ plt.subplots_adjust(hspace=0.001)
 # ax1.set_xscale("log")
 # ax1.set_xlim(0, 1.0)
 
-ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+ax1.legend(loc="upper right", fancybox=True, framealpha=1.0)
 
 savename = plot_output_dir(name) + "ratio.pdf"
 

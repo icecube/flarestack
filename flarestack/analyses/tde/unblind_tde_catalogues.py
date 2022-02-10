@@ -7,8 +7,7 @@ import numpy as np
 from flarestack.core.unblinding import create_unblinder
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.utils.custom_dataset import custom_dataset
-from flarestack.analyses.tde.shared_TDE import tde_catalogue_name, \
-    tde_catalogues
+from flarestack.analyses.tde.shared_TDE import tde_catalogue_name, tde_catalogues
 import logging
 from flarestack.utils.catalogue_loader import load_catalogue
 
@@ -25,19 +24,15 @@ llh_energy = {
     "gamma": 2.0,
 }
 
-llh_time = {
-    "time_pdf_name": "custom_source_box"
-}
+llh_time = {"time_pdf_name": "custom_source_box"}
 
-llh_bkg_time = {
-    "time_pdf_name": "steady"
-}
+llh_bkg_time = {"time_pdf_name": "steady"}
 
 llh_dict = {
     "llh_name": "standard",
     "llh_energy_pdf": llh_energy,
     "llh_sig_time_pdf": llh_time,
-    "llh_bkg_time_pdf": llh_bkg_time
+    "llh_bkg_time_pdf": llh_bkg_time,
 }
 
 name_root = "analyses/tde/unblind_stacked_TDEs/"
@@ -61,11 +56,12 @@ for j, cat in enumerate(tde_catalogues):
     unblind_dict = {
         "name": name,
         "mh_name": "fit_weights",
-        "dataset": custom_dataset(txs_sample_v1, catalogue,
-                                  llh_dict["llh_sig_time_pdf"]),
+        "dataset": custom_dataset(
+            txs_sample_v1, catalogue, llh_dict["llh_sig_time_pdf"]
+        ),
         "catalogue": cat_path,
         "llh_dict": llh_dict,
-        "background_ts": bkg_ts
+        "background_ts": bkg_ts,
     }
 
     # ub = create_unblinder(unblind_dict, mock_unblind=False)
@@ -90,8 +86,10 @@ for j, cat in enumerate(tde_catalogues):
     print("\hline")
 
     for i, x in enumerate(catalogue):
-        print(f'{x["source_name"].decode()} & {np.degrees(x["ra_rad"]):.2f} & {np.degrees(x["dec_rad"]):.2f} & '
-              f'{x["distance_mpc"]:.0f} & {x["start_time_mjd"]:.0f} & {x["end_time_mjd"]:.0f}  & {ns[i]:.2f} \\\\')
+        print(
+            f'{x["source_name"].decode()} & {np.degrees(x["ra_rad"]):.2f} & {np.degrees(x["dec_rad"]):.2f} & '
+            f'{x["distance_mpc"]:.0f} & {x["start_time_mjd"]:.0f} & {x["end_time_mjd"]:.0f}  & {ns[i]:.2f} \\\\'
+        )
     print("\hline")
 
 for x in res:

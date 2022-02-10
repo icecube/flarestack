@@ -21,8 +21,9 @@ import matplotlib.cm as cm
 
 energy_pdf = PowerLaw()
 
-azimuth_bins = np.linspace(0., 2*np.pi, 181)
-sin_dec_bins = np.linspace(-1., 1., 11)
+azimuth_bins = np.linspace(0.0, 2 * np.pi, 181)
+sin_dec_bins = np.linspace(-1.0, 1.0, 11)
+
 
 def create_2d_hist(sin_dec, az, sin_dec_bins, weights):
     """Creates a 2D histogram for a set of data (Experimental or Monte
@@ -38,15 +39,17 @@ def create_2d_hist(sin_dec, az, sin_dec_bins, weights):
     """
     # Produces the histogram
     hist_2d, binedges = np.histogramdd(
-        (az, sin_dec), bins=(azimuth_bins, sin_dec_bins), weights=weights)
+        (az, sin_dec), bins=(azimuth_bins, sin_dec_bins), weights=weights
+    )
     n_dimensions = hist_2d.ndim
 
     # Normalises histogram
     norms = np.sum(hist_2d, axis=n_dimensions - 2)
-    norms[norms == 0.] = 1.
+    norms[norms == 0.0] = 1.0
     hist_2d /= norms
 
     return hist_2d
+
 
 def create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
     """Creates 2D histograms for both data and MC, in which the seasons
@@ -65,16 +68,20 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
     :return: 2D spline function
     """
 
-    bkg_hist = create_2d_hist(exp["sinDec"], exp["azimuth"], sin_dec_bins,
-                              weights=np.ones_like(exp["logE"]))
+    bkg_hist = create_2d_hist(
+        exp["sinDec"], exp["azimuth"], sin_dec_bins, weights=np.ones_like(exp["logE"])
+    )
 
-    sig_hist = create_2d_hist(np.sin(mc["trueDec"]), mc["trueAzimuth"],
-                              sin_dec_bins,
-                              weights=energy_pdf.weight_mc(mc, gamma))
+    sig_hist = create_2d_hist(
+        np.sin(mc["trueDec"]),
+        mc["trueAzimuth"],
+        sin_dec_bins,
+        weights=energy_pdf.weight_mc(mc, gamma),
+    )
 
     # Produces an array containing True if x > 0, False otherwise
-    domain_bkg = bkg_hist > 0.
-    domain_sig = sig_hist > 0.
+    domain_bkg = bkg_hist > 0.0
+    domain_sig = sig_hist > 0.0
 
     # Creates an array of ones as the default ratio
     ratio = np.ones_like(bkg_hist, dtype=np.float)
@@ -90,23 +97,24 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
     np.copyto(ratio, max_ratio, where=domain_sig & ~domain_bkg)
 
     # Sets bin centers, and order of spline (for x and y)
-    sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
-    az_bin_center = (azimuth_bins[:-1] + azimuth_bins[1:]) / 2.
+    sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.0
+    az_bin_center = (azimuth_bins[:-1] + azimuth_bins[1:]) / 2.0
     order = 2
 
     # Fits a 2D spline function to the log of ratio array
     # This is 2nd order in both dimensions
     spline = scipy.interpolate.RectBivariateSpline(
-        az_bin_center, sin_bin_center, np.log(ratio),
-        kx=order, ky=order, s=0)
+        az_bin_center, sin_bin_center, np.log(ratio), kx=order, ky=order, s=0
+    )
 
     return spline
+
 
 def azimuth_proxy(data, season_dict):
 
     t = data[season_dict["MJD Time Key"]]
 
-    sidereal_day = 364./365.
+    sidereal_day = 364.0 / 365.0
 
     res = t % sidereal_day
 
@@ -169,10 +177,8 @@ def plot_ratio(seasons):
         data = [
             ("exp", exp["sinDec"], azimuth_proxy(exp, season_dict)),
             ("mc", np.sin(mc["dec"]), azimuth_proxy(mc, season_dict)),
-            (("exp_cut"), exp_cut["sinDec"],
-             azimuth_proxy(exp_cut, season_dict)),
-            (("mc cut"), np.sin(mc_cut["dec"]), azimuth_proxy(mc_cut,season_dict))
-
+            (("exp_cut"), exp_cut["sinDec"], azimuth_proxy(exp_cut, season_dict)),
+            (("mc cut"), np.sin(mc_cut["dec"]), azimuth_proxy(mc_cut, season_dict)),
         ]
 
         root = plots_dir + "azimuth/" + season_dict["Data Sample"] + "/"
@@ -188,50 +194,60 @@ def plot_ratio(seasons):
 
             if name in ["exp", "exp_cut"]:
 
-                hist_2d = create_2d_hist(sin_dec, az,
-                                         sin_dec_bins,
-                                         weights=np.ones_like(sin_dec)).T
+                hist_2d = create_2d_hist(
+                    sin_dec, az, sin_dec_bins, weights=np.ones_like(sin_dec)
+                ).T
 
             else:
-                ow = mc['ow']
-                trueE = mc['trueE']
-                weights = numexpr.evaluate('ow * trueE **(-2)')
+                ow = mc["ow"]
+                trueE = mc["trueE"]
+                weights = numexpr.evaluate("ow * trueE **(-2)")
 
                 mem_use = str(
-                    float(
-                        resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
+                    float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.0e6
+                )
                 print("")
-                print('Memory usage max: %s (Gb)' % mem_use)
+                print("Memory usage max: %s (Gb)" % mem_use)
 
                 if name == "mc":
 
                     hist_2d = create_2d_hist(
-                        sin_dec, az, sin_dec_bins,
-                        weights=energy_pdf.weight_mc(mc, gamma=3.7)).T
+                        sin_dec,
+                        az,
+                        sin_dec_bins,
+                        weights=energy_pdf.weight_mc(mc, gamma=3.7),
+                    ).T
 
                 else:
                     hist_2d = create_2d_hist(
-                        sin_dec, az, sin_dec_bins,
-                        weights=energy_pdf.weight_mc(
-                            mc_cut, gamma=3.7)).T
-
+                        sin_dec,
+                        az,
+                        sin_dec_bins,
+                        weights=energy_pdf.weight_mc(mc_cut, gamma=3.7),
+                    ).T
 
             hist_2d = np.array([x / np.mean(x) for x in hist_2d])
 
             plt.figure()
             ax = plt.subplot(111)
 
-            sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
-            az_bin_center = (azimuth_bins[:-1] + azimuth_bins[1:]) / 2.
+            sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.0
+            az_bin_center = (azimuth_bins[:-1] + azimuth_bins[1:]) / 2.0
 
             X, Y = np.meshgrid(az_bin_center, sin_bin_center)
-            cbar = ax.pcolormesh(X, Y, hist_2d, vmin=0.5, vmax=1.5,
-                                 cmap=cm.get_cmap('seismic'))
+            cbar = ax.pcolormesh(
+                X, Y, hist_2d, vmin=0.5, vmax=1.5, cmap=cm.get_cmap("seismic")
+            )
             # ax.set_aspect('equal')
 
-            plt.axis([min(azimuth_bins), max(azimuth_bins),
-                      min(sin_dec_bins), max(sin_dec_bins),
-                      ])
+            plt.axis(
+                [
+                    min(azimuth_bins),
+                    max(azimuth_bins),
+                    min(sin_dec_bins),
+                    max(sin_dec_bins),
+                ]
+            )
             ax.set_ylabel("Sin(Declination)")
             ax.set_xlabel("Azimuth")
             plt.colorbar(cbar)
@@ -241,14 +257,14 @@ def plot_ratio(seasons):
             plt.close()
 
             spline = scipy.interpolate.RectBivariateSpline(
-                az_bin_center, sin_bin_center, hist_2d.T,
-                kx=3, ky=1, s=0)
+                az_bin_center, sin_bin_center, hist_2d.T, kx=3, ky=1, s=0
+            )
 
             plt.figure()
             ax = plt.subplot(111)
 
-            sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
-            az_bin_center = (azimuth_bins[:-1] + azimuth_bins[1:]) / 2.
+            sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.0
+            az_bin_center = (azimuth_bins[:-1] + azimuth_bins[1:]) / 2.0
 
             z = []
 
@@ -258,13 +274,19 @@ def plot_ratio(seasons):
             z = np.array(z).T
 
             X, Y = np.meshgrid(azimuth_bins, sin_dec_bins)
-            cbar = ax.pcolormesh(X, Y, z.T, vmin=0.5, vmax=1.5,
-                          cmap=cm.get_cmap('seismic'))
+            cbar = ax.pcolormesh(
+                X, Y, z.T, vmin=0.5, vmax=1.5, cmap=cm.get_cmap("seismic")
+            )
             # ax.set_aspect('equal')
 
-            plt.axis([min(azimuth_bins), max(azimuth_bins),
-                      min(sin_dec_bins), max(sin_dec_bins),
-                      ])
+            plt.axis(
+                [
+                    min(azimuth_bins),
+                    max(azimuth_bins),
+                    min(sin_dec_bins),
+                    max(sin_dec_bins),
+                ]
+            )
             ax.set_ylabel("Sin(Declination)")
             ax.set_xlabel("Azimuth")
             plt.colorbar(cbar)
@@ -273,15 +295,20 @@ def plot_ratio(seasons):
             plt.savefig(savename)
             plt.close()
 
-        upgoing = [azimuth_proxy(exp[exp["sinDec"] > 0.], season_dict),
-                   azimuth_proxy(mc[mc["dec"] > 0.], season_dict)]
+        upgoing = [
+            azimuth_proxy(exp[exp["sinDec"] > 0.0], season_dict),
+            azimuth_proxy(mc[mc["dec"] > 0.0], season_dict),
+        ]
 
-        downgoing = [azimuth_proxy(exp[exp["sinDec"] < 0.], season_dict),
-                     azimuth_proxy(mc[mc["dec"] < 0.], season_dict)]
+        downgoing = [
+            azimuth_proxy(exp[exp["sinDec"] < 0.0], season_dict),
+            azimuth_proxy(mc[mc["dec"] < 0.0], season_dict),
+        ]
 
-        upgoing_cut = [azimuth_proxy(exp_cut[exp_cut["sinDec"] > 0.],
-                                     season_dict),
-                   azimuth_proxy(mc_cut[mc_cut["dec"] > 0.], season_dict)]
+        upgoing_cut = [
+            azimuth_proxy(exp_cut[exp_cut["sinDec"] > 0.0], season_dict),
+            azimuth_proxy(mc_cut[mc_cut["dec"] > 0.0], season_dict),
+        ]
 
         # downgoing_cut = [azimuth_proxy(exp_cut[exp_cut["sinDec"] < 0.],
         #                                season_dict),
@@ -294,8 +321,13 @@ def plot_ratio(seasons):
             weights = [np.ones_like(x) / float(len(x)) for x in dataset]
 
             n, edges, patches = plt.hist(
-                dataset, bins=azimuth_bins, histtype='step',
-                weights=weights, label=["Data", "MC"], color=["red", "b"])
+                dataset,
+                bins=azimuth_bins,
+                histtype="step",
+                weights=weights,
+                label=["Data", "MC"],
+                color=["red", "b"],
+            )
 
             med_bkg = np.median(n[0])
 
@@ -304,23 +336,33 @@ def plot_ratio(seasons):
 
             sum_over = np.sum(over - med_bkg)
 
-            title = season_dict["Name"] + " " + [
-                "upgoing", "downgoing", "upgoing [Log(E) > " + str(cut) + "]",
-                "downgoing [Log(E) > " + str(cut) + "]"][i]
+            title = (
+                season_dict["Name"]
+                + " "
+                + [
+                    "upgoing",
+                    "downgoing",
+                    "upgoing [Log(E) > " + str(cut) + "]",
+                    "downgoing [Log(E) > " + str(cut) + "]",
+                ][i]
+            )
 
-            plt.axhline(med_bkg, linestyle="--", color="k", linewidth=0.5,)
+            plt.axhline(
+                med_bkg,
+                linestyle="--",
+                color="k",
+                linewidth=0.5,
+            )
 
             message = "{0:.2f}".format(sum_over)
-            plt.annotate(message, xy=(0.05, 0.9),
-                         xycoords="axes fraction", color="red")
+            plt.annotate(message, xy=(0.05, 0.9), xycoords="axes fraction", color="red")
 
-            mids = (edges[:-1] + edges[1:]) / 2.
+            mids = (edges[:-1] + edges[1:]) / 2.0
 
             fills = np.array(n[0])
             fills[~mask] = med_bkg
 
-            ax1.fill_between(mids, fills, med_bkg, facecolor='red',
-                             alpha=0.5)
+            ax1.fill_between(mids, fills, med_bkg, facecolor="red", alpha=0.5)
 
             ax1.set_ylim(ymin=0.0)
 
@@ -328,11 +370,10 @@ def plot_ratio(seasons):
             plt.legend()
             plt.xlabel("Azimuth")
             plt.ylabel("Fraction of Total")
-            ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1,
-                                   sharex=ax1)
+            ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
             plt.plot(mids, n[1] / n[0], color="orange")
-            plt.axhline(1., linestyle="--", color="k")
+            plt.axhline(1.0, linestyle="--", color="k")
             plt.ylabel("Ratio (MC/Data)")
             plt.xlabel("Azimuth (rad)")
             xticklabels = ax1.get_xticklabels()
@@ -344,6 +385,7 @@ def plot_ratio(seasons):
 
             plt.savefig(root + title + " 1D.pdf")
             plt.close()
+
 
 # plot_ratio(txs_sample_v1)
 plot_ratio(gfu_v002_p01)

@@ -15,33 +15,35 @@ import os
 import logging
 
 logging.getLogger().setLevel("DEBUG")
-logging.debug('logging level is DEBUG')
-logging.getLogger('matplotlib').setLevel('INFO')
+logging.debug("logging level is DEBUG")
+logging.getLogger("matplotlib").setLevel("INFO")
 
 # set up result dictionaries
 full_res = dict()
 analyses = dict()
 
 # specifiy the minimizer
-mh_name = 'large_catalogue'
+mh_name = "large_catalogue"
 
 # sub path in plot output directory
-raw = "analyses/skylab_crosscheck/" + mh_name + '/'
+raw = "analyses/skylab_crosscheck/" + mh_name + "/"
 # data_dir = os.environ['HOME'] + '/flarestack_cc/'
 
 
 # define a function to make a
 def plot_ra_distribution(sin_dec, n_sources):
-    filename = plot_output_dir(f'{raw}{sin_dec:.4f}/{int(n_sources)}sources/ra_distribution.pdf')
-    title = rf'sin($\delta$)={sin_dec:.2f} \n n={n_sources:.0f}'
+    filename = plot_output_dir(
+        f"{raw}{sin_dec:.4f}/{int(n_sources)}sources/ra_distribution.pdf"
+    )
+    title = rf"sin($\delta$)={sin_dec:.2f} \n n={n_sources:.0f}"
 
     catalogue_filename = fs_sources(str(int(n_sources)), sin_dec)
     c = np.load(catalogue_filename)
 
-    ra = c['ra_rad']
+    ra = c["ra_rad"]
     f, a = plt.subplots()
     a.hist(ra)
-    a.set_xlabel('right ascensions')
+    a.set_xlabel("right ascensions")
     a.set_title(title)
     f.savefig(filename)
     plt.close()
@@ -72,7 +74,7 @@ llh_dict = {
     "llh_name": "standard_matrix",
     "llh_energy_pdf": injection_energy,
     "llh_sig_time_pdf": llh_time,
-    "llh_bkg_time_pdf": {"time_pdf_name": "steady"}
+    "llh_bkg_time_pdf": {"time_pdf_name": "steady"},
 }
 
 inj_dict = {
@@ -84,7 +86,7 @@ length = 0
 for season_name, season in ps_v002_p01.seasons.items():
     length += season.get_time_pdf().get_livetime()
 
-logging.info('injection length in livetime is {:.2f}'.format(length))
+logging.info("injection length in livetime is {:.2f}".format(length))
 
 sin_res = dict()
 
@@ -96,36 +98,47 @@ for sindec in same_sindecs:
 
     for i, n in enumerate(np.array(nsources)):
 
-        logging.info(f'stacking {n} sources')
-        logging.info(f'cat path is {fs_sources(n, sindec)}')
+        logging.info(f"stacking {n} sources")
+        logging.info(f"cat path is {fs_sources(n, sindec)}")
 
-        name = raw + '{:.4f}/'.format(sindec) + str(n) + 'sources' if sindec is not None \
-            else raw + 'None/' + str(n) + 'sources'
+        name = (
+            raw + "{:.4f}/".format(sindec) + str(n) + "sources"
+            if sindec is not None
+            else raw + "None/" + str(n) + "sources"
+        )
         catalogue = np.load(fs_sources(n, sindec))
         closest_src = np.sort(catalogue, order="distance_mpc")[0]
 
-        scale = (flux_to_k(reference_sensitivity(
-            np.sin(closest_src["dec_rad"]), gamma=gamma
-        ) * 40 * (math.log(float(len(catalogue)), 4) + 1)) * 200.) / length
+        scale = (
+            flux_to_k(
+                reference_sensitivity(np.sin(closest_src["dec_rad"]), gamma=gamma)
+                * 40
+                * (math.log(float(len(catalogue)), 4) + 1)
+            )
+            * 200.0
+        ) / length
 
         mh_dict = {
             "name": name,
             "mh_name": mh_name,
-            "dataset": custom_dataset(ps_v002_p01, catalogue,
-                                      llh_dict["llh_sig_time_pdf"]),
+            "dataset": custom_dataset(
+                ps_v002_p01, catalogue, llh_dict["llh_sig_time_pdf"]
+            ),
             "catalogue": fs_sources(n, sindec),
             "inj_dict": inj_dict,
             "llh_dict": llh_dict,
             "scale": scale,
-            "n_trials": 500/cluster if cluster else 1,
-            "n_steps": 10
+            "n_trials": 500 / cluster if cluster else 1,
+            "n_steps": 10,
         }
 
         job_id = None
-        job_id = analyse(mh_dict,
-                         cluster=True if cluster else False,
-                         n_cpu=1 if cluster else 25,
-                         n_jobs=cluster)
+        job_id = analyse(
+            mh_dict,
+            cluster=True if cluster else False,
+            n_cpu=1 if cluster else 25,
+            n_jobs=cluster,
+        )
         job_ids.append(job_id)
 
         full_res[str(n)] = mh_dict
@@ -133,7 +146,7 @@ for sindec in same_sindecs:
     sin_res[str(sindec)] = full_res
 
 if cluster and np.any(job_ids):
-    logging.info(f'waiting for jobs {job_ids}')
+    logging.info(f"waiting for jobs {job_ids}")
     wait_for_cluster(job_ids)
 
 for sindec in same_sindecs:
@@ -144,7 +157,7 @@ for sindec in same_sindecs:
 
     for n in full_res:
 
-        logging.debug(f'n = {n}, type={type(n)}')
+        logging.debug(f"n = {n}, type={type(n)}")
 
         rh_dict = full_res[n]
         rh = ResultsHandler(rh_dict)
@@ -156,8 +169,10 @@ for sindec in same_sindecs:
         plot_ra_distribution(sindec, float(n))
 
     # load results from skylab if they exist
-    skylab_result_path = sl_data_dir(sindec) + '/nsources_gamma{:.1f}.npy'.format(gamma)
-    skylab_results = np.load(skylab_result_path) if os.path.isfile(skylab_result_path) else None
+    skylab_result_path = sl_data_dir(sindec) + "/nsources_gamma{:.1f}.npy".format(gamma)
+    skylab_results = (
+        np.load(skylab_result_path) if os.path.isfile(skylab_result_path) else None
+    )
 
     # normalize all points to
     norm_to = reference_sensitivity(sindec, gamma=gamma)
@@ -165,68 +180,100 @@ for sindec in same_sindecs:
     fig, ax = plt.subplots()
 
     Nsqrt = np.sqrt(np.array(sens[0]))
-    Nflat = [1.] * len(sens[0])
+    Nflat = [1.0] * len(sens[0])
 
-    ax.plot(sens[0], Nsqrt, 'k--', label=r'$F \sim \sqrt{N}$')
-    ax.plot(sens[0], Nflat, 'k-.', label=r'$F = const$')
-    ax.errorbar(sens[0], np.array(sens[1]) / sens[1][0], yerr=np.array(sens[2]).T / norm_to,
-                marker='', ls='-', capsize=3, label='flarestack')
+    ax.plot(sens[0], Nsqrt, "k--", label=r"$F \sim \sqrt{N}$")
+    ax.plot(sens[0], Nflat, "k-.", label=r"$F = const$")
+    ax.errorbar(
+        sens[0],
+        np.array(sens[1]) / sens[1][0],
+        yerr=np.array(sens[2]).T / norm_to,
+        marker="",
+        ls="-",
+        capsize=3,
+        label="flarestack",
+    )
 
     if skylab_results is not None:
-        logging.info('drawing skylab results')
-        ax.errorbar(skylab_results['nsources'],
-                    skylab_results['sensitivity'] / skylab_results['sensitivity'][0],
-                    yerr=skylab_results['sensitivity_error'] / skylab_results['sensitivity'][0],
-                    marker='', ls='-', capsize=3, label='skylab')
+        logging.info("drawing skylab results")
+        ax.errorbar(
+            skylab_results["nsources"],
+            skylab_results["sensitivity"] / skylab_results["sensitivity"][0],
+            yerr=skylab_results["sensitivity_error"] / skylab_results["sensitivity"][0],
+            marker="",
+            ls="-",
+            capsize=3,
+            label="skylab",
+        )
     else:
-        logging.info('no skylab results')
+        logging.info("no skylab results")
 
-    ax.set_xlabel('$N$')
+    ax.set_xlabel("$N$")
     ax.set_ylabel(r"$F \, \cdot \, F_{\mathrm{point \, source}}^{-1}$")
-    ax.set_xscale('log')
-    ax.set_title('stacked sensitivity \n' + r'$\sin(\delta)=${:.2f}'.format(sindec))
+    ax.set_xscale("log")
+    ax.set_title("stacked sensitivity \n" + r"$\sin(\delta)=${:.2f}".format(sindec))
     ax.legend()
 
     plt.tight_layout()
 
-    fig.savefig(plot_output_dir(raw + '/{:.4f}/'.format(sindec)) + f'sens_nsources_gamma={gamma}_'
-                                                                   f'sindec{sindec:.2f}.pdf')
+    fig.savefig(
+        plot_output_dir(raw + "/{:.4f}/".format(sindec))
+        + f"sens_nsources_gamma={gamma}_"
+        f"sindec{sindec:.2f}.pdf"
+    )
     plt.close()
 
     fig2, ax2 = plt.subplots()
 
-    Nsqrt = 1/np.sqrt(sens[0])
-    Nrez = 1/np.array(sens[0])
+    Nsqrt = 1 / np.sqrt(sens[0])
+    Nrez = 1 / np.array(sens[0])
 
-    ax2.plot(sens[0], Nsqrt, 'k--', label=r'$F \sim \sqrt{N}$')
-    ax2.plot(sens[0], Nrez, 'k-.', label=r'$F = const$')
-    ax2.errorbar(sens[0],
-                 np.array(sens[1]) / sens[1][0] / np.array(sens[0]),
-                 yerr=np.array(sens[2]).T / sens[1][0] / np.array(sens[0]),
-                 marker='', ls='-', capsize=3, label='flarestack')
+    ax2.plot(sens[0], Nsqrt, "k--", label=r"$F \sim \sqrt{N}$")
+    ax2.plot(sens[0], Nrez, "k-.", label=r"$F = const$")
+    ax2.errorbar(
+        sens[0],
+        np.array(sens[1]) / sens[1][0] / np.array(sens[0]),
+        yerr=np.array(sens[2]).T / sens[1][0] / np.array(sens[0]),
+        marker="",
+        ls="-",
+        capsize=3,
+        label="flarestack",
+    )
 
     if skylab_results is not None:
-        logging.info('drawing skylab results')
-        ax2.errorbar(skylab_results['nsources'],
-                     skylab_results['sensitivity'] / skylab_results['sensitivity'][0] / np.array(sens[0]),
-                     yerr=skylab_results['sensitivity_error'] / skylab_results['sensitivity'][0] / np.array(sens[0]),
-                     marker='', ls='-', capsize=3, label='skylab')
+        logging.info("drawing skylab results")
+        ax2.errorbar(
+            skylab_results["nsources"],
+            skylab_results["sensitivity"]
+            / skylab_results["sensitivity"][0]
+            / np.array(sens[0]),
+            yerr=skylab_results["sensitivity_error"]
+            / skylab_results["sensitivity"][0]
+            / np.array(sens[0]),
+            marker="",
+            ls="-",
+            capsize=3,
+            label="skylab",
+        )
     else:
-        logging.info('no skylab results')
+        logging.info("no skylab results")
 
-    ax2.set_xlabel('$N_{\mathrm{sources}}$')
-    ax2.set_ylabel(r"$F \, \cdot \, F_{\mathrm{point \, source}}^{-1} \, \cdot \, N_{\mathrm{sources}}^{-1}$")
-    ax2.set_xscale('log')
-    ax2.set_yscale('log')
-    ax2.set_title('stacked sensitivity per source\n' + r'$\sin(\delta)=${:.2f}'.format(sindec))
+    ax2.set_xlabel("$N_{\mathrm{sources}}$")
+    ax2.set_ylabel(
+        r"$F \, \cdot \, F_{\mathrm{point \, source}}^{-1} \, \cdot \, N_{\mathrm{sources}}^{-1}$"
+    )
+    ax2.set_xscale("log")
+    ax2.set_yscale("log")
+    ax2.set_title(
+        "stacked sensitivity per source\n" + r"$\sin(\delta)=${:.2f}".format(sindec)
+    )
     ax2.legend()
 
     plt.tight_layout()
 
-    fig2.savefig(plot_output_dir(raw +
-                                 '/{:.4f}/'.format(sindec)) + f'sens_nsources_gamma={gamma}_persource_'
-                                                              f'sindec{sindec:.2f}.pdf')
+    fig2.savefig(
+        plot_output_dir(raw + "/{:.4f}/".format(sindec))
+        + f"sens_nsources_gamma={gamma}_persource_"
+        f"sindec{sindec:.2f}.pdf"
+    )
     plt.close()
-
-
-

@@ -3,12 +3,7 @@ import numpy as np
 from flarestack.shared import catalogue_dir, plot_output_dir
 import matplotlib.pyplot as plt
 
-cats = [
-    "jetted",
-    "gold",
-    "obscured",
-    "silver"
-]
+cats = ["jetted", "gold", "obscured", "silver"]
 
 for j, cat in enumerate(cats):
 
@@ -26,7 +21,3 @@ for j, cat in enumerate(cats):
     plt.title(cat + " TDEs")
     plt.savefig(savepath)
     plt.close()
-
-
-
-

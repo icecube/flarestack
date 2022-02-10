@@ -5,21 +5,31 @@ import numpy as np
 import scipy.interpolate
 from scipy import sparse
 import pickle
-from flarestack.shared import acceptance_path, llh_energy_hash_pickles, \
-    SoB_spline_path, default_gamma_precision, default_smoothing_order
+from flarestack.shared import (
+    acceptance_path,
+    llh_energy_hash_pickles,
+    SoB_spline_path,
+    default_gamma_precision,
+    default_smoothing_order,
+)
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.utils.make_SoB_splines import load_spline
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import SpatialPDF
-from flarestack.utils.create_acceptance_functions import dec_range,\
-    make_acceptance_season
-from flarestack.utils.make_SoB_splines import create_2d_ratio_hist, \
-    make_2d_spline_from_hist, make_individual_spline_set
+from flarestack.utils.create_acceptance_functions import (
+    dec_range,
+    make_acceptance_season,
+)
+from flarestack.utils.make_SoB_splines import (
+    create_2d_ratio_hist,
+    make_2d_spline_from_hist,
+    make_individual_spline_set,
+)
 
 logger = logging.getLogger(__name__)
 
 spatial_mask_threshold = 1e-21
-default_spacial_box_width = 5.  # box width around source positions in degrees
+default_spacial_box_width = 5.0  # box width around source positions in degrees
 
 
 def read_llh_dict(llh_dict):
@@ -35,20 +45,20 @@ def read_llh_dict(llh_dict):
         ("LLH Energy PDF", "llh_energy_pdf"),
         ("llh_sig_energy_pdf", "llh_energy_pdf"),
         ("Fit Negative n_s?", "negative_ns_bool"),
-        ("llh_time_pdf", "llh_sig_time_pdf")
+        ("llh_time_pdf", "llh_sig_time_pdf"),
     ]
 
     for (old_key, new_key) in maps:
 
         if old_key in list(llh_dict.keys()):
-            logger.warning("Deprecated llh_dict key'{0}' was used. Please use '{1}' in future.".format(
-                old_key, new_key))
+            logger.warning(
+                "Deprecated llh_dict key'{0}' was used. Please use '{1}' in future.".format(
+                    old_key, new_key
+                )
+            )
             llh_dict[new_key] = llh_dict[old_key]
 
-    pairs = [
-        ("llh_energy_pdf", read_e_pdf_dict),
-        ("llh_sig_time_pdf", read_t_pdf_dict)
-    ]
+    pairs = [("llh_energy_pdf", read_e_pdf_dict), ("llh_sig_time_pdf", read_t_pdf_dict)]
 
     for (key, f) in pairs:
         if key in list(llh_dict.keys()):
@@ -60,17 +70,17 @@ def read_llh_dict(llh_dict):
         llh_dict["llh_spatial_pdf"] = {}
 
     if "llh_bkg_time_pdf" not in llh_dict.keys():
-        logger.warning("No 'llh_bkg_time_pdf' was specified. A 'steady' pdf will be assumed.")
-        llh_dict["llh_bkg_time_pdf"] = {
-            "time_pdf_name": "steady"
-        }
+        logger.warning(
+            "No 'llh_bkg_time_pdf' was specified. A 'steady' pdf will be assumed."
+        )
+        llh_dict["llh_bkg_time_pdf"] = {"time_pdf_name": "steady"}
 
     return llh_dict
 
 
 class LLH(object):
-    """Base class LLH.
-    """
+    """Base class LLH."""
+
     subclasses = {}
 
     def __init__(self, season, sources, llh_dict):
@@ -78,25 +88,31 @@ class LLH(object):
         self.sources = sources
         self.llh_dict = llh_dict
         self.spatial_pdf = SpatialPDF(llh_dict["llh_spatial_pdf"], season)
-        self.spatial_box_width = llh_dict.get('spatial_box_width', default_spacial_box_width)
+        self.spatial_box_width = llh_dict.get(
+            "spatial_box_width", default_spacial_box_width
+        )
 
         try:
             time_dict = llh_dict["llh_sig_time_pdf"]
             self.sig_time_pdf = TimePDF.create(time_dict, season.get_time_pdf())
         except KeyError:
-            raise KeyError("No Signal Time PDF specified. Please add an "
-                           "'llh_sig_time_pdf' entry to the llh_dict, and try "
-                           "again. If you do not want time dependence in your "
-                           "likelihood, please specify a 'steady' Time PDF.")
+            raise KeyError(
+                "No Signal Time PDF specified. Please add an "
+                "'llh_sig_time_pdf' entry to the llh_dict, and try "
+                "again. If you do not want time dependence in your "
+                "likelihood, please specify a 'steady' Time PDF."
+            )
 
         try:
             time_dict = llh_dict["llh_bkg_time_pdf"]
             self.bkg_time_pdf = TimePDF.create(time_dict, season.get_time_pdf())
         except KeyError:
-            raise KeyError("No Background Time PDF specified. Please add an "
-                           "'llh_bkg_time_pdf' entry to the llh_dict, and try "
-                           "again. If you do not want time dependence in your "
-                           "likelihood, please specify a 'steady' Time PDF.")
+            raise KeyError(
+                "No Background Time PDF specified. Please add an "
+                "'llh_bkg_time_pdf' entry to the llh_dict, and try "
+                "again. If you do not want time dependence in your "
+                "likelihood, please specify a 'steady' Time PDF."
+            )
 
         self.acceptance, self.energy_weight_f = self.create_energy_functions()
 
@@ -105,6 +121,7 @@ class LLH(object):
         """Adds a new subclass of EnergyPDF, with class name equal to
         "energy_pdf_name".
         """
+
         def decorator(subclass):
             cls.subclasses[llh_name] = subclass
             return subclass
@@ -118,7 +135,7 @@ class LLH(object):
         llh_name = llh_dict["llh_name"]
 
         if llh_name not in cls.subclasses:
-            raise ValueError('Bad LLH name {}'.format(llh_name))
+            raise ValueError("Bad LLH name {}".format(llh_name))
 
         return cls.subclasses[llh_name](season, sources, llh_dict)
 
@@ -127,7 +144,7 @@ class LLH(object):
         llh_name = llh_dict["llh_name"]
 
         if llh_name not in cls.subclasses:
-            raise ValueError('Bad LLH name {}'.format(llh_name))
+            raise ValueError("Bad LLH name {}".format(llh_name))
 
         return cls.subclasses[llh_name].return_llh_parameters(llh_dict)
 
@@ -136,7 +153,7 @@ class LLH(object):
         llh_name = mh_dict["llh_dict"]["llh_name"]
 
         if llh_name not in cls.subclasses:
-            raise ValueError('Bad LLH name {}'.format(llh_name))
+            raise ValueError("Bad LLH name {}".format(llh_name))
 
         return cls.subclasses[llh_name].return_injected_parameters(mh_dict)
 
@@ -238,10 +255,10 @@ class LLH(object):
         """
 
         def acc_f(source, params=None):
-            return 1.
+            return 1.0
 
         def energy_weight_f(event, params=None):
-            return 1.
+            return 1.0
 
         return acc_f, energy_weight_f
 
@@ -265,12 +282,13 @@ class LLH(object):
             width = np.deg2rad(self.spatial_box_width)
 
             # Sets a declination band 5 degrees above and below the source
-            min_dec = max(-np.pi / 2., source['dec_rad'] - width)
-            max_dec = min(np.pi / 2., source['dec_rad'] + width)
+            min_dec = max(-np.pi / 2.0, source["dec_rad"] - width)
+            max_dec = min(np.pi / 2.0, source["dec_rad"] + width)
 
             # Accepts events lying within a 5 degree band of the source
-            dec_mask = np.logical_and(np.greater(data["dec"], min_dec),
-                                      np.less(data["dec"], max_dec))
+            dec_mask = np.logical_and(
+                np.greater(data["dec"], min_dec), np.less(data["dec"], max_dec)
+            )
 
             # Sets the minimum value of cos(dec)
             cos_factor = np.amin(np.cos([min_dec, max_dec]))
@@ -278,13 +296,14 @@ class LLH(object):
             # Scales the width of the box in ra, to give a roughly constant
             # area. However, if the width would have to be greater that +/- pi,
             # then sets the area to be exactly 2 pi.
-            dPhi = np.amin([2. * np.pi, 2. * width / cos_factor])
+            dPhi = np.amin([2.0 * np.pi, 2.0 * width / cos_factor])
 
             # Accounts for wrapping effects at ra=0, calculates the distance
             # of each event to the source.
             ra_dist = np.fabs(
-                (data["ra"] - source['ra_rad'] + np.pi) % (2. * np.pi) - np.pi)
-            ra_mask = ra_dist < dPhi / 2.
+                (data["ra"] - source["ra_rad"] + np.pi) % (2.0 * np.pi) - np.pi
+            )
+            ra_mask = ra_dist < dPhi / 2.0
 
             spatial_mask = dec_mask & ra_mask
 
@@ -322,8 +341,7 @@ class LLH(object):
         kwargs = self.create_kwargs(data, pull_corrector, weight_f)
 
         def test_statistic(params, weights):
-            return self.calculate_test_statistic(
-                params, weights, **kwargs)
+            return self.calculate_test_statistic(params, weights, **kwargs)
 
         return test_statistic
 
@@ -343,22 +361,25 @@ class LLH(object):
         return {}
 
 
-@LLH.register_subclass('spatial')
+@LLH.register_subclass("spatial")
 class SpatialLLH(LLH):
     """Most basic LLH, in which only spatial, and optionally also temporal,
     information is included. No Energy PDF is used, and no energy weighting
     is applied.
 
     """
+
     fit_energy = False
 
     def __init__(self, season, sources, llh_dict):
         LLH.__init__(self, season, sources, llh_dict)
 
         if "energy_pdf_name" in list(llh_dict["llh_energy_pdf"]):
-            raise Exception("Found 'llh_energy_pdf' entry in llh_dict, "
-                            "but SpatialLLH does not use Energy PDFs. \n"
-                            "Please remove this entry, and try again.")
+            raise Exception(
+                "Found 'llh_energy_pdf' entry in llh_dict, "
+                "but SpatialLLH does not use Energy PDFs. \n"
+                "Please remove this entry, and try again."
+            )
 
     def create_energy_function(self):
         """In the most simple case of spatial-only weighting, you would
@@ -417,8 +438,12 @@ class SpatialLLH(LLH):
         def test_statistic(params, weights):
 
             return self.calculate_test_statistic(
-                params, weights, n_all=n_all, n_coincident=n_coincident,
-                SoB_spacetime=SoB_spacetime)
+                params,
+                weights,
+                n_all=n_all,
+                n_coincident=n_coincident,
+                SoB_spacetime=SoB_spacetime,
+            )
 
         return test_statistic
 
@@ -435,33 +460,34 @@ class SpatialLLH(LLH):
 
         # Calculates the expected number of signal events for each source in
         # the season
-        all_n_j = (n_s * weights.T[0])
+        all_n_j = n_s * weights.T[0]
 
         x = []
 
         for i, n_j in enumerate(all_n_j):
-            x.append(1 + (n_j / kwargs["n_all"]) *
-                          (kwargs["SoB_spacetime"][i] - 1.))
+            x.append(1 + (n_j / kwargs["n_all"]) * (kwargs["SoB_spacetime"][i] - 1.0))
 
-        if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
-            llh_value = -50. + all_n_j
+        if np.sum([np.sum(x_row <= 0.0) for x_row in x]) > 0:
+            llh_value = -50.0 + all_n_j
 
         else:
 
             llh_value = np.array([np.sum(np.log(y)) for y in x])
 
             llh_value += self.assume_background(
-                all_n_j, kwargs["n_coincident"], kwargs["n_all"])
+                all_n_j, kwargs["n_coincident"], kwargs["n_all"]
+            )
 
-            if np.logical_and(np.sum(all_n_j) < 0,
-                              np.sum(llh_value) < np.sum(-50. + all_n_j)):
-                llh_value = -50. + all_n_j
+            if np.logical_and(
+                np.sum(all_n_j) < 0, np.sum(llh_value) < np.sum(-50.0 + all_n_j)
+            ):
+                llh_value = -50.0 + all_n_j
 
         # Definition of test statistic
-        return 2. * np.sum(llh_value)
+        return 2.0 * np.sum(llh_value)
 
 
-@LLH.register_subclass('fixed_energy')
+@LLH.register_subclass("fixed_energy")
 class FixedEnergyLLH(LLH):
 
     fit_energy = False
@@ -472,14 +498,16 @@ class FixedEnergyLLH(LLH):
             e_pdf_dict = llh_dict["llh_energy_pdf"]
             self.energy_pdf = EnergyPDF.create(e_pdf_dict)
         except KeyError:
-            raise KeyError("LLH with energy term selected, but no energy PDF "
-                           "has been provided. Please add an 'llh_energy_pdf' "
-                           "dictionary to the LLH dictionary, and try "
-                           "again.")
+            raise KeyError(
+                "LLH with energy term selected, but no energy PDF "
+                "has been provided. Please add an 'llh_energy_pdf' "
+                "dictionary to the LLH dictionary, and try "
+                "again."
+            )
 
         # defines the order of the splines used in the building of the energy PDF
         self.smoothing_order = None
-        smoothing_order = llh_dict.get("smoothing_order", 'flarestack')
+        smoothing_order = llh_dict.get("smoothing_order", "flarestack")
         if isinstance(smoothing_order, str):
             self.smoothing_order = default_smoothing_order[smoothing_order]
         else:
@@ -487,7 +515,7 @@ class FixedEnergyLLH(LLH):
 
         # used to construct the support points in gamma when the energy PDF is built
         self.precision = None
-        precision = llh_dict.get('gamma_precision', 'flarestack')
+        precision = llh_dict.get("gamma_precision", "flarestack")
         if isinstance(precision, str):
             self.precision = default_gamma_precision[precision]
         else:
@@ -516,7 +544,7 @@ class FixedEnergyLLH(LLH):
         with open(acc_path, "rb") as f:
             [dec_vals, acc] = pickle.load(f)
 
-        acc_spline = scipy.interpolate.interp1d(dec_vals, acc, kind='linear')
+        acc_spline = scipy.interpolate.interp1d(dec_vals, acc, kind="linear")
 
         def acc_f(source, params=None):
             return acc_spline(source["dec_rad"])
@@ -532,8 +560,9 @@ class FixedEnergyLLH(LLH):
         with open(SoB_path, "rb") as f:
             [dec_vals, ratio_hist] = pickle.load(f)
 
-        spline = make_2d_spline_from_hist(np.array(ratio_hist), dec_vals,
-                                          self.season.log_e_bins, self.smoothing_order)
+        spline = make_2d_spline_from_hist(
+            np.array(ratio_hist), dec_vals, self.season.log_e_bins, self.smoothing_order
+        )
 
         def energy_weight_f(event, params=None):
             return np.exp(spline(event["logE"], event["sinDec"], grid=False))
@@ -541,8 +570,10 @@ class FixedEnergyLLH(LLH):
         return acc_f, energy_weight_f
 
     def create_acceptance_function(self, acc_path):
-        logger.info("Building acceptance functions in sin(dec) bins "
-                     "(with fixed energy weighting)")
+        logger.info(
+            "Building acceptance functions in sin(dec) bins "
+            "(with fixed energy weighting)"
+        )
 
         mc = self.season.get_pseudo_mc()
 
@@ -551,16 +582,17 @@ class FixedEnergyLLH(LLH):
         for i, dec in enumerate(dec_range):
 
             # Sets half width of band
-            dec_width = np.deg2rad(5.)
+            dec_width = np.deg2rad(5.0)
 
             # Sets a declination band 5 degrees above and below the source
-            min_dec = max(-np.pi / 2., dec - dec_width)
-            max_dec = min(np.pi / 2., dec + dec_width)
+            min_dec = max(-np.pi / 2.0, dec - dec_width)
+            max_dec = min(np.pi / 2.0, dec + dec_width)
             # Gives the solid angle coverage of the sky for the band
-            omega = 2. * np.pi * (np.sin(max_dec) - np.sin(min_dec))
+            omega = 2.0 * np.pi * (np.sin(max_dec) - np.sin(min_dec))
 
-            band_mask = np.logical_and(np.greater(mc["trueDec"], min_dec),
-                                       np.less(mc["trueDec"], max_dec))
+            band_mask = np.logical_and(
+                np.greater(mc["trueDec"], min_dec), np.less(mc["trueDec"], max_dec)
+            )
 
             cut_mc = mc[band_mask]
             weights = self.energy_pdf.weight_mc(cut_mc)
@@ -581,8 +613,10 @@ class FixedEnergyLLH(LLH):
         return f
 
     def create_energy_weighting_function(self, SoB_path):
-        logger.info("Building energy-weighting functions in sin(dec) vs log E bins "
-                     "(with fixed energy weighting)")
+        logger.info(
+            "Building energy-weighting functions in sin(dec) vs log E bins "
+            "(with fixed energy weighting)"
+        )
 
         # dec_range = self.season["sinDec bins"]
 
@@ -591,7 +625,7 @@ class FixedEnergyLLH(LLH):
             mc=self.season.get_pseudo_mc(),
             sin_dec_bins=dec_range,
             log_e_bins=self.season.log_e_bins,
-            weight_function=self.energy_pdf.weight_mc
+            weight_function=self.energy_pdf.weight_mc,
         )
 
         try:
@@ -637,7 +671,6 @@ class FixedEnergyLLH(LLH):
         kwargs["SoB"] = np.array(SoB)
         return kwargs
 
-
     def calculate_test_statistic(self, params, weights, **kwargs):
         """Calculates the test statistic, given the parameters. Uses numexpr
         for faster calculations.
@@ -650,33 +683,34 @@ class FixedEnergyLLH(LLH):
 
         # Calculates the expected number of signal events for each source in
         # the season
-        all_n_j = (n_s * weights.T[0])
+        all_n_j = n_s * weights.T[0]
 
         x = []
 
         for i, n_j in enumerate(all_n_j):
-            x.append(1 + (n_j /  kwargs["n_all"]) *
-                          (kwargs["SoB"][i] - 1.))
+            x.append(1 + (n_j / kwargs["n_all"]) * (kwargs["SoB"][i] - 1.0))
 
-        if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
-            llh_value = -50. + all_n_j
+        if np.sum([np.sum(x_row <= 0.0) for x_row in x]) > 0:
+            llh_value = -50.0 + all_n_j
 
         else:
 
             llh_value = np.array([np.sum(np.log(y)) for y in x])
 
             llh_value += self.assume_background(
-                all_n_j, kwargs["n_coincident"], kwargs["n_all"])
+                all_n_j, kwargs["n_coincident"], kwargs["n_all"]
+            )
 
-            if np.logical_and(np.sum(all_n_j) < 0,
-                              np.sum(llh_value) < np.sum(-50. + all_n_j)):
-                llh_value = -50. + all_n_j
+            if np.logical_and(
+                np.sum(all_n_j) < 0, np.sum(llh_value) < np.sum(-50.0 + all_n_j)
+            ):
+                llh_value = -50.0 + all_n_j
 
         # Definition of test statistic
-        return 2. * np.sum(llh_value)
+        return 2.0 * np.sum(llh_value)
 
 
-@LLH.register_subclass('standard')
+@LLH.register_subclass("standard")
 class StandardLLH(FixedEnergyLLH):
 
     fit_energy = True
@@ -686,19 +720,21 @@ class StandardLLH(FixedEnergyLLH):
         FixedEnergyLLH.__init__(self, season, sources, llh_dict)
 
         # Bins for energy Log(E/GeV)
-        self.energy_bins = np.linspace(1., 10., 40 + 1)
+        self.energy_bins = np.linspace(1.0, 10.0, 40 + 1)
 
         # Sets precision for energy SoB
         # self.precision = .1
 
-        self.SoB_spline_2Ds = load_spline(self.season,
-                                          smoothing_order=self.smoothing_order,
-                                          gamma_precision=self.precision)
+        self.SoB_spline_2Ds = load_spline(
+            self.season,
+            smoothing_order=self.smoothing_order,
+            gamma_precision=self.precision,
+        )
 
         if self.SoB_spline_2Ds:
             logger.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
         else:
-            logger.warning("Didn\'t load SoB splines!!!")
+            logger.warning("Didn't load SoB splines!!!")
 
         logger.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
 
@@ -725,7 +761,11 @@ class StandardLLH(FixedEnergyLLH):
         :return: Acceptance function, energy_weighting_function
         """
 
-        SoB_path = SoB_spline_path(self.season, smoothing_order=self.smoothing_order, gamma_precision=self.precision)
+        SoB_path = SoB_spline_path(
+            self.season,
+            smoothing_order=self.smoothing_order,
+            gamma_precision=self.precision,
+        )
         acc_path = acceptance_path(self.season)
 
         # Set up acceptance function, creating values if they have not been
@@ -750,9 +790,12 @@ class StandardLLH(FixedEnergyLLH):
         # Checks if energy weighting functions have been created
 
         if not os.path.isfile(SoB_path):
-            make_individual_spline_set(self.season, SoB_path,
-                                       smoothing_order=self.smoothing_order,
-                                       gamma_precision=self.precision)
+            make_individual_spline_set(
+                self.season,
+                SoB_path,
+                smoothing_order=self.smoothing_order,
+                gamma_precision=self.precision,
+            )
 
         return acc_f, None
 
@@ -789,8 +832,7 @@ class StandardLLH(FixedEnergyLLH):
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)
 
-        f = scipy.interpolate.interp2d(
-            dec_bins, gamma_bins, acc.T, kind='linear')
+        f = scipy.interpolate.interp2d(dec_bins, gamma_bins, acc.T, kind="linear")
         return f
 
     def new_acceptance(self, source, params=None):
@@ -835,7 +877,7 @@ class StandardLLH(FixedEnergyLLH):
                 # likelihood!)
 
                 sig = self.signal_pdf(source, coincident_data)
-                nonzero_mask = (sig > spatial_mask_threshold)
+                nonzero_mask = sig > spatial_mask_threshold
 
                 s_mask[s_mask] *= nonzero_mask
 
@@ -844,10 +886,13 @@ class StandardLLH(FixedEnergyLLH):
 
                 if len(coincident_data) > 0:
 
-                    SoB_pdf = lambda x: self.signal_pdf(source, x) / \
-                                        self.background_pdf(source, x)
+                    SoB_pdf = lambda x: self.signal_pdf(
+                        source, x
+                    ) / self.background_pdf(source, x)
 
-                    spatial_cache = pull_corrector.create_spatial_cache(coincident_data, SoB_pdf)
+                    spatial_cache = pull_corrector.create_spatial_cache(
+                        coincident_data, SoB_pdf
+                    )
 
                     SoB_spacetime.append(spatial_cache)
 
@@ -884,7 +929,7 @@ class StandardLLH(FixedEnergyLLH):
 
         # Calculates the expected number of signal events for each source in
         # the season
-        all_n_j = (n_s * weights.T[0])
+        all_n_j = n_s * weights.T[0]
 
         x = []
 
@@ -898,46 +943,55 @@ class StandardLLH(FixedEnergyLLH):
             # n_s > 0 (as it is not included for n_s=0).
 
             if len(SoB_spacetime) == 0:
-                x.append(np.array([1.]))
+                x.append(np.array([1.0]))
 
             else:
 
                 SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
-                    gamma, SoB_spacetime)
+                    gamma, SoB_spacetime
+                )
 
                 if n_j < 0:
-                    x.append(1. + (n_j / kwargs["n_all"]) * (
-                            SoB_spacetime - 1.))
+                    x.append(1.0 + (n_j / kwargs["n_all"]) * (SoB_spacetime - 1.0))
 
                 else:
 
                     SoB_energy = self.estimate_energy_weights(
-                            gamma, kwargs["SoB_energy_cache"][i])
+                        gamma, kwargs["SoB_energy_cache"][i]
+                    )
 
-                    x.append(1. + ((n_j /kwargs["n_all"]) * (
-                            (SoB_energy * SoB_spacetime) - 1.)))
+                    x.append(
+                        1.0
+                        + (
+                            (n_j / kwargs["n_all"])
+                            * ((SoB_energy * SoB_spacetime) - 1.0)
+                        )
+                    )
 
-        if np.sum([np.sum(x_row <= 0.) for x_row in x]) > 0:
-            llh_value = -50. + all_n_j
+        if np.sum([np.sum(x_row <= 0.0) for x_row in x]) > 0:
+            llh_value = -50.0 + all_n_j
 
         else:
 
             llh_value = np.sum([np.sum(np.log(y)) for y in x])
 
-            llh_value += np.sum(self.assume_background(
-                np.sum(all_n_j), kwargs["n_coincident"], kwargs["n_all"]))
+            llh_value += np.sum(
+                self.assume_background(
+                    np.sum(all_n_j), kwargs["n_coincident"], kwargs["n_all"]
+                )
+            )
 
-            if np.logical_and(np.sum(all_n_j) < 0,
-                              np.sum(llh_value) < np.sum(-50. + all_n_j)):
-                llh_value = -50. + all_n_j
+            if np.logical_and(
+                np.sum(all_n_j) < 0, np.sum(llh_value) < np.sum(-50.0 + all_n_j)
+            ):
+                llh_value = -50.0 + all_n_j
 
         # Definition of test statistic
-        return 2. * np.sum(llh_value)
+        return 2.0 * np.sum(llh_value)
 
-
-# ==============================================================================
-# Energy Log(Signal/Background) Ratio
-# ==============================================================================
+    # ==============================================================================
+    # Energy Log(Signal/Background) Ratio
+    # ==============================================================================
 
     def create_SoB_energy_cache(self, cut_data):
         """Evaluates the Log(Signal/Background) values for all coincident
@@ -955,9 +1009,12 @@ class StandardLLH(FixedEnergyLLH):
         for gamma in list(self.SoB_spline_2Ds.keys()):
             try:
                 energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma].ev(
-                    cut_data["logE"], cut_data["sinDec"])
+                    cut_data["logE"], cut_data["sinDec"]
+                )
             except:  # this is in case the splines were produced using the RegularGridInterpolator
-                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma]((cut_data["logE"], cut_data["sinDec"]))
+                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma](
+                    (cut_data["logE"], cut_data["sinDec"])
+                )
 
         return energy_SoB_cache
 
@@ -987,8 +1044,8 @@ class StandardLLH(FixedEnergyLLH):
             S2 = energy_SoB_cache[g2]
 
             val = numexpr.evaluate(
-                "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
-                " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
+                "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2"
+                + " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
             )
 
         return val
@@ -1022,14 +1079,15 @@ class StandardLLH(FixedEnergyLLH):
         return res_dict
 
 
-@LLH.register_subclass('standard_overlapping')
+@LLH.register_subclass("standard_overlapping")
 class StandardOverlappingLLH(StandardLLH):
-
     def create_kwargs(self, data, pull_corrector, weight_f=None):
 
         if weight_f is None:
-            raise Exception("Weight function not passed, but is required for "
-                            "standard_overlapping LLH functions.")
+            raise Exception(
+                "Weight function not passed, but is required for "
+                "standard_overlapping LLH functions."
+            )
 
         season_weight = lambda x: weight_f([1.0, x], self.season)
 
@@ -1053,7 +1111,7 @@ class StandardOverlappingLLH(StandardLLH):
                 # likelihood!)
 
                 sig = self.signal_pdf(source, coincident_data)
-                nonzero_mask = (sig > spatial_mask_threshold)
+                nonzero_mask = sig > spatial_mask_threshold
                 s_mask[s_mask] *= nonzero_mask
 
                 assumed_background_mask *= ~s_mask
@@ -1063,10 +1121,16 @@ class StandardOverlappingLLH(StandardLLH):
         SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
 
         def joint_SoB(dataset, gamma):
-            return np.sum([np.array(
-                season_weight(gamma)[i] * self.signal_pdf(source, dataset) /
-                self.background_pdf(source, dataset))
-                for i, source in enumerate(self.sources)], axis=0
+            return np.sum(
+                [
+                    np.array(
+                        season_weight(gamma)[i]
+                        * self.signal_pdf(source, dataset)
+                        / self.background_pdf(source, dataset)
+                    )
+                    for i, source in enumerate(self.sources)
+                ],
+                axis=0,
             ) / np.sum(season_weight(gamma))
 
         SoB_spacetime = pull_corrector.create_spatial_cache(coincident_data, joint_SoB)
@@ -1090,47 +1154,48 @@ class StandardOverlappingLLH(StandardLLH):
         gamma = params[-1]
 
         SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
-                gamma, kwargs["SoB_spacetime_cache"])
+            gamma, kwargs["SoB_spacetime_cache"]
+        )
 
-        SoB_energy = self.estimate_energy_weights(
-                gamma, kwargs["SoB_energy_cache"])
+        SoB_energy = self.estimate_energy_weights(gamma, kwargs["SoB_energy_cache"])
 
         # Calculates the expected number of signal events for each source in
         # the season
-        n_j = (n_s * np.sum(weights))
+        n_j = n_s * np.sum(weights)
 
         # If n_s if negative, then removes the energy term from the likelihood
 
         # Switches off Energy term for negative n_s, which should in theory
         # be a continuous change that does not alter the likelihood for
         # n_s > 0 (as it is not included for n_s=0).
-        if n_j < 0.:
-            x = (1. + ((n_j / kwargs["n_all"]) * (
-                    SoB_spacetime - 1.)))
+        if n_j < 0.0:
+            x = 1.0 + ((n_j / kwargs["n_all"]) * (SoB_spacetime - 1.0))
         else:
-            x = (1. + ((n_j / kwargs["n_all"]) * (
-                (SoB_energy * SoB_spacetime) - 1.)))
+            x = 1.0 + ((n_j / kwargs["n_all"]) * ((SoB_energy * SoB_spacetime) - 1.0))
 
         llh_value = np.sum(np.log(x))
 
         llh_value += self.assume_background(
-            n_j, kwargs["n_coincident"], kwargs["n_all"])
+            n_j, kwargs["n_coincident"], kwargs["n_all"]
+        )
 
         # Definition of test statistic
-        return 2. * np.sum(llh_value)
+        return 2.0 * np.sum(llh_value)
 
 
-@LLH.register_subclass('standard_matrix')
+@LLH.register_subclass("standard_matrix")
 class StandardMatrixLLH(StandardOverlappingLLH):
-
     def create_kwargs(self, data, pull_corrector, weight_f=None):
 
         if weight_f is None:
-            raise Exception("Weight function not passed, but is required for "
-                            "standard_overlapping LLH functions.")
+            raise Exception(
+                "Weight function not passed, but is required for "
+                "standard_overlapping LLH functions."
+            )
 
-        coincidence_matrix = sparse.lil_matrix((len(self.sources), len(data)),
-                                                      dtype=bool)
+        coincidence_matrix = sparse.lil_matrix(
+            (len(self.sources), len(data)), dtype=bool
+        )
 
         kwargs = dict()
 
@@ -1152,7 +1217,7 @@ class StandardMatrixLLH(StandardOverlappingLLH):
                 # likelihood!)
 
                 sig = self.signal_pdf(source, coincident_data)
-                nonzero_mask = (sig > spatial_mask_threshold)
+                nonzero_mask = sig > spatial_mask_threshold
                 s_mask[s_mask] *= nonzero_mask
 
                 coincidence_matrix[i] = s_mask
@@ -1163,14 +1228,17 @@ class StandardMatrixLLH(StandardOverlappingLLH):
         coincident_source_mask = np.sum(coincidence_matrix, axis=1) > 0
         coincident_source_mask = np.array(coincident_source_mask).ravel()
 
-        coincidence_matrix = coincidence_matrix[coincident_source_mask].T[
-            coincident_nu_mask].T
+        coincidence_matrix = (
+            coincidence_matrix[coincident_source_mask].T[coincident_nu_mask].T
+        )
         coincidence_matrix.tocsr()
 
         coincident_data = data[coincident_nu_mask]
         coincident_sources = sources[coincident_source_mask]
 
-        season_weight = lambda x: weight_f([1.0, x], self.season)[coincident_source_mask]
+        season_weight = lambda x: weight_f([1.0, x], self.season)[
+            coincident_source_mask
+        ]
 
         SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
 
@@ -1181,14 +1249,15 @@ class StandardMatrixLLH(StandardOverlappingLLH):
 
             # create an empty lil_matrix (good for matrix creation) with shape
             # of coincidence_matrix and type float
-            SoB_matrix_sparse = sparse.lil_matrix(coincidence_matrix.shape,
-                                                  dtype=float)
+            SoB_matrix_sparse = sparse.lil_matrix(coincidence_matrix.shape, dtype=float)
 
             for i, src in enumerate(coincident_sources):
                 mask = (coincidence_matrix.getrow(i)).toarray()[0]
-                SoB_matrix_sparse[i, mask] = \
-                    weight[i] * self.signal_pdf(src, dataset[mask]) / \
-                    self.background_pdf(src, dataset[mask])
+                SoB_matrix_sparse[i, mask] = (
+                    weight[i]
+                    * self.signal_pdf(src, dataset[mask])
+                    / self.background_pdf(src, dataset[mask])
+                )
 
             SoB_sum = SoB_matrix_sparse.sum(axis=0)
             return_value = np.array(SoB_sum).ravel()
@@ -1222,19 +1291,17 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
     # Defines custom Flare class
 
     class FlareLLH(ParentLLH):
-
-        def create_flare_llh_function(self, data, flare_veto,
-                                      n_all, src, n_season, pull_corrector):
+        def create_flare_llh_function(
+            self, data, flare_veto, n_all, src, n_season, pull_corrector
+        ):
 
             coincident_data = data[~flare_veto]
             kwargs = self.create_kwargs(coincident_data, pull_corrector)
             kwargs["n_all"] = n_all
-            weights = np.array([1.])
+            weights = np.array([1.0])
 
             def test_statistic(params):
-                return self.calculate_test_statistic(
-                    params, weights, **kwargs)
-
+                return self.calculate_test_statistic(params, weights, **kwargs)
 
             # Super ugly-looking code that magically takes the old llh
             # object, sets the assume_background contribution to zero,
@@ -1243,8 +1310,10 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
 
             def combined_test_statistic(params):
                 return test_statistic(params) + (
-                        2 * self.assume_season_background(
-                    params[0], np.sum(~flare_veto), n_season, n_all)
+                    2
+                    * self.assume_season_background(
+                        params[0], np.sum(~flare_veto), n_season, n_all
+                    )
                 )
 
             return combined_test_statistic
@@ -1263,7 +1332,7 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             :param n_all: The total number of events
             :return: 0.
             """
-            return 0.
+            return 0.0
 
         def signal_pdf(self, source, cut_data):
             """Calculates the value of the signal spatial PDF for a given source
@@ -1291,7 +1360,6 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             space_term = self.spatial_pdf.background_spatial(cut_data)
 
             return space_term
-
 
         @staticmethod
         def assume_season_background(n_s, n_mask, n_season, n_all):
@@ -1328,7 +1396,8 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             # ChangeME?
 
             SoB_energy = self.estimate_energy_weights(
-                    gamma=3.0, energy_SoB_cache=SoB_energy_cache)
+                gamma=3.0, energy_SoB_cache=SoB_energy_cache
+            )
 
             SoB = SoB_space * SoB_energy
             return SoB
@@ -1357,12 +1426,7 @@ if __name__ == "__main__":
     from flarestack.shared import fs_scratch_dir
     from scipy.interpolate import InterpolatedUnivariateSpline
 
-    g = EnergyPDF.create(
-        {
-            "energy_pdf_name": "PowerLaw",
-            "gamma": 2.2
-        }
-    )
+    g = EnergyPDF.create({"energy_pdf_name": "PowerLaw", "gamma": 2.2})
 
     e_range = np.logspace(0, 7, 1e3)
 
@@ -1386,13 +1450,8 @@ if __name__ == "__main__":
 
     llh_dict = {
         "llh_name": "FixedEnergy",
-        "llh_time_pdf": {
-            "time_pdf_name": "Steady"
-        },
-        "llh_energy_pdf": {
-            "energy_pdf_name": "PowerLaw",
-            "gamma": 2.2
-        }
+        "llh_time_pdf": {"time_pdf_name": "Steady"},
+        "llh_energy_pdf": {"energy_pdf_name": "PowerLaw", "gamma": 2.2}
         # "LLH Energy PDF": e_pdf_dict
     }
     source = np.load(ps_catalogue_name(0.0))
@@ -1405,8 +1464,7 @@ if __name__ == "__main__":
     data = inj.create_dataset(0.0)
     f = llh.create_llh_function(data)
 
-    weights = np.array([1.])
+    weights = np.array([1.0])
 
     for i in np.linspace(0.0, 10.0, 21):
         print(i, f([i], weights))
-

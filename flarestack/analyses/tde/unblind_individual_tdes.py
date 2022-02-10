@@ -7,8 +7,7 @@ import numpy as np
 from flarestack.core.unblinding import create_unblinder
 from flarestack.data.icecube import txs_sample_v1, gfu_v002_p04
 from flarestack.utils.custom_dataset import custom_dataset
-from flarestack.analyses.tde.shared_TDE import individual_tdes, \
-    individual_tde_cat
+from flarestack.analyses.tde.shared_TDE import individual_tdes, individual_tde_cat
 import logging
 from flarestack.utils.catalogue_loader import load_catalogue
 
@@ -25,19 +24,15 @@ llh_energy = {
     "gamma": 2.0,
 }
 
-llh_time = {
-    "time_pdf_name": "custom_source_box"
-}
+llh_time = {"time_pdf_name": "custom_source_box"}
 
-llh_bkg_time = {
-    "time_pdf_name": "steady"
-}
+llh_bkg_time = {"time_pdf_name": "steady"}
 
 llh_dict = {
     "llh_name": "standard",
     "llh_energy_pdf": llh_energy,
     "llh_sig_time_pdf": llh_time,
-    "llh_bkg_time_pdf": llh_bkg_time
+    "llh_bkg_time_pdf": llh_bkg_time,
 }
 
 name_root = "analyses/tde/unblind_individual_tdes/"
@@ -57,8 +52,7 @@ for j, cat in enumerate(individual_tdes)[:1]:
     catalogue = np.load(cat_path)
 
     if cat != "AT2018cow":
-        dataset = custom_dataset(txs_sample_v1, catalogue,
-                                  llh_dict["llh_sig_time_pdf"])
+        dataset = custom_dataset(txs_sample_v1, catalogue, llh_dict["llh_sig_time_pdf"])
     else:
         dataset = gfu_v002_p04
 
@@ -70,7 +64,7 @@ for j, cat in enumerate(individual_tdes)[:1]:
         "dataset": dataset,
         "catalogue": cat_path,
         "llh_dict": llh_dict,
-        "background_ts": bkg_ts
+        "background_ts": bkg_ts,
     }
 
     ub = create_unblinder(unblind_dict, mock_unblind=False, disable_warning=True)
@@ -94,8 +88,10 @@ for j, cat in enumerate(individual_tdes)[:1]:
     print("\hline")
 
     for i, x in enumerate(catalogue):
-        print(f'{x["source_name"].decode()} & {np.degrees(x["ra_rad"]):.2f} & {np.degrees(x["dec_rad"]):.2f} & '
-              f'{x["distance_mpc"]:.0f} & {x["start_time_mjd"]:.0f} & {x["end_time_mjd"]:.0f}  & {ns[i]:.2f} \\\\')
+        print(
+            f'{x["source_name"].decode()} & {np.degrees(x["ra_rad"]):.2f} & {np.degrees(x["dec_rad"]):.2f} & '
+            f'{x["distance_mpc"]:.0f} & {x["start_time_mjd"]:.0f} & {x["end_time_mjd"]:.0f}  & {ns[i]:.2f} \\\\'
+        )
     print("\hline")
 
 for x in res:

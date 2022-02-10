@@ -41,18 +41,21 @@ def data_path(season):
 def pseudo_mc_path(season):
     return pseudo_mc_dir + season + ".npy"
 
+
 def pseudo_mc_binning(season):
     return pseudo_mc_dir + season + "_binning.npy"
 
 
-data_dtype = np.dtype([
-    ('ra', np.float),
-    ('dec', np.float),
-    ('logE', np.float),
-    ('sigma', np.float),
-    ('time', np.float),
-    ('sinDec', np.float)
-])
+data_dtype = np.dtype(
+    [
+        ("ra", np.float),
+        ("dec", np.float),
+        ("logE", np.float),
+        ("sigma", np.float),
+        ("time", np.float),
+        ("sinDec", np.float),
+    ]
+)
 
 
 datasets = ["IC79-2010", "IC86-2011", "IC86-2012"]
@@ -77,10 +80,14 @@ def parse_numpy_dataset():
                 if i > 0:
                     row = [float(x) for x in row if x != ""]
 
-                    entry = (np.deg2rad(row[3]), np.deg2rad(row[4]),
-                             row[1], np.deg2rad(row[2]),
-                             row[0], np.sin(np.deg2rad(row[4]))
-                             )
+                    entry = (
+                        np.deg2rad(row[3]),
+                        np.deg2rad(row[4]),
+                        row[1],
+                        np.deg2rad(row[2]),
+                        row[0],
+                        np.sin(np.deg2rad(row[4])),
+                    )
 
                     data.append(entry)
 
@@ -102,9 +109,9 @@ def make_season(season_name):
         sample_name=sample_name,
         exp_path=data_path(season_name),
         pseudo_mc_path=pseudo_mc_path(season_name),
-        sin_dec_bins=np.linspace(-1., 1., 50),
-        log_e_bins=np.arange(2., 9. + 0.01, 0.25),
-        a_eff_path=data_dir + season_name + "-TabulatedAeff.txt"
+        sin_dec_bins=np.linspace(-1.0, 1.0, 50),
+        log_e_bins=np.arange(2.0, 9.0 + 0.01, 0.25),
+        a_eff_path=data_dir + season_name + "-TabulatedAeff.txt",
     )
     icecube_ps_3_year.add_season(season)
 
@@ -115,6 +122,7 @@ for season_name in datasets:
 
 # if __name__=="__main__":
 #     parse_numpy_dataset()
+
 
 def parse_angular_resolution():
     """Function to parse angular resolution."""
@@ -134,7 +142,7 @@ def parse_angular_resolution():
                 if i > 0:
                     row = [float(x) for x in row if x != ""]
 
-                    true_e = 0.5*(row[0] + row[1])
+                    true_e = 0.5 * (row[0] + row[1])
                     log_e = np.log10(true_e)
                     med_ang_err = np.deg2rad(row[2])
                     x.append(log_e)
@@ -149,25 +157,31 @@ def parse_angular_resolution():
 
         def kinematic_angle(log_e):
             e = 10**log_e
-            return 1.0 * np.sqrt(10**3/e)
+            return 1.0 * np.sqrt(10**3 / e)
 
         z = np.linspace(1, 6, 100)
 
         plt.figure()
-        plt.scatter(x, np.degrees(y), label="Published Median (Energy Proxy)",
-                    color="orange")
+        plt.scatter(
+            x, np.degrees(y), label="Published Median (Energy Proxy)", color="orange"
+        )
 
-        plt.plot(z, kinematic_angle(z),
-                 label=r"$\nu-\mu$ Kinematic Angle (True Energy)")
+        plt.plot(
+            z, kinematic_angle(z), label=r"$\nu-\mu$ Kinematic Angle (True Energy)"
+        )
 
         new_x = np.linspace(1, 3, 7)
-        plt.scatter(new_x, kinematic_angle(new_x), color="purple",
-                    label="Flarestack K.A. anchor values")
+        plt.scatter(
+            new_x,
+            kinematic_angle(new_x),
+            color="purple",
+            label="Flarestack K.A. anchor values",
+        )
 
         # Remove Kinematic Angle region and recalculate angular resolution
         # using finer step size
 
-        mask = x > 3.
+        mask = x > 3.0
 
         x = x[mask]
         y = y[mask]
@@ -175,8 +189,13 @@ def parse_angular_resolution():
         full_x = list(new_x) + list(x)
         full_y = list(np.deg2rad(kinematic_angle(new_x))) + list(y)
 
-        plt.plot(full_x, np.degrees(full_y), color="red",
-                 linestyle=":", label="Flarestack interpolation")
+        plt.plot(
+            full_x,
+            np.degrees(full_y),
+            color="red",
+            linestyle=":",
+            label="Flarestack interpolation",
+        )
 
         plt.xlabel(r"$log_{10}(Energy)$")
         plt.ylabel("Median Angular Resolution (degrees)")

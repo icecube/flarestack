@@ -3,8 +3,9 @@ import os
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.shared import plot_output_dir
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.icecube_utils.reference_sensitivity import \
-    reference_7year_discovery_potential
+from flarestack.icecube_utils.reference_sensitivity import (
+    reference_7year_discovery_potential,
+)
 import matplotlib.pyplot as plt
 from flarestack.utils.asimov_estimator import AsimovEstimator
 
@@ -85,9 +86,9 @@ for i, datasets in enumerate(loop_datasets):
             mask = np.ones_like(sindecs, dtype=bool)
 
         else:
-            mask = [sindecs > - 0.05]
+            mask = [sindecs > -0.05]
 
-        color = ['r', "blue", 'green', 'y'][j]
+        color = ["r", "blue", "green", "y"][j]
 
         dem = AsimovEstimator(dataset, inj_kwargs)
 
@@ -117,22 +118,25 @@ for i, datasets in enumerate(loop_datasets):
 
         plot_range = np.linspace(-0.99, 0.99, 1000)
 
-        ax1.plot(sindecs[mask], disc_pots, color=color,
-                 label="Flarestack Estimation ({0})".format(sample_name))
+        ax1.plot(
+            sindecs[mask],
+            disc_pots,
+            color=color,
+            label="Flarestack Estimation ({0})".format(sample_name),
+        )
 
-        disc_ratios = np.array(disc_pots)/refs[mask]
+        disc_ratios = np.array(disc_pots) / refs[mask]
         print(disc_ratios)
-        print("Range:", max(disc_ratios)/min(disc_ratios))
+        print("Range:", max(disc_ratios) / min(disc_ratios))
 
         ax2.scatter(sindecs[mask], disc_ratios, color=color)
         ax2.plot(sindecs[mask], disc_ratios, color=color, linestyle="--")
 
-    ax1.set_xlim(xmin=-1., xmax=1.)
+    ax1.set_xlim(xmin=-1.0, xmax=1.0)
     # ax1.set_ylim(ymin=1.e-13, ymax=1.e-10)
-    ax1.grid(True, which='both')
-    ax1.semilogy(nonposy='clip')
-    ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]",
-                   fontsize=12)
+    ax1.grid(True, which="both")
+    ax1.semilogy(nonposy="clip")
+    ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]", fontsize=12)
 
     ax2.set_ylabel(r"ratio", fontsize=12)
     ax2.set_xlabel(r"sin($\delta$)", fontsize=12)
@@ -144,7 +148,7 @@ for i, datasets in enumerate(loop_datasets):
     plt.setp(xticklabels, visible=False)
     plt.subplots_adjust(hspace=0.001)
 
-    plt.suptitle('Point Source Discovery Potential')
+    plt.suptitle("Point Source Discovery Potential")
 
     # ratio_interp = interp1d(sindecs, sens_ratios)
     #
@@ -156,7 +160,7 @@ for i, datasets in enumerate(loop_datasets):
     #     reference_sensitivity(interp_range)*ratio_interp(interp_range),
     #     color='red', linestyle="--", label="Ratio Interpolation")
 
-    ax1.legend(loc='upper right', fancybox=True, framealpha=1.)
+    ax1.legend(loc="upper right", fancybox=True, framealpha=1.0)
 
     save_dir = plot_output_dir(name)
 

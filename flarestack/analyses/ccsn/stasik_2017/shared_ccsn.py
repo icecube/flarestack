@@ -15,10 +15,13 @@ raw_cat_dir = ccsn_cat_dir + "raw/"
 sn_cats = ["IIn", "IIp", "Ibc"]
 sn_times_box = [100, 300, 1000]
 sn_times_decay = [0.02, 0.2, 2]
-sn_times_dict = {'box': sn_times_box, 'decay': sn_times_decay}
+sn_times_dict = {"box": sn_times_box, "decay": sn_times_decay}
 
-sn_times = {'IIn': sn_times_dict, 'IIP': sn_times_dict,
-            'Ibc': {'box': sn_times_box + [-20]}}
+sn_times = {
+    "IIn": sn_times_dict,
+    "IIP": sn_times_dict,
+    "Ibc": {"box": sn_times_box + [-20]},
+}
 
 
 def raw_sn_catalogue_name(sn_type):
@@ -27,47 +30,50 @@ def raw_sn_catalogue_name(sn_type):
 
 def pdf_names(pdf_type, pdf_time):
 
-    logging.debug(f'getting pdf name for type {pdf_type} {pdf_time}')
+    logging.debug(f"getting pdf name for type {pdf_type} {pdf_time}")
 
     if pdf_time < 0:
-        pdf_time_str = f'Pre{abs(pdf_time):.0f}'
+        pdf_time_str = f"Pre{abs(pdf_time):.0f}"
     elif pdf_time < 1:
-        pdf_time_str = f'{pdf_time}'
+        pdf_time_str = f"{pdf_time}"
     elif pdf_time < 100:
-        pdf_time_str = f'{pdf_time:.1f}'
+        pdf_time_str = f"{pdf_time:.1f}"
     else:
-        pdf_time_str = f'{pdf_time:.0f}'
+        pdf_time_str = f"{pdf_time:.0f}"
 
-    return f'{pdf_type}{pdf_time_str}'
+    return f"{pdf_type}{pdf_time_str}"
 
 
-def sn_catalogue_name(sn_type, nearby=True, raw=False, pdf_name=''):
+def sn_catalogue_name(sn_type, nearby=True, raw=False, pdf_name=""):
 
-    pdf_name = None if pdf_name == '' else pdf_name
-    if sn_type == 'IIp': sn_type = 'IIP'
+    pdf_name = None if pdf_name == "" else pdf_name
+    if sn_type == "IIp":
+        sn_type = "IIP"
 
     if raw:
-        sn_name = 'raw/'
+        sn_name = "raw/"
 
-        if 'Ib' in sn_type:
-            sn_name += 'Ib_BoxPre20.0'
-        elif 'IIn' in sn_type:
-            sn_name += 'IIn_Box300.0'
-        elif ('IIp' in sn_type) or ('IIP' in sn_type):
-            sn_name += 'IIp_Box300.0'
+        if "Ib" in sn_type:
+            sn_name += "Ib_BoxPre20.0"
+        elif "IIn" in sn_type:
+            sn_name += "IIn_Box300.0"
+        elif ("IIp" in sn_type) or ("IIP" in sn_type):
+            sn_name += "IIp_Box300.0"
         else:
             raise Exception
 
-        sn_name += '_New_fs_readable.npy'
+        sn_name += "_New_fs_readable.npy"
 
         return ccsn_cat_dir + sn_name
 
     else:
 
         sn_name = sn_type
-        if pdf_name: sn_name += '_' + pdf_name
-        if nearby: sn_name += '_nearby'
-        sn_name += '.npy'
+        if pdf_name:
+            sn_name += "_" + pdf_name
+        if nearby:
+            sn_name += "_nearby"
+        sn_name += ".npy"
 
         # if nearby:
         #     sn_name += "nearby.npy"
@@ -95,38 +101,26 @@ def sn_time_pdfs(sn_type):
     time_pdfs = []
 
     for i in sn_times:
-        time_pdfs.append(
-            {
-                "time_pdf_name": "box",
-                "pre_window": 0,
-                "post_window": i
-            }
-        )
+        time_pdfs.append({"time_pdf_name": "box", "pre_window": 0, "post_window": i})
 
     if sn_type == "Ibc":
-        time_pdfs.append(
-            {
-                "time_pdf_name": "box",
-                "pre_window": 20,
-                "post_window": 0
-            }
-        )
+        time_pdfs.append({"time_pdf_name": "box", "pre_window": 20, "post_window": 0})
 
     return time_pdfs
 
 
 def limit_sens(mh_name, pdf_type):
 
-    base = f'analyses/ccsn/stasik2017/calculate_sensitivity/{mh_name}/{pdf_type}/'
+    base = f"analyses/ccsn/stasik2017/calculate_sensitivity/{mh_name}/{pdf_type}/"
     sub_base = base.split(os.sep)
 
     for i, _ in enumerate(sub_base):
         p = sub_base[0]
         for d in range(1, i):
-            p += f'{os.sep}{sub_base[d]}'
+            p += f"{os.sep}{sub_base[d]}"
         p = limits_dir + p
         if not os.path.isdir(p):
-            logging.debug(f'making directory {p}')
+            logging.debug(f"making directory {p}")
             os.mkdir(p)
 
     return limit_output_path(base)

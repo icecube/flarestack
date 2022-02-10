@@ -5,16 +5,16 @@ import numpy as np
 import os
 import pickle as Pickle
 from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict,\
-    IC86_234_dict
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict, IC86_234_dict
 from flarestack.shared import flux_to_k, make_analysis_pickle, plot_output_dir
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
-from flarestack.analyses.txs_0506_056.make_txs_catalogue import \
-    txs_catalogue, txs_cat_path
-from flarestack.analyses.txs_0506_056.load_gao_spectral_models import \
-    spline_name
+from flarestack.analyses.txs_0506_056.make_txs_catalogue import (
+    txs_catalogue,
+    txs_cat_path,
+)
+from flarestack.analyses.txs_0506_056.load_gao_spectral_models import spline_name
 from flarestack.utils.custom_dataset import custom_dataset
 
 base_dir = "analyses/txs_0506_056/loop_gao_models/"
@@ -31,17 +31,12 @@ for i in n_range:
 
     # Use a source that is constant in time
 
-    injection_time = {
-        "Name": "FixedEndBox"
-    }
+    injection_time = {"Name": "FixedEndBox"}
 
     # Use a source with a spectral index of -2, with an energy range between
     # 100 GeV and 10 Pev (10**7 GeV).
 
-    injection_energy = {
-        "Name": "Spline",
-        "Spline Path": spline_name(i)
-    }
+    injection_energy = {"Name": "Spline", "Spline Path": spline_name(i)}
 
     # Fix injection time/energy PDFs, and use "Poisson Smearing" to simulate
     # random variations in detected neutrino numbers
@@ -61,9 +56,7 @@ for i in n_range:
 
     # Try to fit a power law to the data
 
-    llh_energy = {
-        "Name": "Power Law"
-    }
+    llh_energy = {"Name": "Power Law"}
 
     # Set up a likelihood that fits the number of signal events (n_s), and also
     # the spectral index (gamma) of the source
@@ -76,7 +69,7 @@ for i in n_range:
 
     # Takes a guess at the correct flux scale, based on previous IceCube results
 
-    scale = flux_to_k(2.) * 10**((160.-i)/160.)
+    scale = flux_to_k(2.0) * 10 ** ((160.0 - i) / 160.0)
 
     # Assign a unique name for each different minimisation handler dictionary
 
@@ -94,7 +87,7 @@ for i in n_range:
         "llh_dict": llh_kwargs,
         "scale": scale,
         "n_trials": 100,
-        "n_steps": 11
+        "n_steps": 11,
     }
 
     pkl_file = make_analysis_pickle(mh_dict)
@@ -147,7 +140,3 @@ for i, vals in enumerate([sens, disc]):
     print("Saving to", savepath)
     plt.savefig(savepath)
     plt.close()
-
-
-
-

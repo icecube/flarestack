@@ -28,18 +28,23 @@ import argparse
 import numpy as np
 from flarestack.shared import log_dir, fs_dir
 from flarestack.cluster.submitter import Submitter
-from flarestack.cluster.make_desy_cluster_script import make_desy_submit_file, submit_file
+from flarestack.cluster.make_desy_cluster_script import (
+    make_desy_submit_file,
+    submit_file,
+)
 
 logger = logging.getLogger(__name__)
 
-username = os.path.basename(os.environ['HOME'])
+username = os.path.basename(os.environ["HOME"])
 
-cmd = 'qstat -u ' + username
+cmd = "qstat -u " + username
 
 
 def wait_for_cluster(job_ids=None):
-    logger.warning('The wait_for_cluster function is deprecated! '
-                   'Use the Submitter class instead.')
+    logger.warning(
+        "The wait_for_cluster function is deprecated! "
+        "Use the Submitter class instead."
+    )
     Submitter.wait_for_cluster(job_ids)
 
     # if not job_ids:
@@ -69,16 +74,16 @@ def wait_for_job(job_id=None, progress_str=None):
     """
 
     if not job_id:
-        job_id_str = 's'
+        job_id_str = "s"
     else:
         if progress_str:
-            job_id_str = f' {progress_str} {job_id}'
+            job_id_str = f" {progress_str} {job_id}"
         else:
-            job_id_str = ' ' + str(job_id)
+            job_id_str = " " + str(job_id)
 
     time.sleep(10)
 
-    cmd = f'qstat -u {username}'
+    cmd = f"qstat -u {username}"
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     tmp = process.stdout.read().decode()
     n_total = n_tasks(tmp, job_id)
@@ -88,18 +93,21 @@ def wait_for_job(job_id=None, progress_str=None):
         if i > 3:
 
             running_process = subprocess.Popen(
-                cmd + " -s r", stdout=subprocess.PIPE, shell=True)
+                cmd + " -s r", stdout=subprocess.PIPE, shell=True
+            )
             running_tmp = running_process.stdout.read().decode()
 
-            if running_tmp != '':
+            if running_tmp != "":
                 n_running = n_tasks(running_tmp, job_id)
             else:
                 n_running = 0
 
-            logger.info(f'{time.asctime(time.localtime())} - Job{job_id_str}:'
-                         f' {n_total} entries in queue. '
-                         f'Of these, {n_running} are running tasks, and '
-                         f'{n_total-n_running} are tasks still waiting to be executed.')
+            logger.info(
+                f"{time.asctime(time.localtime())} - Job{job_id_str}:"
+                f" {n_total} entries in queue. "
+                f"Of these, {n_running} are running tasks, and "
+                f"{n_total-n_running} are tasks still waiting to be executed."
+            )
             i = 0
             j += 1
 
@@ -126,12 +134,14 @@ def submit_to_cluster(path, n_cpu=2, n_jobs=10, ram_per_core=None, **kwargs):
     if n_cpu > 1:
         submit_cmd += " -pe multicore {0} -R y ".format(n_cpu)
 
-    ram_per_core = "{0:.1f}G".format(6./float(n_cpu) + 2.) if not ram_per_core else ram_per_core
+    ram_per_core = (
+        "{0:.1f}G".format(6.0 / float(n_cpu) + 2.0)
+        if not ram_per_core
+        else ram_per_core
+    )
     print("Ram per core:", ram_per_core)
 
-    submit_cmd += "-t 1-{0}:1 {1} {2} {3}".format(
-        n_jobs, submit_file, path, n_cpu
-    )
+    submit_cmd += "-t 1-{0}:1 {1} {2} {3}".format(n_jobs, submit_file, path, n_cpu)
 
     make_desy_submit_file(ram_per_core, **kwargs)
 
@@ -140,7 +150,7 @@ def submit_to_cluster(path, n_cpu=2, n_jobs=10, ram_per_core=None, **kwargs):
     process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
     msg = process.stdout.read().decode()
     print(msg)
-    job_id = int(str(msg).split('job-array')[1].split('.')[0])
+    job_id = int(str(msg).split("job-array")[1].split(".")[0])
 
     return job_id
 
@@ -153,7 +163,7 @@ def n_tasks(tmp, job_id):
     :return: int
     """
     st = str(tmp)
-    ids = np.array([int(s.split(' ')[2]) for s in st.split('\n')[2:-1]])
+    ids = np.array([int(s.split(" ")[2]) for s in st.split("\n")[2:-1]])
 
     if job_id:
         return len(ids[ids == job_id])

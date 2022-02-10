@@ -30,8 +30,7 @@ class SpatialPDF:
 
 
 class SignalSpatialPDF:
-    """Base Signal Spatial PDF class.
-    """
+    """Base Signal Spatial PDF class."""
 
     subclasses = {}
 
@@ -51,6 +50,7 @@ class SignalSpatialPDF:
         """Adds a new subclass of SpatialPDF, with class name equal to
         "spatial_pdf_name".
         """
+
         def decorator(subclass):
             cls.subclasses[spatial_pdf_name] = subclass
             return subclass
@@ -66,9 +66,10 @@ class SignalSpatialPDF:
             s_pdf_name = "circular_gaussian"
 
         if s_pdf_name not in cls.subclasses:
-            raise ValueError('Bad Signal Spatial PDF name {0} \n'
-                             'Available names are {1}'.format(
-                s_pdf_name, cls.subclasses))
+            raise ValueError(
+                "Bad Signal Spatial PDF name {0} \n"
+                "Available names are {1}".format(s_pdf_name, cls.subclasses)
+            )
 
         return cls.subclasses[s_pdf_name](s_pdf_dict)
 
@@ -89,23 +90,33 @@ class SignalSpatialPDF:
         """
         # Turns Right Ascension/Declination into Azimuth/Zenith for healpy
         phi1 = ra1 - np.pi
-        zen1 = np.pi/2. - dec1
+        zen1 = np.pi / 2.0 - dec1
         phi2 = ra2 - np.pi
-        zen2 = np.pi/2. - dec2
+        zen2 = np.pi / 2.0 - dec2
         phi3 = ra3 - np.pi
-        zen3 = np.pi/2. - dec3
+        zen3 = np.pi / 2.0 - dec3
 
         # Rotate each ra1 and dec1 towards the pole?
-        x = np.array([hp.rotator.rotateDirection(
-            hp.rotator.get_rotation_matrix((dp, -dz, 0.))[0], z, p)
-            for z, p, dz, dp in zip(zen1, phi1, zen2, phi2)])
+        x = np.array(
+            [
+                hp.rotator.rotateDirection(
+                    hp.rotator.get_rotation_matrix((dp, -dz, 0.0))[0], z, p
+                )
+                for z, p, dz, dp in zip(zen1, phi1, zen2, phi2)
+            ]
+        )
 
         # Rotate **all** these vectors towards ra3, dec3 (source_path)
-        zen, phi = hp.rotator.rotateDirection(np.dot(
-            hp.rotator.get_rotation_matrix((-phi3, 0, 0))[0],
-            hp.rotator.get_rotation_matrix((0, zen3, 0.))[0]), x[:, 0], x[:, 1])
+        zen, phi = hp.rotator.rotateDirection(
+            np.dot(
+                hp.rotator.get_rotation_matrix((-phi3, 0, 0))[0],
+                hp.rotator.get_rotation_matrix((0, zen3, 0.0))[0],
+            ),
+            x[:, 0],
+            x[:, 1],
+        )
 
-        dec = np.pi/2. - zen
+        dec = np.pi / 2.0 - zen
 
         ra = phi + np.pi
         return np.atleast_1d(ra), np.atleast_1d(dec)
@@ -131,17 +142,18 @@ class SignalSpatialPDF:
         names = ev.dtype.names
 
         # Rotates the events to lie on the source
-        ev["ra"], rot_dec = self.rotate(ev["ra"], np.arcsin(ev["sinDec"]),
-                                        ev["trueRa"], ev["trueDec"],
-                                        ra, dec)
+        ev["ra"], rot_dec = self.rotate(
+            ev["ra"], np.arcsin(ev["sinDec"]), ev["trueRa"], ev["trueDec"], ra, dec
+        )
 
         if "dec" in names:
             ev["dec"] = rot_dec
         ev["sinDec"] = np.sin(rot_dec)
 
         # Deletes the Monte Carlo information from sampled events
-        non_mc = [name for name in names
-                  if name not in ["trueRa", "trueDec", "trueE", "ow"]]
+        non_mc = [
+            name for name in names if name not in ["trueRa", "trueDec", "trueE", "ow"]
+        ]
         ev = ev[non_mc].copy()
 
         return ev
@@ -149,18 +161,17 @@ class SignalSpatialPDF:
 
 @SignalSpatialPDF.register_subclass("circular_gaussian")
 class CircularGaussian(SignalSpatialPDF):
-
     def simulate_distribution(self, source, data):
         data["ra"] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
         data["dec"] = norm.rvs(size=len(data)) * data["sigma"]
         data["sinDec"] = np.sin(data["dec"])
         data = append_fields(
-            data, ["trueRa", "trueDec"],
-            [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])]
+            data,
+            ["trueRa", "trueDec"],
+            [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])],
         ).copy()
 
-        data = self.rotate_to_position(
-            data, source["ra_rad"], source["dec_rad"]).copy()
+        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"]).copy()
 
         return data.copy()
 
@@ -175,13 +186,16 @@ class CircularGaussian(SignalSpatialPDF):
         :return: Array of Spatial PDF values
         """
         distance = angular_distance(
-            cut_data['ra'], cut_data['dec'],
-            source['ra_rad'], source['dec_rad']
+            cut_data["ra"], cut_data["dec"], source["ra_rad"], source["dec_rad"]
         )
-        space_term = (1. / (2. * np.pi * cut_data['sigma'] ** 2.) *
-                      np.exp(-0.5 * (distance / cut_data['sigma']) ** 2.))
+        space_term = (
+            1.0
+            / (2.0 * np.pi * cut_data["sigma"] ** 2.0)
+            * np.exp(-0.5 * (distance / cut_data["sigma"]) ** 2.0)
+        )
 
         return space_term
+
 
 # ==============================================================================
 # Background Spatial PDFs
@@ -215,9 +229,10 @@ class BackgroundSpatialPDF:
             s_pdf_name = "zenith_spline"
 
         if s_pdf_name not in cls.subclasses:
-            raise ValueError('Bad Background Spatial PDF name {0} \n'
-                             'Available names are {1}'.format(
-                s_pdf_name, cls.subclasses))
+            raise ValueError(
+                "Bad Background Spatial PDF name {0} \n"
+                "Available names are {1}".format(s_pdf_name, cls.subclasses)
+            )
 
         return cls.subclasses[s_pdf_name](s_pdf_dict, season)
 
@@ -232,7 +247,7 @@ class UniformPDF(BackgroundSpatialPDF):
     """
 
     def background_spatial(self, events):
-        space_term = (1. / (4. * np.pi)) * np.ones(len(events))
+        space_term = (1.0 / (4.0 * np.pi)) * np.ones(len(events))
         return space_term
 
 
@@ -248,19 +263,23 @@ class UniformSolidAngle(BackgroundSpatialPDF):
         BackgroundSpatialPDF.__init__(self, spatial_pdf_dict, season)
 
         try:
-            self.solid_angle = spatial_pdf_dict['background_solid_angle']
+            self.solid_angle = spatial_pdf_dict["background_solid_angle"]
         except KeyError:
-            raise KeyError("No solid angle passed to UniformSolidAngle class.\n"
-                           "Please include an entry 'background_solid_angle' "
-                           "in the 'spatial_pdf_dict'.")
+            raise KeyError(
+                "No solid angle passed to UniformSolidAngle class.\n"
+                "Please include an entry 'background_solid_angle' "
+                "in the 'spatial_pdf_dict'."
+            )
 
         if self.solid_angle > 4 * np.pi:
-            raise ValueError("Solid angle {0} was provided, but this is "
-                             "larger than 4pi. Please provide a valid solid "
-                             "angle.")
+            raise ValueError(
+                "Solid angle {0} was provided, but this is "
+                "larger than 4pi. Please provide a valid solid "
+                "angle."
+            )
 
     def background_spatial(self, events):
-        space_term = (1. / self.solid_angle) * np.ones(len(events))
+        space_term = (1.0 / self.solid_angle) * np.ones(len(events))
         return space_term
 
 
@@ -286,8 +305,6 @@ class ZenithSpline(BackgroundSpatialPDF):
         return load_bkg_spatial_spline(season)
 
     def background_spatial(self, events):
-        space_term = (1. / (2. * np.pi)) * np.exp(
-            self.bkg_f(events["sinDec"]))
+        space_term = (1.0 / (2.0 * np.pi)) * np.exp(self.bkg_f(events["sinDec"]))
 
         return space_term
-

@@ -4,13 +4,19 @@ import os
 import shutil
 import scipy.interpolate
 import pickle as Pickle
-from flarestack.shared import default_gamma_precision, SoB_spline_path, default_smoothing_order, \
-    bkg_spline_path, get_base_sob_plot_dir, flarestack_gamma_precision
+from flarestack.shared import (
+    default_gamma_precision,
+    SoB_spline_path,
+    default_smoothing_order,
+    bkg_spline_path,
+    get_base_sob_plot_dir,
+    flarestack_gamma_precision,
+)
 from flarestack.core.energy_pdf import PowerLaw
 import matplotlib.pyplot as plt
 
-environment_smoothing_key = 'FLARESATCK_SMOOTHING_ORDER'
-environment_precision_key = 'FLARESTACK_PRECISION'
+environment_smoothing_key = "FLARESATCK_SMOOTHING_ORDER"
+environment_precision_key = "FLARESTACK_PRECISION"
 logger = logging.getLogger(__name__)
 energy_pdf = PowerLaw()
 
@@ -30,11 +36,15 @@ def get_gamma_precision(precision=flarestack_gamma_precision):
         if precision in default_gamma_precision:
             return default_gamma_precision[precision]
         else:
-            raise ValueError(f'No gamma precision value defined for {precision}!'
-                             f'Choose: {default_gamma_precision.keys()}')
+            raise ValueError(
+                f"No gamma precision value defined for {precision}!"
+                f"Choose: {default_gamma_precision.keys()}"
+            )
 
     else:
-        raise TypeError(f'Type {type(precision)} of {precision} not understood for variable gamma precision')
+        raise TypeError(
+            f"Type {type(precision)} of {precision} not understood for variable gamma precision"
+        )
 
 
 def _around(value, precision=flarestack_gamma_precision):
@@ -46,7 +56,9 @@ def _around(value, precision=flarestack_gamma_precision):
     Can also provide default of llh codes by name, either 'skylab' or 'flarestack'.
     :return: value after processed
     """
-    return np.around(float(value) / get_gamma_precision(precision)) * get_gamma_precision(precision)
+    return np.around(
+        float(value) / get_gamma_precision(precision)
+    ) * get_gamma_precision(precision)
 
 
 def get_gamma_support_points(precision=flarestack_gamma_precision):
@@ -77,9 +89,10 @@ def create_2d_hist(sin_dec, log_e, sin_dec_bins, log_e_bins, weights):
     # rangee = tuple([(wB_i[0], wB_i[-1]) for wB_i in [log_e_bins, sin_dec_bins]])
     # if np.all(weights == 1):
     #     weights = None
-        # print('no weights')
+    # print('no weights')
     hist_2d, binedges = np.histogramdd(
-        (log_e, sin_dec), bins=(log_e_bins, sin_dec_bins), weights=weights)  # , range=rangee, normed=True)
+        (log_e, sin_dec), bins=(log_e_bins, sin_dec_bins), weights=weights
+    )  # , range=rangee, normed=True)
 
     # n_dimensions = hist_2d.ndim
 
@@ -89,6 +102,7 @@ def create_2d_hist(sin_dec, log_e, sin_dec_bins, log_e_bins, weights):
     # hist_2d /= norms
 
     return hist_2d
+
 
 # def create_2d_gamma_energy(sin_dec, log_e, sin_dec_bins, weights):
 #     """Creates a 2D histogram for a set of data (Experimental or Monte
@@ -123,8 +137,9 @@ def create_bkg_2d_hist(exp, sin_dec_bins, log_e_bins):
     :param sin_dec_bins: Bins of Sin(Declination to be used)
     :return: 2D histogram
     """
-    return create_2d_hist(exp["sinDec"], exp["logE"], sin_dec_bins, log_e_bins,
-                          weights=exp["weight"])
+    return create_2d_hist(
+        exp["sinDec"], exp["logE"], sin_dec_bins, log_e_bins, weights=exp["weight"]
+    )
 
 
 def create_sig_2d_hist(mc, sin_dec_bins, log_e_bins, weight_function):
@@ -136,8 +151,9 @@ def create_sig_2d_hist(mc, sin_dec_bins, log_e_bins, weight_function):
     :return: 2D histogram
     """
 
-    return create_2d_hist(mc["sinDec"], mc["logE"], sin_dec_bins, log_e_bins,
-                          weights=weight_function(mc))
+    return create_2d_hist(
+        mc["sinDec"], mc["logE"], sin_dec_bins, log_e_bins, weights=weight_function(mc)
+    )
 
 
 def create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function):
@@ -161,7 +177,7 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     sig_hist = create_sig_2d_hist(mc, sin_dec_bins, log_e_bins, weight_function)
     n_dimensions = sig_hist.ndim
     norms = np.sum(sig_hist, axis=n_dimensions - 2)
-    norms[norms == 0.] = 1.
+    norms[norms == 0.0] = 1.0
     sig_hist /= norms
     # bkg_norms = np.sum(bkg_hist, axis=tuple(range(n_dimensions - 1)))
     # bkg_norms[bkg_norms == 0.] = 1
@@ -181,11 +197,11 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     for i, bkg_row in enumerate(bkg_hist.T):
         sig_row = sig_hist.T[i]
 
-        fill_mask = (bkg_row == 0.) & (sig_row > 0.)
-        bkg_row[fill_mask] = 1.
+        fill_mask = (bkg_row == 0.0) & (sig_row > 0.0)
+        bkg_row[fill_mask] = 1.0
         # bkg_row /= np.sum(bkg_row)
 
-        mask = (bkg_row > 0.) & (sig_row > 0.)
+        mask = (bkg_row > 0.0) & (sig_row > 0.0)
         r = np.ones_like(bkg_row)
         r[mask] = sig_row[mask] / (bkg_row[mask] / np.sum(bkg_row))
 
@@ -204,7 +220,9 @@ def create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function):
     return ratio
 
 
-def create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, weight_function, smoothing_order):
+def create_2d_ratio_spline(
+    exp, mc, sin_dec_bins, log_e_bins, weight_function, smoothing_order
+):
     """Creates 2D histograms for both data and MC, in which the seasons
     are binned by Sin(Declination) and Log(Energy/GeV). Each histogram is
     normalised in Sin(Declination) bands. Then creates a histogram of the
@@ -225,8 +243,7 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, weight_function, s
     :return: 2D spline function
     """
 
-    ratio = create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins,
-                                 weight_function)
+    ratio = create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins, weight_function)
 
     spline = make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order)
 
@@ -236,8 +253,8 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, weight_function, s
 def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order):
 
     # Sets bin centers, and order of spline (for x and y)
-    sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.
-    log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.
+    sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.0
+    log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.0
 
     # the order of the splines defaults to 2
     # default_order = 2
@@ -250,7 +267,7 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order):
 
     # when setting the emviron value to 'None', order will be None and no splines will be produced
     if isinstance(smoothing_order, type(None)):
-        logger.warning(f'{environment_smoothing_key} is None! Not making splines!')
+        logger.warning(f"{environment_smoothing_key} is None! Not making splines!")
         return
 
     # Fits a 2D spline function to the log of ratio array
@@ -263,22 +280,27 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order):
         binmids = (log_e_bin_center, sin_bin_center)
 
         spline = scipy.interpolate.RegularGridInterpolator(
-            binmids, np.log(ratio),
-            method="linear",
-            bounds_error=False,
-            fill_value=0.)
+            binmids, np.log(ratio), method="linear", bounds_error=False, fill_value=0.0
+        )
 
     # If the interpolating splines are of order greater than 1, use RectBivariateSpline
     else:
         # This is order-th order in both dimensions
         spline = scipy.interpolate.RectBivariateSpline(
-            log_e_bin_center, sin_bin_center, np.log(ratio),
-            kx=smoothing_order, ky=smoothing_order, s=0)
+            log_e_bin_center,
+            sin_bin_center,
+            np.log(ratio),
+            kx=smoothing_order,
+            ky=smoothing_order,
+            s=0,
+        )
 
     return spline
 
 
-def create_gamma_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order):
+def create_gamma_2d_ratio_spline(
+    exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order
+):
     """Creates a 2D gamma ratio spline by creating a function that weights MC
     assuming a power law of spectral index gamma.
 
@@ -292,8 +314,9 @@ def create_gamma_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins, gamma, smoot
     def weight_function(sig_mc):
         return energy_pdf.weight_mc(sig_mc, gamma)
 
-    return create_2d_ratio_spline(exp, mc, sin_dec_bins, log_e_bins,
-                                  weight_function, smoothing_order)
+    return create_2d_ratio_spline(
+        exp, mc, sin_dec_bins, log_e_bins, weight_function, smoothing_order
+    )
 
 
 def create_2d_splines(exp, mc, sin_dec_bins, log_e_bins, **kwargs):
@@ -313,17 +336,17 @@ def create_2d_splines(exp, mc, sin_dec_bins, log_e_bins, **kwargs):
     :return: Dictionary of 2D Log(Signal/Background) splines
     """
     splines = dict()
-    gamma_precision = kwargs.get('gamma_precision', 'flarestack')
-    smoothing_order = kwargs.get('smoothing_order', 'flarestack')
+    gamma_precision = kwargs.get("gamma_precision", "flarestack")
+    smoothing_order = kwargs.get("smoothing_order", "flarestack")
     gamma_support_points = get_gamma_support_points(precision=gamma_precision)
-
 
     for gamma in gamma_support_points:
         splines[gamma] = create_gamma_2d_ratio_spline(
-            exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order)
+            exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order
+        )
 
     if not np.any(list(splines.values())):
-        logger.warning('No splines!')
+        logger.warning("No splines!")
         return
 
     return splines
@@ -341,16 +364,19 @@ def create_bkg_spatial_spline(exp, sin_dec_bins):
     """
     sin_dec_range = (np.min(sin_dec_bins), np.max(sin_dec_bins))
     hist, bins = np.histogram(
-        exp['sinDec'], density=True, bins=sin_dec_bins, range=sin_dec_range,
-        weights=exp["weight"]
+        exp["sinDec"],
+        density=True,
+        bins=sin_dec_bins,
+        range=sin_dec_range,
+        weights=exp["weight"],
     )
 
     bins = np.concatenate([bins[:1], bins, bins[-1:]])
     hist = np.concatenate([hist[:1], hist, hist[-1:]])
 
     bkg_spline = scipy.interpolate.InterpolatedUnivariateSpline(
-                            (bins[1:] + bins[:-1]) / 2.,
-                            np.log(hist), k=2)
+        (bins[1:] + bins[:-1]) / 2.0, np.log(hist), k=2
+    )
     return bkg_spline
 
 
@@ -360,20 +386,31 @@ def make_spline(seasons, **kwargs):
     :param seasons: Seasons to iterate over
     """
 
-    logger.info(f"Splines will be made to calculate the Signal/Background ratio of "
-                "the MC to data. The MC will be weighted with a power law, for each"
-                " gamma in: {list(get_gamma_support_points(**kwargs))}")
+    logger.info(
+        f"Splines will be made to calculate the Signal/Background ratio of "
+        "the MC to data. The MC will be weighted with a power law, for each"
+        " gamma in: {list(get_gamma_support_points(**kwargs))}"
+    )
 
     for season in seasons.values():
         SoB_path = SoB_spline_path(season, **kwargs)
         make_individual_spline_set(season, SoB_path, **kwargs)
         make_background_spline(season)
 
-def make_plot(hist, savepath, x_bins, y_bins, normed=True, log_min=5,
-              label_x=r"$\sin(\delta)$", label_y="log(Energy)"):
+
+def make_plot(
+    hist,
+    savepath,
+    x_bins,
+    y_bins,
+    normed=True,
+    log_min=5,
+    label_x=r"$\sin(\delta)$",
+    label_y="log(Energy)",
+):
     if normed:
         norms = np.sum(hist, axis=hist.ndim - 2)
-        norms[norms == 0.] = 1.
+        norms[norms == 0.0] = 1.0
         hist /= norms
     else:
         hist = np.log(np.array(hist))
@@ -381,13 +418,13 @@ def make_plot(hist, savepath, x_bins, y_bins, normed=True, log_min=5,
     ax = plt.subplot(111)
     X, Y = np.meshgrid(x_bins, y_bins)
     if not normed:
-        max_col = min(abs(min([min(row) for row in hist.T])),
-                      max([max(row) for row in hist.T]))
-        cbar = ax.pcolormesh(X, Y, hist, cmap="seismic",
-                             vmin=-5, vmax=5)
+        max_col = min(
+            abs(min([min(row) for row in hist.T])), max([max(row) for row in hist.T])
+        )
+        cbar = ax.pcolormesh(X, Y, hist, cmap="seismic", vmin=-5, vmax=5)
         plt.colorbar(cbar, label="Log(Signal/Background)")
     else:
-        hist[hist == 0.] = np.nan
+        hist[hist == 0.0] = np.nan
         cbar = ax.pcolormesh(X, Y, hist)
         plt.colorbar(cbar, label="Column-normalised density")
     plt.xlabel(label_x)
@@ -429,9 +466,14 @@ def make_individual_spline_set(season, SoB_path, **kwargs):
         # Generate plots
         for gamma in np.linspace(1.0, 4.0, 7):
 
-            plot_path = base_plot_path + "gamma=" + str(gamma) + "/" + \
-                        f'precision{kwargs.get("gamma_precision", "flarestack")}_' \
-                        f'smoothing{kwargs.get("smoothing_order", "flarestack")}'
+            plot_path = (
+                base_plot_path
+                + "gamma="
+                + str(gamma)
+                + "/"
+                + f'precision{kwargs.get("gamma_precision", "flarestack")}_'
+                f'smoothing{kwargs.get("smoothing_order", "flarestack")}'
+            )
 
             try:
                 os.makedirs(plot_path)
@@ -441,13 +483,18 @@ def make_individual_spline_set(season, SoB_path, **kwargs):
             def weight_function(sig_mc):
                 return energy_pdf.weight_mc(sig_mc, gamma)
 
-            mc_hist = create_sig_2d_hist(mc, sin_dec_bins, log_e_bins,
-                                         weight_function)
+            mc_hist = create_sig_2d_hist(mc, sin_dec_bins, log_e_bins, weight_function)
 
             make_plot(mc_hist, plot_path + "sig.pdf", sin_dec_bins, log_e_bins)
-            make_plot(create_2d_ratio_hist(exp, mc, sin_dec_bins, log_e_bins,
-                                           weight_function),
-                      plot_path + "SoB.pdf", sin_dec_bins, log_e_bins, normed=False)
+            make_plot(
+                create_2d_ratio_hist(
+                    exp, mc, sin_dec_bins, log_e_bins, weight_function
+                ),
+                plot_path + "SoB.pdf",
+                sin_dec_bins,
+                log_e_bins,
+                normed=False,
+            )
 
             Z = []
             for s in sin_dec_bins:
@@ -462,23 +509,28 @@ def make_individual_spline_set(season, SoB_path, **kwargs):
 
             Z = np.array(Z).T
 
-            max_col = min(abs(min([min(row) for row in Z])),
-                          max([max(row) for row in Z]))
+            max_col = min(
+                abs(min([min(row) for row in Z])), max([max(row) for row in Z])
+            )
 
             plt.figure()
             ax = plt.subplot(111)
             X, Y = np.meshgrid(sin_dec_bins, log_e_bins)
-            cbar = ax.pcolormesh(X, Y, Z, cmap="seismic",
-                                 vmin=-max_col, vmax=max_col,
-                                 shading='auto')
+            cbar = ax.pcolormesh(
+                X, Y, Z, cmap="seismic", vmin=-max_col, vmax=max_col, shading="auto"
+            )
             plt.colorbar(cbar, label="Log(Signal/Background)")
             plt.xlabel(r"$\sin(\delta)$")
             plt.ylabel("log(Energy)")
             plt.savefig(plot_path + "spline.pdf")
             plt.close()
 
-        make_plot(exp_hist,
-                  savepath=base_plot_path + "bkg.pdf", x_bins=sin_dec_bins, y_bins=log_e_bins)
+        make_plot(
+            exp_hist,
+            savepath=base_plot_path + "bkg.pdf",
+            x_bins=sin_dec_bins,
+            y_bins=log_e_bins,
+        )
 
         del mc
 

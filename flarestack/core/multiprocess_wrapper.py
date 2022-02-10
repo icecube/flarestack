@@ -15,6 +15,7 @@ try:
 except RuntimeError:
     pass
 
+
 def generate_dynamic_mh_class(mh_dict):
 
     # mh_dict = read_mh_dict(mh_dict)
@@ -32,11 +33,11 @@ def generate_dynamic_mh_class(mh_dict):
         raise KeyError("Parent class {} not found.".format(mh_name))
 
     class MultiProcessingMinimisationHandler(ParentMinimisationHandler):
-
         def add_injector(self, season, sources):
             pass
 
     return MultiProcessingMinimisationHandler(mh_dict)
+
 
 class MultiProcessor:
     queue = None
@@ -45,11 +46,12 @@ class MultiProcessor:
     def __init__(self, n_cpu, **kwargs):
         self.queue = JoinableQueue()
         self.log_queue = Queue()
-        self.n_tasks = Value('i', 0)
+        self.n_tasks = Value("i", 0)
         kwargs["n_tasks"] = self.n_tasks
 
-        self.processes = [Process(target=self.run_trial, kwargs=kwargs)
-                          for _ in range(int(n_cpu))]
+        self.processes = [
+            Process(target=self.run_trial, kwargs=kwargs) for _ in range(int(n_cpu))
+        ]
 
         self.mh = MinimisationHandler.create(kwargs["mh_dict"])
         for season in self.mh.seasons.keys():
@@ -59,7 +61,9 @@ class MultiProcessor:
         self.scales = []
 
         handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter("%(levelname)s: %(asctime)s - %(process)s - %(message)s"))
+        handler.setFormatter(
+            logging.Formatter("%(levelname)s: %(asctime)s - %(process)s - %(message)s")
+        )
         # ql gets records from the queue and sends them to the handler
 
         ql = QueueListener(self.log_queue, handler)
@@ -107,21 +111,21 @@ class MultiProcessor:
 
         for scale in scale_range:
             for _ in range(n_trials):
-                self.add_to_queue((scale, int(random.random() * 10 ** 8)))
+                self.add_to_queue((scale, int(random.random() * 10**8)))
 
-        n_tasks = (len(scale_range) * n_trials)
+        n_tasks = len(scale_range) * n_trials
         with self.n_tasks.get_lock():
             self.n_tasks.value += n_tasks
 
         logger.info("Added {0} trials to queue. Now processing.".format(n_tasks))
 
-        while self.n_tasks.value > 0.:
+        while self.n_tasks.value > 0.0:
             logger.info("{0} tasks remaining.".format(self.n_tasks.value))
             time.sleep(30)
         logger.info("Finished processing {0} tasks.".format(n_tasks))
 
     def terminate(self):
-        """ wait until queue is empty and terminate processes """
+        """wait until queue is empty and terminate processes"""
         self.queue.join()
         for p in self.processes:
             p.terminate()
@@ -142,14 +146,14 @@ def run_multiprocess(n_cpu, mh_dict):
         del r
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os
 
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="Path for analysis pkl_file")
-    parser.add_argument("-n", "--n_cpu", default=min(max(1, os.cpu_count()-1), 32))
+    parser.add_argument("-n", "--n_cpu", default=min(max(1, os.cpu_count() - 1), 32))
     cfg = parser.parse_args()
 
     logger.info(f"N CPU available {os.cpu_count()}. Using {cfg.n_cpu}")

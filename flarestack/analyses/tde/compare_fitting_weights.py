@@ -14,8 +14,7 @@ from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 import matplotlib.pyplot as plt
 from flarestack.utils.custom_dataset import custom_dataset
 import math
-from flarestack.analyses.tde.shared_TDE import tde_catalogue_name, \
-    tde_catalogues
+from flarestack.analyses.tde.shared_TDE import tde_catalogue_name, tde_catalogues
 
 analyses = dict()
 
@@ -45,7 +44,7 @@ fixed_weights = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": False,
-    "Fit Weights?": False
+    "Fit Weights?": False,
 }
 
 fixed_weights_negative = {
@@ -53,7 +52,7 @@ fixed_weights_negative = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": True,
-    "Fit Weights?": False
+    "Fit Weights?": False,
 }
 
 flare = {
@@ -61,7 +60,7 @@ flare = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Flare Search?": True,
-    "Fit Negative n_s?": False
+    "Fit Negative n_s?": False,
 }
 
 cat_res = dict()
@@ -83,16 +82,16 @@ for cat in tde_catalogues:
 
     closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
 
-    for i, llh_kwargs in enumerate([
-                                    fixed_weights,
-                                    fixed_weights_negative,
-                                    fit_weights,
-                                    flare
-                                    ]):
-        label = ["Fixed Weights", "Fixed Weights (Negative n_s)",
-                 "Fit Weights", "Flare Search", ][i]
-        f_name = ["fixed_weights", "fixed_weights_neg",
-                  "fit_weights", "flare"][i]
+    for i, llh_kwargs in enumerate(
+        [fixed_weights, fixed_weights_negative, fit_weights, flare]
+    ):
+        label = [
+            "Fixed Weights",
+            "Fixed Weights (Negative n_s)",
+            "Fit Weights",
+            "Flare Search",
+        ][i]
+        f_name = ["fixed_weights", "fixed_weights_neg", "fit_weights", "flare"][i]
 
         flare_name = name + f_name + "/"
 
@@ -111,8 +110,8 @@ for cat in tde_catalogues:
                 "Pre-Window": 0,
                 "Post-Window": flare_length,
                 "Time Smear?": True,
-                "Min Offset": 0.,
-                "Max Offset": max_window - flare_length
+                "Min Offset": 0.0,
+                "Max Offset": max_window - flare_length,
             }
 
             inj_kwargs = {
@@ -121,22 +120,27 @@ for cat in tde_catalogues:
                 "Poisson Smear?": True,
             }
 
-            scale = old_div(100 * math.sqrt(float(len(catalogue))) * flux_to_k(
-                reference_sensitivity(np.sin(closest_src["dec"]), gamma=2)
-            ) * max_window, flare_length)
+            scale = old_div(
+                100
+                * math.sqrt(float(len(catalogue)))
+                * flux_to_k(reference_sensitivity(np.sin(closest_src["dec"]), gamma=2))
+                * max_window,
+                flare_length,
+            )
 
             # print scale
 
             mh_dict = {
                 "name": full_name,
-                "datasets": custom_dataset(txs_sample_v2, catalogue,
-                                           llh_kwargs["LLH Time PDF"]),
+                "datasets": custom_dataset(
+                    txs_sample_v2, catalogue, llh_kwargs["LLH Time PDF"]
+                ),
                 "catalogue": cat_path,
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
                 "n_trials": 1,
-                "n_steps": 15
+                "n_steps": 15,
             }
 
             pkl_file = make_analysis_pickle(mh_dict)
@@ -166,9 +170,10 @@ for (cat, src_res) in cat_res.items():
     cat_path = tde_catalogue_name(cat) + "_catalogue.npy"
     catalogue = np.load(cat_path)
 
-    src_1_frac = old_div(min(catalogue["Distance (Mpc)"])**-2,np.sum(
-        catalogue["Distance (Mpc)"] ** -2
-    ))
+    src_1_frac = old_div(
+        min(catalogue["Distance (Mpc)"]) ** -2,
+        np.sum(catalogue["Distance (Mpc)"] ** -2),
+    )
 
     for i, (f_type, res) in enumerate(sorted(src_res.items())):
 
@@ -181,7 +186,8 @@ for (cat, src_res) in cat_res.items():
                 inj_time = length * 60 * 60 * 24
 
                 astro_sens, astro_disc = rh.astro_values(
-                    rh_dict["inj kwargs"]["Injection Energy PDF"])
+                    rh_dict["inj kwargs"]["Injection Energy PDF"]
+                )
 
                 key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
@@ -200,8 +206,7 @@ for (cat, src_res) in cat_res.items():
 
         labels.append(f_type)
 
-    for j, [fluence, energy] in enumerate([[sens, sens_e],
-                                           [disc_pots, disc_e]]):
+    for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
 
         plt.figure()
         ax1 = plt.subplot(111)
@@ -220,7 +225,7 @@ for (cat, src_res) in cat_res.items():
 
         # Set up plot
 
-        ax2.grid(True, which='both')
+        ax2.grid(True, which="both")
         ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
         ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
         ax1.set_xlabel(r"Flare Length (Days)")
@@ -234,17 +239,24 @@ for (cat, src_res) in cat_res.items():
             try:
                 y = [fluence, energy][k]
 
-                ax.set_ylim(0.7 * min([min(x) for x in y if len(x) > 0]),
-                            1.5 * max([max(x) for x in y if len(x) > 0]))
+                ax.set_ylim(
+                    0.7 * min([min(x) for x in y if len(x) > 0]),
+                    1.5 * max([max(x) for x in y if len(x) > 0]),
+                )
 
             except ValueError:
                 pass
 
-        plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat +
-                  " TDEs")
+        plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat + " TDEs")
 
-        ax1.legend(loc='upper left', fancybox=True)
+        ax1.legend(loc="upper left", fancybox=True)
         plt.tight_layout()
-        plt.savefig(plot_output_dir(name) + "/flare_vs_box_" + cat + "_" +
-                    ["sens", "disc"][j] + ".pdf")
+        plt.savefig(
+            plot_output_dir(name)
+            + "/flare_vs_box_"
+            + cat
+            + "_"
+            + ["sens", "disc"][j]
+            + ".pdf"
+        )
         plt.close()

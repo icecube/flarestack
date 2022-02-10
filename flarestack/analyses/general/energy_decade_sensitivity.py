@@ -53,13 +53,13 @@ for sindec in sindecs:
 
     cat_path = ps_catalogue_name(sindec)
 
-    subname = base_name + "/sindec=" + '{0:.2f}'.format(sindec) + "/"
+    subname = base_name + "/sindec=" + "{0:.2f}".format(sindec) + "/"
 
     southern = sindec < np.sin(np.radians(-5))
 
     for i, (e_min, e_max) in enumerate(bins):
 
-        name = subname + '{0:.2f}'.format(e_min) +"/"
+        name = subname + "{0:.2f}".format(e_min) + "/"
 
         injection_energy = dict(llh_energy)
         injection_energy["E Min"] = e_min
@@ -73,9 +73,9 @@ for sindec in sindecs:
 
         e_center = 0.5 * (np.log10(e_min) + np.log10(e_max))
 
-        parabola_min = 5 + 0.5 * (1 + np.sign(-sindec -np.sin(np.radians(5))))
+        parabola_min = 5 + 0.5 * (1 + np.sign(-sindec - np.sin(np.radians(5))))
 
-        e_scale = np.exp(0.5*(e_center - parabola_min) ** 2)
+        e_scale = np.exp(0.5 * (e_center - parabola_min) ** 2)
 
         scale = flux_to_k(reference_sensitivity(sindec)) * 100 * e_scale
 
@@ -87,7 +87,7 @@ for sindec in sindecs:
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 10,
-            "n_steps": 20
+            "n_steps": 20,
         }
 
         analysis_path = analysis_dir + name

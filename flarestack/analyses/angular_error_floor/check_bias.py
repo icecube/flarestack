@@ -19,34 +19,25 @@ root_name = "analyses/angular_error_floor/check_bias/"
 for i, llh_name in enumerate(["standard", "standard_overlapping"]):
     base_name = root_name + llh_name + "/"
 
-    llh_dict = {
-        "name": llh_name,
-        "LLH Time PDF": {
-            "Name": "Steady"
-        }
-    }
+    llh_dict = {"name": llh_name, "LLH Time PDF": {"Name": "Steady"}}
 
     if llh_name is not "spatial_overlapping":
-        llh_dict["LLH Energy PDF"] = {
-            "Name": "Power Law"
-        }
+        llh_dict["LLH Energy PDF"] = {"Name": "Power Law"}
 
     # for j, gamma in enumerate([1.5, 2.0, 3.0, 3.5]):
-    for j, gamma in enumerate([2.]):
+    for j, gamma in enumerate([2.0]):
         name = base_name + str(gamma) + "/"
 
         if llh_name == "fixed_energy":
             llh_dict["LLH Energy PDF"]["Gamma"] = gamma
 
         inj_dict = {
-            "Injection Time PDF": {
-                "Name": "Steady"
-            },
+            "Injection Time PDF": {"Name": "Steady"},
             "Injection Energy PDF": {
                 "Name": "Power Law",
                 "Gamma": gamma,
             },
-            "fixed_n": 30
+            "fixed_n": 30,
         }
 
         mh_dict = {
@@ -56,11 +47,13 @@ for i, llh_name in enumerate(["standard", "standard_overlapping"]):
             # "catalogue": ps_catalogue_name(sin_dec),
             "catalogue": tde_catalogue_name("jetted"),
             "llh_dict": llh_dict,
-            "inj kwargs": inj_dict
+            "inj kwargs": inj_dict,
         }
 
-        scale = flux_to_k(reference_sensitivity(sin_dec, gamma)) * 125 * (
-            [4.0, 1.0, 0.3, 10.0][j]
+        scale = (
+            flux_to_k(reference_sensitivity(sin_dec, gamma))
+            * 125
+            * ([4.0, 1.0, 0.3, 10.0][j])
         )
 
         mh = MinimisationHandler.create(mh_dict)

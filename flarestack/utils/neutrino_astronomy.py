@@ -13,7 +13,7 @@ e_0 = 1 * u.GeV
 
 # Set parameters for conversion from CR luminosity to nu luminosity
 f_pi = 0.1
-waxmann_bachall = (3. / 8.) * f_pi
+waxmann_bachall = (3.0 / 8.0) * f_pi
 
 f_cr_to_nu = 0.05
 
@@ -32,7 +32,7 @@ def find_zfactor(distance):
 
 def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
-    flux /= (u. GeV * u.cm ** 2 * u.s)
+    flux /= u.GeV * u.cm**2 * u.s
 
     energy_PDF = EnergyPDF.create(e_pdf_dict)
 
@@ -44,7 +44,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     # Calculate fluence
 
-    tot_fluence = (flux * e_integral)
+    tot_fluence = flux * e_integral
 
     astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = tot_fluence.value
 
@@ -52,7 +52,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
-    frac = calculate_source_weight(src_1)/calculate_source_weight(catalogue)
+    frac = calculate_source_weight(src_1) / calculate_source_weight(catalogue)
 
     si = flux * frac
 
@@ -64,22 +64,24 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     lumdist = src_1["distance_mpc"] * u.Mpc
 
-    area = (4 * math.pi * (lumdist.to(u.cm)) ** 2)
+    area = 4 * math.pi * (lumdist.to(u.cm)) ** 2
 
-    dNdA = (si * phi_integral).to(u.s ** -1 * u.cm ** -2)
+    dNdA = (si * phi_integral).to(u.s**-1 * u.cm**-2)
 
     # int_dNdA += dNdA
 
     N = dNdA * area
 
     logger.debug("There would be {:.3g} neutrinos emitted.".format(N))
-    logger.debug("The energy range was assumed to be between {0} and {1}".format(
-        energy_PDF.integral_e_min, energy_PDF.integral_e_max
-    ))
+    logger.debug(
+        "The energy range was assumed to be between {0} and {1}".format(
+            energy_PDF.integral_e_min, energy_PDF.integral_e_max
+        )
+    )
     # Energy requires a 1/(1+z) factor
 
     zfactor = find_zfactor(lumdist)
-    etot = (si * area * e_integral).to(u.erg /u.s) * zfactor
+    etot = (si * area * e_integral).to(u.erg / u.s) * zfactor
 
     astro_res["Mean Luminosity (erg/s)"] = etot.value
 
@@ -89,7 +91,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue):
 
     logger.debug(
         "Assuming {0:.3g}% was transferred from CR to neutrinos, we would require a total CR luminosity of {1}".format(
-        100 * f_cr_to_nu, cr_e
+            100 * f_cr_to_nu, cr_e
         )
     )
 

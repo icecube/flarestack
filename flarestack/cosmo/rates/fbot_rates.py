@@ -3,8 +3,14 @@ from astropy import units as u
 from flarestack.cosmo.rates.sfr_rates import get_sfr_evolution
 
 local_fbot_rates = {
-    "ho_20_high": (7. * 10**-7./(u.Mpc**3 * u.yr), "https://arxiv.org/abs/2003.01222"),
-    "ho_20_low": (4. * 10**-7./(u.Mpc**3 * u.yr), "https://arxiv.org/abs/2003.01222"),
+    "ho_20_high": (
+        7.0 * 10**-7.0 / (u.Mpc**3 * u.yr),
+        "https://arxiv.org/abs/2003.01222",
+    ),
+    "ho_20_low": (
+        4.0 * 10**-7.0 / (u.Mpc**3 * u.yr),
+        "https://arxiv.org/abs/2003.01222",
+    ),
 }
 
 
@@ -21,15 +27,19 @@ def get_local_fbot_rate(rate_name=None, with_range=False):
         rate_name = "ho_20_high"
 
     if rate_name not in local_fbot_rates.keys():
-        raise Exception(f"Rate name '{rate_name}' not recognised. "
-                        f"The following source evolutions are available: {local_fbot_rates.keys()}")
+        raise Exception(
+            f"Rate name '{rate_name}' not recognised. "
+            f"The following source evolutions are available: {local_fbot_rates.keys()}"
+        )
     else:
         local_rate, ref = local_fbot_rates[rate_name]
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
     if with_range:
-        raise Exception(f"No one sigma rate range found for rate '{rate_name}'. "
-                        f"Use a different rate, or set 'with_range=False'.")
+        raise Exception(
+            f"No one sigma rate range found for rate '{rate_name}'. "
+            f"Use a different rate, or set 'with_range=False'."
+        )
 
     return local_rate.to("Mpc-3 yr-1")
 

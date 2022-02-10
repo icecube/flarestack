@@ -23,7 +23,7 @@ def load_catalogue(path):
         ("Name", "source_name"),
         ("Ref Time (MJD)", "ref_time_mjd"),
         ("Start Time (MJD)", "start_time_mjd"),
-        ("End Time (MJD)", "end_time_mjd")
+        ("End Time (MJD)", "end_time_mjd"),
     ]
 
     for (old_key, new_key) in maps:
@@ -37,28 +37,33 @@ def load_catalogue(path):
         base_weight = np.ones(len(sources))
 
         sources = append_fields(
-            sources, 'base_weight', base_weight,
-            usemask=False, dtypes=[float]
+            sources, "base_weight", base_weight, usemask=False, dtypes=[float]
         )
 
     # Check that ra and dec are really in radians!
 
-    if max(sources["ra_rad"]) > 2. * np.pi:
-        raise Exception("Sources have Right Ascension values greater than 2 "
-                        "pi. Are you sure you're not using degrees rather "
-                        "than radians?")
+    if max(sources["ra_rad"]) > 2.0 * np.pi:
+        raise Exception(
+            "Sources have Right Ascension values greater than 2 "
+            "pi. Are you sure you're not using degrees rather "
+            "than radians?"
+        )
 
-    if max(abs(sources["dec_rad"])) > np.pi/2.:
-        raise Exception("Sources have Declination values exceeding "
-                        "+/- pi/2. Are you sure you're not using degrees "
-                        "rather than radians?")
+    if max(abs(sources["dec_rad"])) > np.pi / 2.0:
+        raise Exception(
+            "Sources have Declination values exceeding "
+            "+/- pi/2. Are you sure you're not using degrees "
+            "rather than radians?"
+        )
 
     # Check that all sources have a unique name
 
     if len(set(sources["source_name"])) < len(sources["source_name"]):
 
-        raise Exception("Some sources in catalogue do not have unique "
-                        "names. Please assign unique names to each source.")
+        raise Exception(
+            "Some sources in catalogue do not have unique "
+            "names. Please assign unique names to each source."
+        )
 
     # Rescale 'base_weight'
     # sources["base_weight"] /= np.mean(sources["base_weight"])

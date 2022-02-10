@@ -9,19 +9,24 @@ import pickle as Pickle
 import scipy.optimize
 from flarestack.core.injector import read_injector_dict
 from flarestack.core.llh import LLH, generate_dynamic_flare_class, read_llh_dict
-from flarestack.shared import name_pickle_output_dir, \
-    inj_dir_name, plot_output_dir, scale_shortener, flux_to_k
+from flarestack.shared import (
+    name_pickle_output_dir,
+    inj_dir_name,
+    plot_output_dir,
+    scale_shortener,
+    flux_to_k,
+)
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize, ListedColormap
 import matplotlib as mpl
 from flarestack.core.time_pdf import TimePDF, Box, Steady
 from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
-from flarestack.utils.catalogue_loader import load_catalogue, \
-    calculate_source_weight
+from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
 
 logger = logging.getLogger(__name__)
+
 
 def time_smear(inj):
     inj_time = inj["injection_sig_time_pdf"]
@@ -43,37 +48,41 @@ def read_mh_dict(mh_dict):
     maps = [
         ("inj kwargs", "inj_dict"),
         ("datasets", "dataset"),
-        ("background TS", "background_ts")
+        ("background TS", "background_ts"),
     ]
 
     for (old_key, new_key) in maps:
 
         if old_key in list(mh_dict.keys()):
-            logger.warning("Deprecated mh_dict key '{0}' was used. Please use '{1}' in future.".format(
-                old_key, new_key))
+            logger.warning(
+                "Deprecated mh_dict key '{0}' was used. Please use '{1}' in future.".format(
+                    old_key, new_key
+                )
+            )
             mh_dict[new_key] = mh_dict[old_key]
 
     if "name" not in mh_dict.keys():
-        raise KeyError("mh_dict object is missing key 'name'."
-                       "This should be the unique save path for results.")
+        raise KeyError(
+            "mh_dict object is missing key 'name'."
+            "This should be the unique save path for results."
+        )
 
     elif mh_dict["name"][-1] != "/":
         mh_dict["name"] += "/"
 
-    pairs = [
-        ("inj_dict", read_injector_dict),
-        ("llh_dict", read_llh_dict)
-    ]
+    pairs = [("inj_dict", read_injector_dict), ("llh_dict", read_llh_dict)]
 
     for (key, f) in pairs:
         if key in list(mh_dict.keys()):
             mh_dict[key] = f(mh_dict[key])
 
     if np.logical_and("fixed_scale" in mh_dict.keys(), "n_steps" in mh_dict.keys()):
-        logger.warning(f"MinimisationHandler dictionary contained both 'fixed_scale' key for "
-                       f"set injection flux, and 'n_steps' key for stepped injection flux."
-                       f"Make sure you know what you are doing when using both of these options. "
-                       f"\n  mh_dict: \n {mh_dict}")
+        logger.warning(
+            f"MinimisationHandler dictionary contained both 'fixed_scale' key for "
+            f"set injection flux, and 'n_steps' key for stepped injection flux."
+            f"Make sure you know what you are doing when using both of these options. "
+            f"\n  mh_dict: \n {mh_dict}"
+        )
 
     return mh_dict
 
@@ -84,6 +93,7 @@ class MinimisationHandler(object):
     IceCube datasets, a list of sources, and independent sets of arguments for
     the injector and the likelihood.
     """
+
     subclasses = {}
 
     # Each MinimisationHandler must specify which LLH classes are compatible
@@ -132,11 +142,12 @@ class MinimisationHandler(object):
             logger.debug("Using independent injection dataset.")
 
             if self.inj_seasons.keys() != self.seasons.keys():
-                raise Exception("Key mismatch between injection and llh "
-                                "Season objects. Injection Seasons have "
-                                "keys:\n {0} \n and LLH Seasons have keys: \n"
-                                "{1}". format(self.inj_seasons.keys(),
-                                              self.seasons.keys()))
+                raise Exception(
+                    "Key mismatch between injection and llh "
+                    "Season objects. Injection Seasons have "
+                    "keys:\n {0} \n and LLH Seasons have keys: \n"
+                    "{1}".format(self.inj_seasons.keys(), self.seasons.keys())
+                )
 
         except KeyError:
             self.inj_seasons = self.seasons
@@ -147,9 +158,10 @@ class MinimisationHandler(object):
         # chosen LLH class
 
         if self.llh_dict["llh_name"] not in self.compatible_llh:
-            raise ValueError("Specified LLH ({}) is not compatible with "
-                             "selected MinimisationHandler".format(
-                              self.llh_dict["llh_name"]))
+            raise ValueError(
+                "Specified LLH ({}) is not compatible with "
+                "selected MinimisationHandler".format(self.llh_dict["llh_name"])
+            )
         else:
             logger.info("Using '{0}' LLH class".format(self.llh_dict["llh_name"]))
 
@@ -162,9 +174,11 @@ class MinimisationHandler(object):
             self.negative_n_s = False
 
         if self.negative_n_s and not self.compatible_negative_n_s:
-            raise ValueError("MinimisationHandler has been instructed to \n"
-                             "allow negative n_s, but this is not compatible \n"
-                             "with the selected MinimisationHandler.")
+            raise ValueError(
+                "MinimisationHandler has been instructed to \n"
+                "allow negative n_s, but this is not compatible \n"
+                "with the selected MinimisationHandler."
+            )
 
         # Sets up whether what pull corrector should be used (default is
         # none), and whether an angular error floor should be applied (
@@ -193,6 +207,7 @@ class MinimisationHandler(object):
         """Adds a new subclass of EnergyPDF, with class name equal to
         "energy_pdf_name".
         """
+
         def decorator(subclass):
             cls.subclasses[mh_name] = subclass
             return subclass
@@ -206,7 +221,7 @@ class MinimisationHandler(object):
         mh_name = mh_dict["mh_name"]
 
         if mh_name not in cls.subclasses:
-            raise ValueError('Bad MinimisationHandler name {}'.format(mh_name))
+            raise ValueError("Bad MinimisationHandler name {}".format(mh_name))
 
         return cls.subclasses[mh_name](mh_dict)
 
@@ -216,14 +231,14 @@ class MinimisationHandler(object):
         mh_name = mh_dict["mh_name"]
 
         if mh_name not in cls.subclasses:
-            raise ValueError('Bad MinimisationHandler name {}'.format(mh_name))
+            raise ValueError("Bad MinimisationHandler name {}".format(mh_name))
 
         return cls.subclasses[mh_name].return_parameter_info(mh_dict)
 
     def run_trial(self, full_dataset):
         pass
 
-    def run(self, n_trials, scale=1., seed=None):
+    def run(self, n_trials, scale=1.0, seed=None):
         pass
 
     @staticmethod
@@ -246,21 +261,21 @@ class MinimisationHandler(object):
         else:
             scale = mh_dict["scale"]
             steps = int(mh_dict["n_steps"])
-            background_ntrials_factor = mh_dict.get('background_ntrials_factor', 10)
+            background_ntrials_factor = mh_dict.get("background_ntrials_factor", 10)
             scale_range = np.array(
-                [0. for _ in range(background_ntrials_factor)] +
-                list(np.linspace(0., scale, steps)[1:])
+                [0.0 for _ in range(background_ntrials_factor)]
+                + list(np.linspace(0.0, scale, steps)[1:])
             )
 
         n_trials = int(mh_dict["n_trials"])
 
         return scale_range, n_trials
 
-    def iterate_run(self, scale=1., n_steps=5, n_trials=50):
+    def iterate_run(self, scale=1.0, n_steps=5, n_trials=50):
 
-        scale_range = np.linspace(0., scale, n_steps)[1:]
+        scale_range = np.linspace(0.0, scale, n_steps)[1:]
 
-        self.run(n_trials*10, scale=0.0)
+        self.run(n_trials * 10, scale=0.0)
 
         for scale in scale_range:
             self.run(n_trials, scale)
@@ -292,21 +307,27 @@ class MinimisationHandler(object):
     def get_injector(self, season_name):
 
         if season_name not in self._injectors.keys():
-            self._injectors[season_name] = self.add_injector(self.seasons[season_name], self.sources)
+            self._injectors[season_name] = self.add_injector(
+                self.seasons[season_name], self.sources
+            )
 
         return self._injectors[season_name]
 
     def add_angular_error_modifier(self, season):
         return BaseAngularErrorModifier.create(
-                season, self.llh_dict["llh_energy_pdf"], self.floor_name,
-                self.pull_name,
-                gamma_precision=self.llh_dict.get('gamma_precision', 'flarestack')
+            season,
+            self.llh_dict["llh_energy_pdf"],
+            self.floor_name,
+            self.pull_name,
+            gamma_precision=self.llh_dict.get("gamma_precision", "flarestack"),
         )
 
     def get_angular_error_modifier(self, season_name):
 
         if season_name not in self._aem.keys():
-            self._aem[season_name] = self.add_angular_error_modifier(self.seasons[season_name])
+            self._aem[season_name] = self.add_angular_error_modifier(
+                self.seasons[season_name]
+            )
 
         return self._aem[season_name]
 
@@ -322,11 +343,12 @@ class MinimisationHandler(object):
 
     def guess_discovery_potential(self):
         self.disc_guess = estimate_discovery_potential(
-            self.seasons, dict(self.inj_dict), self.sources, dict(self.llh_dict))
+            self.seasons, dict(self.inj_dict), self.sources, dict(self.llh_dict)
+        )
         return self.disc_guess
 
 
-@MinimisationHandler.register_subclass('fixed_weights')
+@MinimisationHandler.register_subclass("fixed_weights")
 class FixedWeightMinimisationHandler(MinimisationHandler):
     """Class to perform generic minimisations using a 'fixed weights' matrix.
     Sources are assigned intrinsic weights based on their assumed luminosity
@@ -335,8 +357,13 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     vary as a function of the parameters given in minimisation step.
     """
 
-    compatible_llh = ["spatial", "fixed_energy", "standard",
-                      "standard_overlapping", "standard_matrix"]
+    compatible_llh = [
+        "spatial",
+        "fixed_energy",
+        "standard",
+        "standard_overlapping",
+        "standard_matrix",
+    ]
     compatible_negative_n_s = True
 
     def __init__(self, mh_dict):
@@ -372,9 +399,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         """
 
         if self.name == " /":
-            logger.warning("No field 'name' was specified in mh_dict object. "
-                            "Cannot save results without a unique directory"
-                            " name being specified.")
+            logger.warning(
+                "No field 'name' was specified in mh_dict object. "
+                "Cannot save results without a unique directory"
+                " name being specified."
+            )
 
         else:
 
@@ -396,9 +425,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     def dump_injection_values(self, scale):
 
         if self.name == " /":
-            raise Exception("No field 'name' was specified in mh_dict object. "
-                            "Cannot save results without a unique directory"
-                            " name being specified.")
+            raise Exception(
+                "No field 'name' was specified in mh_dict object. "
+                "Cannot save results without a unique directory"
+                " name being specified."
+            )
 
         else:
 
@@ -428,16 +459,15 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         if self.brute:
 
-            brute_range = [
-                (max(x, -30), min(y, 30)) for (x, y) in self.bounds]
+            brute_range = [(max(x, -30), min(y, 30)) for (x, y) in self.bounds]
 
             start_seed = scipy.optimize.brute(
-                llh_f, ranges=brute_range, finish=None, Ns=40)
+                llh_f, ranges=brute_range, finish=None, Ns=40
+            )
         else:
             start_seed = self.p0
 
-        res = scipy.optimize.minimize(
-            llh_f, start_seed, bounds=self.bounds)
+        res = scipy.optimize.minimize(llh_f, start_seed, bounds=self.bounds)
 
         vals = res.x
         flag = res.status
@@ -448,12 +478,18 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             if Nparam > 40:
                 # brute force with more than 40 parameters is unfeasible
                 # try differential evolution
-                logger.warning(f"Minimize failed with {Nparam} parameters. Can not brute force!"
-                               f"Trying with differential evolution")
-                res = scipy.optimize.differential_evolution(llh_f, bounds=self.bounds, polish=True)
+                logger.warning(
+                    f"Minimize failed with {Nparam} parameters. Can not brute force!"
+                    f"Trying with differential evolution"
+                )
+                res = scipy.optimize.differential_evolution(
+                    llh_f, bounds=self.bounds, polish=True
+                )
 
                 if not res.success:
-                    raise ValueError(f"No success with differential evolution either: {res.message}")
+                    raise ValueError(
+                        f"No success with differential evolution either: {res.message}"
+                    )
                 logger.debug(f"success! {res.message}")
 
             else:
@@ -465,12 +501,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         if np.logical_and(not res.x[0] > 0.0, self.negative_n_s):
 
             bounds = list(self.bounds)
-            bounds[0] = (-1000., -0.)
+            bounds[0] = (-1000.0, -0.0)
             start_seed = list(self.p0)
-            start_seed[0] = -1.
+            start_seed[0] = -1.0
 
-            new_res = scipy.optimize.minimize(
-                llh_f, start_seed, bounds=bounds)
+            new_res = scipy.optimize.minimize(llh_f, start_seed, bounds=bounds)
 
             if new_res.status == 0:
                 res = new_res
@@ -493,7 +528,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             "Parameters": parameters,
             "TS": ts,
             "Flag": flag,
-            "f": llh_f
+            "f": llh_f,
         }
 
         return res_dict
@@ -514,9 +549,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         ts_vals.append(res_dict["TS"])
         flags.append(res_dict["Flag"])
 
-        mem_use = str(
-            float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.e6)
-        logger.debug('Memory usage max: {0} (Gb)'.format(mem_use))
+        mem_use = str(float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1.0e6)
+        logger.debug("Memory usage max: {0} (Gb)".format(mem_use))
 
         results = {
             "TS": ts_vals,
@@ -534,10 +568,10 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         full_dataset = self.prepare_dataset(scale, seed)
         return self.run_single(full_dataset, scale, seed)
 
-    def run(self, n_trials, scale=1., seed=None):
+    def run(self, n_trials, scale=1.0, seed=None):
 
         if seed is None:
-            seed = int(random.random() * 10 ** 8)
+            seed = int(random.random() * 10**8)
         np.random.seed(seed)
 
         # param_vals = [[] for x in self.p0]
@@ -570,10 +604,16 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         for (key, param) in sorted(param_vals.items()):
             if len(param) > 0:
-                logger.info("Parameter {0}: {1} {2} {3}".format(key, np.mean(param),
-                      np.median(param), np.std(param)))
-        logger.info("Test Statistic: {0} {1} {2}".format(np.mean(ts_vals),
-              np.median(ts_vals), np.std(ts_vals)))
+                logger.info(
+                    "Parameter {0}: {1} {2} {3}".format(
+                        key, np.mean(param), np.median(param), np.std(param)
+                    )
+                )
+        logger.info(
+            "Test Statistic: {0} {1} {2}".format(
+                np.mean(ts_vals), np.median(ts_vals), np.std(ts_vals)
+            )
+        )
 
         logger.info("FLAG STATISTICS:")
         for i in sorted(np.unique(flags)):
@@ -604,11 +644,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         source_weights = []
 
         for source in src:
-            time_weights.append(llh.sig_time_pdf.effective_injection_time(
-                source))
+            time_weights.append(llh.sig_time_pdf.effective_injection_time(source))
             acc.append(llh.acceptance(source, params))
-            source_weights.append(calculate_source_weight(source) /
-                                  weight_scale)
+            source_weights.append(calculate_source_weight(source) / weight_scale)
 
         time_weights = np.array(time_weights)
         source_weights = np.array(source_weights)
@@ -640,10 +678,10 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return weights_matrix
 
-    def prepare_dataset(self, scale=1., seed=None):
+    def prepare_dataset(self, scale=1.0, seed=None):
 
         if seed is None:
-            seed = int(random.random() * 10 ** 8)
+            seed = int(random.random() * 10**8)
         np.random.seed(seed)
 
         full_dataset = dict()
@@ -663,8 +701,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         for name in self.seasons:
             dataset = full_dataset[name]
             llh_f = self.get_likelihood(name).create_llh_function(
-                dataset, self.get_angular_error_modifier(name),
-                self.make_season_weight
+                dataset, self.get_angular_error_modifier(name), self.make_season_weight
             )
             llh_functions[name] = llh_f
             n_all[name] = len(dataset)
@@ -697,7 +734,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return f_final
 
-    def scan_likelihood(self, scale=0., scan_2d=False):
+    def scan_likelihood(self, scale=0.0, scan_2d=False):
         """Generic wrapper to perform a likelihood scan a background scramble
         with an injection of signal given by scale.
 
@@ -716,7 +753,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         # Scan 1D Likelihood
 
-        plt.figure(figsize=(8, 4 + 2*len(self.p0)))
+        plt.figure(figsize=(8, 4 + 2 * len(self.p0)))
 
         u_ranges = []
 
@@ -732,7 +769,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                 best[i] = bound[1]
 
-                while (g(best) > (min_llh + 5.0)):
+                while g(best) > (min_llh + 5.0):
                     best[i] *= factor
 
                 ur = min(bound[1], max(best[i], 0))
@@ -751,7 +788,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                 best[i] = n
 
-                new = g(best)/2.0
+                new = g(best) / 2.0
                 try:
                     y.append(new[0][0])
                 except IndexError:
@@ -791,15 +828,15 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 u_lim = max(n_range)
                 logger.info(f">{u_lim}")
 
-            ax.axvspan(l_lim, u_lim, facecolor="grey",
-                        alpha=0.2)
+            ax.axvspan(l_lim, u_lim, facecolor="grey", alpha=0.2)
             ax.set_ylim(bottom=0.0)
 
         path = plot_output_dir(self.name) + "llh_scan.pdf"
 
-        title = os.path.basename(
-                    os.path.dirname(self.name[:-1])
-                ).replace("_", " ") + " Likelihood Scans"
+        title = (
+            os.path.basename(os.path.dirname(self.name[:-1])).replace("_", " ")
+            + " Likelihood Scans"
+        )
 
         plt.suptitle(title, y=1.02)
 
@@ -838,13 +875,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 plt.xlabel(r"Spectral Index ($\gamma$)")
 
                 param_name = np.array(self.param_names)[mask][j]
-                ylabel = 'n$_{\mathrm{signal}}$' if param_name == 'n_s' else param_name
+                ylabel = "n$_{\mathrm{signal}}$" if param_name == "n_s" else param_name
                 plt.ylabel(ylabel)
 
                 y = np.linspace(
-                    float(max(bound[0], -100)),
-                    np.array(u_ranges)[index],
-                    int(1e2)
+                    float(max(bound[0], -100)), np.array(u_ranges)[index], int(1e2)
                 )
 
                 X, Y = np.meshgrid(x, y[::-1])
@@ -856,64 +891,85 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                     for n in y:
                         best[index] = n
-                        z_row.append((g(best) - g(res.x))/2.0)
+                        z_row.append((g(best) - g(res.x)) / 2.0)
 
                     Z.append(z_row[::-1])
 
                 Z = np.array(Z).T
 
-                levels = 0.5 * np.array([1.0, 2.0, 5.0])**2
+                levels = 0.5 * np.array([1.0, 2.0, 5.0]) ** 2
 
                 N = 2560
                 mmax = np.max(Z)
                 mmin = np.min(Z)
                 break_ind = int(round(N / (1 + mmax / abs(mmin))))
-                top = cm.get_cmap('gray')
-                bottom = cm.get_cmap('jet_r', N)
+                top = cm.get_cmap("gray")
+                bottom = cm.get_cmap("jet_r", N)
                 colorlist = np.empty((N, 4))
                 colorlist[break_ind:] = bottom(np.linspace(0, 1, N - break_ind))
                 colorlist[:break_ind] = top(np.linspace(1, 0, break_ind))
                 cmap = ListedColormap(colorlist)
                 norm = Normalize(vmin=mmin, vmax=mmax, clip=True)
 
-                plt.imshow(Z, aspect="auto", cmap=cmap, norm=norm,
-                           extent=(x[0], x[-1], y[0], y[-1]),
-                           interpolation='bilinear')
+                plt.imshow(
+                    Z,
+                    aspect="auto",
+                    cmap=cmap,
+                    norm=norm,
+                    extent=(x[0], x[-1], y[0], y[-1]),
+                    interpolation="bilinear",
+                )
 
                 cbar = plt.colorbar()
                 CS = ax.contour(X, Y, Z, levels=levels, colors="white")
 
                 fmt = {}
-                strs = [r'1$\sigma$', r'2$\sigma$', r'5$\sigma$']
+                strs = [r"1$\sigma$", r"2$\sigma$", r"5$\sigma$"]
                 for l, s in zip(CS.levels, strs):
                     fmt[l] = s
 
                 try:
-                    ax.clabel(CS, fmt=fmt, inline=1, fontsize=10, levels=levels,
-                              colors="white")
+                    ax.clabel(
+                        CS,
+                        fmt=fmt,
+                        inline=1,
+                        fontsize=10,
+                        levels=levels,
+                        colors="white",
+                    )
                 except TypeError:
-                    ax.clabel(CS, levels, fmt=fmt, inline=1, fontsize=10, #levels=levels,
-                              colors="white")
+                    ax.clabel(
+                        CS,
+                        levels,
+                        fmt=fmt,
+                        inline=1,
+                        fontsize=10,  # levels=levels,
+                        colors="white",
+                    )
 
                 ax.set_xlim((min(x), max(x)))
                 ax.set_ylim((min(y), max(y)))
 
-                cbar.set_label(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
-                               rotation=90)
+                cbar.set_label(
+                    r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$", rotation=90
+                )
 
-                path = plot_output_dir(self.name) + (param_name + "_")[4:] + \
-                       "contour_scan.pdf"
+                path = (
+                    plot_output_dir(self.name)
+                    + (param_name + "_")[4:]
+                    + "contour_scan.pdf"
+                )
 
-                title = os.path.basename(
-                    os.path.dirname(self.name[:-1])
-                ).replace("_", " ") + " Contour Scans"
+                title = (
+                    os.path.basename(os.path.dirname(self.name[:-1])).replace("_", " ")
+                    + " Contour Scans"
+                )
 
-                plt.scatter(res.x[gamma_index], res.x[index],  color="white",
-                            marker="*")
+                plt.scatter(res.x[gamma_index], res.x[index], color="white", marker="*")
 
                 plt.grid(color="white", linestyle="--", alpha=0.5)
 
-                #plt.suptitle(title)
+                # plt.suptitle(title)
                 plt.tight_layout()
                 plt.savefig(path)
                 plt.close()
@@ -924,12 +980,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     def neutrino_lightcurve(self, seed=None):
 
-        full_dataset = self.prepare_dataset(30., seed)
+        full_dataset = self.prepare_dataset(30.0, seed)
 
         for source in self.sources:
 
-            f, (ax0, ax1) = plt.subplots(1, 2,
-                                       gridspec_kw={'width_ratios': [19, 1]})
+            f, (ax0, ax1) = plt.subplots(1, 2, gridspec_kw={"width_ratios": [19, 1]})
 
             logE = []
             time = []
@@ -948,18 +1003,18 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                 t_mask = np.logical_and(
                     np.greater(
-                        spatial_coincident_data["time"],
-                        llh.sig_time_pdf.sig_t0(source)),
+                        spatial_coincident_data["time"], llh.sig_time_pdf.sig_t0(source)
+                    ),
                     np.less(
-                        spatial_coincident_data["time"],
-                        llh.sig_time_pdf.sig_t1(source))
+                        spatial_coincident_data["time"], llh.sig_time_pdf.sig_t1(source)
+                    ),
                 )
 
                 coincident_data = spatial_coincident_data[t_mask]
 
                 SoB = llh.estimate_significance(coincident_data, source)
 
-                mask = SoB > 1.
+                mask = SoB > 1.0
 
                 y = np.log10(SoB[mask])
 
@@ -971,15 +1026,24 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                 if llh.sig_time_pdf.sig_t0(source) > llh.sig_time_pdf.t0:
 
-                    ax0.axvline(llh.sig_time_pdf.sig_t0(source), color="k", linestyle="--", alpha=0.5)
+                    ax0.axvline(
+                        llh.sig_time_pdf.sig_t0(source),
+                        color="k",
+                        linestyle="--",
+                        alpha=0.5,
+                    )
 
                 if llh.sig_time_pdf.sig_t1(source) < llh.sig_time_pdf.t1:
 
-                    ax0.axvline(llh.sig_time_pdf.sig_t1(source), color="k", linestyle="--", alpha=0.5)
+                    ax0.axvline(
+                        llh.sig_time_pdf.sig_t1(source),
+                        color="k",
+                        linestyle="--",
+                        alpha=0.5,
+                    )
 
-            cmap = cm.get_cmap('jet')
-            norm = mpl.colors.Normalize(vmin=min(logE), vmax=max(logE),
-                                        clip=True)
+            cmap = cm.get_cmap("jet")
+            norm = mpl.colors.Normalize(vmin=min(logE), vmax=max(logE), clip=True)
             m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
             for i, val in enumerate(sig):
@@ -993,14 +1057,14 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                         params[f"t_start ({source['source_name']})"],
                         params[f"t_end ({source['source_name']})"],
                         facecolor="grey",
-                        alpha=0.2
+                        alpha=0.2,
                     )
             ax0.set_xlabel("Arrival Time (MJD)")
             ax0.set_ylabel("Log(Signal/Background)")
 
-            cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
-                                            norm=norm,
-                                            orientation='vertical')
+            cb1 = mpl.colorbar.ColorbarBase(
+                ax1, cmap=cmap, norm=norm, orientation="vertical"
+            )
             ax1.set_ylabel("Muon Energy Proxy (TeV)")
 
             ax0.set_ylim(bottom=0)
@@ -1020,31 +1084,27 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     @staticmethod
     def return_parameter_info(mh_dict):
-        params = [[1.], [(0, 1000.)], ["n_s"]]
+        params = [[1.0], [(0, 1000.0)], ["n_s"]]
 
         params = [
-            params[i] + x for i, x in enumerate(
-                LLH.get_parameters(mh_dict["llh_dict"])
-            )
+            params[i] + x for i, x in enumerate(LLH.get_parameters(mh_dict["llh_dict"]))
         ]
 
         return params[0], params[1], params[2]
 
     def return_injected_parameters(self, scale):
 
-        n_inj = 0.
+        n_inj = 0.0
         for season_name in self.seasons.keys():
             n_inj += np.sum(self.get_injector(season_name).n_exp["n_exp"] * scale)
 
-        inj_params = {
-            "n_s": n_inj
-        }
+        inj_params = {"n_s": n_inj}
         inj_params.update(LLH.get_injected_parameters(self.mh_dict))
 
         return inj_params
 
 
-@MinimisationHandler.register_subclass('large_catalogue')
+@MinimisationHandler.register_subclass("large_catalogue")
 class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
     """Class to perform generic minimisations using a 'fixed weights' matrix.
     However, unlike the 'fixed_weight' class, it is optimised for large
@@ -1059,22 +1119,29 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
         FixedWeightMinimisationHandler.__init__(self, mh_dict)
 
         if self.param_names != ["n_s", "gamma"]:
-            raise Exception("{0} parameters are given, when ['n_s','gamma']"
-                            "was expected".format(self.param_names))
+            raise Exception(
+                "{0} parameters are given, when ['n_s','gamma']"
+                "was expected".format(self.param_names)
+            )
 
     def add_injector(self, season, sources):
 
         if "injector_name" in self.inj_dict.keys():
-            if self.inj_dict["injector_name"] not in LargeCatalogueMinimisationHandler.compatible_injectors:
-                raise Exception(f"'{self.inj_dict['injector_name']}' was provided as injection_name. "
-                                f"Please use any of {LargeCatalogueMinimisationHandler.compatible_injectors}.")
+            if (
+                self.inj_dict["injector_name"]
+                not in LargeCatalogueMinimisationHandler.compatible_injectors
+            ):
+                raise Exception(
+                    f"'{self.inj_dict['injector_name']}' was provided as injection_name. "
+                    f"Please use any of {LargeCatalogueMinimisationHandler.compatible_injectors}."
+                )
         else:
             self.inj_dict["injector_name"] = "low_memory_injector"
 
         return season.make_injector(sources, **self.inj_dict)
 
 
-@MinimisationHandler.register_subclass('fit_weights')
+@MinimisationHandler.register_subclass("fit_weights")
 class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
     compatible_llh = ["spatial", "fixed_energy", "standard"]
     compatible_negative_n_s = False
@@ -1083,8 +1150,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         FixedWeightMinimisationHandler.__init__(self, mh_dict)
 
         if self.negative_n_s:
-            raise ValueError(
-                "Attempted to mix fitting weights with negative n_s.")
+            raise ValueError("Attempted to mix fitting weights with negative n_s.")
 
     def trial_function(self, full_dataset):
 
@@ -1094,8 +1160,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         for name in self.seasons:
             dataset = full_dataset[name]
             llh_f = self.get_likelihood(name).create_llh_function(
-                dataset, self.get_angular_error_modifier(name),
-                self.make_season_weight
+                dataset, self.get_angular_error_modifier(name), self.make_season_weight
             )
             llh_functions[name] = llh_f
             n_all[name] = len(dataset)
@@ -1133,16 +1198,13 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
     @staticmethod
     def return_parameter_info(mh_dict):
         sources = load_catalogue(mh_dict["catalogue"])
-        p0 = [1. for _ in sources]
-        bounds = [(0., 1000.) for _ in sources]
-        names = [FitWeightMinimisationHandler.source_param_name(x)
-                 for x in sources]
+        p0 = [1.0 for _ in sources]
+        bounds = [(0.0, 1000.0) for _ in sources]
+        names = [FitWeightMinimisationHandler.source_param_name(x) for x in sources]
         params = [p0, bounds, names]
 
         params = [
-            params[i] + x for i, x in enumerate(
-                LLH.get_parameters(mh_dict["llh_dict"])
-            )
+            params[i] + x for i, x in enumerate(LLH.get_parameters(mh_dict["llh_dict"]))
         ]
 
         return params[0], params[1], params[2]
@@ -1157,7 +1219,10 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             n_inj = 0
             for season_name in self.seasons.keys():
                 try:
-                    names = [x[0] for x in self.get_injector(season_name).n_exp["source_name"]]
+                    names = [
+                        x[0]
+                        for x in self.get_injector(season_name).n_exp["source_name"]
+                    ]
                     if isinstance(names[0], bytes):
                         names = [x.decode() for x in names]
 
@@ -1166,7 +1231,9 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
 
                     mask = np.array([x == name for x in names])
 
-                    n_inj += np.sum(self.get_injector(season_name).n_exp["n_exp"][mask] * scale)
+                    n_inj += np.sum(
+                        self.get_injector(season_name).n_exp["n_exp"][mask] * scale
+                    )
 
                 # If source not overlapping season, will not be in dict
                 except KeyError:
@@ -1201,11 +1268,13 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             #  + LLH would need to be tested first and probably modified.
 
             if np.sum([isinstance(tpdf, x) for x in [Box, Steady]]) == 0:
-                raise ValueError("Attempting to use a time PDF that is not a "
-                                 "Box or a Steady time PDF class. The flare "
-                                 "search method is only compatible with "
-                                 "time PDFs that are uniform over "
-                                 "fixed periods.")
+                raise ValueError(
+                    "Attempting to use a time PDF that is not a "
+                    "Box or a Steady time PDF class. The flare "
+                    "search method is only compatible with "
+                    "time PDFs that are uniform over "
+                    "fixed periods."
+                )
 
     def run_trial(self, full_dataset):
 
@@ -1213,14 +1282,9 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
         livetime_calcs = dict()
 
-        time_dict = {
-            "time_pdf_name": "custom_source_box"
-        }
+        time_dict = {"time_pdf_name": "custom_source_box"}
 
-        results = {
-            "Parameters": dict(),
-            "Flag": []
-        }
+        results = {"Parameters": dict(), "Flag": []}
 
         # Loop over each data season
 
@@ -1245,11 +1309,11 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                 t_mask = np.logical_and(
                     np.greater(
-                        spatial_coincident_data["time"],
-                        llh.sig_time_pdf.sig_t0(source)),
+                        spatial_coincident_data["time"], llh.sig_time_pdf.sig_t0(source)
+                    ),
                     np.less(
-                        spatial_coincident_data["time"],
-                        llh.sig_time_pdf.sig_t1(source))
+                        spatial_coincident_data["time"], llh.sig_time_pdf.sig_t1(source)
+                    ),
                 )
 
                 coincident_data = spatial_coincident_data[t_mask]
@@ -1264,17 +1328,14 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     if source_name not in list(datasets.keys()):
                         datasets[source_name] = dict()
 
-                    new_entry = {
-                        "season_name": season.season_name
-                    }
+                    new_entry = {"season_name": season.season_name}
                     new_entry["Coincident Data"] = coincident_data
                     new_entry["Start (MJD)"] = llh.sig_time_pdf.t0
                     new_entry["End (MJD)"] = llh.sig_time_pdf.t1
 
                     # Identify significant events (S/B > 1)
 
-                    significant = llh.find_significant_events(
-                        coincident_data, source)
+                    significant = llh.find_significant_events(coincident_data, source)
 
                     new_entry["Significant Times"] = significant["time"]
 
@@ -1289,8 +1350,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
         for (source, source_dict) in datasets.items():
 
             src = self.sources[self.sources["source_name"] == source][0]
-            p0, bounds, names = self.source_fit_parameter_info(self.mh_dict,
-                                                               src)
+            p0, bounds, names = self.source_fit_parameter_info(self.mh_dict, src)
 
             # Create a full list of all significant times
 
@@ -1310,9 +1370,11 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
             # Length of search window in livetime
 
-            search_window = np.sum([
-                self.get_likelihood(x).sig_time_pdf.effective_injection_time(src)
-                for x in self.seasons.keys()]
+            search_window = np.sum(
+                [
+                    self.get_likelihood(x).sig_time_pdf.effective_injection_time(src)
+                    for x in self.seasons.keys()
+                ]
             )
 
             # If a maximum flare length is specified, sets that here
@@ -1320,7 +1382,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             if "max_flare" in list(self.llh_dict["llh_sig_time_pdf"].keys()):
                 # Maximum flare given in days, here converted to seconds
                 max_flare = self.llh_dict["llh_sig_time_pdf"]["max_flare"] * (
-                        60 * 60 * 24
+                    60 * 60 * 24
                 )
             else:
                 max_flare = search_window
@@ -1362,12 +1424,14 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     dtype=[
                         ("start_time_mjd", float),
                         ("end_time_mjd", float),
-                    ]
+                    ],
                 )
 
-                flare_length = np.sum([
-                    time_pdf.effective_injection_time(flare_time)
-                    for time_pdf in livetime_calcs.values()]
+                flare_length = np.sum(
+                    [
+                        time_pdf.effective_injection_time(flare_time)
+                        for time_pdf in livetime_calcs.values()
+                    ]
                 )
 
                 # If the flare is between the minimum and maximum length
@@ -1376,7 +1440,6 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     continue
                 elif flare_length > max_flare:
                     continue
-
 
                 # Marginalisation term is length of flare in livetime
                 # divided by max flare length in livetime. Accounts
@@ -1393,10 +1456,17 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 # NUMBER OF NEUTRINOS IN THE SKY OVER THE
                 # ENTIRE SEARCH WINDOW)
 
-                n_all = np.sum([np.sum(~np.logical_or(
-                    np.less(data["time"], t_start),
-                    np.greater(data["time"], t_end)))
-                                for data in full_dataset.values()])
+                n_all = np.sum(
+                    [
+                        np.sum(
+                            ~np.logical_or(
+                                np.less(data["time"], t_start),
+                                np.greater(data["time"], t_end),
+                            )
+                        )
+                        for data in full_dataset.values()
+                    ]
+                )
 
                 llhs = dict()
 
@@ -1408,9 +1478,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     # Check that flare overlaps with season
 
-                    inj_time = llh.sig_time_pdf.effective_injection_time(
-                        flare_time
-                    )
+                    inj_time = llh.sig_time_pdf.effective_injection_time(flare_time)
 
                     if not inj_time > 0:
                         continue
@@ -1419,15 +1487,18 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     data = full_dataset[name]
 
-                    n_season = np.sum(~np.logical_or(
-                        np.less(data["time"], t_start),
-                        np.greater(data["time"], t_end)))
+                    n_season = np.sum(
+                        ~np.logical_or(
+                            np.less(data["time"], t_start),
+                            np.greater(data["time"], t_end),
+                        )
+                    )
 
                     # Removes non-coincident data
 
                     flare_veto = np.logical_or(
                         np.less(coincident_data["time"], t_start),
-                        np.greater(coincident_data["time"], t_end)
+                        np.greater(coincident_data["time"], t_end),
                     )
 
                     # Checks to make sure that there are
@@ -1442,13 +1513,17 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     # Creates the likelihood function for the flare
 
                     flare_f = llh.create_flare_llh_function(
-                        coincident_data, flare_veto, n_all, src, n_season,
-                        self.get_angular_error_modifier(season_dict["season_name"])
+                        coincident_data,
+                        flare_veto,
+                        n_all,
+                        src,
+                        n_season,
+                        self.get_angular_error_modifier(season_dict["season_name"]),
                     )
 
                     llhs[season_dict["season_name"]] = {
                         "f": flare_f,
-                        "flare length": flare_length
+                        "flare length": flare_length,
                     }
 
                 # From here, we have normal minimisation behaviour
@@ -1465,8 +1540,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                     return -ts
 
                 res = scipy.optimize.fmin_l_bfgs_b(
-                    f_final, p0, bounds=bounds,
-                    approx_grad=True)
+                    f_final, p0, bounds=bounds, approx_grad=True
+                )
 
                 all_res.append(res)
                 all_ts.append(-res[1])
@@ -1485,22 +1560,23 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 dtype=[
                     ("start_time_mjd", float),
                     ("end_time_mjd", float),
-                ]
+                ],
             )
 
-            best_length = np.sum([
-                time_pdf.effective_injection_time(best_time)
-                for time_pdf in livetime_calcs.values()]
+            best_length = np.sum(
+                [
+                    time_pdf.effective_injection_time(best_time)
+                    for time_pdf in livetime_calcs.values()
+                ]
             ) / (60 * 60 * 24)
 
-            best = [x for x in all_res[index][0]] + [
-                best_start, best_end, best_length
-            ]
+            best = [x for x in all_res[index][0]] + [best_start, best_end, best_length]
 
             p0, bounds, names = self.source_parameter_info(self.mh_dict, src)
 
-            names += [self.source_param_name(x, src)
-                      for x in ["t_start", "t_end", "length"]]
+            names += [
+                self.source_param_name(x, src) for x in ["t_start", "t_end", "length"]
+            ]
 
             for i, x in enumerate(best):
                 key = names[i]
@@ -1520,36 +1596,36 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
     def source_param_name(param, source):
         return param + " (" + str(source["source_name"]) + ")"
 
-
     @staticmethod
     def source_fit_parameter_info(mh_dict, source):
 
-        p0 = [1.]
-        bounds = [(0., 1000.)]
+        p0 = [1.0]
+        bounds = [(0.0, 1000.0)]
         names = [FlareMinimisationHandler.source_param_name("n_s", source)]
 
-        llh_p0, llh_bounds, llh_names = LLH.get_parameters(
-            mh_dict["llh_dict"])
+        llh_p0, llh_bounds, llh_names = LLH.get_parameters(mh_dict["llh_dict"])
 
         p0 += llh_p0
         bounds += llh_bounds
-        names += [FlareMinimisationHandler.source_param_name(x, source)
-                  for x in llh_names]
+        names += [
+            FlareMinimisationHandler.source_param_name(x, source) for x in llh_names
+        ]
 
         return p0, bounds, names
 
     @staticmethod
     def source_parameter_info(mh_dict, source):
 
-        p0, bounds, names = \
-            FlareMinimisationHandler.source_fit_parameter_info(
-                mh_dict, source
-            )
+        p0, bounds, names = FlareMinimisationHandler.source_fit_parameter_info(
+            mh_dict, source
+        )
 
         p0 += [np.nan for _ in range(3)]
-        bounds += [(np.nan, np.nan)for _ in range(3)]
-        names += [FlareMinimisationHandler.source_param_name(x, source)
-                  for x in ["t_start", "t_end", "length"]]
+        bounds += [(np.nan, np.nan) for _ in range(3)]
+        names += [
+            FlareMinimisationHandler.source_param_name(x, source)
+            for x in ["t_start", "t_end", "length"]
+        ]
 
         return p0, bounds, names
 
@@ -1558,9 +1634,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
         p0, bounds, names = [], [], []
         sources = load_catalogue(mh_dict["catalogue"])
         for source in sources:
-            res = FlareMinimisationHandler.source_parameter_info(
-                mh_dict, source
-            )
+            res = FlareMinimisationHandler.source_parameter_info(mh_dict, source)
 
             for i, x in enumerate(res):
                 [p0, bounds, names][i] += x
@@ -1580,7 +1654,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                 try:
 
-                    names = [x[0] for x in self.get_injector(season_name).n_exp["source_name"]]
+                    names = [
+                        x[0]
+                        for x in self.get_injector(season_name).n_exp["source_name"]
+                    ]
 
                     if isinstance(names[0], bytes):
                         names = [x.decode() for x in names]
@@ -1590,7 +1667,9 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     mask = np.array([x == name for x in names])
 
-                    n_inj += np.sum(self.get_injector(season_name).n_exp["n_exp"][mask] * scale)
+                    n_inj += np.sum(
+                        self.get_injector(season_name).n_exp["n_exp"][mask] * scale
+                    )
 
                 # If source not overlapping season, will not be in dict
                 except KeyError:
@@ -1598,10 +1677,18 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
             inj_params[key] = n_inj
 
-            ts = min([self.get_injector(season_name).sig_time_pdf.sig_t0(source)
-                      for season_name in self.seasons.keys()])
-            te = max([self.get_injector(season_name).sig_time_pdf.sig_t1(source)
-                      for season_name in self.seasons.keys()])
+            ts = min(
+                [
+                    self.get_injector(season_name).sig_time_pdf.sig_t0(source)
+                    for season_name in self.seasons.keys()
+                ]
+            )
+            te = max(
+                [
+                    self.get_injector(season_name).sig_time_pdf.sig_t1(source)
+                    for season_name in self.seasons.keys()
+                ]
+            )
 
             inj_params[self.source_param_name("length", source)] = te - ts
 
@@ -1612,8 +1699,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                 inj_params[self.source_param_name("t_start", source)] = ts
                 inj_params[self.source_param_name("t_end", source)] = te
 
-            for (key, val) in LLH.get_injected_parameters(
-                    self.mh_dict).items():
+            for (key, val) in LLH.get_injected_parameters(self.mh_dict).items():
                 inj_params[self.source_param_name(key, source)] = val
 
         return inj_params
@@ -1621,7 +1707,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
     def add_likelihood(self, season):
         return generate_dynamic_flare_class(season, self.sources, self.llh_dict)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     from multiprocessing import Pool
 
     parser = argparse.ArgumentParser()

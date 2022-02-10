@@ -19,7 +19,6 @@ print(eff_a["neutrino_energy.npy"])
 print(eff_a["cos_zenith.npy"])
 
 
-
 # class IceCubeBackgroundFluxModel:
 #
 #     def __init__(self):
@@ -90,9 +89,6 @@ print(eff_a["cos_zenith.npy"])
 #     "energy_pdf_name": "PowerLaw",
 #     "gamma": 3.7
 # }
-
-
-
 
 
 # class SimCubeSeason(SimSeason):

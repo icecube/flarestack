@@ -57,8 +57,11 @@ Path to local copy of point source tracks, downloaded on 24/04/18 from
       MC File    IC86-2014_corrected_MC_v2.npy
 
 """
-from flarestack.data.icecube.ic_season import IceCubeDataset, \
-    IceCubeSeason, icecube_dataset_dir
+from flarestack.data.icecube.ic_season import (
+    IceCubeDataset,
+    IceCubeSeason,
+    icecube_dataset_dir,
+)
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 import numpy as np
 import copy
@@ -76,7 +79,7 @@ ic40 = IceCubeSeason(
     mc_path=ps_data_dir + "IC40_corrected_MC.npy",
     grl_path=ps_data_dir + "IC40_GRL.npy",
     sin_dec_bins=get_ps_binning("IC40")[0],
-    log_e_bins=get_ps_binning("IC40")[1]
+    log_e_bins=get_ps_binning("IC40")[1],
 )
 
 ps_v002_p01.add_season(ic40)
@@ -89,7 +92,7 @@ ic59 = IceCubeSeason(
     mc_path=ps_data_dir + "IC59_corrected_MC.npy",
     grl_path=ps_data_dir + "IC59_GRL.npy",
     sin_dec_bins=get_ps_binning("IC59")[0],
-    log_e_bins=get_ps_binning("IC59")[1]
+    log_e_bins=get_ps_binning("IC59")[1],
 )
 
 ps_v002_p01.add_season(ic59)
@@ -101,11 +104,11 @@ ic79 = IceCubeSeason(
     mc_path=ps_data_dir + "IC79b_corrected_MC.npy",
     grl_path=ps_data_dir + "IC79b_GRL.npy",
     sin_dec_bins=get_ps_binning("IC79")[0],
-    log_e_bins=get_ps_binning("IC79")[1]
+    log_e_bins=get_ps_binning("IC79")[1],
 )
 ps_v002_p01.add_season(ic79)
 
-boundary = np.sin(np.radians(-5.))  # North/South transition boundary
+boundary = np.sin(np.radians(-5.0))  # North/South transition boundary
 
 ic86_1 = IceCubeSeason(
     season_name="IC86_1",
@@ -114,7 +117,7 @@ ic86_1 = IceCubeSeason(
     mc_path=ps_data_dir + "IC86_corrected_MC.npy",
     grl_path=ps_data_dir + "IC86_GRL.npy",
     sin_dec_bins=get_ps_binning("IC86_2011")[0],
-    log_e_bins=get_ps_binning("IC86_2011")[1]
+    log_e_bins=get_ps_binning("IC86_2011")[1],
 )
 
 ps_v002_p01.add_season(ic86_1)
@@ -130,7 +133,7 @@ for i in range(2, 5):
         mc_path=ps_data_dir + "IC86-2012_corrected_MC_v2.npy",
         grl_path=ps_data_dir + "IC86-201{0}_GRL.npy".format(i),
         sin_dec_bins=get_ps_binning("IC86_2012")[0],
-        log_e_bins=get_ps_binning("IC86_2012")[1]
+        log_e_bins=get_ps_binning("IC86_2012")[1],
     )
     ps_v002_p01.add_subseason(ic86_i)
 
@@ -140,16 +143,16 @@ ic86_234 = IceCubeSeason(
     exp_path=[
         ps_data_dir + "IC86-2012_exp_v2.npy",
         ps_data_dir + "IC86-2013_exp_v2.npy",
-        ps_data_dir + "IC86-2014_exp_v2.npy"
+        ps_data_dir + "IC86-2014_exp_v2.npy",
     ],
     mc_path=ps_data_dir + "IC86-2012_corrected_MC_v2.npy",
     grl_path=[
         ps_data_dir + "IC86-2012_GRL.npy",
         ps_data_dir + "IC86-2013_GRL.npy",
-        ps_data_dir + "IC86-2014_GRL.npy"
+        ps_data_dir + "IC86-2014_GRL.npy",
     ],
     sin_dec_bins=get_ps_binning("IC86_2012")[0],
-    log_e_bins=get_ps_binning("IC86_2012")[1]
+    log_e_bins=get_ps_binning("IC86_2012")[1],
 )
 
 ps_v002_p01.add_season(ic86_234)
@@ -166,4 +169,3 @@ for i, season_name in enumerate(["IC79", "IC86_1", "IC86_2"]):
     season.sample_name = "all_sky_3_year_mc"
 
     ps_3_systematic_set.add_season(season)
-

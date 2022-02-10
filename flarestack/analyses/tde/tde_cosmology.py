@@ -5,8 +5,12 @@ import matplotlib.pyplot as plt
 from flarestack.shared import plot_output_dir
 import numpy as np
 import os
-from flarestack.misc.convert_diffuse_flux_contour import contour_95, \
-    upper_contour, lower_contour, global_fit_e_range
+from flarestack.misc.convert_diffuse_flux_contour import (
+    contour_95,
+    upper_contour,
+    lower_contour,
+    global_fit_e_range,
+)
 from flarestack.utils.neutrino_cosmology import get_diffuse_flux_at_1GeV
 from flarestack.analyses.tde.shared_TDE import tde_cat_limit
 
@@ -26,9 +30,11 @@ eta = -2
 
 def raw_tde_evolution(z):
     """https://arxiv.org/abs/1509.01592"""
-    evolution = ((1 + z)**(0.2 * eta) + ((1 + z)/1.43)**(-3.2 * eta) +
-                 ((1 + z)/2.66)**(-7 * eta)
-                 )**(1./eta)
+    evolution = (
+        (1 + z) ** (0.2 * eta)
+        + ((1 + z) / 1.43) ** (-3.2 * eta)
+        + ((1 + z) / 2.66) ** (-7 * eta)
+    ) ** (1.0 / eta)
     return evolution
 
 
@@ -41,7 +47,6 @@ def normed_tde_evolution(z):
     :return: Normalised scaling of density with redshift
     """
     return raw_tde_evolution(z) / raw_tde_evolution(0.0)
-
 
 
 def tde_rate(z):
@@ -85,9 +90,9 @@ for (name, energy, key) in res:
 
         rate_key = ["(Observed Rate)", "(Theoretical Rate)"][i]
 
-        class_dict[rate_key] = calculate_transient_cosmology(e_pdf_dict, rate,
-                                                             name + "TDEs",
-                                                             zmax=6.0, diffuse_fit="Joint")
+        class_dict[rate_key] = calculate_transient_cosmology(
+            e_pdf_dict, rate, name + "TDEs", zmax=6.0, diffuse_fit="Joint"
+        )
 
     norms[key] = class_dict
 
@@ -104,13 +109,14 @@ def biehl_jetted_rate(z):
     :param z: Redshift
     :return: Jetted TDE rate
     """
-    rate = 0.1 * (1 + z)**jetted_m / (u.Gpc**3 * u.yr)
+    rate = 0.1 * (1 + z) ** jetted_m / (u.Gpc**3 * u.yr)
     return rate.to("Mpc-3 yr-1")
 
 
 def standard_jetted_rate(z):
     """Rate taken from appendix of https://arxiv.org/pdf/1706.00391"""
     return (normed_tde_evolution(z) * 3 * 10**-11) / (u.Mpc**3 * u.yr)
+
 
 #
 norms["Jetted TDEs"] = dict()
@@ -120,10 +126,9 @@ e_pdf_dict["Source Energy (erg)"] = tde_cat_limit("jetted", 2.5) * u.erg
 # for i, rate in enumerate([standard_jetted_rate, biehl_jetted_rate]):
 for i, rate in enumerate([standard_jetted_rate]):
     rate_key = ["(Observed Rate)", "(Theoretical Rate)"][i]
-    norms["Jetted TDEs"][rate_key] = calculate_transient_cosmology(e_pdf_dict,
-                                                                   rate,
-                                               "jetted TDEs", zmax=2.5,
-                                                                   diffuse_fit="Joint")
+    norms["Jetted TDEs"][rate_key] = calculate_transient_cosmology(
+        e_pdf_dict, rate, "jetted TDEs", zmax=2.5, diffuse_fit="Joint"
+    )
 
 
 base_dir = plot_output_dir("analyses/tde/")
@@ -137,7 +142,7 @@ except OSError:
 
 
 def z(energy, norm):
-    return norm * energy ** -0.5
+    return norm * energy**-0.5
 
 
 plt.figure()
@@ -146,33 +151,37 @@ plt.figure()
 
 plt.fill_between(
     global_fit_e_range,
-    global_fit_e_range ** 2 * upper_contour(global_fit_e_range, contour_95),
-    global_fit_e_range ** 2 * lower_contour(global_fit_e_range, contour_95),
-    color="k", label='IceCube diffuse flux\nApJ 809, 2015',
-    alpha=.5,
+    global_fit_e_range**2 * upper_contour(global_fit_e_range, contour_95),
+    global_fit_e_range**2 * lower_contour(global_fit_e_range, contour_95),
+    color="k",
+    label="IceCube diffuse flux\nApJ 809, 2015",
+    alpha=0.5,
 )
 
 diffuse_norm, diffuse_gamma = get_diffuse_flux_at_1GeV()
 
 
-plt.plot(global_fit_e_range,
-         diffuse_norm * global_fit_e_range**(2. - diffuse_gamma),
-         color="k")
+plt.plot(
+    global_fit_e_range,
+    diffuse_norm * global_fit_e_range ** (2.0 - diffuse_gamma),
+    color="k",
+)
 
-linestyles = {
-    "(Observed Rate)": "-",
-    "(Theoretical Rate)": ":"
-}
+linestyles = {"(Observed Rate)": "-", "(Theoretical Rate)": ":"}
 
 
 for i, (name, res_dict) in enumerate(norms.items()):
     # plt.plot(e_range, z(e_range, norm), label=name)
     for (rate, norm) in res_dict.items():
-        plt.errorbar(e_range, z(e_range, norm).value,
-                     yerr=.25 * np.array([x.value for x in z(e_range, norm)]),
-                     uplims=True, label=name,
-                     linestyle = linestyles[rate],
-                     color=["blue", "orange"][i])
+        plt.errorbar(
+            e_range,
+            z(e_range, norm).value,
+            yerr=0.25 * np.array([x.value for x in z(e_range, norm)]),
+            uplims=True,
+            label=name,
+            linestyle=linestyles[rate],
+            color=["blue", "orange"][i],
+        )
 
 plt.yscale("log")
 plt.xscale("log")
@@ -189,5 +198,3 @@ plt.close()
 #                     "jetted TDEs (biehl)", zmax=2.5,
 #                     # diffuse_fit="Northern Tracks"
 #                     )
-
-

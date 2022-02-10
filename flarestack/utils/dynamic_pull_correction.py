@@ -14,8 +14,7 @@ def get_mc(floor_dict):
 
 
 def get_pulls(mc):
-    x = np.degrees(angular_distance(
-        mc["ra"], mc["dec"], mc["trueRa"], mc["trueDec"]))
+    x = np.degrees(angular_distance(mc["ra"], mc["dec"], mc["trueRa"], mc["trueDec"]))
     y = np.degrees(mc["sigma"]) * 1.177
     return x / y
 
@@ -47,7 +46,8 @@ def create_quantile_floor_0d(floor_dict):
     weights = e_pdf.weight_mc(mc)
 
     quantile_floor = weighted_quantile(
-        mc["raw_sigma"], floor_dict["floor_quantile"], weights)
+        mc["raw_sigma"], floor_dict["floor_quantile"], weights
+    )
 
     save_path = floor_pickle(floor_dict)
 
@@ -64,9 +64,11 @@ def create_quantile_floor_0d_e(floor_dict):
     default, bounds, name = e_pdf.return_energy_parameters()
 
     if len(name) != 1:
-        raise Exception("Trying to scan just one energy parameter, "
-                        "but selected energy pdf gave the following parameters:"
-                        " {} {} {}".format(name, default, bounds))
+        raise Exception(
+            "Trying to scan just one energy parameter, "
+            "but selected energy pdf gave the following parameters:"
+            " {} {} {}".format(name, default, bounds)
+        )
 
     x_range = np.linspace(bounds[0][0], bounds[0][1], n_step)
     y_range = []
@@ -74,7 +76,8 @@ def create_quantile_floor_0d_e(floor_dict):
     for x in x_range:
         weights = e_pdf.weight_mc(mc, x)
         quantile_floor = weighted_quantile(
-            mc["raw_sigma"], floor_dict["floor_quantile"], weights)
+            mc["raw_sigma"], floor_dict["floor_quantile"], weights
+        )
         y_range.append(quantile_floor)
 
     y_range = np.array(y_range)
@@ -102,23 +105,21 @@ def create_quantile_floor_1d(floor_dict):
     e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
     weights = e_pdf.weight_mc(mc)
 
-    bins = np.linspace(2., 6., 30)
+    bins = np.linspace(2.0, 6.0, 30)
 
     x_range = 0.5 * (bins[1:] + bins[:-1])
     y_range = []
 
     for j, lower in enumerate(bins[:-1]):
         upper = bins[j + 1]
-        mask = np.logical_and(
-            mc["logE"] >= lower,
-            mc["logE"] < upper
-        )
+        mask = np.logical_and(mc["logE"] >= lower, mc["logE"] < upper)
         quantile_floor = weighted_quantile(
-            mc["raw_sigma"][mask], floor_dict["floor_quantile"], weights[mask])
+            mc["raw_sigma"][mask], floor_dict["floor_quantile"], weights[mask]
+        )
 
         y_range.append(quantile_floor)
 
-    x_range = np.array([0.] + list(x_range) + [10.])
+    x_range = np.array([0.0] + list(x_range) + [10.0])
     y_range = np.array([y_range[0]] + list(y_range) + [y_range[-1]])
 
     save_path = floor_pickle(floor_dict)
@@ -144,22 +145,21 @@ def create_quantile_floor_1d_e(floor_dict):
     default, bounds, name = e_pdf.return_energy_parameters()
 
     if name != ["gamma"]:
-        raise Exception("Trying to scan gamma parameter, "
-                        "but selected energy pdf gave the following parameters:"
-                        " {} {} {}".format(name, default, bounds))
+        raise Exception(
+            "Trying to scan gamma parameter, "
+            "but selected energy pdf gave the following parameters:"
+            " {} {} {}".format(name, default, bounds)
+        )
 
     e_range = np.linspace(bounds[0][0], bounds[0][1], n_step)
 
-    bins = np.linspace(2., 6., 20)
+    bins = np.linspace(2.0, 6.0, 20)
 
     z_range = []
 
     for j, lower in enumerate(bins[:-1]):
         upper = bins[j + 1]
-        mask = np.logical_and(
-            mc["logE"] >= lower,
-            mc["logE"] < upper
-        )
+        mask = np.logical_and(mc["logE"] >= lower, mc["logE"] < upper)
 
         cut_mc = mc[mask]
 
@@ -169,14 +169,15 @@ def create_quantile_floor_1d_e(floor_dict):
             weights = e_pdf.weight_mc(cut_mc, e)
 
             quantile_floor = weighted_quantile(
-                cut_mc["raw_sigma"], floor_dict["floor_quantile"], weights)
+                cut_mc["raw_sigma"], floor_dict["floor_quantile"], weights
+            )
 
             vals.append(quantile_floor)
 
         z_range.append(vals)
 
     x_range = 0.5 * (bins[1:] + bins[:-1])
-    x_range = np.array([0.] + list(x_range) + [10.])
+    x_range = np.array([0.0] + list(x_range) + [10.0])
 
     z_range = np.array([z_range[0]] + z_range + [z_range[-1]])
 
@@ -190,8 +191,8 @@ def create_quantile_floor_1d_e(floor_dict):
     from scipy.interpolate import RectBivariateSpline
 
     spline = RectBivariateSpline(
-        x_range, e_range, np.log(np.degrees(z_range)),
-        kx=1, ky=1, s=0)
+        x_range, e_range, np.log(np.degrees(z_range)), kx=1, ky=1, s=0
+    )
 
     Z = []
     for x in x_range:
@@ -203,7 +204,12 @@ def create_quantile_floor_1d_e(floor_dict):
     ax = plt.subplot(111)
     X, Y = np.meshgrid(x_range, e_range)
     # cbar = ax.pcolor(X, Y, np.log(np.degrees(z_range.T)), cmap="viridis", )
-    cbar = ax.pcolor(X, Y, Z.T, cmap="viridis", )
+    cbar = ax.pcolor(
+        X,
+        Y,
+        Z.T,
+        cmap="viridis",
+    )
     plt.colorbar(cbar, label="Log(Angular Error Floor/deg)")
     plt.ylabel(name[0])
     plt.xlabel("Log(Energy proxy)")
@@ -216,25 +222,28 @@ def create_pull_0d_e(pull_dict):
     pulls = get_pulls(mc)
     e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
     # gamma_precision = pull_dict.get('gamma_precision', 'flarestack')
-    gamma_precision = pull_dict['gamma_precision']
+    gamma_precision = pull_dict["gamma_precision"]
 
     default, bounds, name = e_pdf.return_energy_parameters()
 
     if name != ["gamma"]:
-        raise Exception("Trying to scan gamma parameter, "
-                        "but selected energy pdf gave the following parameters:"
-                        " {} {} {}".format(name, default, bounds))
+        raise Exception(
+            "Trying to scan gamma parameter, "
+            "but selected energy pdf gave the following parameters:"
+            " {} {} {}".format(name, default, bounds)
+        )
 
     res_dict = dict()
 
-    x_range = np.array(sorted(list(get_gamma_support_points(precision=gamma_precision))))
+    x_range = np.array(
+        sorted(list(get_gamma_support_points(precision=gamma_precision)))
+    )
 
     y_range = []
 
     for x in x_range:
         weights = e_pdf.weight_mc(mc, x)
-        median_pull = weighted_quantile(
-            pulls, 0.5, weights)
+        median_pull = weighted_quantile(pulls, 0.5, weights)
         y_range.append(median_pull)
         res_dict[x] = np.log(median_pull)
 
@@ -259,29 +268,24 @@ def create_pull_0d_e(pull_dict):
     print("Saved to", save_path)
 
 
-
 def create_pull_1d(pull_dict):
     mc = get_mc(pull_dict)
     pulls = get_pulls(mc)
     e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
     weights = e_pdf.weight_mc(mc)
 
-    bins = np.linspace(2., 6., n_ebins)
+    bins = np.linspace(2.0, 6.0, n_ebins)
 
     x_range = 0.5 * (bins[1:] + bins[:-1])
     y_range = []
 
     for j, lower in enumerate(bins[:-1]):
         upper = bins[j + 1]
-        mask = np.logical_and(
-            mc["logE"] >= lower,
-            mc["logE"] < upper
-        )
-        median_pull = weighted_quantile(
-            pulls[mask], 0.5, weights[mask])
+        mask = np.logical_and(mc["logE"] >= lower, mc["logE"] < upper)
+        median_pull = weighted_quantile(pulls[mask], 0.5, weights[mask])
         y_range.append(median_pull)
 
-    x_range = np.array([0.] + list(x_range) + [10.])
+    x_range = np.array([0.0] + list(x_range) + [10.0])
     y_range = np.array([y_range[0]] + list(y_range) + [y_range[-1]])
 
     save_path = pull_pickle(pull_dict)
@@ -309,20 +313,24 @@ def create_pull_1d_e(floor_dict):
     mc = get_mc(floor_dict)
     pulls = get_pulls(mc)
     e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
-    gamma_precision = floor_dict.get('gamma_precision', 'flarestack')
+    gamma_precision = floor_dict.get("gamma_precision", "flarestack")
 
     default, bounds, name = e_pdf.return_energy_parameters()
 
     if name != ["gamma"]:
-        raise Exception("Trying to scan gamma parameter, "
-                        "but selected energy pdf gave the following parameters:"
-                        " {} {} {}".format(name, default, bounds))
+        raise Exception(
+            "Trying to scan gamma parameter, "
+            "but selected energy pdf gave the following parameters:"
+            " {} {} {}".format(name, default, bounds)
+        )
 
-    e_range = np.array(sorted(list(get_gamma_support_points(precision=gamma_precision))))
+    e_range = np.array(
+        sorted(list(get_gamma_support_points(precision=gamma_precision)))
+    )
 
-    bins = np.linspace(2., 6., 5)
+    bins = np.linspace(2.0, 6.0, 5)
     x_range = 0.5 * (bins[1:] + bins[:-1])
-    x_range = np.array([0.] + list(x_range) + [10.])
+    x_range = np.array([0.0] + list(x_range) + [10.0])
 
     res_dict = dict()
 
@@ -335,13 +343,9 @@ def create_pull_1d_e(floor_dict):
 
         for j, lower in enumerate(bins[:-1]):
             upper = bins[j + 1]
-            mask = np.logical_and(
-                mc["logE"] >= lower,
-                mc["logE"] < upper
-            )
+            mask = np.logical_and(mc["logE"] >= lower, mc["logE"] < upper)
 
-            median_pull = weighted_quantile(
-                pulls[mask], 0.5, weights[mask])
+            median_pull = weighted_quantile(pulls[mask], 0.5, weights[mask])
 
             vals.append(median_pull)
 
@@ -369,13 +373,13 @@ def create_pull_1d_e(floor_dict):
     ax = plt.subplot(111)
     X, Y = np.meshgrid(x_range, e_range)
     # cbar = ax.pcolor(X, Y, np.log(np.degrees(z_range.T)), cmap="viridis", )
-    cbar = ax.pcolor(X, Y, np.log(z_range), cmap="seismic",
-                     vmax=1.0, vmin=-1.0)
+    cbar = ax.pcolor(X, Y, np.log(z_range), cmap="seismic", vmax=1.0, vmin=-1.0)
     plt.colorbar(cbar, label="Log(Median Pull)")
     plt.ylabel(name[0])
     plt.xlabel("Log(Energy proxy)")
     plt.savefig(plot_path)
     plt.close()
+
 
 def create_pull_2d(pull_dict):
     mc = get_mc(pull_dict)
@@ -383,7 +387,7 @@ def create_pull_2d(pull_dict):
     e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
     weights = e_pdf.weight_mc(mc)
 
-    x_bins = np.linspace(2., 6., n_ebins)
+    x_bins = np.linspace(2.0, 6.0, n_ebins)
     ymax = pull_dict["season"]["sinDec bins"][-1]
     ymin = pull_dict["season"]["sinDec bins"][0]
     # y_bins = np.linspace(ymin, ymax, 41)
@@ -395,22 +399,19 @@ def create_pull_2d(pull_dict):
 
     for j, lower in enumerate(x_bins[:-1]):
         upper = x_bins[j + 1]
-        mask = np.logical_and(
-            mc["logE"] >= lower,
-            mc["logE"] < upper
-        )
+        mask = np.logical_and(mc["logE"] >= lower, mc["logE"] < upper)
 
         cut_mc = mc[mask]
 
         for k, lower_dec in enumerate(y_bins[:-1]):
             upper_dec = y_bins[k + 1]
             bin_mask = np.logical_and(
-                cut_mc["sinDec"] >= lower_dec,
-                cut_mc["sinDec"] < upper_dec
+                cut_mc["sinDec"] >= lower_dec, cut_mc["sinDec"] < upper_dec
             )
 
             median_pull = weighted_quantile(
-                pulls[mask][bin_mask], 0.5, weights[mask][bin_mask])
+                pulls[mask][bin_mask], 0.5, weights[mask][bin_mask]
+            )
 
             z_range[j][k] = np.log(median_pull)
 
@@ -430,13 +431,13 @@ def create_pull_2d(pull_dict):
 
     ax = plt.subplot(111)
     X, Y = np.meshgrid(x_bins, y_bins)
-    cbar = ax.pcolor(X, Y, z_range.T, cmap="seismic",
-                     vmax=1.0, vmin=-1.0)
+    cbar = ax.pcolor(X, Y, z_range.T, cmap="seismic", vmax=1.0, vmin=-1.0)
     plt.colorbar(cbar, label="Log(Median Pull)")
     plt.ylabel(r"$\sin(\delta)$")
     plt.xlabel("Log(Energy proxy)")
     plt.savefig(plot_path)
     plt.close()
+
 
 def create_pull_2d_e(pull_dict):
     save_path = pull_pickle(pull_dict)
@@ -450,9 +451,9 @@ def create_pull_2d_e(pull_dict):
     mc = get_mc(pull_dict)
     pulls = get_pulls(mc)
     e_pdf = EnergyPDF.create(pull_dict["e_pdf_dict"])
-    gamma_precision = pull_dict.get('gamma_precision', 'flarestack')
+    gamma_precision = pull_dict.get("gamma_precision", "flarestack")
 
-    x_bins = np.linspace(2., 6., n_ebins)
+    x_bins = np.linspace(2.0, 6.0, n_ebins)
     ymax = pull_dict["season"]["sinDec bins"][-1]
     ymin = pull_dict["season"]["sinDec bins"][0]
     y_bins = np.linspace(ymin, ymax, 11)
@@ -462,7 +463,9 @@ def create_pull_2d_e(pull_dict):
 
     res_dict = dict()
 
-    e_range = np.array(sorted(list(get_gamma_support_points(precision=gamma_precision))))
+    e_range = np.array(
+        sorted(list(get_gamma_support_points(precision=gamma_precision)))
+    )
 
     for e in e_range:
 
@@ -472,22 +475,19 @@ def create_pull_2d_e(pull_dict):
 
         for j, lower in enumerate(x_bins[:-1]):
             upper = x_bins[j + 1]
-            mask = np.logical_and(
-                mc["logE"] >= lower,
-                mc["logE"] < upper
-            )
+            mask = np.logical_and(mc["logE"] >= lower, mc["logE"] < upper)
 
             cut_mc = mc[mask]
 
             for k, lower_dec in enumerate(y_bins[:-1]):
                 upper_dec = y_bins[k + 1]
                 bin_mask = np.logical_and(
-                    cut_mc["sinDec"] >= lower_dec,
-                    cut_mc["sinDec"] < upper_dec
+                    cut_mc["sinDec"] >= lower_dec, cut_mc["sinDec"] < upper_dec
                 )
 
                 median_pull = weighted_quantile(
-                    pulls[mask][bin_mask], 0.5, weights[mask][bin_mask])
+                    pulls[mask][bin_mask], 0.5, weights[mask][bin_mask]
+                )
 
                 z_range[j][k] = np.log(median_pull)
         res_dict[e] = [x_range, y_range, z_range]
@@ -496,14 +496,12 @@ def create_pull_2d_e(pull_dict):
 
         ax = plt.subplot(111)
         X, Y = np.meshgrid(x_bins, y_bins)
-        cbar = ax.pcolor(X, Y, z_range.T, cmap="seismic",
-                         vmax=1.0, vmin=-1.0)
+        cbar = ax.pcolor(X, Y, z_range.T, cmap="seismic", vmax=1.0, vmin=-1.0)
         plt.colorbar(cbar, label="Log(Median Pull)")
         plt.ylabel(r"$\sin(\delta)$")
         plt.xlabel("Log(Energy proxy)")
         plt.savefig(plot_path)
         plt.close()
-
 
     save_path = pull_pickle(pull_dict)
 

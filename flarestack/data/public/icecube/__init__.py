@@ -9,18 +9,31 @@ from flarestack.icecube_utils.dataset_loader import data_loader
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import matplotlib.ticker as ticker
-from flarestack.shared import eff_a_plot_dir, energy_proxy_path, \
-    med_ang_res_path, energy_proxy_plot_path
+from flarestack.shared import (
+    eff_a_plot_dir,
+    energy_proxy_path,
+    med_ang_res_path,
+    energy_proxy_plot_path,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class PublicICSeason(SeasonWithoutMC):
-
-    def __init__(self, season_name, sample_name, exp_path, pseudo_mc_path,
-                 sin_dec_bins, log_e_bins, a_eff_path, **kwargs):
-        SeasonWithoutMC.__init__(self, season_name, sample_name, exp_path,
-                                 pseudo_mc_path, **kwargs)
+    def __init__(
+        self,
+        season_name,
+        sample_name,
+        exp_path,
+        pseudo_mc_path,
+        sin_dec_bins,
+        log_e_bins,
+        a_eff_path,
+        **kwargs,
+    ):
+        SeasonWithoutMC.__init__(
+            self, season_name, sample_name, exp_path, pseudo_mc_path, **kwargs
+        )
         self.sin_dec_bins = sin_dec_bins
         self.log_e_bins = log_e_bins
         self.a_eff_path = a_eff_path
@@ -43,38 +56,48 @@ class PublicICSeason(SeasonWithoutMC):
 
         entry_0 = pseudo_mc[0]
 
-        log_e_bin_center = list(pseudo_mc[
-            pseudo_mc["sinDec"] == entry_0["sinDec"]]["logE"])
+        log_e_bin_center = list(
+            pseudo_mc[pseudo_mc["sinDec"] == entry_0["sinDec"]]["logE"]
+        )
 
         # Make sure values are strictly increasing
 
         if log_e_bin_center != list(sorted(set(pseudo_mc["logE"]))):
-            x_sign = -1.
+            x_sign = -1.0
             log_e_bin_center = list(sorted(set(pseudo_mc["logE"])))
         else:
-            x_sign = 1.
+            x_sign = 1.0
 
-        sin_bin_center = list(pseudo_mc[
-            pseudo_mc["logE"] == entry_0["logE"]]["sinDec"])
+        sin_bin_center = list(pseudo_mc[pseudo_mc["logE"] == entry_0["logE"]]["sinDec"])
 
         if sin_bin_center != list(sorted(set(pseudo_mc["sinDec"]))):
-            y_sign = -1.
+            y_sign = -1.0
             sin_bin_center = list(sorted(set(pseudo_mc["sinDec"])))
         else:
-            y_sign = 1.
+            y_sign = 1.0
 
         eff_a = pseudo_mc
 
-        eff_a = np.reshape(eff_a, (len(log_e_bin_center), len(sin_bin_center),))
+        eff_a = np.reshape(
+            eff_a,
+            (
+                len(log_e_bin_center),
+                len(sin_bin_center),
+            ),
+        )
 
         order = 1
 
         effective_area_spline = scipy.interpolate.RectBivariateSpline(
-            log_e_bin_center, sin_bin_center, np.log(eff_a["a_eff"] + 1e-9),
-            kx=order, ky=order, s=0)
+            log_e_bin_center,
+            sin_bin_center,
+            np.log(eff_a["a_eff"] + 1e-9),
+            kx=order,
+            ky=order,
+            s=0,
+        )
 
-        return lambda x, y: np.exp(effective_area_spline.ev(
-            x * x_sign, y * y_sign))
+        return lambda x, y: np.exp(effective_area_spline.ev(x * x_sign, y * y_sign))
 
     def load_energy_proxy_mapping(self):
         path = energy_proxy_path(self)
@@ -88,8 +111,7 @@ class PublicICSeason(SeasonWithoutMC):
 
     def plot_effective_area(self, show=False):
 
-        savepath = eff_a_plot_dir + self.sample_name + "/" + self.season_name \
-                   + ".pdf"
+        savepath = eff_a_plot_dir + self.sample_name + "/" + self.season_name + ".pdf"
 
         try:
             os.makedirs(os.path.dirname(savepath))
@@ -98,18 +120,21 @@ class PublicICSeason(SeasonWithoutMC):
 
         plt.figure()
         ax = plt.subplot(111)
-        X, Y = np.meshgrid(self.log_e_bins, self.sin_dec_bins,)
+        X, Y = np.meshgrid(
+            self.log_e_bins,
+            self.sin_dec_bins,
+        )
 
         eff_a_f = self.load_effective_area()
 
         vals = eff_a_f(X, Y)
 
-        cbar = ax.pcolormesh(X, Y, vals, norm=LogNorm(), shading='auto')
+        cbar = ax.pcolormesh(X, Y, vals, norm=LogNorm(), shading="auto")
         cb = plt.colorbar(cbar, label="Effective Area [m]", ax=ax)
         plt.ylabel(r"$\sin(\delta)$")
 
         locs, labels = plt.xticks()
-        labels = [10**float(item) for item in locs]
+        labels = [10 ** float(item) for item in locs]
         plt.xticks(locs, labels)
         plt.xlabel(r"$E_{\nu}$")
         logger.info(f"Saving to {savepath}")
@@ -121,15 +146,17 @@ class PublicICSeason(SeasonWithoutMC):
 
     def get_raw_pseudo_mc(self):
 
-        data_dtype = np.dtype([
-            ('logE', np.float),
-            ('trueE', np.float),
-            ('sinDec', np.float),
-            ('trueDec', np.float),
-            ('ow', np.float),
-            ('a_eff', np.float),
-            ("sigma", np.float)
-        ])
+        data_dtype = np.dtype(
+            [
+                ("logE", np.float),
+                ("trueE", np.float),
+                ("sinDec", np.float),
+                ("trueDec", np.float),
+                ("ow", np.float),
+                ("a_eff", np.float),
+                ("sigma", np.float),
+            ]
+        )
 
         pseudo_mc = []
 
@@ -142,18 +169,17 @@ class PublicICSeason(SeasonWithoutMC):
                 if i > 0:
                     row = [float(x) for x in row if x != ""]
 
-                    true_e = 0.5*(row[0] + row[1])
+                    true_e = 0.5 * (row[0] + row[1])
                     log_e = np.log10(true_e)
                     cos_zen = 0.5 * (row[2] + row[3])
                     zen = np.arccos(cos_zen)
-                    true_dec = (zen - np.pi/2.)
+                    true_dec = zen - np.pi / 2.0
                     sin_dec = np.sin(true_dec)
                     a_eff = row[4]
 
-                    entry = tuple([
-                        log_e, true_e, sin_dec, true_dec,
-                        a_eff, a_eff, np.nan
-                    ])
+                    entry = tuple(
+                        [log_e, true_e, sin_dec, true_dec, a_eff, a_eff, np.nan]
+                    )
 
                     pseudo_mc.append(entry)
         pseudo_mc = np.array(pseudo_mc, dtype=data_dtype)
@@ -175,23 +201,22 @@ class PublicICSeason(SeasonWithoutMC):
 
         # pseudo_mc = pseudo_mc[]
 
-        for i, x in enumerate([-5.]):#, -15.]):
+        for i, x in enumerate([-5.0]):  # , -15.]):
             label = ["Upgoing", "Downgoing"][i]
             cut_value = np.sin(np.deg2rad(x))
 
-            sign = np.sign(i-0.5)
+            sign = np.sign(i - 0.5)
 
             # Cut down then up
 
             exp_cut = exp[(sign * exp["sinDec"]) > (sign * cut_value)]
 
-            pseudo_mc_cut = pseudo_mc[
-                (sign * pseudo_mc["sinDec"]) > (sign * cut_value)
-            ]
+            pseudo_mc_cut = pseudo_mc[(sign * pseudo_mc["sinDec"]) > (sign * cut_value)]
 
             log_e_exp = exp_cut["logE"]
             log_e_exp[log_e_exp < min(pseudo_mc_cut["logE"])] = min(
-                pseudo_mc_cut["logE"])
+                pseudo_mc_cut["logE"]
+            )
 
             # spread = np.linspace(-1., 1., 10)
             # weights = scipy.stats.norm.pdf(spread, scale=0.3)
@@ -222,7 +247,9 @@ class PublicICSeason(SeasonWithoutMC):
             res = ax2.hist(
                 pseudo_mc_cut["logE"],
                 weights=pseudo_mc_cut["ow"] * pseudo_mc_cut["trueE"] ** -index,
-                density=True, bins=exp_bins)
+                density=True,
+                bins=exp_bins,
+            )
             mc_vals = res[0]
 
             ax2.set_yscale("log")
@@ -245,8 +272,7 @@ class PublicICSeason(SeasonWithoutMC):
 
             ax3 = plt.subplot(313)
             plt.plot(centers, exp_vals / mc_vals)
-            plt.plot(centers, np.exp(log_e_weighting(centers)),
-                     linestyle=":")
+            plt.plot(centers, np.exp(log_e_weighting(centers)), linestyle=":")
             ax3.set_yscale("log")
             ax3.set_title("Ratio")
             ax3.set_xlabel(r"$\log_{10}(E)$")

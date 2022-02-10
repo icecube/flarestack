@@ -1,8 +1,11 @@
 import numpy as np
 import os
 from flarestack.data import Dataset, SeasonWithMC
-from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader, \
-    verify_grl_with_data
+from flarestack.icecube_utils.dataset_loader import (
+    data_loader,
+    grl_loader,
+    verify_grl_with_data,
+)
 from flarestack.shared import host_server
 from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
 from scipy.interpolate import interp1d
@@ -11,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 try:
-    icecube_dataset_dir = os.environ['FLARESTACK_DATASET_DIR']
+    icecube_dataset_dir = os.environ["FLARESTACK_DATASET_DIR"]
 
     if os.path.isdir(icecube_dataset_dir + "mirror-7year-PS-sens/"):
         ref_dir_7yr = icecube_dataset_dir + "mirror-7year-PS-sens/"
@@ -20,12 +23,12 @@ except KeyError:
     icecube_dataset_dir = None
 
 try:
-    ref_dir_7yr = os.environ['7YR_SENS_REF']
+    ref_dir_7yr = os.environ["7YR_SENS_REF"]
 except KeyError:
     ref_dir_7yr = None
 
 try:
-    ref_10yr = os.environ['10YR_SENS_REF']
+    ref_10yr = os.environ["10YR_SENS_REF"]
 except KeyError:
     ref_10yr = None
 
@@ -33,16 +36,24 @@ if icecube_dataset_dir is None:
     if host_server == "DESY":
         icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
         ref_dir_7yr = icecube_dataset_dir + "ref_sensitivity/mirror-7year-PS-sens/"
-        ref_10yr = icecube_dataset_dir + "ref_sensitivity/TenYr_E2andE3_sensitivity_and_discpot.npy"
+        ref_10yr = (
+            icecube_dataset_dir
+            + "ref_sensitivity/TenYr_E2andE3_sensitivity_and_discpot.npy"
+        )
         logger.info(f"Loading datasets from {icecube_dataset_dir} (DESY)")
     elif host_server == "WIPAC":
         icecube_dataset_dir = "/data/ana/analyses/"
-        ref_dir_7yr = "/data/ana/PointSource/PS/version-002-p01/results/time_integrated_fullsky/"
+        ref_dir_7yr = (
+            "/data/ana/PointSource/PS/version-002-p01/results/time_integrated_fullsky/"
+        )
         ref_10yr = "/data/user/tcarver/skylab_scripts/skylab_trunk/doc/analyses/combined_tracks/TenYr_E2andE3_sensitivity_and_discpot.npy"
         logger.info(f"Loading datasets from {icecube_dataset_dir} (WIPAC)")
     else:
-        raise ImportError("No IceCube data directory found. Run: \n"
-                          "export FLARESTACK_DATA_DIR=/path/to/IceCube/data")
+        raise ImportError(
+            "No IceCube data directory found. Run: \n"
+            "export FLARESTACK_DATA_DIR=/path/to/IceCube/data"
+        )
+
 
 def get_published_sens_ref_dir():
     try:
@@ -51,9 +62,11 @@ def get_published_sens_ref_dir():
         logger.error(
             "No reference sensitivity directory found. "
             "Please create one at {0}".format(
-            icecube_dataset_dir + "mirror-7year-PS-sens/"
-            ))
+                icecube_dataset_dir + "mirror-7year-PS-sens/"
+            )
+        )
         raise
+
 
 @TimePDF.register_subclass("icecube_on_off_list")
 class IceCubeRunList(DetectorOnOffList):
@@ -74,28 +87,34 @@ class IceCubeRunList(DetectorOnOffList):
 
             first_run = self.on_off_list["run"][:-1][mask][0]
 
-            logger.warning("\nMaybe the IceCube GoodRunList was not produced correctly. \n"
-                           "Some runs in the GoodRunList start immediately after the preceding run ends. \n"
-                           "For older files, there should be gaps between every run due to detector downtime, "
-                           "but some are missing here. \n"
-                           f"The first missing gap is between runs {first_run} and {first_run+1}. \n"
-                           "Any livetime estimates using this GoodRunList will not be accurate. \n"
-                           "This is a known problem affecting older IceCube GoodRunLists. \n"
-                           "You should use a newer, corrected GoodRunList. \n"
-                           "Flarestack will attempt to stitch these runs together. \n"
-                           "However, livetime estimates may be off by several percentage points, "
-                           "or even more for very short timescales. \n"
-                           "You have been warned!")
+            logger.warning(
+                "\nMaybe the IceCube GoodRunList was not produced correctly. \n"
+                "Some runs in the GoodRunList start immediately after the preceding run ends. \n"
+                "For older files, there should be gaps between every run due to detector downtime, "
+                "but some are missing here. \n"
+                f"The first missing gap is between runs {first_run} and {first_run+1}. \n"
+                "Any livetime estimates using this GoodRunList will not be accurate. \n"
+                "This is a known problem affecting older IceCube GoodRunLists. \n"
+                "You should use a newer, corrected GoodRunList. \n"
+                "Flarestack will attempt to stitch these runs together. \n"
+                "However, livetime estimates may be off by several percentage points, "
+                "or even more for very short timescales. \n"
+                "You have been warned!"
+            )
 
             while np.sum(mask) > 0:
 
                 index = list(mask).index(True)
 
-                self.on_off_list[index]["stop"] = self.on_off_list[index+1]["stop"]
-                self.on_off_list[index]["length"] += self.on_off_list[index+1]["length"]
-                self.on_off_list[index]["events"] += self.on_off_list[index + 1]["events"]
+                self.on_off_list[index]["stop"] = self.on_off_list[index + 1]["stop"]
+                self.on_off_list[index]["length"] += self.on_off_list[index + 1][
+                    "length"
+                ]
+                self.on_off_list[index]["events"] += self.on_off_list[index + 1][
+                    "events"
+                ]
 
-                mod_mask = np.arange(len(self.on_off_list)) == index+1
+                mod_mask = np.arange(len(self.on_off_list)) == index + 1
 
                 self.on_off_list = self.on_off_list[~mod_mask]
 
@@ -108,26 +127,40 @@ class IceCubeRunList(DetectorOnOffList):
             first_run = self.on_off_list["run"][:-1][~mask][0]
 
             logger.error("The IceCube GoodRunList was not produced correctly.")
-            logger.error("Some runs in the GoodRunList start before the preceding run has ended.")
+            logger.error(
+                "Some runs in the GoodRunList start before the preceding run has ended."
+            )
             logger.error("Under no circumstances should runs overlap.")
-            logger.error(f"The first overlap is between runs {first_run} and {first_run+1}.")
-            logger.error("Any livetime estimates using this GoodRunList will not be accurate.")
-            logger.error("This is a known problem affecting older IceCube GoodRunLists.")
+            logger.error(
+                f"The first overlap is between runs {first_run} and {first_run+1}."
+            )
+            logger.error(
+                "Any livetime estimates using this GoodRunList will not be accurate."
+            )
+            logger.error(
+                "This is a known problem affecting older IceCube GoodRunLists."
+            )
             logger.error("You should use a newer, corrected GoodRunList.")
             logger.error("Flarestack will attempt to stitch these runs together.")
-            logger.error("However, livetime estimates may be off by several percentage points, "
-                          "or even more for very short timescales.")
+            logger.error(
+                "However, livetime estimates may be off by several percentage points, "
+                "or even more for very short timescales."
+            )
             logger.error("You have been warned!")
 
             while np.sum(~mask) > 0:
 
                 index = list(~mask).index(True)
 
-                self.on_off_list[index]["stop"] = self.on_off_list[index+1]["stop"]
-                self.on_off_list[index]["length"] += self.on_off_list[index+1]["length"]
-                self.on_off_list[index]["events"] += self.on_off_list[index + 1]["events"]
+                self.on_off_list[index]["stop"] = self.on_off_list[index + 1]["stop"]
+                self.on_off_list[index]["length"] += self.on_off_list[index + 1][
+                    "length"
+                ]
+                self.on_off_list[index]["events"] += self.on_off_list[index + 1][
+                    "events"
+                ]
 
-                mod_mask = np.arange(len(self.on_off_list)) == index+1
+                mod_mask = np.arange(len(self.on_off_list)) == index + 1
 
                 self.on_off_list = self.on_off_list[~mod_mask]
 
@@ -141,11 +174,11 @@ class IceCubeRunList(DetectorOnOffList):
         step = 1e-12
 
         t_range = [t0 - step]
-        f = [0.]
+        f = [0.0]
 
-        mjd = [0.]
-        livetime = [0.]
-        total_t = 0.
+        mjd = [0.0]
+        livetime = [0.0]
+        total_t = 0.0
 
         for i, run in enumerate(self.on_off_list):
             mjd.append(run["start"])
@@ -154,11 +187,10 @@ class IceCubeRunList(DetectorOnOffList):
             mjd.append(run["stop"])
             livetime.append(total_t)
 
-            t_range.extend([
-                run["start"] - step, run["start"], run["stop"],
-                run["stop"] + step
-            ])
-            f.extend([0., 1., 1., 0.])
+            t_range.extend(
+                [run["start"] - step, run["start"], run["stop"], run["stop"] + step]
+            )
+            f.extend([0.0, 1.0, 1.0, 0.0])
 
         stitch_t = t_range
         stitch_f = f
@@ -170,13 +202,15 @@ class IceCubeRunList(DetectorOnOffList):
             for i, t in enumerate(stitch_t):
                 if t != sorted(stitch_t)[i]:
                     print(t, sorted(stitch_t)[i])
-                    print(stitch_t[i-1:i+2])
-                    print(sorted(stitch_t)[i-1:i+2])
-                    key = int((i-1)/4)
-                    print(self.on_off_list[key:key+2])
+                    print(stitch_t[i - 1 : i + 2])
+                    print(sorted(stitch_t)[i - 1 : i + 2])
+                    key = int((i - 1) / 4)
+                    print(self.on_off_list[key : key + 2])
                     input("????")
-            
-            raise Exception(f"Runs in GoodRunList are out of order for {self.on_off_list}. Check that!")
+
+            raise Exception(
+                f"Runs in GoodRunList are out of order for {self.on_off_list}. Check that!"
+            )
 
         mjd.append(1e5)
         livetime.append(total_t)
@@ -186,16 +220,26 @@ class IceCubeRunList(DetectorOnOffList):
         livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
+
 class IceCubeDataset(Dataset):
     pass
 
 
 class IceCubeSeason(SeasonWithMC):
-
-    def __init__(self, season_name, sample_name, exp_path, mc_path, grl_path,
-                 sin_dec_bins, log_e_bins, **kwargs):
-        SeasonWithMC.__init__(self, season_name, sample_name, exp_path, mc_path,
-                              **kwargs)
+    def __init__(
+        self,
+        season_name,
+        sample_name,
+        exp_path,
+        mc_path,
+        grl_path,
+        sin_dec_bins,
+        log_e_bins,
+        **kwargs,
+    ):
+        SeasonWithMC.__init__(
+            self, season_name, sample_name, exp_path, mc_path, **kwargs
+        )
         self.grl_path = grl_path
         self.all_paths.append(grl_path)
         self.sin_dec_bins = sin_dec_bins
@@ -223,7 +267,7 @@ class IceCubeSeason(SeasonWithMC):
 
         t_pdf_dict = {
             "time_pdf_name": "icecube_on_off_list",
-            "on_off_list": self.get_grl()
+            "on_off_list": self.get_grl(),
         }
 
         return t_pdf_dict

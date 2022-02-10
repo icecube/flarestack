@@ -5,8 +5,10 @@ from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_v003_p02
 from flarestack.shared import make_analysis_pickle
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.cluster import analyse, wait_cluster
-from flarestack.analyses.txs_0506_056.make_txs_catalogue import \
-    txs_catalogue, txs_cat_path
+from flarestack.analyses.txs_0506_056.make_txs_catalogue import (
+    txs_catalogue,
+    txs_cat_path,
+)
 
 # Initialise Injectors/LLHs
 
@@ -21,10 +23,7 @@ injection_time = {
 # Use a source following a power law with a spectral index of -2, using the
 # default energy range of 100 GeV to 10 Pev (10**7 GeV).
 
-injection_energy = {
-    "energy_pdf_name": "PowerLaw",
-    "gamma": 2.0
-}
+injection_energy = {"energy_pdf_name": "PowerLaw", "gamma": 2.0}
 
 # Fix injection time/energy PDFs, and use "Poisson Smearing" to simulate
 # random variations in detected neutrino numbers
@@ -75,7 +74,7 @@ mh_dict = {
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
     "n_trials": 1,
-    "n_steps": 10
+    "n_steps": 10,
 }
 
 mh = MinimisationHandler.create(mh_dict)
@@ -85,7 +84,7 @@ mh_dict["scale"] = scale
 
 # Creates a Minimisation Handler using the dictionary, and runs the trials
 
-analyse(mh_dict,  n_cpu=2, n_jobs=1, cluster=False)
+analyse(mh_dict, n_cpu=2, n_jobs=1, cluster=False)
 # wait_cluster()
 
 # mh.iterate_run(scale, n_steps=mh_dict["n_steps"],
@@ -101,8 +100,7 @@ sens = rh.sensitivity
 # Converts the flux at Earth to a required luminosity from the source,
 # by scaling with distance and accounting for redshift
 
-astro_sens, astro_disc = rh.astro_values(
-    mh_dict["inj_dict"]["injection_energy_pdf"])
+astro_sens, astro_disc = rh.astro_values(mh_dict["inj_dict"]["injection_energy_pdf"])
 
 # Print output
 
@@ -118,13 +116,14 @@ print("\n")
 print("FINAL RESULT", "\n")
 
 print("Sensitivity is", sens, "GeV/cm^2")
-print("This requires a neutrino luminosity of", end=' ')
+print("This requires a neutrino luminosity of", end=" ")
 print(astro_sens["Mean Luminosity (erg/s)"], "erg/s")
 print()
 print("Discovery Potential is", rh.disc_potential, "GeV/cm^2")
 print("(The discovery potential probably does not have good statistics)")
 print()
-print("REMINDER: our quick discovery potential estimate was:", mh.disc_guess,
-      "GeV/cm^2")
+print(
+    "REMINDER: our quick discovery potential estimate was:", mh.disc_guess, "GeV/cm^2"
+)
 
 print("\n \n \n")

@@ -15,8 +15,7 @@ def custom_data_loader(path):
     dataset = data_loader(path, floor=False)
     percentile = np.ones_like(dataset["ra"]) * np.nan
     dataset = append_fields(
-        dataset, 'percentile', percentile,
-        usemask=False, dtypes=[np.float]
+        dataset, "percentile", percentile, usemask=False, dtypes=[np.float]
     )
 
     return dataset
@@ -28,10 +27,9 @@ exp = custom_data_loader(season["exp_path"])
 
 n_sin_dec_bins = 35 + 1
 
-sin_dec_bins = np.percentile(mc["sinDec"],
-                             np.linspace(0.0, 100.0, n_sin_dec_bins))
-sin_dec_bins[0] = -1.
-sin_dec_bins[-1] = 1.
+sin_dec_bins = np.percentile(mc["sinDec"], np.linspace(0.0, 100.0, n_sin_dec_bins))
+sin_dec_bins[0] = -1.0
+sin_dec_bins[-1] = 1.0
 print(sin_dec_bins)
 
 path = dataset_plot_dir + season["Data Sample"] + "/" + season["Name"] + "/"
@@ -50,6 +48,7 @@ for j, bins in enumerate([sin_dec_bins, IC86_1_dict["sinDec bins"]]):
 
     plt.savefig(path + ["equal_MC", "old"][j] + "sin_dec_.pdf")
     plt.close()
+
 
 def weighted_quantile(values, quantiles, weight):
     """
@@ -75,8 +74,10 @@ def calculate_logE_percentile(data, n_slices):
 
     n_high_e = int(0.7 * n_slices)
 
-    percentiles = list(np.linspace(0.0, 80., n_slices + 1 - n_high_e)) + \
-                  list(np.linspace(80.0, 100.0, n_high_e + 1))[1:]
+    percentiles = (
+        list(np.linspace(0.0, 80.0, n_slices + 1 - n_high_e))
+        + list(np.linspace(80.0, 100.0, n_high_e + 1))[1:]
+    )
     percentiles = np.array(percentiles)
     log_e_bins = np.linspace(0.0, 10.0, n_slices + 1)
     # log_e_bins = np.percentile(data["logE"], percentiles)
@@ -133,7 +134,7 @@ log_e_bins = np.linspace(1.0, 10.0, 5)
 def make_plot(hist, savepath, normed=True):
     if normed:
         norms = np.sum(hist, axis=hist.ndim - 2)
-        norms[norms == 0.] = 1.
+        norms[norms == 0.0] = 1.0
         hist /= norms
 
     hist = np.log(np.array(hist))
@@ -141,13 +142,13 @@ def make_plot(hist, savepath, normed=True):
     ax = plt.subplot(111)
     X, Y = np.meshgrid(sin_dec_bins, log_e_bins)
     if not normed:
-        max_col = min(abs(min([min(row) for row in hist.T])),
-                      max([max(row) for row in hist.T]))
-        cbar = ax.pcolormesh(X, Y, hist, cmap="seismic",
-                             vmin=-5, vmax=5)
+        max_col = min(
+            abs(min([min(row) for row in hist.T])), max([max(row) for row in hist.T])
+        )
+        cbar = ax.pcolormesh(X, Y, hist, cmap="seismic", vmin=-5, vmax=5)
         plt.colorbar(cbar, label="Log(Signal/Background)")
     else:
-        hist[hist == 0.] = np.nan
+        hist[hist == 0.0] = np.nan
         cbar = ax.pcolormesh(X, Y, hist)
         plt.colorbar(cbar, label="Log(Column-normalised density)")
     plt.xlabel(r"$\sin(\delta)$")
@@ -157,7 +158,8 @@ def make_plot(hist, savepath, normed=True):
 
 
 bkg_hist, binedges = np.histogramdd(
-    (exp["logE"], exp["sinDec"]), bins=(log_e_bins, sin_dec_bins),
+    (exp["logE"], exp["sinDec"]),
+    bins=(log_e_bins, sin_dec_bins),
 )
 
 make_plot(bkg_hist, path + "data.pdf")
@@ -172,16 +174,14 @@ bkg_hist /= np.sum(bkg_hist, axis=0)
 # plt.savefig(path + "data.pdf")
 # plt.close()
 for gamma in [2.0]:
-# for gamma in [1.0, 2.0, 3.0, 3.5, 3.7]:
+    # for gamma in [1.0, 2.0, 3.0, 3.5, 3.7]:
     weights = mc["ow"] * mc["trueE"] ** -gamma
 
     all_log_e_bins = [log_e_bins for _, _ in enumerate(sin_dec_bins)]
 
     plt.figure()
     mc_hist, binedges = np.histogramdd(
-        (mc["logE"], mc["sinDec"]),
-        bins=(log_e_bins, sin_dec_bins),
-        weights=weights
+        (mc["logE"], mc["sinDec"]), bins=(log_e_bins, sin_dec_bins), weights=weights
     )
     savepath = path + "MC_" + str(gamma) + ".pdf"
     make_plot(mc_hist, savepath=savepath, normed=True)
@@ -191,14 +191,14 @@ for gamma in [2.0]:
     z = []
 
     for k, row in enumerate(mc_hist.T):
-        if not np.logical_and(min(row) > 0.0, min(bkg_hist.T[k]) > 0.):
+        if not np.logical_and(min(row) > 0.0, min(bkg_hist.T[k]) > 0.0):
             row = list(row)[::-1]
             bkg_row = list(bkg_hist.T[k])[::-1]
             borders = list(all_log_e_bins[k])[::-1]
 
             for j, x in enumerate(row):
-                if not np.logical_and(x > 0., bkg_row[j] > 0.):
-                    new = row[j-1] * 0.5
+                if not np.logical_and(x > 0.0, bkg_row[j] > 0.0):
+                    new = row[j - 1] * 0.5
                     row[j] = new
                     row[j - 1] = new
                     bkg_new = bkg_row[j - 1] * 0.5
@@ -214,12 +214,11 @@ for gamma in [2.0]:
 
         x += [sin_dec_bins[k] for _, _ in enumerate(all_log_e_bins[k][1:])]
         y += list(all_log_e_bins[k][1:] + all_log_e_bins[k][:-1])
-        z += old_div(mc_hist.T[k],bkg_hist.T[k])
-
+        z += old_div(mc_hist.T[k], bkg_hist.T[k])
 
     mc_hist /= np.sum(mc_hist, axis=0)
 
-    ratio = old_div(mc_hist,bkg_hist)
+    ratio = old_div(mc_hist, bkg_hist)
     savepath = path + "ratio_" + str(gamma) + ".pdf"
     make_plot(ratio, savepath=savepath, normed=False)
 
@@ -237,10 +236,9 @@ for gamma in [2.0]:
 
     order = 1
 
-    spline = scipy.interpolate.interp2d(
-        x, y, np.log(ratio))
+    spline = scipy.interpolate.interp2d(x, y, np.log(ratio))
 
-    for x_val in [2., 3., 7.]:
+    for x_val in [2.0, 3.0, 7.0]:
         print(x_val, spline(0.0, x_val), spline(0.5, x_val))
 
     spline_perc = np.linspace(1.0, 8.0, 100)
@@ -257,13 +255,12 @@ for gamma in [2.0]:
 
     # max_col = min(abs(min([min(row) for row in Z])),
     #               max([max(row) for row in Z]))
-    max_col = 5.
+    max_col = 5.0
 
     plt.figure()
     ax = plt.subplot(111)
     X, Y = np.meshgrid(splin_sindec, spline_perc)
-    cbar = ax.pcolormesh(X, Y, Z, cmap="seismic",
-                         vmin=-max_col, vmax=max_col)
+    cbar = ax.pcolormesh(X, Y, Z, cmap="seismic", vmin=-max_col, vmax=max_col)
     plt.colorbar(cbar, label="Log(Signal/Background)")
     plt.xlabel(r"$\sin(\delta)$")
     plt.ylabel("log(Energy)")
@@ -294,4 +291,4 @@ for gamma in [2.0]:
 #     log_e_bin_center, sin_bin_center, np.log(ratio),
 #     kx=order, ky=order, s=0)
 
-    # log_e_bins
+# log_e_bins

@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 def submit_local(mh_dict, n_cpu):
-    s = Submitter.submitter_dict['local'](
+    s = Submitter.submitter_dict["local"](
         mh_dict, use_cluster=False, n_cpu=n_cpu, do_sensitivity_scale_estimation=False
     )
     s.analyse()
@@ -24,12 +24,14 @@ def analyse(mh_dict, cluster=False, n_cpu=None, **kwargs):
     :param kwargs: Optional kwargs
     """
     if cluster and ("n_jobs" in kwargs):
-        logger.warning('The Submitter class determines the number of jobs '
-                       'from the number of trials and the number of trials per job. '
-                       'So it is not necessary anymore to specifically give the number of jobs!')
-        ntrials_orig = mh_dict['n_trials']
-        mh_dict['n_trials'] = ntrials_orig * kwargs['n_jobs']
-        kwargs['trials_per_task'] = ntrials_orig
+        logger.warning(
+            "The Submitter class determines the number of jobs "
+            "from the number of trials and the number of trials per job. "
+            "So it is not necessary anymore to specifically give the number of jobs!"
+        )
+        ntrials_orig = mh_dict["n_trials"]
+        mh_dict["n_trials"] = ntrials_orig * kwargs["n_jobs"]
+        kwargs["trials_per_task"] = ntrials_orig
 
     s = Submitter.get_submitter(mh_dict, cluster, n_cpu, **kwargs)
     s.analyse()

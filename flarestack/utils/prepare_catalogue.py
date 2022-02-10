@@ -13,13 +13,15 @@ import zlib
 from flarestack.shared import catalogue_dir
 
 cat_dtype = [
-    ("ra_rad", np.float), ("dec_rad", np.float),
+    ("ra_rad", np.float),
+    ("dec_rad", np.float),
     ("base_weight", np.float),
     ("injection_weight_modifier", np.float),
     ("ref_time_mjd", np.float),
     ("start_time_mjd", np.float),
     ("end_time_mjd", np.float),
-    ('distance_mpc', np.float), ('source_name', 'a30'),
+    ("distance_mpc", np.float),
+    ("source_name", "a30"),
 ]
 
 
@@ -30,30 +32,32 @@ def single_source(sindec, ra_rad=np.pi):
     :param ra: Right Ascension in radians
     :return: Source Array
     """
-    sources = np.empty(
-        1, dtype=cat_dtype)
+    sources = np.empty(1, dtype=cat_dtype)
 
     ref_time = 55800.4164699
 
-    sources['ra_rad'] = np.array([ra_rad])
-    sources['dec_rad'] = np.arcsin(sindec)
-    sources['base_weight'] = np.array([1.])
-    sources['injection_weight_modifier'] = np.array([1.])
-    sources['distance_mpc'] = np.array([1.0])
-    sources['ref_time_mjd'] = (np.array([ref_time]))
-    sources['start_time_mjd'] = (np.array([ref_time - 50]))
-    sources['end_time_mjd'] = (np.array([ref_time + 100]))
-    sources['source_name'] = 'PS_dec=' + str(sindec)
+    sources["ra_rad"] = np.array([ra_rad])
+    sources["dec_rad"] = np.arcsin(sindec)
+    sources["base_weight"] = np.array([1.0])
+    sources["injection_weight_modifier"] = np.array([1.0])
+    sources["distance_mpc"] = np.array([1.0])
+    sources["ref_time_mjd"] = np.array([ref_time])
+    sources["start_time_mjd"] = np.array([ref_time - 50])
+    sources["end_time_mjd"] = np.array([ref_time + 100])
+    sources["source_name"] = "PS_dec=" + str(sindec)
 
     return sources
 
 
 def build_ps_cat_name(sindec):
-    return catalogue_dir + "single_source/sindec_" + '{0:.2f}'.format(sindec)\
-           + ".npy"
+    return catalogue_dir + "single_source/sindec_" + "{0:.2f}".format(sindec) + ".npy"
+
 
 def build_ps_stack_cat_name(sindecs):
-    return f"{catalogue_dir}multi_source/{zlib.adler32(str(list(sindecs)).encode())}.npy"
+    return (
+        f"{catalogue_dir}multi_source/{zlib.adler32(str(list(sindecs)).encode())}.npy"
+    )
+
 
 def make_single_source(sindec):
     cat = single_source(sindec)
@@ -68,11 +72,12 @@ def make_single_source(sindec):
 
 def ps_catalogue_name(sindec):
     name = build_ps_cat_name(sindec)
-    
+
     if not os.path.isfile(name):
         make_single_source(sindec)
 
     return name
+
 
 def make_stacked_source(sindecs):
     cat = []
@@ -124,9 +129,17 @@ def make_single_sources():
     logging.info("Single Source catalogues created!")
 
 
-def custom_sources(name, ra, dec, weight, distance,
-                   injection_modifier=None, ref_time=np.nan,
-                   start_time=np.nan, end_time=np.nan):
+def custom_sources(
+    name,
+    ra,
+    dec,
+    weight,
+    distance,
+    injection_modifier=None,
+    ref_time=np.nan,
+    start_time=np.nan,
+    end_time=np.nan,
+):
     """Creates a catalogue array,
 
     :param name: Source Name
@@ -142,17 +155,17 @@ def custom_sources(name, ra, dec, weight, distance,
     """
     sources = np.empty(np.array([ra]).__len__(), dtype=cat_dtype)
 
-    sources['ra_rad'] = np.deg2rad(np.array([ra]))
-    sources['dec_rad'] = np.deg2rad(np.array([dec]))
+    sources["ra_rad"] = np.deg2rad(np.array([ra]))
+    sources["dec_rad"] = np.deg2rad(np.array([dec]))
 
     # If some sources are to be brighter than others, a non-uniform weight
     # array can be passed.
-    sources['base_weight'] = np.array([weight])
+    sources["base_weight"] = np.array([weight])
 
     # The source distance can be provided, in arbitrary units. The injector
     # and reconstructor will weight sources according to 1/ (distance ^ 2).
 
-    sources['distance_mpc'] = np.array([distance])
+    sources["distance_mpc"] = np.array([distance])
 
     # The sources can have a modified injection weight. This means the
     # weights used in the likelihood will not match the weights used in the
@@ -167,15 +180,14 @@ def custom_sources(name, ra, dec, weight, distance,
     # the discovery date or the date of lightcurve peak. It is important that
     # this is consistently defined between sources. Box Time PDFs can be defined
     # relative to this point.
-    sources['ref_time_mjd'] = (np.array([ref_time]))
+    sources["ref_time_mjd"] = np.array([ref_time])
 
     # The source csan also be assigned fixed start and end times. Fixed Box
     # Time PDFs can be defined relative to these values. This allows for the
     # Time PDF duration to vary between sources.
-    sources['start_time_mjd'] = (np.array([start_time]))
-    sources['end_time_mjd'] = (np.array([end_time]))
+    sources["start_time_mjd"] = np.array([start_time])
+    sources["end_time_mjd"] = np.array([end_time])
 
-    sources['source_name'] = np.array([name])
+    sources["source_name"] = np.array([name])
 
     return sources
-

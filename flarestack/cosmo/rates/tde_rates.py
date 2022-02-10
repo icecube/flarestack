@@ -11,13 +11,15 @@ def tde_evolution_sun_15(z):
     :param z: Redshift
     :return: f(z)
     """
-    evolution = ((1 + z)**(0.2 * eta) + ((1 + z)/1.43)**(-3.2 * eta) +
-                 ((1 + z)/2.66)**(-7 * eta)
-                 )**(1./eta)
+    evolution = (
+        (1 + z) ** (0.2 * eta)
+        + ((1 + z) / 1.43) ** (-3.2 * eta)
+        + ((1 + z) / 2.66) ** (-7 * eta)
+    ) ** (1.0 / eta)
     return evolution
 
 
-def biehl_jetted_evolution(z, m=-3.):
+def biehl_jetted_evolution(z, m=-3.0):
     """Evolution of TDEs assumed by Biehl et al. 2018 is 0.1 per Gpc per year
     (10^-10 per Mpc per year). The source evolution is assumed to be
     negative, with an index m=3, though the paper also considers indexes up
@@ -27,13 +29,13 @@ def biehl_jetted_evolution(z, m=-3.):
     :param m: Index of evolution
     :return: Jetted TDE rate
     """
-    rate = (1 + z)**m
+    rate = (1 + z) ** m
     return rate
 
 
 tde_evolutions = {
     "sun_15": (tde_evolution_sun_15, "https://arxiv.org/abs/1509.01592"),
-    "biehl_18_jetted": (biehl_jetted_evolution, "https://arxiv.org/abs/1711.03555")
+    "biehl_18_jetted": (biehl_jetted_evolution, "https://arxiv.org/abs/1711.03555"),
 }
 
 
@@ -49,8 +51,10 @@ def get_tde_evolution(evolution_name=None, **kwargs):
         evolution_name = "sun_15"
 
     if evolution_name not in tde_evolutions.keys():
-        raise Exception(f"Evolution name '{evolution_name}' not recognised. "
-                        f"The following source evolutions are available: {tde_evolutions.keys()}")
+        raise Exception(
+            f"Evolution name '{evolution_name}' not recognised. "
+            f"The following source evolutions are available: {tde_evolutions.keys()}"
+        )
     else:
         evolution, ref = tde_evolutions[evolution_name]
         logging.info(f"Loaded evolution '{evolution_name}' ({ref})")
@@ -61,36 +65,36 @@ def get_tde_evolution(evolution_name=None, **kwargs):
         :param z: Redshift
         :return: Rate relative to f(z=0.0(
         """
-        return evolution(z, **kwargs)/evolution(0.0, **kwargs)
+        return evolution(z, **kwargs) / evolution(0.0, **kwargs)
 
     return normed_evolution
 
 
 local_tde_rates = {
     "sun_15_jetted": (
-        3. * 10 ** -11. / (u.Mpc**3 * u.yr),
-        1. * 10 ** -11. / (u.Mpc**3 * u.yr),
-        7. * 10 ** -11. / (u.Mpc**3 * u.yr),
-        "https://arxiv.org/abs/1509.01592"
+        3.0 * 10**-11.0 / (u.Mpc**3 * u.yr),
+        1.0 * 10**-11.0 / (u.Mpc**3 * u.yr),
+        7.0 * 10**-11.0 / (u.Mpc**3 * u.yr),
+        "https://arxiv.org/abs/1509.01592",
     ),
     "van_velzen_18": (
-        8. * 10**-7 / (u.Mpc**3 * u.yr),
-        4. * 10 ** -7 / (u.Mpc ** 3 * u.yr),
-        12. * 10 ** -7 / (u.Mpc ** 3 * u.yr),
-        "https://arxiv.org/abs/1707.03458"
+        8.0 * 10**-7 / (u.Mpc**3 * u.yr),
+        4.0 * 10**-7 / (u.Mpc**3 * u.yr),
+        12.0 * 10**-7 / (u.Mpc**3 * u.yr),
+        "https://arxiv.org/abs/1707.03458",
     ),
     "biehl_18_jetted": (
         10**-10 / (u.Mpc**3 * u.yr),
         None,
         None,
-        "https://arxiv.org/abs/1711.03555"
+        "https://arxiv.org/abs/1711.03555",
     ),
     "kochanek_16": (
         1.5 * 10**-6 / (u.Mpc**3 * u.yr),
         None,
         None,
-        "https://arxiv.org/abs/1601.06787"
-    )
+        "https://arxiv.org/abs/1601.06787",
+    ),
 }
 
 
@@ -107,8 +111,10 @@ def get_local_tde_rate(rate_name=None, with_range=False):
         rate_name = "van_velzen_18"
 
     if rate_name not in local_tde_rates.keys():
-        raise Exception(f"Rate name '{rate_name}' not recognised. "
-                        f"The following source evolutions are available: {local_tde_rates.keys()}")
+        raise Exception(
+            f"Rate name '{rate_name}' not recognised. "
+            f"The following source evolutions are available: {local_tde_rates.keys()}"
+        )
     else:
         local_rate, lower_lim, upper_lim, ref = local_tde_rates[rate_name]
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
@@ -116,10 +122,16 @@ def get_local_tde_rate(rate_name=None, with_range=False):
     if with_range:
 
         if lower_lim is None:
-            raise Exception(f"No one sigma rate range found for rate '{rate_name}'. "
-                            f"Use a different rate, or set 'with_range=False'.")
+            raise Exception(
+                f"No one sigma rate range found for rate '{rate_name}'. "
+                f"Use a different rate, or set 'with_range=False'."
+            )
 
-        return local_rate.to("Mpc-3 yr-1"), lower_lim.to("Mpc-3 yr-1"), upper_lim.to("Mpc-3 yr-1")
+        return (
+            local_rate.to("Mpc-3 yr-1"),
+            lower_lim.to("Mpc-3 yr-1"),
+            upper_lim.to("Mpc-3 yr-1"),
+        )
 
     else:
         return local_rate.to("Mpc-3 yr-1")
@@ -138,8 +150,10 @@ def get_tde_rate(evolution_name=None, rate_name=None, with_range=False, **kwargs
     local_rate = get_local_tde_rate(rate_name=rate_name, with_range=with_range)
 
     if with_range:
-        return lambda z: local_rate[0] * normed_evolution(z), \
-               lambda z: local_rate[1] * normed_evolution(z), \
-               lambda z: local_rate[2] * normed_evolution(z)
+        return (
+            lambda z: local_rate[0] * normed_evolution(z),
+            lambda z: local_rate[1] * normed_evolution(z),
+            lambda z: local_rate[2] * normed_evolution(z),
+        )
     else:
-        return lambda z: local_rate*normed_evolution(z)
+        return lambda z: local_rate * normed_evolution(z)

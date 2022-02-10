@@ -14,6 +14,7 @@ from flarestack.shared import k_to_flux
 
 logger = logging.getLogger(__name__)
 
+
 def read_injector_dict(inj_dict):
     """Ensures that injection dictionaries remain backwards-compatible
 
@@ -30,19 +31,22 @@ def read_injector_dict(inj_dict):
             ("inj_energy_pdf", "injection_energy_pdf"),
             ("Poisson Smear?", "poisson_smear_bool"),
             ("injection_time_pdf", "injection_sig_time_pdf"),
-            ("inj_sig_time_pdf", "injection_sig_time_pdf")
+            ("inj_sig_time_pdf", "injection_sig_time_pdf"),
         ]
 
         for (old_key, new_key) in maps:
 
             if old_key in list(inj_dict.keys()):
-                logger.warning("Deprecated inj_dict key '{0}' was used. Please use '{1}' in future.".format(
-                    old_key, new_key))
+                logger.warning(
+                    "Deprecated inj_dict key '{0}' was used. Please use '{1}' in future.".format(
+                        old_key, new_key
+                    )
+                )
                 inj_dict[new_key] = inj_dict[old_key]
 
         pairs = [
             ("injection_energy_pdf", read_e_pdf_dict),
-            ("injection_sig_time_pdf", read_t_pdf_dict)
+            ("injection_sig_time_pdf", read_t_pdf_dict),
         ]
 
         for (key, f) in pairs:
@@ -60,8 +64,7 @@ def read_injector_dict(inj_dict):
 
 
 class BaseInjector:
-    """Base Injector Class
-    """
+    """Base Injector Class"""
 
     subclasses = {}
 
@@ -81,18 +84,20 @@ class BaseInjector:
             self.weight_scale = calculate_source_weight(self.sources)
 
         try:
-            self.sig_time_pdf = TimePDF.create(kwargs["injection_sig_time_pdf"],
-                                               season.get_time_pdf())
+            self.sig_time_pdf = TimePDF.create(
+                kwargs["injection_sig_time_pdf"], season.get_time_pdf()
+            )
             # self.bkg_time_pdf = TimePDF.create(kwargs["injection_bkg_time_pdf"],
             #                                    season.get_time_pdf())
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
-            self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"],
-                                          season)
+            self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"], season)
         except KeyError:
-            raise Exception("Injection Arguments missing. \n "
-                            "'injection_energy_pdf', 'injection_time_pdf',"
-                            "and 'injection_spatial_pdf' are required. \n"
-                            "Found: \n {0}".format(kwargs))
+            raise Exception(
+                "Injection Arguments missing. \n "
+                "'injection_energy_pdf', 'injection_time_pdf',"
+                "and 'injection_spatial_pdf' are required. \n"
+                "Found: \n {0}".format(kwargs)
+            )
 
         if "poisson_smear_bool" in list(kwargs.keys()):
             self.poisson_smear = kwargs["poisson_smear_bool"]
@@ -108,8 +113,10 @@ class BaseInjector:
 
     def calculate_n_exp(self):
 
-        all_n_exp = np.empty((len(self.sources), 1), dtype=np.dtype(
-            [('source_name', 'a30'), ('n_exp', float)]))
+        all_n_exp = np.empty(
+            (len(self.sources), 1),
+            dtype=np.dtype([("source_name", "a30"), ("n_exp", float)]),
+        )
 
         for i, source in enumerate(self.sources):
             all_n_exp[i]["source_name"] = source["source_name"]
@@ -121,10 +128,10 @@ class BaseInjector:
 
     def get_n_exp_single(self, source):
 
-        if not isinstance(source['source_name'], bytes):
-            name = bytes(source['source_name'], encoding='utf8')
+        if not isinstance(source["source_name"], bytes):
+            name = bytes(source["source_name"], encoding="utf8")
         else:
-            name = source['source_name']
+            name = source["source_name"]
 
         return np.copy(self.n_exp[self.n_exp["source_name"] == name])
 
@@ -138,7 +145,8 @@ class BaseInjector:
         """
         self.sources = sources
         self.weight_scale = np.sum(
-                self.sources["base_weight"] * self.sources["distance_mpc"]**-2)
+            self.sources["base_weight"] * self.sources["distance_mpc"] ** -2
+        )
         self.n_exp = self.calculate_n_exp()
 
     def create_dataset(self, scale, angular_error_modifier=None):
@@ -152,7 +160,7 @@ class BaseInjector:
         """
         bkg_events = self.season.simulate_background()
 
-        if scale > 0.:
+        if scale > 0.0:
             sig_events = self.inject_signal(scale)
         else:
             sig_events = []
@@ -171,12 +179,12 @@ class BaseInjector:
     def inject_signal(self, scale):
         return
 
-
     @classmethod
     def register_subclass(cls, inj_name):
         """Adds a new subclass of EnergyPDF, with class name equal to
         "energy_pdf_name".
         """
+
         def decorator(subclass):
             BaseInjector.subclasses[inj_name] = subclass
             return subclass
@@ -194,8 +202,10 @@ class BaseInjector:
         inj_name = inj_dict["injector_name"]
 
         if inj_name not in BaseInjector.subclasses:
-            raise ValueError(f'Bad Injector name {inj_name}. '
-                             f'Available options are {BaseInjector.subclasses.keys()}')
+            raise ValueError(
+                f"Bad Injector name {inj_name}. "
+                f"Available options are {BaseInjector.subclasses.keys()}"
+            )
         else:
             return BaseInjector.subclasses[inj_name](season, sources, **inj_dict)
 
@@ -204,17 +214,17 @@ class BaseInjector:
         # Sets half width of band
         dec_width = np.sin(np.deg2rad(bandwidth))
 
-        sinDec = np.sin(source['dec_rad'])
+        sinDec = np.sin(source["dec_rad"])
 
         # Sets a declination band above and below the source
         min_dec = max(-1, sinDec - dec_width)
-        max_dec = min(1., sinDec + dec_width)
+        max_dec = min(1.0, sinDec + dec_width)
         # Gives the solid angle coverage of the sky for the band
-        omega = 2. * np.pi * (max_dec - min_dec)
+        omega = 2.0 * np.pi * (max_dec - min_dec)
         return np.arcsin(dec_width), np.arcsin(min_dec), np.arcsin(max_dec), omega
 
 
-@BaseInjector.register_subclass('mc_injector')
+@BaseInjector.register_subclass("mc_injector")
 class MCInjector(BaseInjector):
     """Core Injector Class, returns a dataset on which calculations can be
     performed. This base class is tailored for injection of MC into mock
@@ -228,7 +238,9 @@ class MCInjector(BaseInjector):
         self._mc = season.get_mc()
         BaseInjector.__init__(self, season, sources, **kwargs)
 
-        self.injection_declination_bandwidth = self.inj_kwargs.pop('injection_declination_bandwidth', 1.5)
+        self.injection_declination_bandwidth = self.inj_kwargs.pop(
+            "injection_declination_bandwidth", 1.5
+        )
 
         try:
             self.mc_weights = self.energy_pdf.weight_mc(self._mc)
@@ -249,7 +261,9 @@ class MCInjector(BaseInjector):
         :return: band_mask: The mask which removes events outside band
         """
 
-        dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source, self.injection_declination_bandwidth)
+        dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(
+            source, self.injection_declination_bandwidth
+        )
 
         band_mask = self.get_band_mask(source, min_dec, max_dec)
 
@@ -261,8 +275,10 @@ class MCInjector(BaseInjector):
         if source["source_name"] in list(self.injection_band_mask.keys()):
             band_mask = self.injection_band_mask[source["source_name"]]
         else:
-            band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
-                                       np.less(self._mc["trueDec"], max_dec))
+            band_mask = np.logical_and(
+                np.greater(self._mc["trueDec"], min_dec),
+                np.less(self._mc["trueDec"], max_dec),
+            )
             self.injection_band_mask[source["source_name"]] = band_mask
 
         return band_mask
@@ -278,13 +294,12 @@ class MCInjector(BaseInjector):
         # Selects MC events lying in a +/- 5 degree declination band
         source_mc, omega, band_mask = self.select_mc_band(source)
 
-        source_mc = self.calculate_fluence(source, scale, source_mc,
-                                           band_mask, omega)
+        source_mc = self.calculate_fluence(source, scale, source_mc, band_mask, omega)
 
         return source_mc
 
     def calculate_n_exp_single(self, source):
-        return np.sum(self.calculate_single_source(source, 1.)["ow"])
+        return np.sum(self.calculate_single_source(source, 1.0)["ow"])
 
     def calculate_fluence(self, source, scale, source_mc, band_mask, omega):
         """Function to calculate the fluence for a given source, and multiply
@@ -333,7 +348,7 @@ class MCInjector(BaseInjector):
         :return: Set of signal events for the given IC Season.
         """
         # Creates empty signal event array
-        sig_events = np.empty((0, ), dtype=self.season.get_background_dtype())
+        sig_events = np.empty((0,), dtype=self.season.get_background_dtype())
 
         n_tot_exp = 0
 
@@ -362,9 +377,11 @@ class MCInjector(BaseInjector):
             except (TypeError, IndexError):
                 f_n_inj = float(n_inj)
 
-            logger.debug("Injected {0} events with an expectation of {1:.2f} events for {2}".format(
-                n_s, f_n_inj, source["source_name"]
-            ))
+            logger.debug(
+                "Injected {0} events with an expectation of {1:.2f} events for {2}".format(
+                    n_s, f_n_inj, source["source_name"]
+                )
+            )
 
             #  If n_s = 0, skips simulation step.
             if n_s < 1:
@@ -373,20 +390,20 @@ class MCInjector(BaseInjector):
             source_mc = self.calculate_single_source(source, scale)
 
             # Creates a normalised array of OneWeights
-            p_select = source_mc['ow'] / np.sum(source_mc['ow'])
+            p_select = source_mc["ow"] / np.sum(source_mc["ow"])
 
             # Creates an array with n_signal entries.
             # Each entry is a random integer between 0 and no. of sources.
             # The probability for each integer is equal to the OneWeight of
             # the corresponding source_path.
-            ind = np.random.choice(len(source_mc['ow']), size=n_s, p=p_select)
+            ind = np.random.choice(len(source_mc["ow"]), size=n_s, p=p_select)
 
             # Selects the sources corresponding to the random integer array
             sim_ev = source_mc[ind]
 
             # Rotates the Monte Carlo events onto the source_path
             sim_ev = self.spatial_pdf.rotate_to_position(
-                sim_ev, source['ra_rad'], source['dec_rad']
+                sim_ev, source["ra_rad"], source["dec_rad"]
             )
 
             # Generates times for each simulated event, drawing from the
@@ -395,8 +412,7 @@ class MCInjector(BaseInjector):
 
             # Joins the new events to the signal events
             sig_events = np.concatenate(
-                (sig_events,
-                 sim_ev[list(self.season.get_background_dtype().names)])
+                (sig_events, sim_ev[list(self.season.get_background_dtype().names)])
             )
 
         return sig_events
@@ -426,13 +442,21 @@ class LowMemoryInjector(MCInjector):
         self.split_cats = cats
         self.injection_band_paths = paths
 
-        if np.sum([not os.path.isfile(x) for x in self.injection_band_paths]) > 0.:
+        if np.sum([not os.path.isfile(x) for x in self.injection_band_paths]) > 0.0:
             logger.info("No saved band masks found. These will have to be made first.")
             self.make_injection_band_mask()
 
-        self.n_exp = np.zeros((len(self.sources), 1), dtype=np.dtype(
-            [('source_name', 'a30'), ('n_exp', float),
-             ('mask_index', int), ("source_index", int)]))
+        self.n_exp = np.zeros(
+            (len(self.sources), 1),
+            dtype=np.dtype(
+                [
+                    ("source_name", "a30"),
+                    ("n_exp", float),
+                    ("mask_index", int),
+                    ("source_index", int),
+                ]
+            ),
+        )
 
         self.n_exp["mask_index"] = np.array(m_index).reshape(len(m_index), 1)
         self.n_exp["source_index"] = np.array(s_index).reshape(len(s_index), 1)
@@ -455,13 +479,17 @@ class LowMemoryInjector(MCInjector):
                 pass
 
             # Make mask
-            injection_band_mask = sparse.lil_matrix((len(cat),
-                                                     len(self._mc)), dtype=bool)
+            injection_band_mask = sparse.lil_matrix(
+                (len(cat), len(self._mc)), dtype=bool
+            )
             for i, source in enumerate(cat):
-                dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(source,
-                                                                            self.injection_declination_bandwidth)
-                band_mask = np.logical_and(np.greater(self._mc["trueDec"], min_dec),
-                                           np.less(self._mc["trueDec"], max_dec))
+                dec_width, min_dec, max_dec, omega = self.get_dec_and_omega(
+                    source, self.injection_declination_bandwidth
+                )
+                band_mask = np.logical_and(
+                    np.greater(self._mc["trueDec"], min_dec),
+                    np.less(self._mc["trueDec"], max_dec),
+                )
                 injection_band_mask[i, :] = band_mask
             injection_band_mask = injection_band_mask.tocsr()
             sparse.save_npz(path, injection_band_mask)
@@ -474,7 +502,7 @@ class LowMemoryInjector(MCInjector):
         path = self.injection_band_paths[index]
         # logger.debug(f'type(band_mask_cache) = {type(self.band_mask_cache)}')
         del self.band_mask_cache
-        logger.debug(f'loading bandmask from {path}')
+        logger.debug(f"loading bandmask from {path}")
         self.band_mask_cache = sparse.load_npz(path)
         self.band_mask_index = index
         # return sparse.load_npz(path)
@@ -483,12 +511,16 @@ class LowMemoryInjector(MCInjector):
 
         entry = self.get_n_exp_single(source)
         if len(entry) != 1:
-            raise ValueError(f"Length of found entries for {source['source_name']} "
-                             f"is {len(entry)} but should be 1!")
+            raise ValueError(
+                f"Length of found entries for {source['source_name']} "
+                f"is {len(entry)} but should be 1!"
+            )
         mask_index = entry["mask_index"]
 
-        if not np.logical_and(not isinstance(self.band_mask_cache, type(None)),
-                              self.band_mask_index == mask_index):
+        if not np.logical_and(
+            not isinstance(self.band_mask_cache, type(None)),
+            self.band_mask_index == mask_index,
+        ):
             try:
                 self.load_band_mask(mask_index[0])
             except (zlib.error, zipfile.BadZipFile):
@@ -499,9 +531,7 @@ class LowMemoryInjector(MCInjector):
 
         # band_mask = self.load_band_mask(mask_index[0])
 
-        return self.band_mask_cache.getrow(entry["source_index"][0]).toarray(
-
-        )[0]
+        return self.band_mask_cache.getrow(entry["source_index"][0]).toarray()[0]
 
 
 @MCInjector.register_subclass("effective_area_injector")
@@ -522,8 +552,7 @@ class EffectiveAreaInjector(BaseInjector):
     def inject_signal(self, scale):
 
         # Creates empty signal event array
-        sig_events = np.empty((0,),
-                              dtype=self.season.get_background_dtype())
+        sig_events = np.empty((0,), dtype=self.season.get_background_dtype())
 
         n_tot_exp = 0
 
@@ -547,16 +576,19 @@ class EffectiveAreaInjector(BaseInjector):
             else:
                 n_s = int(n_inj)
 
-            logger.debug("Injected {0} events with an expectation of {1:.2f} events for {2}".format(
-                n_s, n_inj if isinstance(n_inj, float) else float(n_inj[0]), source["source_name"]
-            ))
+            logger.debug(
+                "Injected {0} events with an expectation of {1:.2f} events for {2}".format(
+                    n_s,
+                    n_inj if isinstance(n_inj, float) else float(n_inj[0]),
+                    source["source_name"],
+                )
+            )
 
             #  If n_s = 0, skips simulation step.
             if n_s < 1:
                 continue
 
-            sim_ev = np.empty(
-                (n_s,), dtype=self.season.get_background_dtype())
+            sim_ev = np.empty((n_s,), dtype=self.season.get_background_dtype())
 
             # Fills the energy proxy conversion cache
 
@@ -581,8 +613,7 @@ class EffectiveAreaInjector(BaseInjector):
 
             sim_ev = self.spatial_pdf.simulate_distribution(source, sim_ev)
 
-            sim_ev = sim_ev[list(
-                self.season.get_background_dtype().names)].copy()
+            sim_ev = sim_ev[list(self.season.get_background_dtype().names)].copy()
             #
 
             # Joins the new events to the signal events
@@ -613,7 +644,8 @@ class EffectiveAreaInjector(BaseInjector):
 
         def source_eff_area(e):
             return self.effective_area_f(
-                np.log10(e), np.sin(source["dec_rad"])) * self.energy_pdf.f(e)
+                np.log10(e), np.sin(source["dec_rad"])
+            ) * self.energy_pdf.f(e)
 
         int_eff_a = self.energy_pdf.integrate_over_E(source_eff_area)
 
@@ -621,36 +653,35 @@ class EffectiveAreaInjector(BaseInjector):
 
         int_eff_a *= 10**4
 
-        n_inj = fluence*int_eff_a
+        n_inj = fluence * int_eff_a
 
         return n_inj
 
     def calculate_n_exp_single(self, source):
-        return self.calculate_single_source(source, scale=1.)
+        return self.calculate_single_source(source, scale=1.0)
 
     def calculate_energy_proxy(self, source):
         # Simulates energy proxy values
 
         def source_eff_area(log_e):
-            return self.effective_area_f(log_e,
-                                         np.sin(source["dec_rad"])) * \
-                   self.energy_pdf.f(log_e) * \
-                   self.energy_proxy_mapping(log_e)
+            return (
+                self.effective_area_f(log_e, np.sin(source["dec_rad"]))
+                * self.energy_pdf.f(log_e)
+                * self.energy_proxy_mapping(log_e)
+            )
 
         start_x = np.log10(self.energy_pdf.integral_e_min)
 
-
-
         x_vals = np.linspace(
-            start_x + 1e-7,
-            np.log10(self.energy_pdf.integral_e_max),
-            100
+            start_x + 1e-7, np.log10(self.energy_pdf.integral_e_max), 100
         )[1:]
 
-        y_vals = np.array([
-            self.energy_pdf.integrate_over_E(source_eff_area, upper=np.exp(x))
-            for x in x_vals
-        ])
+        y_vals = np.array(
+            [
+                self.energy_pdf.integrate_over_E(source_eff_area, upper=np.exp(x))
+                for x in x_vals
+            ]
+        )
         y_vals /= max(y_vals)
 
         f = interpolate.interp1d([0.0] + list(y_vals), [start_x] + list(x_vals))
@@ -686,6 +717,7 @@ class TrueUnblindedInjector:
     """If the data is unblinded, then UnblindedInjector should be called. In
     this case, the create_dataset function simply returns the unblinded dataset.
     """
+
     def __init__(self, season, sources, **kwargs):
         self.season = season
 
@@ -709,4 +741,3 @@ class TrueUnblindedInjector:
 #     )
 #
 #     LowMemoryInjector(data, cat)
-

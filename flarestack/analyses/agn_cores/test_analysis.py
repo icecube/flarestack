@@ -29,34 +29,34 @@ name = "analyses/agn_cores/test_analysis/"
 
 llh_dict = {
     "name": "spatial",
-    "LLH Time PDF": {
-        "Name": "Steady"
-        },
-    }
+    "LLH Time PDF": {"Name": "Steady"},
+}
 
 inj_dict = {
-    "Injection Time PDF": {
-        "Name": "Steady"
-        },
+    "Injection Time PDF": {"Name": "Steady"},
     "Injection Energy PDF": {
         "Name": "Power Law",
         "Gamma": gamma,
-        }
-    }
+    },
+}
 
 mh_dict = {
     "name": name,
     "mh_name": "fixed_weights",
     "datasets": ps_7year,
-    "catalogue":agn_catalogue_name("radioloud", "2rxs_100brightest_srcs"), # agn_catalogue_name("radioloud", "2rxs_100random_srcs"),  #agn_catalogue_name("radioloud", "2rxs_test"),
+    "catalogue": agn_catalogue_name(
+        "radioloud", "2rxs_100brightest_srcs"
+    ),  # agn_catalogue_name("radioloud", "2rxs_100random_srcs"),  #agn_catalogue_name("radioloud", "2rxs_test"),
     "llh_dict": llh_dict,
-    "inj kwargs": inj_dict
-    }
+    "inj kwargs": inj_dict,
+}
 
 cat_name = agn_catalogue_name("radioloud", "2rxs_100brightest_srcs")
 cat = np.load(cat_name)
 print(("Cat is ", cat_name, " Its lenght is: ", len(cat)))
-scale = flux_to_k(reference_sensitivity(0.5, gamma)) *20*10**-3   #0.5 is the usally the sin_dec of the closest source  -> [this produced 60000 neutrinos!!!
+scale = (
+    flux_to_k(reference_sensitivity(0.5, gamma)) * 20 * 10**-3
+)  # 0.5 is the usally the sin_dec of the closest source  -> [this produced 60000 neutrinos!!!
 
 
 mh = MinimisationHandler.create(mh_dict)

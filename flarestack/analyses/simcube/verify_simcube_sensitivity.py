@@ -60,7 +60,7 @@ for i, (label, dataset) in enumerate(datasets):
         cat_path = ps_catalogue_name(sindec)
 
         mh_dict = {
-            "name": name + "/sindec=" + '{0:.2f}'.format(sindec) + "/",
+            "name": name + "/sindec=" + "{0:.2f}".format(sindec) + "/",
             "mh_name": "fixed_weights",
             "datasets": dataset,
             "catalogue": cat_path,
@@ -70,7 +70,7 @@ for i, (label, dataset) in enumerate(datasets):
             "n_steps": 15,
         }
 
-        mh_dict["scale"] = 1.
+        mh_dict["scale"] = 1.0
 
         mh = MinimisationHandler.create(mh_dict)
         # print(mh.simulate_and_run(0.))
@@ -79,8 +79,6 @@ for i, (label, dataset) in enumerate(datasets):
         # analyse(mh_dict, n_cpu=2)
 
         input("?")
-
-
 
     #     disc_pots = np.array(disc_pots)
     #

@@ -33,13 +33,13 @@ inj_time = {
     "Name": "FixedRefBox",
     "Fixed Ref Time (MJD)": ref_time,
     "Pre-Window": 0,
-    "Post-Window": window
+    "Post-Window": window,
 }
 
 inj = {
     "Injection Time PDF": inj_time,
     "Injection Energy PDF": energy_pdf,
-    "Poisson Smear?": True
+    "Poisson Smear?": True,
 }
 
 cat_res = dict()
@@ -47,7 +47,7 @@ cat_res = dict()
 sindecs = np.linspace(0.5, -0.5, 3)
 # sindecs = [0.0]
 
-offsets = np.linspace(-90., 90, 7)
+offsets = np.linspace(-90.0, 90, 7)
 
 for sindec in sindecs:
 
@@ -55,7 +55,7 @@ for sindec in sindecs:
 
     cat_path = ps_catalogue_name(sindec)
 
-    sindec_key = "sindec=" + '{0:.2f}'.format(sindec)
+    sindec_key = "sindec=" + "{0:.2f}".format(sindec)
 
     name = name_root + sindec_key + "/"
 
@@ -75,7 +75,7 @@ for sindec in sindecs:
             "Name": "FixedRefBox",
             "Fixed Ref Time (MJD)": 55800 + offset,
             "Pre-Window": 0,
-            "Post-Window": window
+            "Post-Window": window,
         }
 
         llh_kwargs = {
@@ -83,19 +83,20 @@ for sindec in sindecs:
             "LLH Time PDF": llh_time,
             "Fit Gamma?": True,
             "Fit Negative n_s?": True,
-            "Fit Weights?": False
+            "Fit Weights?": False,
         }
 
         mh_dict = {
             "name": full_name,
-            "datasets": custom_dataset(ps_v002_p01, np.load(cat_path),
-                                       llh_kwargs["LLH Time PDF"]),
+            "datasets": custom_dataset(
+                ps_v002_p01, np.load(cat_path), llh_kwargs["LLH Time PDF"]
+            ),
             "catalogue": cat_path,
             "inj kwargs": inj,
             "llh kwargs": llh_kwargs,
             "scale": scale,
             "n_trials": 100,
-            "n_steps": 10
+            "n_steps": 10,
         }
 
         analysis_path = analysis_dir + full_name
@@ -148,7 +149,7 @@ ax.set_yscale("log")
 
 plt.title("Sensitivity for 100 day emission")
 
-ax.legend(loc='upper left', fancybox=True, framealpha=1.)
+ax.legend(loc="upper left", fancybox=True, framealpha=1.0)
 plt.tight_layout()
 plt.savefig(plot_output_dir(name_root) + "misalignment_sens.pdf")
 plt.close()

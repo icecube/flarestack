@@ -8,15 +8,20 @@ import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube import diffuse_8_year
 from flarestack.utils.catalogue_loader import load_catalogue
-from flarestack.analyses.agn_cores.shared_agncores import \
-    agn_subset_catalogue, complete_cats_north, complete_cats_north, agn_catalogue_name, agn_subset_catalogue_north
+from flarestack.analyses.agn_cores.shared_agncores import (
+    agn_subset_catalogue,
+    complete_cats_north,
+    complete_cats_north,
+    agn_catalogue_name,
+    agn_subset_catalogue_north,
+)
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.unblinding import create_unblinder
 
 
 import logging
 import os
-import psutil, resource  #to get memory usage info
+import psutil, resource  # to get memory usage info
 
 
 logging.getLogger().setLevel("INFO")
@@ -26,24 +31,22 @@ analyses = dict()
 
 # Initialise Injectors/LLHs
 
-llh_time = {
-    "time_pdf_name": "Steady"
-}
+llh_time = {"time_pdf_name": "Steady"}
 
-llh_energy = {
-    "energy_pdf_name": "PowerLaw"
-}
+llh_energy = {"energy_pdf_name": "PowerLaw"}
 
 llh_dict = {
     "llh_name": "standard_matrix",
     "llh_sig_time_pdf": llh_time,
-    "llh_energy_pdf": llh_energy
+    "llh_energy_pdf": llh_energy,
 }
 
 
 def bkg_ts_base_name(cat_key, gamma):
-    return "analyses/agn_cores/stacking_analysis_8yrNTsample_diff_sens_pre_unblinding/{0}/" \
-           "{1}/".format(cat_key, gamma)
+    return (
+        "analyses/agn_cores/stacking_analysis_8yrNTsample_diff_sens_pre_unblinding/{0}/"
+        "{1}/".format(cat_key, gamma)
+    )
 
 
 def bkg_ts_generate_name(cat_key, n_sources, gamma):
@@ -51,13 +54,14 @@ def bkg_ts_generate_name(cat_key, n_sources, gamma):
 
 
 def base_name(cat_key, gamma):
-    return "analyses/agn_cores/stacking_analysis_8yrNTsample_diff_sens_unblinding/{0}/" \
-           "{1}/".format(cat_key, gamma)
+    return (
+        "analyses/agn_cores/stacking_analysis_8yrNTsample_diff_sens_unblinding/{0}/"
+        "{1}/".format(cat_key, gamma)
+    )
 
 
 def generate_name(cat_key, n_sources, gamma):
     return base_name(cat_key, gamma) + "NrSrcs={0}/".format(n_sources)
-
 
 
 gammas = [2.0, 2.5]

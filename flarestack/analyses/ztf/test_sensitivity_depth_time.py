@@ -25,15 +25,15 @@ name_root = "analyses/ztf/depth_time/"
 
 # Set up what is "injected" into the fake dataset. This is a simulated source
 
-post_window = 5.
+post_window = 5.0
 
 # Use a source that is constant in time
 
 injection_time = {
     "time_pdf_name": "Box",
-    "pre_window": 0.,
+    "pre_window": 0.0,
     "post_window": post_window,
-    "fixed_ref_time_mjd": 55695.
+    "fixed_ref_time_mjd": 55695.0,
 }
 # injection_time = {
 #    "time_pdf_name": "Steady"
@@ -66,10 +66,7 @@ llh_time = dict(inj_kwargs["injection_sig_time_pdf"])
 
 # Try to fit a power law to the data
 
-llh_energy = {
-    "energy_pdf_name": "PowerLaw",
-    "gamma": injection_gamma
-}
+llh_energy = {"energy_pdf_name": "PowerLaw", "gamma": injection_gamma}
 
 # Set up a likelihood that fits the number of signal events (n_s), and also
 # the spectral index (gamma) of the source
@@ -86,7 +83,7 @@ root_mh_dict = {
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
     "n_trials": 10,
-    "n_steps": 10
+    "n_steps": 10,
 }
 
 # Now simulate catalogue
@@ -102,24 +99,24 @@ for sn in sn_types:
 
     core_name = name_root + sn + "/"
 
-
     rate = get_sn_type_rate(sn_type=sn)
-    all_cat_names = simulate_transient_catalogue(root_mh_dict, rate,
-                                                 cat_name="random_{0}".format(sn),
-                                                 n_entries=10,
-                                                 )
+    all_cat_names = simulate_transient_catalogue(
+        root_mh_dict,
+        rate,
+        cat_name="random_{0}".format(sn),
+        n_entries=10,
+    )
 
     cats_to_test = list(all_cat_names.items())
 
     for j, _ in enumerate(seasons[:3]):
 
         raw_mh_dict = dict(root_mh_dict)
-        raw_mh_dict["datasets"] = gfu_8_year.get_seasons(*seasons[:j + 1])
+        raw_mh_dict["datasets"] = gfu_8_year.get_seasons(*seasons[: j + 1])
 
         season_dict = dict()
 
         base_name = "{0}{1}/".format(core_name, j + 1)
-
 
         for (sky, cat_names) in cats_to_test:
 
@@ -157,7 +154,7 @@ for sn in sn_types:
 
             season_dict[sky] = sky_dict
 
-        sn_dict[j+1] = season_dict
+        sn_dict[j + 1] = season_dict
 
     res_dict[sn] = sn_dict
 
@@ -182,7 +179,7 @@ for (sn, sn_dict) in res_dict.items():
             if sky == "Northern":
 
                 sky_res = dict()
-            # if True:
+                # if True:
 
                 savedir = season_savedir + sky + "/"
 
@@ -235,9 +232,7 @@ for (sn, sn_dict) in res_dict.items():
 
                     try:
 
-                        guess = k_to_flux(
-                            rh_dict["scale"] / 1.5
-                        )
+                        guess = k_to_flux(rh_dict["scale"] / 1.5)
 
                     except KeyError:
                         guess = np.nan
@@ -282,7 +277,7 @@ for (sn, sn_dict) in res_dict.items():
                     vals_e = np.array(vals_e)
 
                     base_mask = ~np.isnan(vals_e)
-                    mask = vals_e[base_mask] > 0.
+                    mask = vals_e[base_mask] > 0.0
 
                     try:
 
@@ -345,7 +340,7 @@ for (sn, sn_dict) in res_dict.items():
 
                 try:
 
-                    ratio = np.array(disc_e)/np.array(guess_disc_e)
+                    ratio = np.array(disc_e) / np.array(guess_disc_e)
 
                     plt.figure()
                     ax1 = plt.subplot(111)
@@ -394,7 +389,3 @@ for (sn, sn_res) in all_res.items():
 
     plt.savefig(plot_output_dir(name_root) + str(sn) + "disc_livetime_depth.pdf")
     plt.close()
-
-
-
-

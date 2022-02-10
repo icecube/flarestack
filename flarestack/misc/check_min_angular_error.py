@@ -16,8 +16,7 @@ for season in txs_sample_v1:
         pass
 
     if isinstance(season["exp_path"], list):
-        exp = np.concatenate(
-            tuple([np.load(x) for x in season["exp_path"]]))
+        exp = np.concatenate(tuple([np.load(x) for x in season["exp_path"]]))
     else:
         exp = np.load(season["exp_path"])
 
@@ -33,13 +32,13 @@ for season in txs_sample_v1:
 
     print(season["Name"], "(reading raw data)")
 
-    print(np.sum(mask), "events have an angular error less than", end=' ')
+    print(np.sum(mask), "events have an angular error less than", end=" ")
     print(np.degrees(min_angular_err), "degrees")
     print("This is out of", len(mask), "total events")
 
     print()
 
-    bins = np.linspace(-1, 1., 10)
+    bins = np.linspace(-1, 1.0, 10)
 
     means = 0.5 * (bins[:-1] + bins[1:])
     fracs = []
@@ -64,7 +63,7 @@ for season in txs_sample_v1:
 
     t = exp[season["MJD Time Key"]]
 
-    sidereal_day = 364./365.
+    sidereal_day = 364.0 / 365.0
 
     res = t % sidereal_day
 
@@ -78,7 +77,7 @@ for season in txs_sample_v1:
     while np.sum(az < 0) > 0:
         az[az < 0] += 2 * np.pi
 
-    bins = np.linspace(0, 2*np.pi, 50)
+    bins = np.linspace(0, 2 * np.pi, 50)
 
     means = 0.5 * (bins[:-1] + bins[1:])
     fracs_north = []
@@ -91,8 +90,8 @@ for season in txs_sample_v1:
 
         band_data = exp["sigma"][mask]
 
-        north = band_data[exp["dec"][mask] > 0.]
-        south = band_data[exp["dec"][mask] < 0.]
+        north = band_data[exp["dec"][mask] > 0.0]
+        south = band_data[exp["dec"][mask] < 0.0]
 
         frac_n = np.sum(north < min_angular_err) / float(len(north))
 
@@ -123,8 +122,8 @@ for season in txs_sample_v1:
 
         band_data = exp["sigma"][mask]
 
-        north = band_data[exp["dec"][mask] > 0.]
-        south = band_data[exp["dec"][mask] < 0.]
+        north = band_data[exp["dec"][mask] > 0.0]
+        south = band_data[exp["dec"][mask] < 0.0]
 
         frac_n = np.sum(north < min_angular_err) / float(len(north))
 
@@ -133,8 +132,7 @@ for season in txs_sample_v1:
         frac_s = np.sum(south < min_angular_err) / float(len(south))
         fracs_south.append(frac_s)
 
-        print("North", np.sum(north < min_angular_err), float(len(north)), \
-            frac_n)
+        print("North", np.sum(north < min_angular_err), float(len(north)), frac_n)
 
     plt.figure()
     plt.plot(means, fracs_north, label="Northern Sky")
@@ -159,6 +157,6 @@ for season in txs_sample_v1:
 
     print(season["Name"], "(read in with data_loader)")
 
-    print(np.sum(mask), "events have an angular error less than", end=' ')
+    print(np.sum(mask), "events have an angular error less than", end=" ")
     print(np.degrees(min_angular_err), "degrees")
     print("This is out of", len(mask), "total events")

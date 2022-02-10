@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class IceCubeBackgroundFluxModel:
-
     def __init__(self):
         self.atmo = self.atmo_flux()
         self.muon_bundle = self.muon_bundle_flux()
@@ -36,12 +35,10 @@ class IceCubeBackgroundFluxModel:
 
         ic_angle = np.arccos(sindec)
 
-
-
         dec = np.arccos(sindec)
 
-        earth_radius = 6400.
-        ic_depth = 2.
+        earth_radius = 6400.0
+        ic_depth = 2.0
 
         dist_to_center = earth_radius - ic_depth
 
@@ -59,9 +56,9 @@ class IceCubeBackgroundFluxModel:
 
         # This is the fudgiest factor known to man
 
-        muon_decay_length = 3.
+        muon_decay_length = 3.0
 
-        return np.exp(-length/muon_decay_length)
+        return np.exp(-length / muon_decay_length)
 
     def flux_model_f(self, e, sindec):
 
@@ -69,49 +66,64 @@ class IceCubeBackgroundFluxModel:
 
         return self.atmo.f(e) + muon_contrib
 
+
 # ibfm = IceCubeBackgroundFluxModel()
 #
 # for i in [-1., -0.5, -0.1, 0.0, 0.1, 0.5, 1.]:
 #     print(ibfm.path_through_earth(i))
 # input("?")
 
-bkg_e_pdf_dict = {
-    "energy_pdf_name": "power_law",
-    "gamma": 3.7
-}
-
+bkg_e_pdf_dict = {"energy_pdf_name": "power_law", "gamma": 3.7}
 
 
 class SimCubeSeason(SimSeason):
-
-    def __init__(self, season_name, sample_name, pseudo_mc_path,
-                 event_dtype, load_effective_area, load_angular_resolution,
-                 bkg_time_pdf_dict, bkg_flux_norm, bkg_e_pdf_dict,
-                 energy_proxy_map, sin_dec_bins, log_e_bins, **kwargs):
+    def __init__(
+        self,
+        season_name,
+        sample_name,
+        pseudo_mc_path,
+        event_dtype,
+        load_effective_area,
+        load_angular_resolution,
+        bkg_time_pdf_dict,
+        bkg_flux_norm,
+        bkg_e_pdf_dict,
+        energy_proxy_map,
+        sin_dec_bins,
+        log_e_bins,
+        **kwargs
+    ):
 
         self.log_e_bins = log_e_bins
         self.sin_dec_bins = sin_dec_bins
 
         SimSeason.__init__(
-            self, season_name, sample_name, pseudo_mc_path,
-            event_dtype, load_effective_area,
-            load_angular_resolution, bkg_time_pdf_dict, bkg_flux_norm,
-            bkg_e_pdf_dict, energy_proxy_map, **kwargs
+            self,
+            season_name,
+            sample_name,
+            pseudo_mc_path,
+            event_dtype,
+            load_effective_area,
+            load_angular_resolution,
+            bkg_time_pdf_dict,
+            bkg_flux_norm,
+            bkg_e_pdf_dict,
+            energy_proxy_map,
+            **kwargs
         )
 
     def generate_sim_data(self, fluence):
         logger.info("Simulating events:")
-        sim_events = np.empty((0,),
-                              dtype=self.event_dtype)
+        sim_events = np.empty((0,), dtype=self.event_dtype)
 
         for i, lower_sin_dec in enumerate(self.sin_dec_bins[:-1]):
             upper_sin_dec = self.sin_dec_bins[i + 1]
-            new_events = self.simulate_dec_range(
-                fluence,lower_sin_dec, upper_sin_dec)
+            new_events = self.simulate_dec_range(fluence, lower_sin_dec, upper_sin_dec)
 
-            logger.info("Simulated {0} events between sin(dec)={1} and "
-                  "sin(dec)={2}".format(
-                len(new_events), lower_sin_dec, upper_sin_dec))
+            logger.info(
+                "Simulated {0} events between sin(dec)={1} and "
+                "sin(dec)={2}".format(len(new_events), lower_sin_dec, upper_sin_dec)
+            )
 
             # Joins the new events to the signal events
             sim_events = np.concatenate((sim_events, new_events))
@@ -125,11 +137,12 @@ class SimCubeSeason(SimSeason):
     def simulate_dec_range(self, fluence, lower_sin_dec, upper_sin_dec):
         mean_sin_dec = 0.5 * (lower_sin_dec + upper_sin_dec)
         solid_angle = 2 * np.pi * (upper_sin_dec - lower_sin_dec)
-        sim_fluence = fluence * solid_angle # GeV^-1 cm^-2
+        sim_fluence = fluence * solid_angle  # GeV^-1 cm^-2
 
         def source_eff_area(e):
             return self.effective_area_f(
-                np.log10(e), mean_sin_dec) * self.bkg_energy_pdf.f(e)
+                np.log10(e), mean_sin_dec
+            ) * self.bkg_energy_pdf.f(e)
 
         int_eff_a = self.bkg_energy_pdf.integrate_over_E(source_eff_area)
 
@@ -151,8 +164,7 @@ class SimCubeSeason(SimSeason):
         new_events["dec"] = np.arcsin(new_events["sinDec"])
         new_events["time"] = self.get_time_pdf().simulate_times([], n_sim)
 
-        fluence_ints, log_e_range = \
-            self.bkg_energy_pdf.piecewise_integrate_over_energy(
+        fluence_ints, log_e_range = self.bkg_energy_pdf.piecewise_integrate_over_energy(
             source_eff_area
         )
         fluence_ints = fluence_ints
@@ -160,17 +172,19 @@ class SimCubeSeason(SimSeason):
         fluence_ints = np.array(fluence_ints)
         fluence_ints /= np.sum(fluence_ints)
 
-        fluence_cumulative = [np.sum(fluence_ints[:i])
-                              for i, _ in enumerate(fluence_ints)]
+        fluence_cumulative = [
+            np.sum(fluence_ints[:i]) for i, _ in enumerate(fluence_ints)
+        ]
 
-        fluence_cumulative = [0.] + fluence_cumulative + [1.]
+        fluence_cumulative = [0.0] + fluence_cumulative + [1.0]
 
         log_e_range = list(log_e_range) + [log_e_range[-1]]
 
         sim_true_e = interp1d(fluence_cumulative, log_e_range)
 
         true_e_vals = np.array(
-            [10**sim_true_e(random.random()) for _ in range(n_sim)])
+            [10 ** sim_true_e(random.random()) for _ in range(n_sim)]
+        )
 
         new_events["logE"] = self.energy_proxy_map(true_e_vals)
 
@@ -179,6 +193,7 @@ class SimCubeSeason(SimSeason):
 
         return new_events
 
+
 simcube_dataset = SimDataset()
 
 for (name, season) in icecube_ps_3_year.get_seasons().items():
@@ -186,21 +201,27 @@ for (name, season) in icecube_ps_3_year.get_seasons().items():
     def ideal_energy_proxy(e):
         return np.log10(e)
 
-    def wrapper_f(bkg_time_pdf_dict, bkg_flux_model,
-                  energy_proxy_map=None, sim_name=None, **kwargs):
+    def wrapper_f(
+        bkg_time_pdf_dict,
+        bkg_flux_model,
+        energy_proxy_map=None,
+        sim_name=None,
+        **kwargs
+    ):
 
         if np.logical_and(energy_proxy_map is None, sim_name is None):
             energy_proxy_map = ideal_energy_proxy
             sim_name = "default"
 
-        if np.logical_and(energy_proxy_map != ideal_energy_proxy,
-                          sim_name is None):
-            raise ValueError("Non-default energy proxy mapping was used, "
-                             "but no unique sim_name was provided. Please "
-                             "provide a unique 'sim_name' to describe this "
-                             "simulation.")
+        if np.logical_and(energy_proxy_map != ideal_energy_proxy, sim_name is None):
+            raise ValueError(
+                "Non-default energy proxy mapping was used, "
+                "but no unique sim_name was provided. Please "
+                "provide a unique 'sim_name' to describe this "
+                "simulation."
+            )
 
-        sin_dec_bins = season.sin_dec_bins[season.sin_dec_bins > 0.]
+        sin_dec_bins = season.sin_dec_bins[season.sin_dec_bins > 0.0]
 
         sim_season = SimCubeSeason(
             season_name=name,
@@ -223,15 +244,15 @@ for (name, season) in icecube_ps_3_year.get_seasons().items():
 bkg_time_pdf_dict = {
     "time_pdf_name": "fixed_ref_box",
     "fixed_ref_time_mjd": 50000,
-    "pre_window": 0.,
-    "post_window": 500.
+    "pre_window": 0.0,
+    "post_window": 500.0,
 }
 
 simcube_season = simcube_dataset.set_sim_params(
     name="IC86-2012",
     bkg_time_pdf_dict=bkg_time_pdf_dict,
     bkg_flux_norm=1e8,
-    bkg_e_pdf_dict=bkg_e_pdf_dict
+    bkg_e_pdf_dict=bkg_e_pdf_dict,
 )
 
 # nicecube_10year = SimCubeSeason(0, 100, 1., e_pdf_dict)

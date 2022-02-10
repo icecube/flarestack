@@ -11,8 +11,8 @@ import os
 
 ref_time = 58286.9
 
-t_start = ref_time - 30.
-t_end = ref_time + 100.
+t_start = ref_time - 30.0
+t_end = ref_time + 100.0
 
 # Ra and dec of source, from TNS (https://wis-tns.weizmann.ac.il/object/2018cow)
 ra = 244.000927647
@@ -27,11 +27,11 @@ at2018cow_catalogue = custom_sources(
     name="AT2018cow",
     ra=ra,
     dec=dec,
-    weight=1.,
+    weight=1.0,
     distance=lumdist,
     start_time=t_start,
     end_time=t_end,
-    ref_time=t_start
+    ref_time=t_start,
 )
 
 at2018cow_cat_path = individual_tde_cat("AT2018cow")

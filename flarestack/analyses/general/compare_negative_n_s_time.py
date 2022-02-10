@@ -20,7 +20,7 @@ injection_energy = {
     "Gamma": 2.0,
 }
 
-max_window = 50.
+max_window = 50.0
 
 llh_energy = injection_energy
 
@@ -28,14 +28,14 @@ zero_bound = {
     "LLH Energy PDF": llh_energy,
     "Fit Gamma?": True,
     "Flare Search?": False,
-    "Fit Negative n_s?": False
+    "Fit Negative n_s?": False,
 }
 
 negative_bound = {
     "LLH Energy PDF": llh_energy,
     "Fit Gamma?": True,
     "Flare Search?": False,
-    "Fit Negative n_s?": True
+    "Fit Negative n_s?": True,
 }
 
 name = "benchmarks/negative_n_s_time-dep/"
@@ -47,7 +47,7 @@ sindecs = np.linspace(0.5, -0.5, 3)
 offsets = np.linspace(50, 600, 12)
 # offsets = np.linspace(50, 300, 6)
 
-length = 100.
+length = 100.0
 
 
 analyses = dict()
@@ -55,7 +55,7 @@ analyses = dict()
 for sindec in sindecs:
     cat_path = ps_catalogue_name(sindec)
 
-    decname = name + "sindec=" + '{0:.2f}'.format(sindec) + "/"
+    decname = name + "sindec=" + "{0:.2f}".format(sindec) + "/"
 
     src_res = dict()
 
@@ -71,9 +71,9 @@ for sindec in sindecs:
 
             time = {
                 "Name": "FixedRefBox",
-                "Fixed Ref Time (MJD)": 56300.,
-                "Pre-Window": 0.,
-                "Post-Window": float(offset)
+                "Fixed Ref Time (MJD)": 56300.0,
+                "Pre-Window": 0.0,
+                "Post-Window": float(offset),
             }
 
             injection_time = time
@@ -91,14 +91,15 @@ for sindec in sindecs:
 
             mh_dict = {
                 "name": full_name,
-                "datasets": custom_dataset(ps_v002_p01[-1:], np.load(cat_path),
-                                           llh_kwargs["LLH Time PDF"]),
+                "datasets": custom_dataset(
+                    ps_v002_p01[-1:], np.load(cat_path), llh_kwargs["LLH Time PDF"]
+                ),
                 "catalogue": cat_path,
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
                 "n_trials": 100,
-                "n_steps": 20
+                "n_steps": 20,
             }
 
             analysis_path = analysis_dir + full_name
@@ -156,17 +157,18 @@ for sindec, src_res in analyses.items():
 
                 injection_time = rh_dict["inj kwargs"]["Injection Time PDF"]
 
-                inj_time = 0.
+                inj_time = 0.0
 
                 cat = np.load(rh_dict["catalogue"])
 
                 for season in rh_dict["datasets"]:
                     time = TimePDF.create(injection_time, season)
-                    inj_time += np.mean([
-                        time.effective_injection_time(src) for src in cat])
+                    inj_time += np.mean(
+                        [time.effective_injection_time(src) for src in cat]
+                    )
 
-                sens.append(rh.sensitivity*inj_time)
-                disc_pots.append(rh.disc_potential*inj_time)
+                sens.append(rh.sensitivity * inj_time)
+                disc_pots.append(rh.disc_potential * inj_time)
                 ts_median.append(rh.bkg_median)
 
                 if label == "Zero-bound":
@@ -190,12 +192,11 @@ for sindec, src_res in analyses.items():
         all_sens.append(sens)
         all_fracs.append(fracs)
 
-    ax1.grid(True, which='both')
+    ax1.grid(True, which="both")
     yticks = ax1.yaxis.get_major_ticks()
     yticks[1].label1.set_visible(False)
 
-    ax1.set_ylabel(r"Integrated Flux [ GeV$^{-1}$ cm$^{-2}$ ]",
-                   fontsize=12)
+    ax1.set_ylabel(r"Integrated Flux [ GeV$^{-1}$ cm$^{-2}$ ]", fontsize=12)
 
     ax2 = plt.subplot2grid((6, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
@@ -216,12 +217,11 @@ for sindec, src_res in analyses.items():
     ax3.plot(fracs, ts_median, color="green")
 
     ax3.set_ylabel(r"$\lambda_{med}$")
-    ax3.grid(True, which='both')
+    ax3.grid(True, which="both")
 
     ax4.plot(fracs, frac_over, color="purple")
     ax4.set_ylabel(r"Overfluctuations")
-    ax4.grid(True, which='both')
-
+    ax4.grid(True, which="both")
 
     ax4.set_xlabel(r"Length of window (day)", fontsize=12)
 
@@ -232,10 +232,11 @@ for sindec, src_res in analyses.items():
     # ax1.set_xscale("log")
     # ax1.set_xlim(0, 1.0)
 
-    ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
+    ax1.legend(loc="upper left", fancybox=True, framealpha=1.0)
 
-    savename = plot_output_dir(name) + "sindec=" + '{0:.2f}'.format(sindec) + \
-               "_ratio.pdf"
+    savename = (
+        plot_output_dir(name) + "sindec=" + "{0:.2f}".format(sindec) + "_ratio.pdf"
+    )
 
     try:
         os.makedirs(os.path.dirname(savename))

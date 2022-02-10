@@ -5,8 +5,11 @@ in Thomas Kintscher's final unblinding of GFU for the application of the
 'Online Flare Search' method on archival data.
 """
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
-from flarestack.data.icecube.ic_season import IceCubeDataset, \
-    IceCubeSeason, icecube_dataset_dir
+from flarestack.data.icecube.ic_season import (
+    IceCubeDataset,
+    IceCubeSeason,
+    icecube_dataset_dir,
+)
 from flarestack.data.icecube.gfu import gfu_binning
 import numpy as np
 
@@ -35,7 +38,7 @@ gfu_8_year = IceCubeSeason(
     mc_path=gfu_data_dir + "IC86_2011_MC.npy",
     grl_path=[get_grl_path(x) for x in all_years],
     sin_dec_bins=gfu_binning[0],
-    log_e_bins=gfu_binning[1]
+    log_e_bins=gfu_binning[1],
 )
 
 gfu_v002_p04.add_season(gfu_8_year)
@@ -48,6 +51,6 @@ for year in all_years:
         mc_path=gfu_data_dir + "IC86_2011_MC.npy",
         grl_path=get_grl_path(year),
         sin_dec_bins=gfu_binning[0],
-        log_e_bins=gfu_binning[1]
+        log_e_bins=gfu_binning[1],
     )
     gfu_v002_p04.add_subseason(gfu_year)

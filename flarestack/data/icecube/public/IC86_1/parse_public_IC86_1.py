@@ -14,6 +14,7 @@ import pickle
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.icecube_utils.dataset_loader import data_loader
 from flarestack.shared import input_dir
+
 ref_data = data_loader(IC86_1_dict["exp_path"])
 
 src_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
@@ -22,14 +23,16 @@ data_dir = src_dir + "raw_data/"
 output_path = input_dir + "public_datasets/"
 
 
-data_dtype = np.dtype([
-    ('ra', np.float),
-    ('dec', np.float),
-    ('logE', np.float),
-    ('sigma', np.float),
-    ('time', np.float),
-    ('sinDec', np.float)
-])
+data_dtype = np.dtype(
+    [
+        ("ra", np.float),
+        ("dec", np.float),
+        ("logE", np.float),
+        ("sigma", np.float),
+        ("time", np.float),
+        ("sinDec", np.float),
+    ]
+)
 
 
 def parse_numpy_dataset():
@@ -50,10 +53,14 @@ def parse_numpy_dataset():
                 if i > 0:
                     row = [float(x) for x in row if x != ""]
 
-                    entry = (np.deg2rad(row[3]), np.deg2rad(row[4]),
-                             row[1], np.deg2rad(row[2]),
-                             row[0], np.sin(np.deg2rad(row[4]))
-                             )
+                    entry = (
+                        np.deg2rad(row[3]),
+                        np.deg2rad(row[4]),
+                        row[1],
+                        np.deg2rad(row[2]),
+                        row[0],
+                        np.sin(np.deg2rad(row[4])),
+                    )
 
                     data.append(entry)
 
@@ -91,8 +98,7 @@ def parse_effective_areas():
 
     data = np.array(data)
 
-
-    print(sorted(set(data[:,0] + data[:,1])))
+    print(sorted(set(data[:, 0] + data[:, 1])))
 
 
 parse_effective_areas()

@@ -24,14 +24,16 @@ def data_path(season):
     return output_data_dir + season + ".npy"
 
 
-data_dtype = np.dtype([
-    ('ra', np.float),
-    ('dec', np.float),
-    ('logE', np.float),
-    ('sigma', np.float),
-    ('time', np.float),
-    ('sinDec', np.float)
-])
+data_dtype = np.dtype(
+    [
+        ("ra", np.float),
+        ("dec", np.float),
+        ("logE", np.float),
+        ("sigma", np.float),
+        ("time", np.float),
+        ("sinDec", np.float),
+    ]
+)
 
 
 datasets = ["IC40", "IC59", "IC79", "IC86a", "IC86b", "IC86c"]
@@ -56,10 +58,14 @@ def parse_numpy_dataset():
                 if i > 0:
                     row = [float(x) for x in row if x != ""]
 
-                    entry = (np.deg2rad(row[1]), np.deg2rad(row[2]),
-                             row[4], np.deg2rad(row[3]),
-                             row[0], np.sin(np.deg2rad(row[2]))
-                             )
+                    entry = (
+                        np.deg2rad(row[1]),
+                        np.deg2rad(row[2]),
+                        row[4],
+                        np.deg2rad(row[3]),
+                        row[0],
+                        np.sin(np.deg2rad(row[2])),
+                    )
 
                     data.append(entry)
 
@@ -75,12 +81,12 @@ def parse_numpy_dataset():
 # Events are within 3 degrees of position of TXS 0505+056
 
 dec = np.degrees(txs_catalogue["dec_rad"])
-upper_sin_dec = np.sin(np.deg2rad(dec + 3.))[0]
-lower_sin_dec = np.sin(np.deg2rad(dec - 3.))[0]
+upper_sin_dec = np.sin(np.deg2rad(dec + 3.0))[0]
+lower_sin_dec = np.sin(np.deg2rad(dec - 3.0))[0]
 
 # Account for fact that not events are not distributed over RA range
 
-ra_frac = np.deg2rad(6.)/np.deg2rad(360.)
+ra_frac = np.deg2rad(6.0) / np.deg2rad(360.0)
 
 sin_dec_bins = np.array([lower_sin_dec, upper_sin_dec])
 
@@ -96,7 +102,7 @@ def make_season(season_name):
         "Name": season_name,
         "exp_path": data_path(season_name),
         "mc_path": None,
-        "grl_path": None
+        "grl_path": None,
     }
     return season_dict
 
@@ -104,7 +110,7 @@ def make_season(season_name):
 txs_public_sample = [make_season(x) for x in datasets]
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     parse_numpy_dataset()
 
 # def parse_effective_areas():

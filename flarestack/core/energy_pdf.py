@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-gamma_range = [1., 4.]
+gamma_range = [1.0, 4.0]
 
 default_emin = 100
 default_emax = 10**7
@@ -32,14 +32,15 @@ def read_e_pdf_dict(e_pdf_dict):
             ("Gamma", "gamma"),
             ("Spline Path", "spline_path"),
             ("Source Energy (erg)", "source_energy_erg"),
-
         ]
 
         for (old_key, new_key) in maps:
 
             if old_key in list(e_pdf_dict.keys()):
-                logger.warning("Deprecated e_pdf_key '{0}' was used. "
-                                "Please use '{1}' in future.".format(old_key, new_key))
+                logger.warning(
+                    "Deprecated e_pdf_key '{0}' was used. "
+                    "Please use '{1}' in future.".format(old_key, new_key)
+                )
                 e_pdf_dict[new_key] = e_pdf_dict[old_key]
 
         name_maps = [
@@ -50,8 +51,10 @@ def read_e_pdf_dict(e_pdf_dict):
 
         for (old_key, new_key) in name_maps:
             if e_pdf_dict["energy_pdf_name"] == old_key:
-                logger.warning("Deprecated energy_pdf_name '{0}' was used. "
-                                "Please use '{1}' in future.".format(old_key, new_key))
+                logger.warning(
+                    "Deprecated energy_pdf_name '{0}' was used. "
+                    "Please use '{1}' in future.".format(old_key, new_key)
+                )
                 e_pdf_dict["energy_pdf_name"] = new_key
 
     return e_pdf_dict
@@ -83,6 +86,7 @@ class EnergyPDF(object):
         """Adds a new subclass of EnergyPDF, with class name equal to
         "energy_pdf_name".
         """
+
         def decorator(subclass):
             cls.subclasses[energy_pdf_name] = subclass
             return subclass
@@ -97,7 +101,7 @@ class EnergyPDF(object):
         e_pdf_name = e_pdf_dict["energy_pdf_name"]
 
         if e_pdf_name not in cls.subclasses:
-            raise ValueError('Bad energy PDF name {}'.format(e_pdf_name))
+            raise ValueError("Bad energy PDF name {}".format(e_pdf_name))
 
         return cls.subclasses[e_pdf_name](e_pdf_dict)
 
@@ -153,14 +157,14 @@ class EnergyPDF(object):
 
     @staticmethod
     def piecewise_integrate(f, lower, upper):
-        nsteps = int(1.e3)
+        nsteps = int(1.0e3)
 
         e_range = np.linspace(np.log10(lower), np.log10(upper), nsteps + 1)
         diff_sum = []
 
         for i, log_e in enumerate(e_range[:-1]):
-            e0 = 10.**(log_e)
-            e1 = 10.**(e_range[i + 1])
+            e0 = 10.0 ** (log_e)
+            e1 = 10.0 ** (e_range[i + 1])
             diff_sum.append(0.5 * (e1 - e0) * (f(e0) + f(e1)))
 
         return diff_sum, e_range
@@ -186,11 +190,13 @@ class EnergyPDF(object):
         return default, bounds, name
 
     def simulate_true_energies(self, n_s):
-        raise NotImplementedError("Simulate_true_energies not implemented "
-                                  "for {0}".format(self.__class__.__name__))
+        raise NotImplementedError(
+            "Simulate_true_energies not implemented "
+            "for {0}".format(self.__class__.__name__)
+        )
 
 
-@EnergyPDF.register_subclass('power_law')
+@EnergyPDF.register_subclass("power_law")
 class PowerLaw(EnergyPDF):
     """A Power Law energy PDF. Takes an argument of gamma in the dictionary
     for the init function, where gamma is the spectral index of the Power Law.
@@ -224,38 +230,38 @@ class PowerLaw(EnergyPDF):
         :return: Weights Array
         """
         # Uses numexpr for faster processing
-        ow = mc['ow']
-        trueE = mc['trueE']
+        ow = mc["ow"]
+        trueE = mc["trueE"]
         if gamma is None:
             gamma = self.gamma
-        weights = numexpr.evaluate('ow * trueE **(-gamma)')
+        weights = numexpr.evaluate("ow * trueE **(-gamma)")
 
         # If there is a minimum energy, gives a weight of 0 to events below
         if hasattr(self, "e_min"):
             mask = trueE < self.e_min
-            weights[mask] = 0.
+            weights[mask] = 0.0
 
         # If there is a maximum energy, gives a weight of 0 to events above
         if hasattr(self, "e_max"):
             mask = trueE > self.e_max
-            weights[mask] = 0.
+            weights[mask] = 0.0
 
         del ow, trueE
 
         return weights
 
     def f(self, energy):
-        val = energy ** -self.gamma
+        val = energy**-self.gamma
 
         # If there is a minimum energy, gives a weight of 0 to events below
         if hasattr(self, "e_min"):
             if energy < self.e_min:
-                return 0.
+                return 0.0
 
         # If there is a maximum energy, gives a weight of 0 to events above
         if hasattr(self, "e_max"):
             if energy > self.e_max:
-                return 0.
+                return 0.0
 
         return val
 
@@ -269,15 +275,14 @@ class PowerLaw(EnergyPDF):
 
         # Integrate over flux to get dN/dt
 
-        if self.gamma == 1.:
-            phi_integral = np.log(e_max/e_min)
+        if self.gamma == 1.0:
+            phi_integral = np.log(e_max / e_min)
         else:
 
             phi_power = 1 - self.gamma
 
-            phi_integral = (1. / phi_power) * (
-                (e_max ** phi_power) - (
-                    e_min ** phi_power)
+            phi_integral = (1.0 / phi_power) * (
+                (e_max**phi_power) - (e_min**phi_power)
             )
 
         return phi_integral
@@ -293,17 +298,14 @@ class PowerLaw(EnergyPDF):
             e_min = self.integral_e_min
 
         if self.gamma == 2:
-            e_integral = np.log(e_max/e_min)
+            e_integral = np.log(e_max / e_min)
         else:
             power = 2 - self.gamma
 
             # Get around astropy power rounding error (does not give
             # EXACTLY 2)
 
-            e_integral = (
-                (1. / power) * ((e_max ** power) -
-                                (e_min ** power))
-            )
+            e_integral = (1.0 / power) * ((e_max**power) - (e_min**power))
 
         return e_integral
 
@@ -330,7 +332,6 @@ class PowerLaw(EnergyPDF):
     #     print(fluence_ints)
     #     input("")
 
-
     def return_energy_parameters(self):
         default = [2.0]
         bounds = [(gamma_range[0], gamma_range[1])]
@@ -341,7 +342,7 @@ class PowerLaw(EnergyPDF):
         return {"gamma": self.gamma}
 
 
-@EnergyPDF.register_subclass('spline')
+@EnergyPDF.register_subclass("spline")
 class Spline(EnergyPDF):
     """A Power Law energy PDF. Takes an argument of gamma in the dictionary
     for the init function, where gamma is the spectral index of the Power Law.
@@ -371,17 +372,17 @@ class Spline(EnergyPDF):
         :return: Weights Array
         """
         # Uses numexpr for faster processing
-        weights = mc['ow'] * self.f(mc['trueE'])
+        weights = mc["ow"] * self.f(mc["trueE"])
 
         # If there is a minimum energy, gives a weight of 0 to events below
         if hasattr(self, "e_min"):
-            mask = mc['trueE'] < self.e_min
-            weights[mask] = 0.
+            mask = mc["trueE"] < self.e_min
+            weights[mask] = 0.0
 
         # If there is a maximum energy, gives a weight of 0 to events above
         if hasattr(self, "e_max"):
-            mask = mc['trueE'] > self.e_max
-            weights[mask] = 0.
+            mask = mc["trueE"] > self.e_max
+            weights[mask] = 0.0
 
         return weights
 
@@ -394,7 +395,6 @@ class EnergyPDFConstructor:
 
         self.signal_energy_pdf = EnergyPDF.create(e_pdf_dict)
 
-
     @classmethod
     def create(cls, e_pdf_dict):
         e_pdf_dict = read_e_pdf_dict(e_pdf_dict)
@@ -402,7 +402,7 @@ class EnergyPDFConstructor:
         e_pdf_name = e_pdf_dict["energy_pdf_name"]
 
         if e_pdf_name not in cls.subclasses:
-            raise ValueError('Bad energy PDF name {}'.format(e_pdf_name))
+            raise ValueError("Bad energy PDF name {}".format(e_pdf_name))
 
         return cls.subclasses[e_pdf_name](e_pdf_dict)
 
@@ -456,7 +456,3 @@ class EnergyPDFConstructor:
 #
 #     print energy_pdf.fluence_integral()
 #     print energy_pdf.flux_integral()
-
-
-
-

@@ -24,7 +24,7 @@ name_root = "analyses/ztf/depth/"
 
 # Set up what is "injected" into the fake dataset. This is a simulated source
 
-post_window = 100.
+post_window = 100.0
 
 # Use a source that is constant in time
 
@@ -33,9 +33,9 @@ injection_time = {
     # "Pre-Window": 0.,
     # "Post-Window": post_window
 }
-#injection_time = {
+# injection_time = {
 #    "time_pdf_name": "Steady"
-#}
+# }
 
 # Use a source with a spectral index of -2, with an energy range between
 # 100 GeV and 10 Pev (10**7 GeV).
@@ -64,10 +64,7 @@ llh_time = dict(inj_kwargs["injection_time_pdf"])
 
 # Try to fit a power law to the data
 
-llh_energy = {
-    "energy_pdf_name": "PowerLaw",
-    "gamma": injection_gamma
-}
+llh_energy = {"energy_pdf_name": "PowerLaw", "gamma": injection_gamma}
 
 # Set up a likelihood that fits the number of signal events (n_s), and also
 # the spectral index (gamma) of the source
@@ -84,7 +81,7 @@ raw_mh_dict = {
     "inj_dict": inj_kwargs,
     "llh_dict": llh_kwargs,
     "n_trials": 10,
-    "n_steps": 15
+    "n_steps": 15,
 }
 
 # Now simulate catalogue
@@ -100,13 +97,14 @@ for sn in sn_types:
 
     base_name = name_root + sn + "/"
     rate = get_sn_type_rate(sn_type=sn)
-    all_cat_names = simulate_transient_catalogue(raw_mh_dict, rate,
-                                                 cat_name="random_" + sn,
-                                                 n_entries=25,
-                                                 )
+    all_cat_names = simulate_transient_catalogue(
+        raw_mh_dict,
+        rate,
+        cat_name="random_" + sn,
+        n_entries=25,
+    )
 
     cats_to_test = list(all_cat_names.items())
-
 
     for (sky, cat_names) in cats_to_test:
 
@@ -156,7 +154,7 @@ for (sn, sn_dict) in res_dict.items():
     for (sky, sky_dict) in sn_dict.items():
 
         if sky == "Northern":
-        # if True:
+            # if True:
 
             savedir = savedir_sn + sky + "/"
 
@@ -183,14 +181,15 @@ for (sn, sn_dict) in res_dict.items():
                 #
                 # #
                 astro_sens, astro_disc = rh.astro_values(
-                    rh_dict["inj_dict"]["injection_energy_pdf"])
+                    rh_dict["inj_dict"]["injection_energy_pdf"]
+                )
                 #
                 # energy_pdf = EnergyPDF.create(
                 #     rh_dict["inj_dict"]["injection_energy_pdf"])
                 #
                 # raw_input("prompt")
 
-                disc_convert = rh.disc_potential_25/rh.disc_potential
+                disc_convert = rh.disc_potential_25 / rh.disc_potential
                 #
                 sens.append(astro_sens[key] * inj_time)
                 disc.append(astro_disc[key] * inj_time)
@@ -206,9 +205,7 @@ for (sn, sn_dict) in res_dict.items():
 
                 cat = load_catalogue(rh_dict["catalogue"])
 
-                guess = k_to_flux(
-                    rh_dict["scale"]
-                )
+                guess = k_to_flux(rh_dict["scale"])
 
                 astro_guess = calculate_astronomy(
                     guess, rh_dict["inj_dict"]["injection_energy_pdf"], cat
@@ -229,7 +226,7 @@ for (sn, sn_dict) in res_dict.items():
                 (guess_disc, guess_disc_e),
                 (sens, sens_e),
                 (disc, disc_e),
-                (disc_25, disc_25_e)
+                (disc_25, disc_25_e),
             ]
 
             for j, (vals, vals_e) in enumerate(pairs):
@@ -250,7 +247,7 @@ for (sn, sn_dict) in res_dict.items():
                 vals_e = np.array(vals_e)
 
                 base_mask = ~np.isnan(vals_e)
-                mask = vals_e[base_mask] > 0.
+                mask = vals_e[base_mask] > 0.0
 
                 dists = np.array(np.log(dist))[base_mask][mask]
                 log_e = np.log(vals_e[base_mask][mask])

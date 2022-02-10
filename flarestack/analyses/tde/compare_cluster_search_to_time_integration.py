@@ -11,8 +11,7 @@ from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.utils import load_catalogue, custom_dataset
 from flarestack.cluster import analyse, wait_cluster
 import matplotlib.pyplot as plt
-from flarestack.analyses.tde.shared_TDE import individual_tdes, \
-    individual_tde_cat
+from flarestack.analyses.tde.shared_TDE import individual_tdes, individual_tde_cat
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -28,13 +27,9 @@ injection_energy = {
     "gamma": 2.0,
 }
 
-llh_time = {
-    "time_pdf_name": "custom_source_box"
-}
+llh_time = {"time_pdf_name": "custom_source_box"}
 
-llh_bkg_time = {
-    "time_pdf_name": "steady"
-}
+llh_bkg_time = {"time_pdf_name": "steady"}
 
 llh_energy = injection_energy
 
@@ -45,7 +40,7 @@ time_integrated = {
     "llh_energy_pdf": llh_energy,
     "llh_sig_time_pdf": llh_time,
     "llh_bkg_time_pdf": llh_bkg_time,
-    "negative_ns_bool": False
+    "negative_ns_bool": False,
 }
 
 # Time integration where n_s can be fit as negative or positive
@@ -55,13 +50,18 @@ time_integrated_negative_n_s = {
     "llh_energy_pdf": llh_energy,
     "llh_sig_time_pdf": llh_time,
     "llh_bkg_time_pdf": llh_bkg_time,
-    "negative_ns_bool": True
+    "negative_ns_bool": True,
 }
 
 configs = [
     # (time_integrated, "fixed_weights", "fixed_box", "Time-Integrated (n_s > 0)"),
-    (time_integrated_negative_n_s, "fixed_weights", "fixed_box_negative", "Time-Integrated"),
-    (time_integrated, "flare", "flare", "Cluster Search")
+    (
+        time_integrated_negative_n_s,
+        "fixed_weights",
+        "fixed_box_negative",
+        "Time-Integrated",
+    ),
+    (time_integrated, "flare", "flare", "Cluster Search"),
 ]
 
 cluster = True
@@ -107,11 +107,11 @@ for j, cat in enumerate(individual_tdes[-1:]):
             injection_time = {
                 "time_pdf_name": "fixed_ref_box",
                 "fixed_ref_time_mjd": t_start,
-                "pre_window": 0.,
+                "pre_window": 0.0,
                 "post_window": flare_length,
                 "time_smear_bool": True,
-                "min_offset": 0.,
-                "max_offset": max_window - flare_length
+                "min_offset": 0.0,
+                "max_offset": max_window - flare_length,
             }
 
             inj_dict = {
@@ -121,12 +121,15 @@ for j, cat in enumerate(individual_tdes[-1:]):
 
             # Sets a default flux scale for signal injection
 
-            scale = flux_to_k(reference_sensitivity(np.sin(catalogue["dec_rad"]))
-                              * (50 * max_window / flare_length))
+            scale = flux_to_k(
+                reference_sensitivity(np.sin(catalogue["dec_rad"]))
+                * (50 * max_window / flare_length)
+            )
 
             if cat != "AT2018cow":
-                dataset = custom_dataset(txs_sample_v2, catalogue,
-                                         llh_dict["llh_sig_time_pdf"])
+                dataset = custom_dataset(
+                    txs_sample_v2, catalogue, llh_dict["llh_sig_time_pdf"]
+                )
             else:
                 dataset = gfu_v002_p04
 
@@ -139,15 +142,14 @@ for j, cat in enumerate(individual_tdes[-1:]):
                 "llh_dict": llh_dict,
                 "scale": scale,
                 "n_trials": 10,
-                "n_steps": 15
+                "n_steps": 15,
             }
 
             # Run jobs on cluster
 
-            job_id = analyse(mh_dict,
-                             cluster=cluster,
-                             n_cpu=1 if cluster else 32,
-                             h_cpu='00:59:59')
+            job_id = analyse(
+                mh_dict, cluster=cluster, n_cpu=1 if cluster else 32, h_cpu="00:59:59"
+            )
             job_ids.append(job_id)
 
             res[flare_length] = mh_dict
@@ -191,7 +193,8 @@ for (cat, src_res) in cat_res.items():
                 # Convert flux to fluence and source energy
 
                 astro_sens, astro_disc = rh.astro_values(
-                    rh_dict["inj_dict"]["injection_energy_pdf"])
+                    rh_dict["inj_dict"]["injection_energy_pdf"]
+                )
 
                 key = "Energy Flux (GeV cm^{-2} s^{-1})"
 
@@ -209,8 +212,7 @@ for (cat, src_res) in cat_res.items():
 
     # Loop over sensitivity/discovery potential
 
-    for j, [fluence, energy] in enumerate([[sens, sens_e],
-                                          [disc_pots, disc_e]]):
+    for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
 
         plt.figure()
         ax1 = plt.subplot(111)
@@ -226,14 +228,14 @@ for (cat, src_res) in cat_res.items():
 
                 # Plot fluence on left y axis, and source energy on right y axis
 
-                ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                         color=cols[i])
-                ax2.plot(f, energy[i], linestyle=linestyle,
-                         color=cols[i])
+                ax1.plot(
+                    f, fluence[i], label=labels[i], linestyle=linestyle, color=cols[i]
+                )
+                ax2.plot(f, energy[i], linestyle=linestyle, color=cols[i])
 
         # Set up plot
 
-        ax2.grid(True, which='both')
+        ax2.grid(True, which="both")
         ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
         ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
         ax1.set_xlabel(r"Flare Length (Days)")
@@ -247,15 +249,17 @@ for (cat, src_res) in cat_res.items():
             try:
                 y = [fluence, energy][k]
 
-                ax.set_ylim(0.7 * min([min(x) for x in y if len(x) > 0]),
-                            1.5 * max([max(x) for x in y if len(x) > 0]))
+                ax.set_ylim(
+                    0.7 * min([min(x) for x in y if len(x) > 0]),
+                    1.5 * max([max(x) for x in y if len(x) > 0]),
+                )
 
             except ValueError:
                 pass
 
         plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat)
 
-        ax1.legend(loc='upper left', fancybox=True)
+        ax1.legend(loc="upper left", fancybox=True)
         plt.tight_layout()
 
         path = plot_output_dir(name) + "/flare_vs_box_" + ["sens", "disc"][j] + ".pdf"

@@ -78,8 +78,11 @@ with following README:
     /data/ana/PointSource/IC86_2012_PS/Merged_11*.hd5
 
 """
-from flarestack.data.icecube.ic_season import IceCubeDataset, \
-    IceCubeSeason, icecube_dataset_dir
+from flarestack.data.icecube.ic_season import (
+    IceCubeDataset,
+    IceCubeSeason,
+    icecube_dataset_dir,
+)
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 import numpy as np
 import logging
@@ -92,8 +95,8 @@ grl_data_dir = ps_data_dir + "GRL/"
 ps_v002_p03 = IceCubeDataset()
 
 sample_name = "ps_tracks_v002_p03"
-logger.debug(f'building {sample_name}')
-logger.debug(f'adding IC40')
+logger.debug(f"building {sample_name}")
+logger.debug(f"adding IC40")
 ic40 = IceCubeSeason(
     season_name="IC40",
     sample_name=sample_name,
@@ -101,12 +104,12 @@ ic40 = IceCubeSeason(
     mc_path=ps_data_dir + "IC40_MC.npy",
     grl_path=grl_data_dir + "IC40_exp.npy",
     sin_dec_bins=get_ps_binning("IC40")[0],
-    log_e_bins=get_ps_binning("IC40")[1]
+    log_e_bins=get_ps_binning("IC40")[1],
 )
 
 ps_v002_p03.add_season(ic40)
 
-logger.debug('adding IC59')
+logger.debug("adding IC59")
 ic59 = IceCubeSeason(
     season_name="IC59",
     sample_name=sample_name,
@@ -114,12 +117,12 @@ ic59 = IceCubeSeason(
     mc_path=ps_data_dir + "IC59_MC.npy",
     grl_path=grl_data_dir + "IC59_exp.npy",
     sin_dec_bins=get_ps_binning("IC59")[0],
-    log_e_bins=get_ps_binning("IC59")[1]
+    log_e_bins=get_ps_binning("IC59")[1],
 )
 
 ps_v002_p03.add_season(ic59)
 
-logger.debug('adding IC79')
+logger.debug("adding IC79")
 ic79 = IceCubeSeason(
     season_name="IC79",
     sample_name=sample_name,
@@ -127,13 +130,13 @@ ic79 = IceCubeSeason(
     mc_path=ps_data_dir + "IC79_MC.npy",
     grl_path=grl_data_dir + "IC79_exp.npy",
     sin_dec_bins=get_ps_binning("IC79")[0],
-    log_e_bins=get_ps_binning("IC79")[1]
+    log_e_bins=get_ps_binning("IC79")[1],
 )
 ps_v002_p03.add_season(ic79)
 
-boundary = np.sin(np.radians(-5.))  # North/South transition boundary
+boundary = np.sin(np.radians(-5.0))  # North/South transition boundary
 
-logger.debug('adding IC86 2011')
+logger.debug("adding IC86 2011")
 ic86_1 = IceCubeSeason(
     season_name="IC86_1",
     sample_name=sample_name,
@@ -141,7 +144,7 @@ ic86_1 = IceCubeSeason(
     mc_path=ps_data_dir + "IC86_2011_MC.npy",
     grl_path=grl_data_dir + "IC86_2011_exp.npy",
     sin_dec_bins=get_ps_binning("IC86_2011")[0],
-    log_e_bins=get_ps_binning("IC86_2011")[1]
+    log_e_bins=get_ps_binning("IC86_2011")[1],
 )
 
 ps_v002_p03.add_season(ic86_1)
@@ -150,7 +153,7 @@ ps_v002_p03.add_season(ic86_1)
 # the combined season
 
 for i in range(2, 5):
-    logger.debug(f'adding IC86 201{i}')
+    logger.debug(f"adding IC86 201{i}")
     ic86_i = IceCubeSeason(
         season_name="IC86_{0}".format(i),
         sample_name=sample_name,
@@ -158,27 +161,27 @@ for i in range(2, 5):
         mc_path=ps_data_dir + "IC86_2012_MC.npy",
         grl_path=grl_data_dir + "IC86_201{0}_exp.npy".format(i),
         sin_dec_bins=get_ps_binning("IC86_2012")[0],
-        log_e_bins=get_ps_binning("IC86_2012")[1]
+        log_e_bins=get_ps_binning("IC86_2012")[1],
     )
     ps_v002_p03.add_subseason(ic86_i)
 
-logger.debug('adding IC86 2012-2014')
+logger.debug("adding IC86 2012-2014")
 ic86_234 = IceCubeSeason(
     season_name="IC86_234",
     sample_name=sample_name,
     exp_path=[
         ps_data_dir + "IC86_2012_exp.npy",
         ps_data_dir + "IC86_2013_exp.npy",
-        ps_data_dir + "IC86_2014_exp.npy"
+        ps_data_dir + "IC86_2014_exp.npy",
     ],
     mc_path=ps_data_dir + "IC86_2012_MC.npy",
     grl_path=[
         grl_data_dir + "IC86_2012_exp.npy",
         grl_data_dir + "IC86_2013_exp.npy",
-        grl_data_dir + "IC86_2014_exp.npy"
+        grl_data_dir + "IC86_2014_exp.npy",
     ],
     sin_dec_bins=get_ps_binning("IC86_2012")[0],
-    log_e_bins=get_ps_binning("IC86_2012")[1]
+    log_e_bins=get_ps_binning("IC86_2012")[1],
 )
 
 ps_v002_p03.add_season(ic86_234)
@@ -195,4 +198,3 @@ ps_v002_p03.add_season(ic86_234)
 #     season.sample_name = "all_sky_3_year_mc"
 #
 #     ps_3_systematic_set.add_season(season)
-

@@ -20,12 +20,12 @@ def grb_evolution_lien_14(z, z1=3.6, n1=2.07, n2=-0.7):
 
     res = np.ones_like(z)
 
-    if np.sum(mask) > 0.:
+    if np.sum(mask) > 0.0:
 
-        res[mask] = (1. + z[mask])**n1
+        res[mask] = (1.0 + z[mask]) ** n1
 
-    if np.sum(~mask) > 0.:
-        res[~mask] = ((1. + z1) ** (n1 - n2)) * (1. + z[~mask])**n2
+    if np.sum(~mask) > 0.0:
+        res[~mask] = ((1.0 + z1) ** (n1 - n2)) * (1.0 + z[~mask]) ** n2
 
     return res
 
@@ -55,7 +55,7 @@ grb_evolutions = {
         grb_evolution_lien_14,
         lien_14_lower,
         lien_14_upper,
-        "https://arxiv.org/abs/1311.4567"
+        "https://arxiv.org/abs/1311.4567",
     ),
 }
 
@@ -73,8 +73,10 @@ def get_grb_evolution(evolution_name=None, with_range=False, **kwargs):
         evolution_name = "lien_14"
 
     if evolution_name not in grb_evolutions.keys():
-        raise Exception(f"Evolution name '{evolution_name}' not recognised. "
-                        f"The following source evolutions are available: {grb_evolutions.keys()}")
+        raise Exception(
+            f"Evolution name '{evolution_name}' not recognised. "
+            f"The following source evolutions are available: {grb_evolutions.keys()}"
+        )
     else:
         evolution, lower_ev, upper_ev, ref = grb_evolutions[evolution_name]
         logging.info(f"Loaded evolution '{evolution_name}' ({ref})")
@@ -85,15 +87,21 @@ def get_grb_evolution(evolution_name=None, with_range=False, **kwargs):
         :param z: Redshift
         :return: Rate relative to f(z=0.0(
         """
-        return evolution(z, **kwargs)/evolution(0.0, **kwargs)
+        return evolution(z, **kwargs) / evolution(0.0, **kwargs)
 
     if with_range:
 
         if lower_ev is None:
-            raise Exception(f"No one sigma evolution range found for evolution '{evolution_name}'. "
-                            f"Use a different rate, or set 'with_range=False'.")
+            raise Exception(
+                f"No one sigma evolution range found for evolution '{evolution_name}'. "
+                f"Use a different rate, or set 'with_range=False'."
+            )
 
-        return normed_evolution, lambda z: lower_ev(z)/lower_ev(0.0), lambda z: upper_ev(z)/upper_ev(0.0)
+        return (
+            normed_evolution,
+            lambda z: lower_ev(z) / lower_ev(0.0),
+            lambda z: upper_ev(z) / upper_ev(0.0),
+        )
 
     else:
         return normed_evolution
@@ -104,7 +112,7 @@ local_grb_rates = {
         0.42 / (u.Gpc**3 * u.yr),
         0.38 / (u.Gpc**3 * u.yr),
         0.51 / (u.Gpc**3 * u.yr),
-        "https://arxiv.org/abs/1706.00391"
+        "https://arxiv.org/abs/1706.00391",
     ),
 }
 
@@ -122,8 +130,10 @@ def get_local_grb_rate(rate_name=None, with_range=False):
         rate_name = "lien_14"
 
     if rate_name not in local_grb_rates.keys():
-        raise Exception(f"Rate name '{rate_name}' not recognised. "
-                        f"The following source evolutions are available: {local_grb_rates.keys()}")
+        raise Exception(
+            f"Rate name '{rate_name}' not recognised. "
+            f"The following source evolutions are available: {local_grb_rates.keys()}"
+        )
     else:
         local_rate, lower_lim, upper_lim, ref = local_grb_rates[rate_name]
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
@@ -131,10 +141,16 @@ def get_local_grb_rate(rate_name=None, with_range=False):
     if with_range:
 
         if lower_lim is None:
-            raise Exception(f"No one sigma rate range found for rate '{rate_name}'. "
-                            f"Use a different rate, or set 'with_range=False'.")
+            raise Exception(
+                f"No one sigma rate range found for rate '{rate_name}'. "
+                f"Use a different rate, or set 'with_range=False'."
+            )
 
-        return local_rate.to("Mpc-3 yr-1"), lower_lim.to("Mpc-3 yr-1"), upper_lim.to("Mpc-3 yr-1")
+        return (
+            local_rate.to("Mpc-3 yr-1"),
+            lower_lim.to("Mpc-3 yr-1"),
+            upper_lim.to("Mpc-3 yr-1"),
+        )
 
     else:
         return local_rate.to("Mpc-3 yr-1")
@@ -150,18 +166,15 @@ def get_grb_rate(evolution_name=None, rate_name=None, with_range=False, **kwargs
     :return: GRB Rate function
     """
     normed_evolution = get_grb_evolution(
-        evolution_name=evolution_name,
-        with_range=with_range,
-        **kwargs
+        evolution_name=evolution_name, with_range=with_range, **kwargs
     )
-    local_rate = get_local_grb_rate(
-        rate_name=rate_name,
-        with_range=with_range
-    )
+    local_rate = get_local_grb_rate(rate_name=rate_name, with_range=with_range)
 
     if with_range:
-        return lambda z: local_rate[0] * normed_evolution[0](z), \
-               lambda z: local_rate[1] * normed_evolution[1](z), \
-               lambda z: local_rate[2] * normed_evolution[2](z)
+        return (
+            lambda z: local_rate[0] * normed_evolution[0](z),
+            lambda z: local_rate[1] * normed_evolution[1](z),
+            lambda z: local_rate[2] * normed_evolution[2](z),
+        )
     else:
         return lambda z: local_rate * normed_evolution(z)

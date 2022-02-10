@@ -2,6 +2,7 @@
 spectrum. To first order, this is a power law with index $E^{-3.7}$.
 """
 
+
 def approximated_atmo_spectrum(energy):
     """Gives an approximated atmospheric neutrino spectrum.
     Can be used for comparing expected true energy distribution to recorded
@@ -11,4 +12,4 @@ def approximated_atmo_spectrum(energy):
     :param energy: True neutrino energy (in some consistent unit)
     :return: Spectrum weight for that energy
     """
-    return energy ** -3.7
+    return energy**-3.7

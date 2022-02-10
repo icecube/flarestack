@@ -5,8 +5,7 @@ import os
 import pickle as Pickle
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, \
-    catalogue_dir
+from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 from flarestack.cluster import run_desy_cluster as rd
 import matplotlib.pyplot as plt
@@ -23,22 +22,16 @@ llh_energy = {
     "Gamma": 2.0,
 }
 
-llh_time = {
-    "Name": "FixedEndBox"
-}
+llh_time = {"Name": "FixedEndBox"}
 
 # Standard Time Integration
 
-standard_inj_time = {
-    "Name": "Box",
-    "Pre-Window": 0,
-    "Post-Window": 100
-}
+standard_inj_time = {"Name": "Box", "Pre-Window": 0, "Post-Window": 100}
 
 standard_inj_kwargs = {
     "Injection Time PDF": standard_inj_time,
     "Injection Energy PDF": llh_energy,
-    "Poisson Smear?": True
+    "Poisson Smear?": True,
 }
 
 standard_llh = {
@@ -46,7 +39,7 @@ standard_llh = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": True,
-    "Fit Weights?": False
+    "Fit Weights?": False,
 }
 
 standard_positive_llh = {
@@ -54,7 +47,7 @@ standard_positive_llh = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": False,
-    "Fit Weights?": False
+    "Fit Weights?": False,
 }
 
 # Murase model with One day Injection
@@ -64,41 +57,30 @@ murase_flare_llh = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": False,
-    "Flare Search?": True
+    "Flare Search?": True,
 }
 
-inj_time_murase = {
-    "Name": "Box",
-    "Pre-Window": 0,
-    "Post-Window": 2.3
-}
+inj_time_murase = {"Name": "Box", "Pre-Window": 0, "Post-Window": 2.3}
 
 murase_flare_inj_kwargs = {
     "Injection Time PDF": inj_time_murase,
     "Injection Energy PDF": llh_energy,
-    "Poisson Smear?": True
+    "Poisson Smear?": True,
 }
 
 # Winter Model with 10 day Injection
 
-winter_energy_pdf = {
-    "Name": "Power Law",
-    "Gamma": 2.0
-}
+winter_energy_pdf = {"Name": "Power Law", "Gamma": 2.0}
 
 winter_flare_llh = {
     "LLH Energy PDF": winter_energy_pdf,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": False,
-    "Flare Search?": True
+    "Flare Search?": True,
 }
 
-winter_flare_inj_time = {
-    "Name": "Box",
-    "Pre-Window": 0,
-    "Post-Window": 10
-}
+winter_flare_inj_time = {"Name": "Box", "Pre-Window": 0, "Post-Window": 10}
 
 winter_flare_injection_time = {
     "Injection Time PDF": winter_flare_inj_time,
@@ -135,18 +117,22 @@ for j, cat in enumerate(cats):
 
     # lengths = [0.5 * max_window]
 
-    for i, [inj_kwargs, llh_kwargs] in enumerate([
-        [standard_inj_kwargs, standard_llh],
-        [standard_inj_kwargs, standard_positive_llh],
-        [winter_flare_injection_time, winter_flare_llh],
-        # [murase_flare_inj_kwargs, murase_flare_llh]
-                                    ]):
+    for i, [inj_kwargs, llh_kwargs] in enumerate(
+        [
+            [standard_inj_kwargs, standard_llh],
+            [standard_inj_kwargs, standard_positive_llh],
+            [winter_flare_injection_time, winter_flare_llh],
+            # [murase_flare_inj_kwargs, murase_flare_llh]
+        ]
+    ):
 
-        label = ["Time-Integrated (Negative n_s)",
-                 "Time-Integrated", "10 Day Flare",
-                 "2 Day Flare"][i]
-        f_name = ["negative_n_s", "positive_n_s", "flare_winter",
-                  "flare_murase"][i]
+        label = [
+            "Time-Integrated (Negative n_s)",
+            "Time-Integrated",
+            "10 Day Flare",
+            "2 Day Flare",
+        ][i]
+        f_name = ["negative_n_s", "positive_n_s", "flare_winter", "flare_murase"][i]
 
         flare_name = name + f_name + "/"
 
@@ -156,11 +142,12 @@ for j, cat in enumerate(cats):
 
             full_name = flare_name + str(gamma) + "/"
 
-            scale = flux_to_k(reference_sensitivity(
-                np.sin(catalogue["dec"]), gamma=gamma) * 50)
+            scale = flux_to_k(
+                reference_sensitivity(np.sin(catalogue["dec"]), gamma=gamma) * 50
+            )
 
             if i > 1:
-                scale *= 10**(i-1)
+                scale *= 10 ** (i - 1)
 
             inj = dict(inj_kwargs)
 
@@ -173,14 +160,15 @@ for j, cat in enumerate(cats):
 
             mh_dict = {
                 "name": full_name,
-                "datasets": custom_dataset(txs_sample_v1, catalogue,
-                                           llh_kwargs["LLH Time PDF"]),
+                "datasets": custom_dataset(
+                    txs_sample_v1, catalogue, llh_kwargs["LLH Time PDF"]
+                ),
                 "catalogue": cat_path,
                 "inj kwargs": inj,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
                 "n_trials": 5,
-                "n_steps": 10
+                "n_steps": 10,
             }
 
             # print scale
@@ -231,8 +219,9 @@ for (cat, src_res) in cat_res.items():
                 inj = rh_dict["inj kwargs"]["Injection Time PDF"]
 
                 if inj["Name"] == "Box":
-                    injection_length = float(inj["Pre-Window"]) + \
-                                       float(inj["Post-Window"])
+                    injection_length = float(inj["Pre-Window"]) + float(
+                        inj["Post-Window"]
+                    )
 
                 else:
                     raise Exception("Unrecognised Time PDF calculation")
@@ -240,7 +229,8 @@ for (cat, src_res) in cat_res.items():
                 inj_time = injection_length * 60 * 60 * 24
 
                 astro_sens, astro_disc = rh.astro_values(
-                    rh_dict["inj kwargs"]["Injection Energy PDF"])
+                    rh_dict["inj kwargs"]["Injection Energy PDF"]
+                )
 
                 key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
@@ -259,8 +249,7 @@ for (cat, src_res) in cat_res.items():
 
         labels.append(f_type)
 
-    for j, [fluence, energy] in enumerate([[sens, sens_e],
-                                          [disc_pots, disc_e]]):
+    for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
 
         plt.figure()
         ax1 = plt.subplot(111)
@@ -275,17 +264,19 @@ for (cat, src_res) in cat_res.items():
         for l, f in enumerate(fracs):
 
             try:
-                ax1.plot(f, fluence[l], label=labels[l], linestyle=linestyle,
-                         color=cols[l])
-                ax2.plot(f, energy[l], linestyle=linestyle,
-                         color=cols[l])
+                ax1.plot(
+                    f, fluence[l], label=labels[l], linestyle=linestyle, color=cols[l]
+                )
+                ax2.plot(f, energy[l], linestyle=linestyle, color=cols[l])
             except ValueError:
                 pass
 
-        y_label = [r"Total Fluence [GeV cm$^{-2}$]",
-                   r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
+        y_label = [
+            r"Total Fluence [GeV cm$^{-2}$]",
+            r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)",
+        ]
 
-        ax2.grid(True, which='both')
+        ax2.grid(True, which="both")
         ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
         ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
         ax1.set_xlabel(r"Gamma")
@@ -295,15 +286,23 @@ for (cat, src_res) in cat_res.items():
         for k, ax in enumerate([ax1, ax2]):
             y = [fluence, energy][k]
 
-            ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
-                        1.1 * max([max(x) for x in y if len(x) > 0]))
+            ax.set_ylim(
+                0.95 * min([min(x) for x in y if len(x) > 0]),
+                1.1 * max([max(x) for x in y if len(x) > 0]),
+            )
 
         plt.title(["Sensitivity", "Discovery Potential"][j] + " for " + cat)
 
-        ax1.legend(loc='upper left', fancybox=True, framealpha=1.)
+        ax1.legend(loc="upper left", fancybox=True, framealpha=1.0)
         plt.tight_layout()
-        plt.savefig(plot_output_dir(name) + "/spectral_index_" +
-                    ["sens", "disc"][j] + "_" + cat + ".pdf")
+        plt.savefig(
+            plot_output_dir(name)
+            + "/spectral_index_"
+            + ["sens", "disc"][j]
+            + "_"
+            + cat
+            + ".pdf"
+        )
         plt.close()
 
     # for j, s in enumerate([sens, sens_e]):

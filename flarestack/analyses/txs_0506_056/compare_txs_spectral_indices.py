@@ -19,9 +19,7 @@ llh_energy = {
     "Gamma": 2.0,
 }
 
-llh_time = {
-    "Name": "FixedEndBox"
-}
+llh_time = {"Name": "FixedEndBox"}
 
 fixed_weights = {
     "LLH Energy PDF": llh_energy,
@@ -50,19 +48,25 @@ injection_length = 100
 
 for e_min in power_law_start_energy:
 
-    name_root = "analyses/txs_0506_056/compare_spectral_indices/Emin=" + \
-                str(e_min) + "/"
+    name_root = (
+        "analyses/txs_0506_056/compare_spectral_indices/Emin=" + str(e_min) + "/"
+    )
 
     src_res = dict()
 
-    for i, llh_kwargs in enumerate([fixed_weights_negative,
-                                    fixed_weights,
-                                    # flare
-                                    ]):
-        label = ["Fixed Weights (Negative n_s)", "Fixed Weights",
-                 "Flare Search", ][i]
-        f_name = ["fixed_weights_neg", "fixed_weights",
-                  "flare"][i]
+    for i, llh_kwargs in enumerate(
+        [
+            fixed_weights_negative,
+            fixed_weights,
+            # flare
+        ]
+    ):
+        label = [
+            "Fixed Weights (Negative n_s)",
+            "Fixed Weights",
+            "Flare Search",
+        ][i]
+        f_name = ["fixed_weights_neg", "fixed_weights", "flare"][i]
 
         name = name_root + f_name + "/"
 
@@ -72,9 +76,7 @@ for e_min in power_law_start_energy:
 
             full_name = name + str(gamma) + "/"
 
-            injection_time = llh_time = {
-                "Name": "FixedEndBox"
-            }
+            injection_time = llh_time = {"Name": "FixedEndBox"}
 
             injection_energy = dict(llh_energy)
             injection_energy["E Min"] = e_min
@@ -86,20 +88,23 @@ for e_min in power_law_start_energy:
                 "Poisson Smear?": True,
             }
 
-            scale = flux_to_k(reference_sensitivity(
-                np.sin(catalogue["dec"]), gamma=gamma
-            )) * 60 * (e_min/100.)**0.2
+            scale = (
+                flux_to_k(reference_sensitivity(np.sin(catalogue["dec"]), gamma=gamma))
+                * 60
+                * (e_min / 100.0) ** 0.2
+            )
 
             mh_dict = {
                 "name": full_name,
-                "datasets": custom_dataset(txs_sample_v1, catalogue,
-                                           llh_kwargs["LLH Time PDF"]),
+                "datasets": custom_dataset(
+                    txs_sample_v1, catalogue, llh_kwargs["LLH Time PDF"]
+                ),
                 "catalogue": txs_cat_path,
                 "inj kwargs": inj_kwargs,
                 "llh kwargs": llh_kwargs,
                 "scale": scale,
                 "n_trials": 5,
-                "n_steps": 15
+                "n_steps": 15,
             }
 
             analysis_path = analysis_dir + full_name
@@ -131,8 +136,7 @@ for e_min in power_law_start_energy:
 
 for (e_min, src_res) in cutoff_dict.items():
 
-    name = "analyses/txs_0506_056/compare_spectral_indices/Emin=" + \
-          str(e_min) + "/"
+    name = "analyses/txs_0506_056/compare_spectral_indices/Emin=" + str(e_min) + "/"
 
     sens_livetime = [[] for _ in src_res]
     fracs = [[] for _ in src_res]
@@ -154,7 +158,8 @@ for (e_min, src_res) in cutoff_dict.items():
                     inj_time = injection_length * 60 * 60 * 24
 
                     astro_sens, astro_disc = rh.astro_values(
-                        rh_dict["inj kwargs"]["Injection Energy PDF"])
+                        rh_dict["inj kwargs"]["Injection Energy PDF"]
+                    )
 
                     key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
@@ -174,8 +179,9 @@ for (e_min, src_res) in cutoff_dict.items():
             labels.append(f_type)
         # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-    for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
-                                          [disc_pots_livetime, disc_e]]):
+    for j, [fluence, energy] in enumerate(
+        [[sens_livetime, sens_e], [disc_pots_livetime, disc_e]]
+    ):
 
         plt.figure()
         ax1 = plt.subplot(111)
@@ -189,15 +195,14 @@ for (e_min, src_res) in cutoff_dict.items():
 
             if len(f) > 0:
 
-                ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                         color=cols[i])
-                ax2.plot(f, energy[i], linestyle=linestyle,
-                         color=cols[i])
+                ax1.plot(
+                    f, fluence[i], label=labels[i], linestyle=linestyle, color=cols[i]
+                )
+                ax2.plot(f, energy[i], linestyle=linestyle, color=cols[i])
 
-        ax2.grid(True, which='both')
+        ax2.grid(True, which="both")
         ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
-        ax2.set_ylabel(r"Isotropic-Equivalent Luminosity $L_{\nu}$ (ergs s$^{"
-                       r"-1}$)")
+        ax2.set_ylabel(r"Isotropic-Equivalent Luminosity $L_{\nu}$ (ergs s$^{" r"-1}$)")
         ax1.set_xlabel(r"Spectral Index ($\gamma$)")
         ax1.set_yscale("log")
         ax2.set_yscale("log")
@@ -205,16 +210,24 @@ for (e_min, src_res) in cutoff_dict.items():
         for k, ax in enumerate([ax1, ax2]):
             y = [fluence, energy][k]
 
-            ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
-                        1.1 * max([max(x) for x in y if len(x) > 0]))
+            ax.set_ylim(
+                0.95 * min([min(x) for x in y if len(x) > 0]),
+                1.1 * max([max(x) for x in y if len(x) > 0]),
+            )
 
-        plt.title(["Sensitivity", "Discovery Potential"][j] +
-                  " for TXS 0506+56 (Neutrino Flare)")
+        plt.title(
+            ["Sensitivity", "Discovery Potential"][j]
+            + " for TXS 0506+56 (Neutrino Flare)"
+        )
 
-        ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
+        ax1.legend(loc="upper left", fancybox=True, framealpha=0.0)
         plt.tight_layout()
-        plt.savefig(plot_output_dir(name) + "/spectral_index_" +
-                    "Emin=" + str(e_min) +
-                    ["sens", "disc"][j] + "_TXS_0506+56.pdf")
+        plt.savefig(
+            plot_output_dir(name)
+            + "/spectral_index_"
+            + "Emin="
+            + str(e_min)
+            + ["sens", "disc"][j]
+            + "_TXS_0506+56.pdf"
+        )
         plt.close()
-

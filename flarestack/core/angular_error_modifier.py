@@ -2,20 +2,36 @@ import logging
 import numpy as np
 import os
 from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.shared import min_angular_err, base_floor_quantile, \
-    floor_pickle, pull_pickle, weighted_quantile
-from flarestack.utils.dynamic_pull_correction import \
-    create_quantile_floor_0d, create_quantile_floor_0d_e, \
-    create_quantile_floor_1d, create_quantile_floor_1d_e, create_pull_0d_e, \
-    create_pull_1d, create_pull_1d_e, create_pull_2d, create_pull_2d_e
+from flarestack.shared import (
+    min_angular_err,
+    base_floor_quantile,
+    floor_pickle,
+    pull_pickle,
+    weighted_quantile,
+)
+from flarestack.utils.dynamic_pull_correction import (
+    create_quantile_floor_0d,
+    create_quantile_floor_0d_e,
+    create_quantile_floor_1d,
+    create_quantile_floor_1d_e,
+    create_pull_0d_e,
+    create_pull_1d,
+    create_pull_1d_e,
+    create_pull_2d,
+    create_pull_2d_e,
+)
 import pickle as Pickle
 from scipy.interpolate import interp1d, RectBivariateSpline
-from flarestack.utils.make_SoB_splines import get_gamma_support_points, \
-    get_gamma_precision, _around
+from flarestack.utils.make_SoB_splines import (
+    get_gamma_support_points,
+    get_gamma_precision,
+    _around,
+)
 import numexpr
 import inspect
 
 logger = logging.getLogger(__name__)
+
 
 class BaseFloorClass(object):
     subclasses = {}
@@ -43,18 +59,19 @@ class BaseFloorClass(object):
         floor_name = floor_dict["floor_name"]
 
         if floor_name not in cls.subclasses:
-            raise ValueError('Bad floor name {}'.format(floor_name))
+            raise ValueError("Bad floor name {}".format(floor_name))
 
         return cls.subclasses[floor_name](floor_dict)
 
     def floor(self, data):
-        return np.array([0. for _ in data])
+        return np.array([0.0 for _ in data])
 
     def apply_floor(self, data):
         mask = data["raw_sigma"] < self.floor(data)
         new_data = data.copy()
         new_data["sigma"][mask] = np.sqrt(
-            self.floor(data[mask].copy()) ** 2. + data["raw_sigma"][mask].copy() ** 2.)
+            self.floor(data[mask].copy()) ** 2.0 + data["raw_sigma"][mask].copy() ** 2.0
+        )
         return new_data
 
     def apply_dynamic(self, data):
@@ -64,7 +81,7 @@ class BaseFloorClass(object):
         return data
 
 
-@BaseFloorClass.register_subclass('no_floor')
+@BaseFloorClass.register_subclass("no_floor")
 class NoFloor(BaseFloorClass):
     pass
 
@@ -94,9 +111,8 @@ class BaseDynamicFloorClass(BaseFloorClass):
         return self.floor(data)
 
 
-@BaseFloorClass.register_subclass('static_floor')
+@BaseFloorClass.register_subclass("static_floor")
 class StaticFloor(BaseStaticFloor):
-
     def __init__(self, floor_dict):
         BaseFloorClass.__init__(self, floor_dict)
 
@@ -105,14 +121,17 @@ class StaticFloor(BaseStaticFloor):
         except KeyError:
             self.min_error = min_angular_err
 
-        logger.debug("Applying an angular error floor of {0} degrees".format(np.degrees(self.min_error)))
+        logger.debug(
+            "Applying an angular error floor of {0} degrees".format(
+                np.degrees(self.min_error)
+            )
+        )
 
     def floor(self, data):
         return np.array([self.min_error for _ in data])
 
 
 class BaseQuantileFloor(BaseFloorClass):
-
     def __init__(self, floor_dict):
 
         try:
@@ -123,7 +142,11 @@ class BaseQuantileFloor(BaseFloorClass):
 
         BaseFloorClass.__init__(self, floor_dict)
 
-        logger.debug("Applying an angular error floor using quantile {0}".format(self.floor_quantile))
+        logger.debug(
+            "Applying an angular error floor using quantile {0}".format(
+                self.floor_quantile
+            )
+        )
 
         if not os.path.isfile(self.pickle_name):
             self.create_pickle()
@@ -142,9 +165,8 @@ class BaseQuantileFloor(BaseFloorClass):
         pass
 
 
-@BaseFloorClass.register_subclass('quantile_floor_0d')
+@BaseFloorClass.register_subclass("quantile_floor_0d")
 class QuantileFloor0D(BaseQuantileFloor, BaseStaticFloor):
-
     def create_pickle(self):
         create_quantile_floor_0d(self.floor_dict)
 
@@ -152,10 +174,8 @@ class QuantileFloor0D(BaseQuantileFloor, BaseStaticFloor):
         return lambda data, params: np.array([pickled_array for _ in data])
 
 
-
-@BaseFloorClass.register_subclass('quantile_floor_0d_e')
+@BaseFloorClass.register_subclass("quantile_floor_0d_e")
 class QuantileFloorEParam0D(BaseQuantileFloor, BaseDynamicFloorClass):
-
     def create_pickle(self):
         create_quantile_floor_0d_e(self.floor_dict)
 
@@ -164,9 +184,8 @@ class QuantileFloorEParam0D(BaseQuantileFloor, BaseDynamicFloorClass):
         return lambda data, params: np.array([func(params) for _ in data])
 
 
-@BaseFloorClass.register_subclass('quantile_floor_1d')
+@BaseFloorClass.register_subclass("quantile_floor_1d")
 class QuantileFloor1D(BaseQuantileFloor, BaseStaticFloor):
-
     def create_pickle(self):
         create_quantile_floor_1d(self.floor_dict)
 
@@ -175,19 +194,23 @@ class QuantileFloor1D(BaseQuantileFloor, BaseStaticFloor):
         return lambda data, params: func(data["logE"])
 
 
-@BaseFloorClass.register_subclass('quantile_floor_1d_e')
+@BaseFloorClass.register_subclass("quantile_floor_1d_e")
 class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
-
     def create_pickle(self):
         create_quantile_floor_1d_e(self.floor_dict)
 
     def create_function(self, pickled_array):
         func = RectBivariateSpline(
-            pickled_array[0], pickled_array[1],
+            pickled_array[0],
+            pickled_array[1],
             np.log(pickled_array[2]),
-            kx=1, ky=1, s=0)
+            kx=1,
+            ky=1,
+            s=0,
+        )
         return lambda data, params: np.array(
-            [np.exp(func(x["logE"], params[0])[0]) for x in data]).T
+            [np.exp(func(x["logE"], params[0])[0]) for x in data]
+        ).T
 
 
 class BaseAngularErrorModifier(object):
@@ -200,7 +223,7 @@ class BaseAngularErrorModifier(object):
         self.pull_name = pull_pickle(pull_dict)
 
         # precision in gamma
-        self.precision = pull_dict.get('gamma_precision', 'flarestack')
+        self.precision = pull_dict.get("gamma_precision", "flarestack")
 
     @classmethod
     def register_subclass(cls, aem_name):
@@ -218,8 +241,14 @@ class BaseAngularErrorModifier(object):
         return decorator
 
     @classmethod
-    def create(cls, season, e_pdf_dict, floor_name="static_floor",
-               aem_name="no_modifier", **kwargs):
+    def create(
+        cls,
+        season,
+        e_pdf_dict,
+        floor_name="static_floor",
+        aem_name="no_modifier",
+        **kwargs
+    ):
 
         pull_dict = dict()
         pull_dict["season"] = season
@@ -229,7 +258,7 @@ class BaseAngularErrorModifier(object):
         pull_dict.update(kwargs)
 
         if aem_name not in cls.subclasses:
-            raise ValueError('Bad pull name {}'.format(aem_name))
+            raise ValueError("Bad pull name {}".format(aem_name))
 
         return cls.subclasses[aem_name](pull_dict)
 
@@ -287,8 +316,8 @@ class BaseAngularErrorModifier(object):
             S2 = spatial_cache[g2]
 
             val = numexpr.evaluate(
-                "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
-                " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
+                "exp((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2"
+                + " + (S2 -S0) / (2. * dg) * (gamma - g1) + S1)"
             )
             # val = numexpr.evaluate(
             #     "((S0 - 2.*S1 + S2) / (2. * dg**2) * (gamma - g1)**2" + \
@@ -298,13 +327,12 @@ class BaseAngularErrorModifier(object):
         return val
 
 
-@BaseAngularErrorModifier.register_subclass('no_pull')
+@BaseAngularErrorModifier.register_subclass("no_pull")
 class NoPull(BaseAngularErrorModifier):
     pass
 
 
 class BaseMedianAngularErrorModifier(BaseAngularErrorModifier):
-
     def __init__(self, pull_dict):
         BaseAngularErrorModifier.__init__(self, pull_dict)
 
@@ -324,14 +352,13 @@ class BaseMedianAngularErrorModifier(BaseAngularErrorModifier):
         pass
 
     def create_static(self):
-        return lambda data: np.array([1. for _ in data])
+        return lambda data: np.array([1.0 for _ in data])
 
     def create_dynamic(self, pickled_array):
-        return lambda data: np.array([1. for _ in data])
+        return lambda data: np.array([1.0 for _ in data])
 
 
 class StaticMedianPullCorrector(BaseMedianAngularErrorModifier):
-
     def __init__(self, pull_dict):
         BaseMedianAngularErrorModifier.__init__(self, pull_dict)
 
@@ -347,7 +374,6 @@ class StaticMedianPullCorrector(BaseMedianAngularErrorModifier):
 
 
 class DynamicMedianPullCorrector(BaseMedianAngularErrorModifier):
-
     def __init__(self, pull_dict):
         BaseAngularErrorModifier.__init__(self, pull_dict)
 
@@ -393,7 +419,6 @@ class DynamicMedianPullCorrector(BaseMedianAngularErrorModifier):
 
 @BaseAngularErrorModifier.register_subclass("median_0d_e")
 class MedianPullEParam0D(DynamicMedianPullCorrector):
-
     def create_pickle(self):
         create_pull_0d_e(self.pull_dict)
 
@@ -403,7 +428,6 @@ class MedianPullEParam0D(DynamicMedianPullCorrector):
 
 @BaseAngularErrorModifier.register_subclass("median_1d")
 class MedianPull1D(StaticMedianPullCorrector):
-
     def create_pickle(self):
         create_pull_1d(self.pull_dict)
 
@@ -414,7 +438,6 @@ class MedianPull1D(StaticMedianPullCorrector):
 
 @BaseAngularErrorModifier.register_subclass("median_1d_e")
 class MedianPullEParam1D(DynamicMedianPullCorrector):
-
     def create_pickle(self):
         create_pull_1d_e(self.pull_dict)
 
@@ -422,28 +445,28 @@ class MedianPullEParam1D(DynamicMedianPullCorrector):
         func = interp1d(pickled_array[0], pickled_array[1])
         return lambda data: func(data["logE"])
 
+
 @BaseAngularErrorModifier.register_subclass("median_2d")
 class MedianPull2D(StaticMedianPullCorrector):
-
     def create_pickle(self):
         create_pull_2d(self.pull_dict)
 
     def create_static(self):
-        func = RectBivariateSpline(self.pickled_data[0], self.pickled_data[1],
-                                   self.pickled_data[2])
+        func = RectBivariateSpline(
+            self.pickled_data[0], self.pickled_data[1], self.pickled_data[2]
+        )
 
         return lambda data: [func(x["logE"], x["sinDec"])[0][0] for x in data]
         # return lambda data:
 
+
 @BaseAngularErrorModifier.register_subclass("median_2d_e")
 class MedianPullEParam2D(DynamicMedianPullCorrector):
-
     def create_pickle(self):
         create_pull_2d_e(self.pull_dict)
 
     def create_dynamic(self, pickled_array):
-        func = RectBivariateSpline(pickled_array[0], pickled_array[1],
-                                   pickled_array[2])
+        func = RectBivariateSpline(pickled_array[0], pickled_array[1], pickled_array[2])
 
         return lambda data: func(data["logE"], data["sinDec"])
 
@@ -451,14 +474,16 @@ class MedianPullEParam2D(DynamicMedianPullCorrector):
 if __name__ == "__main__":
 
     from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-    from flarestack.analyses.angular_error_floor.plot_bias import get_data, \
-        weighted_quantile
+    from flarestack.analyses.angular_error_floor.plot_bias import (
+        get_data,
+        weighted_quantile,
+    )
     from scipy.stats import norm
 
     print(norm.cdf(1.0))
 
     def symmetric_gauss(sigma):
-        return (1 - 2 * norm.sf(sigma))
+        return 1 - 2 * norm.sf(sigma)
 
     def gauss_2d(sigma):
         # return symmetric_gauss(sigma) ** 2
@@ -468,23 +493,20 @@ if __name__ == "__main__":
     print(gauss_2d(1.0))
     print(gauss_2d(1.177))
 
-    e_pdf_dict = {
-        "Name": "Power Law",
-        "Gamma": 3.0
-    }
+    e_pdf_dict = {"Name": "Power Law", "Gamma": 3.0}
 
     e_pdf = EnergyPDF.create(e_pdf_dict)
 
-    pc = BaseAngularErrorModifier.create(IC86_1_dict, e_pdf_dict, "no_floor",
-                                  "median_2d")
+    pc = BaseAngularErrorModifier.create(
+        IC86_1_dict, e_pdf_dict, "no_floor", "median_2d"
+    )
     mc, x, y = get_data(IC86_1_dict)[:10]
 
     pulls = x / y
 
     weights = e_pdf.weight_mc(mc)
 
-    median_pull = weighted_quantile(
-        pulls, 0.5, weights)
+    median_pull = weighted_quantile(pulls, 0.5, weights)
 
     def med_pull(data):
         y = np.degrees(data["sigma"])
@@ -498,9 +520,7 @@ if __name__ == "__main__":
 
     print(mc["sigma"][:5])
 
-
     print(med_pull(mc))
-
 
     print(median_pull)
 

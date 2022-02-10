@@ -9,8 +9,11 @@ This is the sample that was used for the original TXS analysis in 2017
 (NOT THE ONE THAT INCLUDED ADDITIONAL DATA UP TO SPRING 2018!)
 """
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
-from flarestack.data.icecube.ic_season import IceCubeDataset, \
-    IceCubeSeason, icecube_dataset_dir
+from flarestack.data.icecube.ic_season import (
+    IceCubeDataset,
+    IceCubeSeason,
+    icecube_dataset_dir,
+)
 from flarestack.data.icecube.gfu import gfu_binning
 import numpy as np
 
@@ -26,12 +29,12 @@ gfu_season = IceCubeSeason(
     exp_path=[
         gfu_data_dir + "SplineMPEmax.MuEx.IC86-2015.npy",
         gfu_data_dir + "SplineMPEmax.MuEx.IC86-2016.npy",
-        gfu_data_dir + "SplineMPEmax.MuEx.IC86-2017.npy"
+        gfu_data_dir + "SplineMPEmax.MuEx.IC86-2017.npy",
     ],
     mc_path=gfu_data_dir + "SplineMPEmax.MuEx.MC.npy",
     grl_path=gfu_data_dir + "SplineMPEmax.MuEx.GRL.npy",
     sin_dec_bins=gfu_binning[0],
-    log_e_bins=gfu_binning[1]
+    log_e_bins=gfu_binning[1],
 )
 
 gfu_v002_p01.add_season(gfu_season)

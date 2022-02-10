@@ -19,7 +19,7 @@ sources = np.load(cat_path)
 
 # In column one of the paper, they assume a base cosmic ray flux of 10^51 erg
 
-cr_flux = 10 ** 51 * u.erg
+cr_flux = 10**51 * u.erg
 
 # They use the standard Waxmann Bachall factor, in which charged pions are
 # produced with 50% probability, and 3/4 of the decay products of charged
@@ -63,17 +63,13 @@ radiated_energy = {
     "XMMSL1 J0740-85": 5 * 10**50 * u.erg,
     "ASASSN-15oi": 5 * 10**50 * u.erg,
     "ASASSN-14li": 7 * 10**51 * u.erg,
-    "ASASSN-14ae": 1.7 * 10 ** 51 * u.erg,
-    "Swift J1644+57": 10**53 * 20 * u.erg
+    "ASASSN-14ae": 1.7 * 10**51 * u.erg,
+    "Swift J1644+57": 10**53 * 20 * u.erg,
 }
 
 injection_window = 100
 
-time_pdf = {
-    "Name": "Box",
-    "Pre-Window": 0,
-    "Post-Window": injection_window
-}
+time_pdf = {"Name": "Box", "Pre-Window": 0, "Post-Window": injection_window}
 
 
 res_dict = dict()
@@ -104,7 +100,7 @@ for source in sources:
             "Name": "Power Law",
             "Gamma": 2.0,
             "Energy Flux": nu_flux,
-            "E Min": 10 ** 2
+            "E Min": 10**2,
         }
 
         inj_kwargs = {
@@ -120,7 +116,7 @@ for source in sources:
         for season in seasons:
             n_inj += calculate_neutrinos(source, season, inj_kwargs)
 
-        n_injs.append('{0:.2f}'.format(n_inj))
+        n_injs.append("{0:.2f}".format(n_inj))
 
     res_dict[source["Name"]] = n_injs
 

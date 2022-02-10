@@ -8,8 +8,12 @@ from numpy.lib.recfunctions import append_fields, drop_fields
 from flarestack.core.injector import MCInjector, EffectiveAreaInjector
 from flarestack.utils.make_SoB_splines import make_background_spline
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
-from flarestack.core.time_pdf import TimePDF, DetectorOnOffList, FixedEndBox, \
-    FixedRefBox
+from flarestack.core.time_pdf import (
+    TimePDF,
+    DetectorOnOffList,
+    FixedEndBox,
+    FixedRefBox,
+)
 import flarestack
 
 
@@ -17,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class DatasetHolder:
-
     def __init__(self, sample_name):
 
         self.sample_name = sample_name
@@ -29,10 +32,10 @@ class DatasetHolder:
         if version in self.datasets.keys():
             self.current = version
         else:
-            raise Exception("Unrecognised version key: {0} \n "
-                            "Stored dataset keys are: {1}".format(
-                version, self.datasets.keys()
-            ))
+            raise Exception(
+                "Unrecognised version key: {0} \n "
+                "Stored dataset keys are: {1}".format(version, self.datasets.keys())
+            )
 
     def get_current(self):
         if self.current is not None:
@@ -40,9 +43,7 @@ class DatasetHolder:
         else:
             logger.warning("Warning: no file listed as current.")
             key = sorted(list(self.datasets.keys()))
-            logger.warning("Using key {0} out of {1}".format(
-                key, self.datasets.keys())
-            )
+            logger.warning("Using key {0} out of {1}".format(key, self.datasets.keys()))
             return self.datasets[key]
 
 
@@ -78,8 +79,9 @@ class Dataset:
                         "Unrecognised season name: {0} not found. \n"
                         "Available seasons are: {1} \n"
                         "Available subseasons are: {2}".format(
-                            name, self.seasons.keys(), self.subseasons.keys()))
-
+                            name, self.seasons.keys(), self.subseasons.keys()
+                        )
+                    )
 
             return cd
 
@@ -112,7 +114,6 @@ class Dataset:
 
 
 class Season:
-
     def __init__(self, season_name, sample_name, exp_path, **kwargs):
         self.season_name = season_name
         self.sample_name = sample_name
@@ -129,25 +130,27 @@ class Season:
         # If any keywords left over, they're unrecognized, raise an error
         if kwargs:
             # Arbitrarily select alphabetically first unknown keyword arg
-            raise TypeError(f'Season got unexpected keyword argument {min(kwargs)}')
+            raise TypeError(f"Season got unexpected keyword argument {min(kwargs)}")
 
     def setup(self, **kwargs):
 
-        trial_with_data = kwargs.pop('trial_with_data', None)
+        trial_with_data = kwargs.pop("trial_with_data", None)
         subselection_fraction = kwargs.pop("subselection_fraction", None)
 
         # If any keywords left over, they're unrecognized, raise an error
         if kwargs:
             # Arbitrarily select alphabetically first unknown keyword arg
-            raise TypeError(f'Season got unexpected keyword argument {min(kwargs)}')
+            raise TypeError(f"Season got unexpected keyword argument {min(kwargs)}")
 
         # Subselection fraction
 
         if subselection_fraction is not None:
 
-            if float(subselection_fraction) > 1.:
-                raise ValueError("Subselection {0} is greater than 1."
-                                 "Please specify a different subselection value")
+            if float(subselection_fraction) > 1.0:
+                raise ValueError(
+                    "Subselection {0} is greater than 1."
+                    "Please specify a different subselection value"
+                )
 
             self.set_subselection_fraction(subselection_fraction)
 
@@ -165,9 +168,11 @@ class Season:
         self.loaded_trial_model = self.get_trial_model()
 
     def set_subselection_fraction(self, subselection_fraction):
-        if float(subselection_fraction) > 1.:
-            raise ValueError("Subselection {0} is greater than 1."
-                             "Please specify a subselection value <=1. ")
+        if float(subselection_fraction) > 1.0:
+            raise ValueError(
+                "Subselection {0} is greater than 1."
+                "Please specify a subselection value <=1. "
+            )
 
         self._subselection_fraction = subselection_fraction
 
@@ -182,9 +187,7 @@ class Season:
         """Function to return data as a background model."""
         exp = self.get_exp_data(**kwargs)
         weight = np.ones(len(exp))
-        exp = append_fields(
-            exp, 'weight', weight, usemask=False, dtypes=[float]
-        ).copy()
+        exp = append_fields(exp, "weight", weight, usemask=False, dtypes=[float]).copy()
         return exp
 
     def get_background_model(self, **kwargs):
@@ -200,8 +203,10 @@ class Season:
 
     def use_data_for_trials(self):
         if self.__class__.get_background_model == Season.get_background_model:
-            logger.warning("This season is already set to generate trials using scrambled data. "
-                           "No need to set it again!")
+            logger.warning(
+                "This season is already set to generate trials using scrambled data. "
+                "No need to set it again!"
+            )
         else:
             self.get_trial_model = self.get_exp_data
             logger.info("Set trial model to use scrambled data.")
@@ -215,10 +220,12 @@ class Season:
         """
         data = self.generate_trial_dataset()
         # Assigns a flat random distribution for Right Ascension
-        data['ra'] = np.random.uniform(0, 2 * np.pi, size=len(data))
+        data["ra"] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
         np.random.shuffle(data["time"])
-        return np.array(data[list(self.get_background_dtype().names)].copy())[:,]
+        return np.array(data[list(self.get_background_dtype().names)].copy())[
+            :,
+        ]
 
     def simulate_background(self):
         data = self.pseudo_background()
@@ -243,11 +250,10 @@ class Season:
         t_pdf_dict = {
             "time_pdf_name": "fixed_end_box",
             "start_time_mjd": t0,
-            "end_time_mjd": t1
+            "end_time_mjd": t1,
         }
 
         return t_pdf_dict
-
 
     def build_time_pdf(self):
         t_pdf_dict = self.build_time_pdf_dict()
@@ -255,13 +261,13 @@ class Season:
 
         compatible_time_pdfs = [FixedEndBox, FixedRefBox, DetectorOnOffList]
         if np.sum([isinstance(time_pdf, x) for x in compatible_time_pdfs]) == 0:
-            raise ValueError("Attempting to use a time PDF that is not an "
-                             "allowed time PDF class. Only {0} are allowed, "
-                             " as these PDFs have well-defined start and "
-                             "end points. Please prove one of these as a "
-                             "background_time_pdf for the simulation.".format(
-                compatible_time_pdfs
-            ))
+            raise ValueError(
+                "Attempting to use a time PDF that is not an "
+                "allowed time PDF class. Only {0} are allowed, "
+                " as these PDFs have well-defined start and "
+                "end points. Please prove one of these as a "
+                "background_time_pdf for the simulation.".format(compatible_time_pdfs)
+            )
         return time_pdf
 
     def get_time_pdf(self):
@@ -306,13 +312,11 @@ class Season:
     def check_data_quality(self):
         pass
 
-
     # def make_acceptance_function(self, acc_path):
     #     make_acceptance_season(self, acc_path)
 
 
 class SeasonWithMC(Season):
-
     def __init__(self, season_name, sample_name, exp_path, mc_path, **kwargs):
         Season.__init__(self, season_name, sample_name, exp_path, **kwargs)
         self.mc_path = mc_path
@@ -327,14 +331,11 @@ class SeasonWithMC(Season):
 
 
 class SeasonWithoutMC(Season):
-
-    def __init__(self, season_name, sample_name, exp_path, pseudo_mc_path,
-                 **kwargs):
+    def __init__(self, season_name, sample_name, exp_path, pseudo_mc_path, **kwargs):
 
         Season.__init__(self, season_name, sample_name, exp_path, **kwargs)
         self.pseudo_mc_path = pseudo_mc_path
         self.all_paths.append(self.pseudo_mc_path)
-
 
     def make_injector(self, sources, **inj_kwargs):
         return EffectiveAreaInjector.create(self, sources, **inj_kwargs)

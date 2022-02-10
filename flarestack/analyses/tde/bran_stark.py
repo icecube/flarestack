@@ -1,8 +1,13 @@
 from astropy import units as u
-from flarestack.utils.neutrino_cosmology import integrate_over_z, define_cosmology_functions
+from flarestack.utils.neutrino_cosmology import (
+    integrate_over_z,
+    define_cosmology_functions,
+)
+
 
 def uniform_evolution(z):
-    return 1.
+    return 1.0
+
 
 def tde_rate(z):
     """TDE rate as a function of redshift, equal to the local density
@@ -14,7 +19,8 @@ def tde_rate(z):
     """
     return (uniform_evolution(z) * 8 * 10**-7) / (u.Mpc**3 * u.yr)
 
-rate_per_z, _, _, _ = define_cosmology_functions(tde_rate, 1., 1.)
+
+rate_per_z, _, _, _ = define_cosmology_functions(tde_rate, 1.0, 1.0)
 
 int_count = integrate_over_z(rate_per_z, 0.0, 0.1)
 
@@ -25,9 +31,8 @@ hem_eff = 0.5
 cg_eff = 0.9
 
 # Sun
-sun_eff = 2./3.
+sun_eff = 2.0 / 3.0
 
-eff = (hem_eff * cg_eff)
+eff = hem_eff * cg_eff
 
-print(eff*int_count)
-
+print(eff * int_count)

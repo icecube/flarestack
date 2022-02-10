@@ -4,6 +4,7 @@ import pickle as Pickle
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import numpy as np
+
 tde_dir = os.path.abspath(os.path.dirname(__file__))
 tde_cat_dir = tde_dir + "/tde_catalogues/"
 
@@ -12,7 +13,7 @@ individual_tdes = [
     "Swift J2058+05",
     "ASASSN-14li",
     "XMMSL1 J0740-85",
-    "AT2018cow"
+    "AT2018cow",
 ]
 
 
@@ -26,12 +27,7 @@ def individual_tde_cat(name):
     return tde_cat_dir + "individual_TDEs/" + name + "_catalogue.npy"
 
 
-tde_catalogues = [
-    "jetted",
-    "gold",
-    "silver",
-    "obscured"
-]
+tde_catalogues = ["jetted", "gold", "silver", "obscured"]
 
 
 def tde_catalogue_name(name):
@@ -46,8 +42,12 @@ def tde_catalogue_name(name):
 
 
 def tde_cat_limit(name, index):
-    path = limits_dir + "analyses/tde/compare_spectral_indices/Emin=100/" +\
-        name + "/fit_weights/real_unblind/limit.pkl"
+    path = (
+        limits_dir
+        + "analyses/tde/compare_spectral_indices/Emin=100/"
+        + name
+        + "/fit_weights/real_unblind/limit.pkl"
+    )
 
     if not os.path.isfile(path):
         raise Exception("{0} file not found".format(path))
@@ -61,8 +61,12 @@ def tde_cat_limit(name, index):
 
 
 def make_limit_plot(name):
-    path = limits_dir + "analyses/tde/compare_spectral_indices/Emin=100/" +\
-        name + "/fit_weights/real_unblind/limit.pkl"
+    path = (
+        limits_dir
+        + "analyses/tde/compare_spectral_indices/Emin=100/"
+        + name
+        + "/fit_weights/real_unblind/limit.pkl"
+    )
 
     if os.path.isfile(path):
 
@@ -76,9 +80,9 @@ def make_limit_plot(name):
         x_range = np.linspace(data["x"][0], data["x"][-1], 10)
 
         plt.figure()
-        plt.errorbar(x_range, np.exp(f(x_range)),
-                     yerr=.25 * np.exp(f(x_range)),
-                     uplims=True)
+        plt.errorbar(
+            x_range, np.exp(f(x_range)), yerr=0.25 * np.exp(f(x_range)), uplims=True
+        )
         plt.plot(x_range, np.exp(f(x_range)))
         plt.ylabel(r"Isotropic-Equivalent $E_{\nu}$ (erg)")
         plt.xlabel(r"Spectral Index ($\gamma$)")

@@ -13,7 +13,7 @@ from flarestack.core.astro import angular_distance
 
 basedir = plot_output_dir("analyses/angular_error_floor/plots/")
 
-energy_bins = np.linspace(1., 10., 20 + 1)
+energy_bins = np.linspace(1.0, 10.0, 20 + 1)
 
 # data_samples = txs_sample_v1[-3:] + [IC86_234567_dict]
 data_samples = txs_sample_v1[-3:-2]
@@ -21,10 +21,10 @@ data_samples = txs_sample_v1[-3:-2]
 
 def get_data(season):
     mc = data_loader(season["mc_path"], floor=True)
-    x = np.degrees(angular_distance(
-        mc["ra"], mc["dec"], mc["trueRa"], mc["trueDec"]))
+    x = np.degrees(angular_distance(mc["ra"], mc["dec"], mc["trueRa"], mc["trueDec"]))
     y = np.degrees(mc["sigma"]) * 1.177
     return mc, x, y
+
 
 def weighted_quantile(values, quantiles, weight):
     """
@@ -110,7 +110,6 @@ if __name__ == "__main__":
     plt.savefig(path)
     plt.close()
 
-
     plt.figure()
     ax = plt.subplot(111)
     log_e_bins = np.linspace(2.0, 7.0, 10 + 1)
@@ -129,8 +128,7 @@ if __name__ == "__main__":
         for i, lower in enumerate(log_e_bins[:-1]):
             upper = log_e_bins[i + 1]
             mask = np.logical_and(
-                np.log10(mc["trueE"]) > lower,
-                np.log10(mc["trueE"]) < upper
+                np.log10(mc["trueE"]) > lower, np.log10(mc["trueE"]) < upper
             )
             cut_mc = mc[mask]
 
@@ -171,8 +169,7 @@ if __name__ == "__main__":
         for i, lower in enumerate(log_e_bins[:-1]):
             upper = log_e_bins[i + 1]
             mask = np.logical_and(
-                np.log10(mc["trueE"]) > lower,
-                np.log10(mc["trueE"]) < upper
+                np.log10(mc["trueE"]) > lower, np.log10(mc["trueE"]) < upper
             )
             med = weighted_quantile(pulls[mask], 0.5, weights[mask])
             med_pulls += [med for _ in range(2)]
@@ -187,7 +184,7 @@ if __name__ == "__main__":
     plt.title("Angular Error Estimates")
     # ax.set_ylim(bottom=0.4)
     plt.tight_layout()
-    plt.tick_params(axis='both', which='major', labelsize=10)
+    plt.tick_params(axis="both", which="major", labelsize=10)
     path = basedir + "pulls_loge_true.pdf"
     print("Saving to", path)
     plt.savefig(path)
@@ -209,16 +206,13 @@ if __name__ == "__main__":
 
             for i, lower in enumerate(sin_dec_bins[:-1]):
                 upper = sin_dec_bins[i + 1]
-                mask = np.logical_and(
-                    mc["sinDec"] > lower,
-                    mc["sinDec"] < upper
-                )
+                mask = np.logical_and(mc["sinDec"] > lower, mc["sinDec"] < upper)
                 cut_mc = mc[mask]
 
                 over_mask = x[mask] > y[mask]
 
                 weights = cut_mc["ow"] * cut_mc["trueE"] ** -gamma
-                frac = np.sum(weights[over_mask])/ np.sum(weights)
+                frac = np.sum(weights[over_mask]) / np.sum(weights)
                 underestimates += [frac for _ in range(2)]
                 log_es += [lower, upper]
 
@@ -226,7 +220,7 @@ if __name__ == "__main__":
 
         plt.xlabel(r"$\sin(\delta)$")
         plt.ylabel("Fraction of events outside '50% contour'")
-        plt.plot([-1., 1.], [0.5, 0.5], linestyle=":")
+        plt.plot([-1.0, 1.0], [0.5, 0.5], linestyle=":")
         plt.legend()
         plt.title(r"MC events weighted with $E^{-" + str(gamma) + "}$")
         plt.savefig(basedir + "underfluctuations_sindec_" + str(gamma) + ".pdf")
@@ -247,10 +241,7 @@ if __name__ == "__main__":
 
             for i, lower in enumerate(sin_dec_bins[:-1]):
                 upper = sin_dec_bins[i + 1]
-                mask = np.logical_and(
-                    mc["sinDec"] > lower,
-                    mc["sinDec"] < upper
-                )
+                mask = np.logical_and(mc["sinDec"] > lower, mc["sinDec"] < upper)
                 cut_mc = mc[mask]
 
                 over_mask = x[mask] > y[mask]
@@ -264,7 +255,7 @@ if __name__ == "__main__":
 
         plt.xlabel(r"$\sin(\delta)$")
         plt.ylabel("Median Pull")
-        plt.plot([-1., 1.], [1.0, 1.0], linestyle=":")
+        plt.plot([-1.0, 1.0], [1.0, 1.0], linestyle=":")
         plt.legend()
         plt.title(r"MC events weighted with $E^{-" + str(gamma) + "}$")
         plt.savefig(basedir + "pulls_sindec_" + str(gamma) + ".pdf")
@@ -285,15 +276,12 @@ if __name__ == "__main__":
 
             for i, lower in enumerate(log_e_bins[:-1]):
                 upper = log_e_bins[i + 1]
-                mask = np.logical_and(
-                    mc["logE"] > lower,
-                    mc["logE"] < upper
-                )
+                mask = np.logical_and(mc["logE"] > lower, mc["logE"] < upper)
                 cut_mc = mc[mask]
 
                 over_mask = x[mask] > y[mask]
 
-                frac = np.sum(weights[mask][over_mask])/ np.sum(weights[mask])
+                frac = np.sum(weights[mask][over_mask]) / np.sum(weights[mask])
                 underestimates += [frac for _ in range(2)]
                 log_es += [lower, upper]
 
@@ -324,10 +312,7 @@ if __name__ == "__main__":
 
             for i, lower in enumerate(log_e_bins[:-1]):
                 upper = log_e_bins[i + 1]
-                mask = np.logical_and(
-                    mc["logE"] > lower,
-                    mc["logE"] < upper
-                )
+                mask = np.logical_and(mc["logE"] > lower, mc["logE"] < upper)
                 cut_mc = mc[mask]
 
                 med = weighted_quantile(pulls[mask], 0.5, weights[mask])
@@ -346,8 +331,7 @@ if __name__ == "__main__":
 
     input("prompt")
 
-        # print
-
+    # print
 
     for season in data_samples:
 
@@ -362,18 +346,16 @@ if __name__ == "__main__":
         except OSError:
             pass
 
-
         # mc = mc[mc["logE"] < 4.0]
 
         plt.figure()
         ax = plt.subplot(111)
 
-
         weights = mc["ow"] * mc["trueE"] ** -3.0
 
         print("True", max(x), min(x), "Reco", max(y), min(y))
 
-        print("frac over", end=' ')
+        print("frac over", end=" ")
 
         mask = x > y
         print(np.sum(weights[mask]) / np.sum(weights))
@@ -381,18 +363,13 @@ if __name__ == "__main__":
         max_err = 1.0
         bins = np.linspace(0.0, max_err, 11)
 
-        hist_2d, bin_edges = np.histogramdd((x, y),
-                                            bins=(bins, bins),
-                                            weights=weights)
+        hist_2d, bin_edges = np.histogramdd((x, y), bins=(bins, bins), weights=weights)
 
         meds = []
-        centers = 0.5*(bin_edges[0][:-1] + bin_edges[0][1:])
+        centers = 0.5 * (bin_edges[0][:-1] + bin_edges[0][1:])
 
         for i, row in enumerate(hist_2d.T):
-            mask = np.logical_and(
-                y > bin_edges[0][i],
-                y < bin_edges[0][i + 1]
-            )
+            mask = np.logical_and(y > bin_edges[0][i], y < bin_edges[0][i + 1])
             row /= np.sum(weights[mask])
             mc_cut = x[mask]
             # meds.append(np.median(mc_cut))

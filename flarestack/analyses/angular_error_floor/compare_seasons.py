@@ -5,12 +5,11 @@ from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict, IC86_234_dict
 from flarestack.core.results import ResultsHandler
 from flarestack.cluster import run_desy_cluster as rd
-from flarestack.shared import plot_output_dir, scale_shortener, \
-    make_analysis_pickle
+from flarestack.shared import plot_output_dir, scale_shortener, make_analysis_pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
-seasons = [IC86_1_dict,  IC86_234_dict]
+seasons = [IC86_1_dict, IC86_234_dict]
 
 all_res = dict()
 
@@ -24,15 +23,13 @@ for gamma in [2.0, 3.0, 3.5]:
         "Gamma": gamma,
     }
 
-    injection_time = {
-        "Name": "Steady"
-    }
+    injection_time = {"Name": "Steady"}
 
     inj_dict = {
         "Injection Energy PDF": injection_energy,
         "Injection Time PDF": injection_time,
         "Poisson Smear?": False,
-        "fixed_n": 100
+        "fixed_n": 100,
     }
 
     # sin_decs = np.linspace(1.00, -1.00, 41)
@@ -49,7 +46,7 @@ for gamma in [2.0, 3.0, 3.5]:
     res_dict = dict()
 
     for pull_corrector in ["no_pull", "median_1d"]:
-    # for pull_corrector in ["median_1d_e", ]:
+        # for pull_corrector in ["median_1d_e", ]:
         root_name = gamma_name + pull_corrector + "/"
 
         if "_e" in pull_corrector:
@@ -71,8 +68,7 @@ for gamma in [2.0, 3.0, 3.5]:
 
             for season in seasons:
 
-                name = seed_name + season["Data Sample"] + "/" + \
-                       season[ "Name"] + "/"
+                name = seed_name + season["Data Sample"] + "/" + season["Name"] + "/"
 
                 print(name)
 
@@ -81,7 +77,7 @@ for gamma in [2.0, 3.0, 3.5]:
                     "LLH Energy PDF": injection_energy,
                     "LLH Time PDF": injection_time,
                     "pull_name": pull_corrector,
-                    "floor_name": floor
+                    "floor_name": floor,
                 }
 
                 # scale = flux_to_k(reference_sensitivity(sin_dec, gamma)) * 10
@@ -95,7 +91,7 @@ for gamma in [2.0, 3.0, 3.5]:
                     "inj kwargs": inj_dict,
                     "n_trials": 50,
                     "n_steps": 2,
-                    "scale": 1.
+                    "scale": 1.0,
                 }
 
                 pkl_file = make_analysis_pickle(mh_dict)
@@ -135,7 +131,9 @@ for (gamma, res_dict) in all_res.items():
         for mh_dict in mh_list:
             rh = ResultsHandler(mh_dict)
 
-            max_scale = scale_shortener(max([float(x) for x in list(rh.results.keys())]))
+            max_scale = scale_shortener(
+                max([float(x) for x in list(rh.results.keys())])
+            )
             sens.append(rh.sensitivity)
             disc.append(rh.disc_potential)
 
@@ -158,12 +156,11 @@ for (gamma, res_dict) in all_res.items():
         ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
 
         # ax1.set_ylim(ymin=1.e-13, ymax=1.e-10)
-        ax1.grid(True, which='both')
-        ax1.semilogy(nonposy='clip')
+        ax1.grid(True, which="both")
+        ax1.semilogy(nonposy="clip")
 
         ax1.set_ylabel(r"Flux Strength [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$ ]")
-        plt.title(r'Comparison of Pull Corrections with $E^{-'
-                  + str(gamma) + "}$")
+        plt.title(r"Comparison of Pull Corrections with $E^{-" + str(gamma) + "}$")
 
         ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
@@ -199,7 +196,7 @@ for (gamma, res_dict) in all_res.items():
         plt.xlabel(r"sin($\delta$)")
         plt.ylabel(name + r" in $n_{s}$")
         plt.legend()
-        plt.title(name + r' with $E^{-'+ str(gamma) + "}$")
+        plt.title(name + r" with $E^{-" + str(gamma) + "}$")
         savepath = plot_output_dir(gamma_name) + "comparison " + name + ".pdf"
         print("Saving to", savepath)
         plt.savefig(savepath)

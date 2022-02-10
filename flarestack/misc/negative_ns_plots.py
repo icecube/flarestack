@@ -15,7 +15,7 @@ delta = np.zeros(n_zero)
 chi2 = scipy.stats.chi2.rvs(df=1.4, loc=0, scale=1, size=5000)
 
 data = list(chi2) + list(delta)
-weight = np.ones_like(data)/float(len(data))
+weight = np.ones_like(data) / float(len(data))
 
 plt.figure()
 plt.hist(data, weights=weight, bins=50)
@@ -31,7 +31,7 @@ unbound_path = illustration_dir + "ts_negative_hist.png"
 negative = -scipy.stats.chi2.rvs(df=3.0, loc=0, scale=1, size=n_zero)
 
 data = list(chi2) + list(negative)
-weight = np.ones_like(data)/float(len(data))
+weight = np.ones_like(data) / float(len(data))
 
 plt.figure()
 plt.hist(data, weights=weight, bins=50)
@@ -46,11 +46,11 @@ standard_llh_path = illustration_dir + "llh_standard.png"
 
 x = np.linspace(0, 10, 500)
 
-cut = -7.
+cut = -7.0
 
 
 def y(x):
-    return (x+5.)**2 + 1./(x - cut)**0.5
+    return (x + 5.0) ** 2 + 1.0 / (x - cut) ** 0.5
 
 
 def f(x):
@@ -59,7 +59,7 @@ def f(x):
 
 plt.figure()
 plt.plot(x, f(x))
-plt.scatter(0., 0., color="r", marker="*", s=100, zorder=3)
+plt.scatter(0.0, 0.0, color="r", marker="*", s=100, zorder=3)
 plt.ylabel(r"$\Delta$ LLH")
 plt.xlabel(r"$n_{s}$")
 plt.xlim(-11, 11)
@@ -85,7 +85,7 @@ plt.close()
 
 
 def extension(x):
-    return 50. - x
+    return 50.0 - x
 
 
 def alt_f(x):
@@ -113,9 +113,3 @@ plt.xlim(-11, 11)
 plt.tight_layout()
 plt.savefig(corrected_llh_path)
 plt.close()
-
-
-
-
-
-

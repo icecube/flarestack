@@ -9,8 +9,7 @@ from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
 from flarestack.utils.reference_sensitivity import reference_sensitivity
-from flarestack.analyses.tde.shared_TDE import tde_catalogues, \
-    tde_catalogue_name
+from flarestack.analyses.tde.shared_TDE import tde_catalogues, tde_catalogue_name
 from flarestack.cluster import run_desy_cluster as rd
 import math
 import matplotlib.pyplot as plt
@@ -25,15 +24,13 @@ llh_energy = {
     "Gamma": 2.0,
 }
 
-llh_time = {
-    "Name": "FixedEndBox"
-}
+llh_time = {"Name": "FixedEndBox"}
 
 fit_weights = {
     "LLH Energy PDF": llh_energy,
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
-    "Fit Weights?": True
+    "Fit Weights?": True,
 }
 
 fixed_weights = {
@@ -41,7 +38,7 @@ fixed_weights = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": False,
-    "Fit Weights?": False
+    "Fit Weights?": False,
 }
 
 fixed_weights_negative = {
@@ -49,7 +46,7 @@ fixed_weights_negative = {
     "LLH Time PDF": llh_time,
     "Fit Gamma?": True,
     "Fit Negative n_s?": True,
-    "Fit Weights?": False
+    "Fit Weights?": False,
 }
 
 gammas = [1.8, 1.9, 2.0, 2.1, 2.3, 2.5, 2.7]
@@ -80,15 +77,21 @@ for e_min in power_law_start_energy:
 
         closest_src = np.sort(catalogue, order="Distance (Mpc)")[0]
 
-        for i, llh_kwargs in enumerate([fixed_weights_negative,
-                                        fixed_weights,
-                                        fit_weights,
-                                        # flare
-                                        ]):
-            label = ["Fixed Weights", "Fixed Weights (n_s > 0)",
-                     "Fit Weights", "Flare Search", ][i]
-            f_name = ["fixed_weights_neg", "fixed_weights",
-                      "fit_weights", "flare"][i]
+        for i, llh_kwargs in enumerate(
+            [
+                fixed_weights_negative,
+                fixed_weights,
+                fit_weights,
+                # flare
+            ]
+        ):
+            label = [
+                "Fixed Weights",
+                "Fixed Weights (n_s > 0)",
+                "Fit Weights",
+                "Flare Search",
+            ][i]
+            f_name = ["fixed_weights_neg", "fixed_weights", "fit_weights", "flare"][i]
 
             flare_name = name + f_name + "/"
 
@@ -100,8 +103,8 @@ for e_min in power_law_start_energy:
 
                 injection_time = llh_time = {
                     "Name": "Box",
-                    "Pre-Window": 0.,
-                    "Post-Window": injection_length
+                    "Pre-Window": 0.0,
+                    "Post-Window": injection_length,
                 }
 
                 injection_energy = dict(llh_energy)
@@ -114,27 +117,33 @@ for e_min in power_law_start_energy:
                     "Poisson Smear?": True,
                 }
 
-                scale = flux_to_k(reference_sensitivity(
-                    np.sin(closest_src["dec"]), gamma=gamma
-                ) * 40 * math.sqrt(float(len(catalogue)))) * (e_min/100.)**0.2
+                scale = (
+                    flux_to_k(
+                        reference_sensitivity(np.sin(closest_src["dec"]), gamma=gamma)
+                        * 40
+                        * math.sqrt(float(len(catalogue)))
+                    )
+                    * (e_min / 100.0) ** 0.2
+                )
 
                 mh_dict = {
                     "name": full_name,
-                    "datasets": custom_dataset(txs_sample_v1, catalogue,
-                                               llh_kwargs["LLH Time PDF"]),
+                    "datasets": custom_dataset(
+                        txs_sample_v1, catalogue, llh_kwargs["LLH Time PDF"]
+                    ),
                     "catalogue": cat_path,
                     "inj kwargs": inj_kwargs,
                     "llh kwargs": llh_kwargs,
                     "scale": scale,
                     "n_trials": 5,
-                    "n_steps": 15
+                    "n_steps": 15,
                 }
 
                 pkl_file = make_analysis_pickle(mh_dict)
 
                 # if label != "Fixed Weights (n_s > 0)":
                 if label == "Fit Weights":
-                #     rd.submit_to_cluster(pkl_file, n_jobs=1000)
+                    #     rd.submit_to_cluster(pkl_file, n_jobs=1000)
 
                     # mh = MinimisationHandler(mh_dict)
                     # mh.iterate_run(mh_dict["scale"], mh_dict["n_steps"],
@@ -173,16 +182,18 @@ for (e_min, cat_res) in cutoff_dict.items():
 
                 for (gamma, rh_dict) in sorted(res.items()):
                     try:
-                        rh = ResultsHandler(rh_dict["name"],
-                                            rh_dict["llh kwargs"],
-                                            rh_dict["catalogue"],
-                                            show_inj=True
-                                            )
+                        rh = ResultsHandler(
+                            rh_dict["name"],
+                            rh_dict["llh kwargs"],
+                            rh_dict["catalogue"],
+                            show_inj=True,
+                        )
 
                         inj_time = injection_length * 60 * 60 * 24
 
                         astro_sens, astro_disc = rh.astro_values(
-                            rh_dict["inj kwargs"]["Injection Energy PDF"])
+                            rh_dict["inj kwargs"]["Injection Energy PDF"]
+                        )
 
                         key = "Total Fluence (GeV cm^{-2} s^{-1})"
 
@@ -202,8 +213,9 @@ for (e_min, cat_res) in cutoff_dict.items():
                 labels.append(f_type)
             # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
-        for j, [fluence, energy] in enumerate([[sens_livetime, sens_e],
-                                              [disc_pots_livetime, disc_e]]):
+        for j, [fluence, energy] in enumerate(
+            [[sens_livetime, sens_e], [disc_pots_livetime, disc_e]]
+        ):
 
             plt.figure()
             ax1 = plt.subplot(111)
@@ -217,15 +229,21 @@ for (e_min, cat_res) in cutoff_dict.items():
 
                 if len(f) > 0:
 
-                    ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle,
-                             color=cols[i])
-                    ax2.plot(f, energy[i], linestyle=linestyle,
-                             color=cols[i])
+                    ax1.plot(
+                        f,
+                        fluence[i],
+                        label=labels[i],
+                        linestyle=linestyle,
+                        color=cols[i],
+                    )
+                    ax2.plot(f, energy[i], linestyle=linestyle, color=cols[i])
 
-            y_label = [r"Total Fluence [GeV cm$^{-2}$]",
-                       r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)"]
+            y_label = [
+                r"Total Fluence [GeV cm$^{-2}$]",
+                r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)",
+            ]
 
-            ax2.grid(True, which='both')
+            ax2.grid(True, which="both")
             ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$]", fontsize=12)
             ax2.set_ylabel(r"Mean Isotropic-Equivalent $E_{\nu}$ (erg)")
             ax1.set_xlabel(r"Spectral Index ($\gamma$)")
@@ -235,16 +253,29 @@ for (e_min, cat_res) in cutoff_dict.items():
             for k, ax in enumerate([ax1, ax2]):
                 y = [fluence, energy][k]
 
-                ax.set_ylim(0.95 * min([min(x) for x in y if len(x) > 0]),
-                            1.1 * max([max(x) for x in y if len(x) > 0]))
+                ax.set_ylim(
+                    0.95 * min([min(x) for x in y if len(x) > 0]),
+                    1.1 * max([max(x) for x in y if len(x) > 0]),
+                )
 
-            plt.title("Stacked " + ["Sensitivity", "Discovery Potential"][j] +
-                      " for " + cat_name + " TDEs")
+            plt.title(
+                "Stacked "
+                + ["Sensitivity", "Discovery Potential"][j]
+                + " for "
+                + cat_name
+                + " TDEs"
+            )
 
-            ax1.legend(loc='upper left', fancybox=True, framealpha=0.)
+            ax1.legend(loc="upper left", fancybox=True, framealpha=0.0)
             plt.tight_layout()
-            plt.savefig(plot_output_dir(name) + "/spectral_index_" +
-                        "Emin=" + str(e_min) +
-                        ["sens", "disc"][j] + "_" + cat_name + ".pdf")
+            plt.savefig(
+                plot_output_dir(name)
+                + "/spectral_index_"
+                + "Emin="
+                + str(e_min)
+                + ["sens", "disc"][j]
+                + "_"
+                + cat_name
+                + ".pdf"
+            )
             plt.close()
-

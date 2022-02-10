@@ -5,6 +5,7 @@ from flarestack.data.icecube.ic_season import get_published_sens_ref_dir
 
 ref_dir_7yr, ref_10yr = get_published_sens_ref_dir()
 
+
 def reference_sensitivity(sindec=np.array(0.0), gamma=2.0, sample="7yr"):
 
     if sample == "7yr":
@@ -12,7 +13,10 @@ def reference_sensitivity(sindec=np.array(0.0), gamma=2.0, sample="7yr"):
     elif sample == "10yr":
         return reference_10year_sensitivity(sindec, gamma)
     else:
-        raise Exception(f"Sample '{sample}' not recognised. Available references are '7yr' and '10yr'.")
+        raise Exception(
+            f"Sample '{sample}' not recognised. Available references are '7yr' and '10yr'."
+        )
+
 
 def reference_discovery_potential(sindec=np.array(0.0), gamma=2.0, sample="7yr"):
 
@@ -21,7 +25,10 @@ def reference_discovery_potential(sindec=np.array(0.0), gamma=2.0, sample="7yr")
     elif sample == "10yr":
         return reference_10year_discovery_potential(sindec, gamma)
     else:
-        raise Exception(f"Sample '{sample}' not recognised. Available references are '7yr' and '10yr'.")
+        raise Exception(
+            f"Sample '{sample}' not recognised. Available references are '7yr' and '10yr'."
+        )
+
 
 def reference_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
@@ -40,7 +47,7 @@ def reference_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     # The sensitivities here are given in units TeV ^ -gamma per cm2 per s
     # The sensitivities used in this code are GeV ^-1 per cm2 per s
     # The conversion is thus (TeV/Gev) ^ (1 - gamma) , i.e 10 ** 3(1-gamma)
-    sens = np.array([list(x)[1:] for x in data]) * 10 ** 3
+    sens = np.array([list(x)[1:] for x in data]) * 10**3
     scaling = np.array([10 ** (3 * (i - 1)) for i in range(3)])
     sens *= scaling
 
@@ -57,6 +64,7 @@ def reference_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
         return np.array([np.exp(sens_ref(x, gamma))[0] for x in sindec])
     else:
         return np.exp(sens_ref(sindec, gamma))
+
 
 def reference_7year_discovery_potential(sindec=0.0, gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
@@ -75,7 +83,7 @@ def reference_7year_discovery_potential(sindec=0.0, gamma=2.0):
     # The discovery potentials are given in units TeV ^ -gamma per cm2 per s
     # The discovery potentials used in this code are GeV ^-1 per cm2 per s
     # The conversion is thus (TeV/Gev) ^ (1 - gamma) , i.e 10 ** 3(1-gamma)
-    disc = np.array([list(x)[1:] for x in data]) * 10 ** 3
+    disc = np.array([list(x)[1:] for x in data]) * 10**3
     scaling = np.array([10 ** (3 * (i - 1)) for i in range(3)])
     disc *= scaling
 
@@ -93,6 +101,7 @@ def reference_7year_discovery_potential(sindec=0.0, gamma=2.0):
     else:
         return np.exp(disc_ref(sindec, gamma))
 
+
 def reference_10year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
     analysis sensitivity. Then converts given values for sin(declination to
@@ -107,13 +116,12 @@ def reference_10year_sensitivity(sindec=np.array(0.0), gamma=2.0):
 
     sindecs = np.sin(np.array([x[0] for x in data]))
 
-
     gammas = [2.0, 3.0]
 
     # The sensitivities here are given in units TeV ^ -gamma per cm2 per s
     # The sensitivities used in this code are GeV ^-1 per cm2 per s
     # The conversion is thus (TeV/Gev) ^ (1 - gamma) , i.e 10 ** 3(1-gamma)
-    sens = np.array([list(x)[1:3] for x in data]) * 10 ** 3
+    sens = np.array([list(x)[1:3] for x in data]) * 10**3
 
     scaling = np.array([10 ** (3 * (i)) for i in range(2)])
     sens *= scaling
@@ -124,6 +132,7 @@ def reference_10year_sensitivity(sindec=np.array(0.0), gamma=2.0):
         return np.array([np.exp(sens_ref(x, gamma))[0] for x in sindec])
     else:
         return np.exp(sens_ref(sindec, gamma))
+
 
 def reference_10year_discovery_potential(sindec=np.array(0.0), gamma=2.0):
     """Interpolates between the saved values of the Stefan Coenders 7 year PS
@@ -139,13 +148,12 @@ def reference_10year_discovery_potential(sindec=np.array(0.0), gamma=2.0):
 
     sindecs = np.sin(np.array([x[0] for x in data]))
 
-
     gammas = [2.0, 3.0]
 
     # The sensitivities here are given in units TeV ^ -gamma per cm2 per s
     # The sensitivities used in this code are GeV ^-1 per cm2 per s
     # The conversion is thus (TeV/Gev) ^ (1 - gamma) , i.e 10 ** 3(1-gamma)
-    sens = np.array([list(x)[3:] for x in data]) * 10 ** 3
+    sens = np.array([list(x)[3:] for x in data]) * 10**3
 
     scaling = np.array([10 ** (3 * i) for i in range(2)])
     sens *= scaling

@@ -23,11 +23,11 @@ txs_catalogue = custom_sources(
     name="TXS_0506+056",
     ra=ra,
     dec=dec,
-    weight=1.,
+    weight=1.0,
     distance=lumdist,
     start_time=t_start,
     end_time=t_end,
-    ref_time=t_start
+    ref_time=t_start,
 )
 
 txs_cat_path = transients_dir + "/TXS_0506+056.npy"

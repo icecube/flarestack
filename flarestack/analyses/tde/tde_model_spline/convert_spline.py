@@ -12,10 +12,10 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 path = os.path.join(dir_path, "Neutrinos_from_TDE.pickle")
 
 with open(path, "rb") as f:
-    data = pickle.load(f, encoding='bytes')
+    data = pickle.load(f, encoding="bytes")
 
-e = data["E_GeV"][:,0]
-y = data["E_GeV"][:,1]
+e = data["E_GeV"][:, 0]
+y = data["E_GeV"][:, 1]
 
 flux = y / e**2
 

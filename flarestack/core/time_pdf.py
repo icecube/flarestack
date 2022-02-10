@@ -27,7 +27,11 @@ def decay_fct(t, t0, decay_time, truncation=np.inf):
     :param truncation: truncation time, function will give zero for t < truncation
     :return: value at t
     """
-    val = np.heaviside(t - t0, 1) * (1 / (1 + (t - t0) / decay_time)) * np.heaviside(t0 + truncation - t, 1)
+    val = (
+        np.heaviside(t - t0, 1)
+        * (1 / (1 + (t - t0) / decay_time))
+        * np.heaviside(t0 + truncation - t, 1)
+    )
     return val
 
 
@@ -41,8 +45,10 @@ def decay_fct_integral(tstart, tend, t0, decay_time, truncation=np.inf):
     :param truncation: float, truncation time, decay function will be 0 for t < truncation
     :return: float
     """
-    val = decay_time * \
-          np.log((decay_time + np.maximum(0, np.minimum(tend - t0, truncation))) / (decay_time + np.maximum(tstart - t0, 0)))
+    val = decay_time * np.log(
+        (decay_time + np.maximum(0, np.minimum(tend - t0, truncation)))
+        / (decay_time + np.maximum(tstart - t0, 0))
+    )
     return val
 
 
@@ -57,27 +63,31 @@ def read_t_pdf_dict(t_pdf_dict):
         ("Name", "time_pdf_name"),
         ("Max Offset", "max_offset"),
         ("Min Offset", "min_offset"),
-        ("Max Flare", "max_flare")
+        ("Max Flare", "max_flare"),
     ]
 
     for (old_key, new_key) in maps:
 
         if old_key in list(t_pdf_dict.keys()):
-            logger.warning("Deprecated t_pdf_key '{0}' was used. "
-                           "Please use '{1}' in future.".format(old_key, new_key))
+            logger.warning(
+                "Deprecated t_pdf_key '{0}' was used. "
+                "Please use '{1}' in future.".format(old_key, new_key)
+            )
             t_pdf_dict[new_key] = t_pdf_dict[old_key]
 
     name_maps = [
         ("Steady", "steady"),
         ("Box", "box"),
         ("FixedRefBox", "fixed_ref_box"),
-        ("FixedEndBox", "custom_source_box") # Not a typo! Class renamed.
+        ("FixedEndBox", "custom_source_box"),  # Not a typo! Class renamed.
     ]
 
     for (old_key, new_key) in name_maps:
         if t_pdf_dict["time_pdf_name"] == old_key:
-            logger.warning("Deprecated time_pdf_name '{0}' was used. "
-                            "Please use '{1}' in future.".format(old_key, new_key))
+            logger.warning(
+                "Deprecated time_pdf_name '{0}' was used. "
+                "Please use '{1}' in future.".format(old_key, new_key)
+            )
             t_pdf_dict["time_pdf_name"] = new_key
 
     return t_pdf_dict
@@ -90,11 +100,16 @@ class TimePDF(object):
         self.t_dict = t_pdf_dict
 
         if livetime_pdf is not None:
-            self.livetime_f = lambda x: livetime_pdf.livetime_f(x)# * livetime_pdf.livetime
+            self.livetime_f = lambda x: livetime_pdf.livetime_f(
+                x
+            )  # * livetime_pdf.livetime
             self.livetime_pdf = livetime_pdf
             self.t0 = livetime_pdf.sig_t0()
             self.t1 = livetime_pdf.sig_t1()
-            self.mjd_to_livetime, self.livetime_to_mjd = self.livetime_pdf.get_mjd_conversion()
+            (
+                self.mjd_to_livetime,
+                self.livetime_to_mjd,
+            ) = self.livetime_pdf.get_mjd_conversion()
 
         else:
             self.livetime_pdf = None
@@ -118,8 +133,10 @@ class TimePDF(object):
         t_pdf_name = t_pdf_dict["time_pdf_name"]
 
         if t_pdf_name not in cls.subclasses:
-            raise ValueError(f'Bad time PDF name {t_pdf_name}. '
-                             f'Available PDFs are {cls.subclasses.keys()}')
+            raise ValueError(
+                f"Bad time PDF name {t_pdf_name}. "
+                f"Available PDFs are {cls.subclasses.keys()}"
+            )
 
         return cls.subclasses[t_pdf_name](t_pdf_dict, livetime_pdf)
 
@@ -137,8 +154,8 @@ class TimePDF(object):
 
         f = np.array(self.signal_integral(t, source))
 
-        f[f < 0.] = 0.
-        f[f > 1.] = 1.
+        f[f < 0.0] = 0.0
+        f[f > 1.0] = 1.0
 
         return f
 
@@ -157,17 +174,18 @@ class TimePDF(object):
         min_int = self.product_integral(self.sig_t0(source), source)
         fraction = max_int - min_int
 
-        t_range = np.linspace(float(self.sig_t0(source)), float(self.sig_t1(source)),
-                              int(1e4))
+        t_range = np.linspace(
+            float(self.sig_t0(source)), float(self.sig_t1(source)), int(1e4)
+        )
         cumu = (self.product_integral(t_range, source) - min_int) / fraction
 
         # Checks to ensure the cumulative fraction spans 0 to 1
-        if max(cumu) > 1.:
+        if max(cumu) > 1.0:
             raise Exception("Cumulative Distribution exceeds 1.")
-        elif min(cumu) < 0.:
+        elif min(cumu) < 0.0:
             raise Exception("Cumulative Distribution extends below 0.")
 
-        return interp1d(cumu, t_range, kind='linear')
+        return interp1d(cumu, t_range, kind="linear")
 
     def simulate_times(self, source, n_s):
         """Randomly draws times for n_s events for a given source,
@@ -180,15 +198,14 @@ class TimePDF(object):
         """
         f = self.inverse_interpolate(source)
 
-        sims = f(np.random.uniform(0., 1., n_s))
+        sims = f(np.random.uniform(0.0, 1.0, n_s))
 
         return sims
 
     def f(self, t, source):
         raise NotImplementedError(
-            "No 'f' has been implemented for {0}".format(
-                self.__class__.__name__
-            ))
+            "No 'f' has been implemented for {0}".format(self.__class__.__name__)
+        )
 
     def sig_t0(self, source):
         """Calculates the starting time for the time pdf.
@@ -196,8 +213,9 @@ class TimePDF(object):
         :param source: Source to be considered
         :return: Time of PDF start
         """
-        raise NotImplementedError("sig_t0 function not implemented for "
-                                  "{0}".format(self.__class__.__name__))
+        raise NotImplementedError(
+            "sig_t0 function not implemented for " "{0}".format(self.__class__.__name__)
+        )
 
     def sig_t1(self, source):
         """Calculates the ending time for the time pdf.
@@ -205,8 +223,9 @@ class TimePDF(object):
         :param source: Source to be considered
         :return: Time of PDF end
         """
-        raise NotImplementedError("sig_t1 function not implemented for "
-                                  "{0}".format(self.__class__.__name__))
+        raise NotImplementedError(
+            "sig_t1 function not implemented for " "{0}".format(self.__class__.__name__)
+        )
 
     def integral_to_infinity(self, source):
         max_int = self.product_integral(self.sig_t1(source), source)
@@ -237,7 +256,8 @@ class TimePDF(object):
     def get_mjd_conversion(self):
         return self.mjd_to_livetime, self.livetime_to_mjd
 
-@TimePDF.register_subclass('steady')
+
+@TimePDF.register_subclass("steady")
 class Steady(TimePDF):
     """The time-independent case for a Time PDF. Requires no additional
     arguments in the dictionary for __init__. Used for a steady source that
@@ -248,11 +268,13 @@ class Steady(TimePDF):
         TimePDF.__init__(self, t_pdf_dict, livetime_pdf)
 
         if self.livetime_pdf is None:
-            raise ValueError("No livetime pdf has been provided, but a Steady "
-                             "Time PDF has been chosen. Without a fixed start "
-                             "and end point, no PDF can be defined. Please "
-                             "provide a livetime_pdf, or use a different Time "
-                             "PDF class such as FixedEndBox.")
+            raise ValueError(
+                "No livetime pdf has been provided, but a Steady "
+                "Time PDF has been chosen. Without a fixed start "
+                "and end point, no PDF can be defined. Please "
+                "provide a livetime_pdf, or use a different Time "
+                "PDF class such as FixedEndBox."
+            )
         else:
             self.livetime = livetime_pdf.get_livetime()
 
@@ -266,7 +288,7 @@ class Steady(TimePDF):
         :param source: Source to be considered
         :return: Value of normalised box function at t
         """
-        return 1./self.livetime#self.livetime_f(t)# * self.livetime
+        return 1.0 / self.livetime  # self.livetime_f(t)# * self.livetime
 
     def signal_integral(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
@@ -335,7 +357,7 @@ class Steady(TimePDF):
         return self.t1
 
 
-@TimePDF.register_subclass('box')
+@TimePDF.register_subclass("box")
 class Box(TimePDF):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. Requires arguments of
@@ -398,7 +420,7 @@ class Box(TimePDF):
 
         length = self.mjd_to_livetime(t1) - self.mjd_to_livetime(t0)
 
-        if length > 0.:
+        if length > 0.0:
             return box_func(t, t0, t1) / length
 
         else:
@@ -420,8 +442,11 @@ class Box(TimePDF):
 
         length = self.mjd_to_livetime(t1) - self.mjd_to_livetime(t0)
 
-        return np.abs((self.mjd_to_livetime(t) - self.mjd_to_livetime(t0))
-                      * box_func(t, t0, t1+1e-9) / length)
+        return np.abs(
+            (self.mjd_to_livetime(t) - self.mjd_to_livetime(t0))
+            * box_func(t, t0, t1 + 1e-9)
+            / length
+        )
 
     def flare_time_mask(self, source):
         """In this case, the interesting period for Flare Searches is the
@@ -446,7 +471,7 @@ class Box(TimePDF):
         t0 = self.mjd_to_livetime(self.sig_t0(source))
         t1 = self.mjd_to_livetime(self.sig_t1(source))
         time = (t1 - t0) * 60 * 60 * 24
-        return max(time, 0.)
+        return max(time, 0.0)
 
     def raw_injection_time(self, source):
         """Calculates the 'raw injection time' which is the injection time
@@ -461,7 +486,7 @@ class Box(TimePDF):
         return diff * (60 * 60 * 24)
 
 
-@TimePDF.register_subclass('fixed_ref_box')
+@TimePDF.register_subclass("fixed_ref_box")
 class FixedRefBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. In this case, the start
@@ -469,6 +494,7 @@ class FixedRefBox(Box):
     a field "Start Time (MJD)" and another "End Time (MJD)", specifying the
     period of the Time PDF.
     """
+
     def __init__(self, t_pdf_dict, season):
         Box.__init__(self, t_pdf_dict, season)
         self.fixed_ref = t_pdf_dict["fixed_ref_time_mjd"]
@@ -495,7 +521,7 @@ class FixedRefBox(Box):
         return min(self.fixed_ref + self.post_window, self.t1)
 
 
-@TimePDF.register_subclass('fixed_end_box')
+@TimePDF.register_subclass("fixed_end_box")
 class FixedEndBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. In this case, the start
@@ -552,7 +578,7 @@ class FixedEndBox(Box):
             return mjd_to_l, l_to_mjd
 
 
-@TimePDF.register_subclass('custom_source_box')
+@TimePDF.register_subclass("custom_source_box")
 class CustomSourceBox(Box):
     """The simplest time-dependent case for a Time PDF. Used for a source that
     is uniformly emitting for a fixed period of time. In this case, the start
@@ -608,11 +634,18 @@ class DetectorOnOffList(TimePDF):
         try:
             self.on_off_list = t_pdf_dict["on_off_list"]
         except KeyError:
-            raise KeyError("No 'on_off_list' found in t_pdf_dict. The "
-                           "following fields were provided: {0}".format(
-                t_pdf_dict.keys()
-            ))
-        self.t0, self.t1, self._livetime, self.season_f, self.mjd_to_livetime, self.livetime_to_mjd = self.parse_list()
+            raise KeyError(
+                "No 'on_off_list' found in t_pdf_dict. The "
+                "following fields were provided: {0}".format(t_pdf_dict.keys())
+            )
+        (
+            self.t0,
+            self.t1,
+            self._livetime,
+            self.season_f,
+            self.mjd_to_livetime,
+            self.livetime_to_mjd,
+        ) = self.parse_list()
 
     def parse_list(self):
         t0 = min(self.on_off_list["start"])
@@ -621,7 +654,7 @@ class DetectorOnOffList(TimePDF):
         return t0, t1, livetime
 
     def f(self, t, source=None):
-        return self.season_f(t)/self.livetime
+        return self.season_f(t) / self.livetime
 
     def livetime_f(self, t, source=None):
         return self.f(t, source)
@@ -642,19 +675,22 @@ class DetectorOnOffList(TimePDF):
         return self.mjd_to_livetime, self.livetime_to_mjd
 
 
-@TimePDF.register_subclass('decay')
+@TimePDF.register_subclass("decay")
 class DecayPDF(TimePDF):
-
     def __init__(self, t_pdf_dict, season):
         TimePDF.__init__(self, t_pdf_dict, season)
 
-        if not 'decay_time' in self.t_dict:
-            raise KeyError('In order to use a Decay PDF, a decay time has to be included in the time pdf dictionary!')
+        if not "decay_time" in self.t_dict:
+            raise KeyError(
+                "In order to use a Decay PDF, a decay time has to be included in the time pdf dictionary!"
+            )
 
-        self.decay_time = self.t_dict['decay_time']
-        self.decay_length = self.t_dict['decay_length'] if 'decay_time' in self.t_dict else np.inf
-        if not 'decay_time' in self.t_dict:
-            logger.warning('No decay length given! Assuming endless decay')
+        self.decay_time = self.t_dict["decay_time"]
+        self.decay_length = (
+            self.t_dict["decay_length"] if "decay_time" in self.t_dict else np.inf
+        )
+        if not "decay_time" in self.t_dict:
+            logger.warning("No decay length given! Assuming endless decay")
 
     def decay_function(self, t, t0):
         return decay_fct(t, t0, self.decay_time, self.decay_length)
@@ -679,7 +715,7 @@ class DecayPDF(TimePDF):
         :param source: source to be considered
         :return: end time of signal
         """
-        return min((self.t1, source['ref_time_mjd'] + self.decay_length))
+        return min((self.t1, source["ref_time_mjd"] + self.decay_length))
 
     def signal_integral(self, t, source):
         """
@@ -689,8 +725,10 @@ class DecayPDF(TimePDF):
         :return: float
         """
 
-        integration_result = self.decay_integral(self.t0, t, source['ref_time_mjd'])
-        normalization_factor = self.decay_integral(self.t0, self.t1, source['ref_time_mjd'])
+        integration_result = self.decay_integral(self.t0, t, source["ref_time_mjd"])
+        normalization_factor = self.decay_integral(
+            self.t0, self.t1, source["ref_time_mjd"]
+        )
         return integration_result / normalization_factor
 
     def effective_injection_time(self, source=None):
@@ -702,10 +740,12 @@ class DecayPDF(TimePDF):
         """
         sig_t0 = self.sig_t0(source)
         sig_t1 = self.sig_t1(source)
-        complete_integral = self.decay_integral(source['ref_time_mjd'],
-                                                source['ref_time_mjd'] + self.decay_length,
-                                                source['ref_time_mjd'])
-        portion = self.decay_integral(sig_t0, sig_t1, source['ref_time_mjd'])
+        complete_integral = self.decay_integral(
+            source["ref_time_mjd"],
+            source["ref_time_mjd"] + self.decay_length,
+            source["ref_time_mjd"],
+        )
+        portion = self.decay_integral(sig_t0, sig_t1, source["ref_time_mjd"])
         weight = portion / complete_integral
 
         t0 = self.mjd_to_livetime(sig_t0)
@@ -725,10 +765,12 @@ class DecayPDF(TimePDF):
 
         sig_t0 = self.sig_t0(source)
         sig_t1 = self.sig_t1(source)
-        complete_integral = self.decay_integral(source['ref_time_mjd'],
-                                                source['ref_time_mjd'] + self.decay_length,
-                                                source['ref_time_mjd'])
-        portion = self.decay_integral(sig_t0, sig_t1, source['ref_time_mjd'])
+        complete_integral = self.decay_integral(
+            source["ref_time_mjd"],
+            source["ref_time_mjd"] + self.decay_length,
+            source["ref_time_mjd"],
+        )
+        portion = self.decay_integral(sig_t0, sig_t1, source["ref_time_mjd"])
         weight = portion / complete_integral
 
         return self.decay_length * weight * 60 * 60 * 24
@@ -750,22 +792,24 @@ class DecayPDF(TimePDF):
         # to normalize the function, integrate over the whole livetime
         a, b = self.mjd_to_livetime(t0), self.mjd_to_livetime(t1)
         normalization_factor = self.decay_integral(
-            a, b, source['ref_time_mjd'] - self.livetime_to_mjd(0)
+            a, b, source["ref_time_mjd"] - self.livetime_to_mjd(0)
         )
 
-        if normalization_factor > 0.:
-            r = self.decay_function(t, source['ref_time_mjd'])
+        if normalization_factor > 0.0:
+            r = self.decay_function(t, source["ref_time_mjd"])
             return r / normalization_factor
 
         else:
             # the normalization factor should always be greater than zero,
             # so here something went wrong.
-            logger.error(f'\nintegrating from {a:.2f} to {b:.2f}. \n'
-                          f't = {t} \n'
-                          f't0 = {t0:.2f} \n'
-                          f't_pp={self.decay_time:.2f} \n'
-                          f'trunc={self.decay_length:.2f}')
-            raise ValueError('Normalization factor <= 0!')
+            logger.error(
+                f"\nintegrating from {a:.2f} to {b:.2f}. \n"
+                f"t = {t} \n"
+                f"t0 = {t0:.2f} \n"
+                f"t_pp={self.decay_time:.2f} \n"
+                f"trunc={self.decay_length:.2f}"
+            )
+            raise ValueError("Normalization factor <= 0!")
 
 
 # from data.icecube_pointsource_7_year import ps_v002_p01
