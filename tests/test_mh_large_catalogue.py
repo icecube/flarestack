@@ -12,25 +12,14 @@ from flarestack.analyses.agn_cores.shared_agncores import agn_subset_catalogue
 
 llh_dict = {
     "llh_name": "standard_matrix",
-    "llh_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_bkg_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_energy_pdf": {
-        "energy_pdf_name": "power_law"
-    }
+    "llh_sig_time_pdf": {"time_pdf_name": "steady"},
+    "llh_bkg_time_pdf": {"time_pdf_name": "steady"},
+    "llh_energy_pdf": {"energy_pdf_name": "power_law"},
 }
 
 inj_dict = {
-    "injection_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "injection_energy_pdf": {
-        "energy_pdf_name": "power_law",
-        "gamma": 2.0
-    }
+    "injection_sig_time_pdf": {"time_pdf_name": "steady"},
+    "injection_energy_pdf": {"energy_pdf_name": "power_law", "gamma": 2.0},
 }
 
 # Create a catalogue containing the 700 brightest sources in the radioloud
@@ -46,21 +35,19 @@ catalogue = agn_subset_catalogue("radioloud", "radioselected", n_sources)
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
 
-true_parameters = [
-    [0.0, 2.33905480645302],
-    [14.379477037814556, 4.0]
-]
+true_parameters = [[0.0, 2.33905480645302], [14.379477037814556, 4.0]]
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
     def test_declination_sensitivity(self):
 
-        logging.info("Testing 'large_catalogue' MinimisationHandler class "
-              "with {0} sources and IC40 data".format(n_sources))
+        logging.info(
+            "Testing 'large_catalogue' MinimisationHandler class "
+            "with {0} sources and IC40 data".format(n_sources)
+        )
 
         # Test stacking
 
@@ -70,7 +57,7 @@ class TestTimeIntegrated(unittest.TestCase):
             "dataset": icecube_ps_3_year.get_seasons("IC79-2010"),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
-            "inj_dict": {}
+            "inj_dict": {},
         }
 
         ub = create_unblinder(unblind_dict)
@@ -103,5 +90,5 @@ class TestTimeIntegrated(unittest.TestCase):
         # logging.info("Reference best fit {0}".format(true_parameters[1]))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

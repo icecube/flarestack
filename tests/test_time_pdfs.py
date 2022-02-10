@@ -11,37 +11,30 @@ from flarestack import MinimisationHandler
 # Initialise Injectors/LLHs
 
 time_pdfs = [
-    {
-        "time_pdf_name": "steady"
-    },
-    {
-        "time_pdf_name": "box",
-        "pre_window": 0.,
-        "post_window": 100.
-    },
+    {"time_pdf_name": "steady"},
+    {"time_pdf_name": "box", "pre_window": 0.0, "post_window": 100.0},
     {
         "time_pdf_name": "custom_source_box",
     },
     {
         "time_pdf_name": "fixed_ref_box",
-        "pre_window": 0.,
-        "post_window": 100.,
-        "fixed_ref_time_mjd": 56000
-    }
+        "pre_window": 0.0,
+        "post_window": 100.0,
+        "fixed_ref_time_mjd": 56000,
+    },
 ]
 
 true_parameters = [
     [1.877671588900102, 3.4651997149577394],
     [0.0, 2.111438613892292],
     [0.0, 2.110474052128495],
-    [0.0, 2.0993342075261676]
+    [0.0, 2.0993342075261676],
 ]
 
 catalogue = tde_catalogue_name("jetted")
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -57,18 +50,15 @@ class TestTimeIntegrated(unittest.TestCase):
                 "llh_bkg_time_pdf": {
                     "time_pdf_name": "steady",
                 },
-                "llh_energy_pdf": {
-                    "energy_pdf_name": "power_law"
-                }
+                "llh_energy_pdf": {"energy_pdf_name": "power_law"},
             }
-
 
             # Test three declinations
 
             unblind_dict = {
                 "mh_name": "fixed_weights",
                 "name": "tests/test_time_pdfs/",
-                "dataset": icecube_ps_3_year.get_seasons('IC79-2010', 'IC86-2011'),
+                "dataset": icecube_ps_3_year.get_seasons("IC79-2010", "IC86-2011"),
                 "catalogue": catalogue,
                 "llh_dict": llh_dict,
             }
@@ -102,5 +92,5 @@ class TestTimeIntegrated(unittest.TestCase):
             # print(res)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

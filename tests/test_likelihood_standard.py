@@ -12,15 +12,11 @@ from flarestack.core.unblinding import create_unblinder
 
 llh_dict = {
     "llh_name": "standard",
-    "llh_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
+    "llh_sig_time_pdf": {"time_pdf_name": "steady"},
     "llh_bkg_time_pdf": {
         "time_pdf_name": "steady",
     },
-    "llh_energy_pdf": {
-        "energy_pdf_name": "power_law"
-    }
+    "llh_energy_pdf": {"energy_pdf_name": "power_law"},
 }
 
 # Loop over sin(dec) values
@@ -35,12 +31,11 @@ sindecs = np.linspace(0.5, -0.5, 3)
 true_parameters = [
     [0.0, 2.3746234433776863],
     [0.0, 2.1278706029950163],
-    [3.118277154641447, 4.0]
+    [3.118277154641447, 4.0],
 ]
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -71,5 +66,5 @@ class TestTimeIntegrated(unittest.TestCase):
                 self.assertAlmostEqual(x, true_parameters[j][i], delta=0.1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

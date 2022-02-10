@@ -8,14 +8,13 @@ from flarestack.core.unblinding import create_unblinder
 from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack.utils import custom_dataset, load_catalogue
 
-true_parameters = [0., 2.07606811]
-true_keys = ['IC79-2010', 'IC86-2011']
+true_parameters = [0.0, 2.07606811]
+true_keys = ["IC79-2010", "IC86-2011"]
 
 catalogue = tde_catalogue_name("jetted")
 
 
 class TestUtilCustomDataset(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -25,22 +24,19 @@ class TestUtilCustomDataset(unittest.TestCase):
 
         llh_dict = {
             "llh_name": "standard",
-            "llh_sig_time_pdf":     {
+            "llh_sig_time_pdf": {
                 "time_pdf_name": "box",
-                "pre_window": 0.,
-                "post_window": 100.
+                "pre_window": 0.0,
+                "post_window": 100.0,
             },
             "llh_bkg_time_pdf": {
                 "time_pdf_name": "steady",
             },
-            "llh_energy_pdf": {
-                "energy_pdf_name": "power_law"
-            }
+            "llh_energy_pdf": {"energy_pdf_name": "power_law"},
         }
 
         dataset = custom_dataset(
-            icecube_ps_3_year, load_catalogue(catalogue),
-            llh_dict["llh_sig_time_pdf"]
+            icecube_ps_3_year, load_catalogue(catalogue), llh_dict["llh_sig_time_pdf"]
         )
 
         keys = sorted(list(dataset.keys()))
@@ -53,8 +49,9 @@ class TestUtilCustomDataset(unittest.TestCase):
             "name": "test_custom_dataset",
             "mh_name": "fixed_weights",
             "dataset": custom_dataset(
-                icecube_ps_3_year, load_catalogue(catalogue),
-                llh_dict["llh_sig_time_pdf"]
+                icecube_ps_3_year,
+                load_catalogue(catalogue),
+                llh_dict["llh_sig_time_pdf"],
             ),
             "catalogue": catalogue,
             "llh_dict": llh_dict,
@@ -70,5 +67,5 @@ class TestUtilCustomDataset(unittest.TestCase):
         logging.info("Reference best fit {0}".format(true_parameters))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -14,7 +14,6 @@ catalogue = tde_catalogue_name("jetted")
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -30,26 +29,20 @@ class TestTimeIntegrated(unittest.TestCase):
                 # Initialise Injectors/LLHs
 
                 inj_dict = {
-                    "injection_sig_time_pdf": {
-                        "time_pdf_name": "steady"
-                    },
+                    "injection_sig_time_pdf": {"time_pdf_name": "steady"},
                     "injection_energy_pdf": {
                         "energy_pdf_name": "power_law",
-                        "gamma": gamma
-                    }
+                        "gamma": gamma,
+                    },
                 }
 
                 llh_dict = {
                     "llh_name": "standard",
-                    "llh_sig_time_pdf": {
-                        "time_pdf_name": "steady"
-                    },
+                    "llh_sig_time_pdf": {"time_pdf_name": "steady"},
                     "llh_bkg_time_pdf": {
                         "time_pdf_name": "steady",
                     },
-                    "llh_energy_pdf": {
-                        "energy_pdf_name": "power_law"
-                    }
+                    "llh_energy_pdf": {"energy_pdf_name": "power_law"},
                 }
 
                 # Test three declinations
@@ -63,7 +56,7 @@ class TestTimeIntegrated(unittest.TestCase):
                     "llh_dict": llh_dict,
                     "n_steps": 5,
                     "n_trials": 10,
-                    "scale": [3., 500.][j]
+                    "scale": [3.0, 500.0][j],
                 }
 
                 analyse(mh_dict, n_cpu=24, cluster=False)
@@ -87,10 +80,11 @@ class TestTimeIntegrated(unittest.TestCase):
             ub = create_unblinder(ub_dict, full_plots=True, scan_2d=True)
 
             mh = MinimisationHandler.create(mh_dict)
-            mh.iterate_run(scale=1., n_steps=3, n_trials=1)
+            mh.iterate_run(scale=1.0, n_steps=3, n_trials=1)
 
         except OverfluctuationError:
             pass
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

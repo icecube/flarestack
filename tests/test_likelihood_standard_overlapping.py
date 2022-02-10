@@ -11,15 +11,9 @@ from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 
 llh_dict = {
     "llh_name": "standard_overlapping",
-    "llh_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_bkg_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_energy_pdf": {
-        "energy_pdf_name": "power_law"
-    }
+    "llh_sig_time_pdf": {"time_pdf_name": "steady"},
+    "llh_bkg_time_pdf": {"time_pdf_name": "steady"},
+    "llh_energy_pdf": {"energy_pdf_name": "power_law"},
 }
 
 # Loop over sin(dec) values
@@ -35,7 +29,6 @@ true_parameters = [3.642652892484948, 4.0]
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -64,5 +57,5 @@ class TestTimeIntegrated(unittest.TestCase):
             self.assertAlmostEqual(x, true_parameters[i], delta=0.1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

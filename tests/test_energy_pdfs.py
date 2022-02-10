@@ -15,10 +15,7 @@ from flarestack.shared import energy_spline_dir
 logger = logging.getLogger()
 logger.setLevel("ERROR")
 
-base_energy_pdf =     {
-        "energy_pdf_name": "power_law",
-        "gamma": 3.0
-    }
+base_energy_pdf = {"energy_pdf_name": "power_law", "gamma": 3.0}
 
 g = EnergyPDF.create(base_energy_pdf)
 
@@ -39,33 +36,18 @@ with open(spline_save_path, "wb") as h:
 
 energy_pdfs = [
     base_energy_pdf,
-    {
-        "energy_pdf_name": "spline",
-        "spline_path": spline_save_path
-    },
+    {"energy_pdf_name": "spline", "spline_path": spline_save_path},
     # Outdated style, test for backwards-compatibility
-    {
-        "Name": "PowerLaw",
-        "Gamma": 3.0
-    },
-    {
-        "Name": "Spline",
-        "Spline Path": spline_save_path
-    }
+    {"Name": "PowerLaw", "Gamma": 3.0},
+    {"Name": "Spline", "Spline Path": spline_save_path},
 ]
 
-true_parameters = [
-    [1.35150508],
-    [1.34119769],
-    [1.35150508],
-    [1.34119769]
-]
+true_parameters = [[1.35150508], [1.34119769], [1.35150508], [1.34119769]]
 
 catalogue = ps_catalogue_name(-0.5)
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -77,19 +59,17 @@ class TestTimeIntegrated(unittest.TestCase):
 
             llh_dict = {
                 "llh_name": "fixed_energy",
-                "llh_sig_time_pdf": {
-                    "time_pdf_name": "steady"
-                },
+                "llh_sig_time_pdf": {"time_pdf_name": "steady"},
                 "llh_bkg_time_pdf": {
                     "time_pdf_name": "steady",
                 },
-                "llh_energy_pdf": e_pdf_dict
+                "llh_energy_pdf": e_pdf_dict,
             }
 
             unblind_dict = {
                 "name": "tests/test_energy_pdfs/",
                 "mh_name": "fixed_weights",
-                "dataset": icecube_ps_3_year.get_seasons('IC79-2010', 'IC86-2011'),
+                "dataset": icecube_ps_3_year.get_seasons("IC79-2010", "IC86-2011"),
                 "catalogue": catalogue,
                 "llh_dict": llh_dict,
             }
@@ -105,5 +85,5 @@ class TestTimeIntegrated(unittest.TestCase):
                 self.assertAlmostEqual(x, true_parameters[i][j], delta=0.1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

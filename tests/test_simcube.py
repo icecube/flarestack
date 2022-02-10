@@ -8,8 +8,8 @@ from flarestack import create_unblinder
 
 sindecs = np.linspace(0.9, 0.0, 4)
 
-class TestSimcube(unittest.TestCase):
 
+class TestSimcube(unittest.TestCase):
     def setUp(self):
         pass
 
@@ -68,22 +68,21 @@ class TestSimcube(unittest.TestCase):
 
         # for j, sindec in enumerate(sindecs):
 
-            # unblind_dict = {
-            #     "mh_name": "fixed_weights",
-            #     "datasets": simcube_dataset.get_seasons("IC86-2012"),
-            #     "catalogue": ps_catalogue_name(sindec),
-            #     "llh_dict": llh_dict,
-            # }
+        # unblind_dict = {
+        #     "mh_name": "fixed_weights",
+        #     "datasets": simcube_dataset.get_seasons("IC86-2012"),
+        #     "catalogue": ps_catalogue_name(sindec),
+        #     "llh_dict": llh_dict,
+        # }
 
-            # ub = create_unblinder(unblind_dict)
-            # key = [x for x in ub.res_dict.keys() if x != "TS"][0]
-            # res = ub.res_dict[key]
-            # # self.assertEqual(list(res["x"]), true_parameters[j])
-            #
-            # print("Best fit values", list(res["x"]))
-            # print("Reference best fit", true_parameters[j])
+        # ub = create_unblinder(unblind_dict)
+        # key = [x for x in ub.res_dict.keys() if x != "TS"][0]
+        # res = ub.res_dict[key]
+        # # self.assertEqual(list(res["x"]), true_parameters[j])
+        #
+        # print("Best fit values", list(res["x"]))
+        # print("Reference best fit", true_parameters[j])
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

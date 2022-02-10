@@ -11,12 +11,8 @@ from flarestack.utils.asimov_estimator import AsimovEstimator
 
 llh_dict = {
     "name": "standard",
-    "llh_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_energy_pdf": {
-        "energy_pdf_name": "power_Law"
-    }
+    "llh_sig_time_pdf": {"time_pdf_name": "steady"},
+    "llh_energy_pdf": {"energy_pdf_name": "power_Law"},
 }
 
 # Loop over sin(dec) values
@@ -31,12 +27,11 @@ sindecs = np.linspace(0.5, -0.5, 3)
 true_parameters = [
     [1.5659139129935208e-08],
     [8.596263924277218e-09],
-    [1.1616079571847577e-07]
+    [1.1616079571847577e-07],
 ]
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -70,5 +65,5 @@ class TestTimeIntegrated(unittest.TestCase):
         #     self.assertEqual(dp, true_parameters[i])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

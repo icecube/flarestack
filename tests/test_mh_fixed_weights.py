@@ -11,15 +11,11 @@ from flarestack import create_unblinder, MinimisationHandler
 
 llh_dict = {
     "llh_name": "standard",
-    "llh_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
+    "llh_sig_time_pdf": {"time_pdf_name": "steady"},
     "llh_bkg_time_pdf": {
         "time_pdf_name": "steady",
     },
-    "llh_energy_pdf": {
-        "energy_pdf_name": "power_law"
-    }
+    "llh_energy_pdf": {"energy_pdf_name": "power_law"},
 }
 
 true_parameters = [3.70369960756338, 4.0]
@@ -29,8 +25,8 @@ catalogue = tde_catalogue_name("jetted")
 
 logging.getLogger().setLevel("INFO")
 
-class TestTimeIntegrated(unittest.TestCase):
 
+class TestTimeIntegrated(unittest.TestCase):
     def setUp(self):
         pass
 
@@ -58,5 +54,6 @@ class TestTimeIntegrated(unittest.TestCase):
         for i, x in enumerate(res["x"]):
             self.assertAlmostEqual(x, true_parameters[i], delta=0.1)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

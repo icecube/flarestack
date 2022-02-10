@@ -17,15 +17,13 @@ llh_energy = {
     "gamma": 2.0,
 }
 
-llh_time = {
-    "time_pdf_name": "custom_source_box"
-}
+llh_time = {"time_pdf_name": "custom_source_box"}
 
 unblind_llh = {
     "llh_name": "standard",
     "llh_sig_time_pdf": llh_time,
     "llh_bkg_time_pdf": {"time_pdf_name": "steady"},
-    "llh_energy_pdf": llh_energy
+    "llh_energy_pdf": llh_energy,
 }
 
 
@@ -36,7 +34,7 @@ unblind_dict = {
     "mh_name": "flare",
     "dataset": icecube_ps_3_year.get_seasons("IC86-2011"),
     "catalogue": cat_path,
-    "llh_dict": unblind_llh
+    "llh_dict": unblind_llh,
 }
 
 # Inspecting the neutrino lightcurve for this fixed-seed scramble confirms
@@ -49,12 +47,11 @@ true_parameters = [
     3.764204148466931,
     55761.7435891,
     55764.59807937,
-    2.8544902700014063
+    2.8544902700014063,
 ]
 
 
 class TestFlareSearch(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -69,33 +66,28 @@ class TestFlareSearch(unittest.TestCase):
 
         for i, x in enumerate(res):
             if i < 2:
-                self.assertAlmostEqual(x/true_parameters[i], 1., places=1)
+                self.assertAlmostEqual(x / true_parameters[i], 1.0, places=1)
             else:
                 self.assertEqual(x, true_parameters[i])
 
         inj_dict = {
-            "injection_sig_time_pdf": {
-                "time_pdf_name": "steady"
-            },
+            "injection_sig_time_pdf": {"time_pdf_name": "steady"},
             "injection_bkg_time_pdf": {
                 "time_pdf_name": "steady",
             },
-            "injection_energy_pdf": {
-                "energy_pdf_name": "power_law",
-                "gamma": 2.0
-            }
+            "injection_energy_pdf": {"energy_pdf_name": "power_law", "gamma": 2.0},
         }
 
         mh_dict = dict(unblind_dict)
         mh_dict["inj_dict"] = inj_dict
-        mh_dict["n_trials"] = 1.
-        mh_dict["n_steps"] = 3.
-        mh_dict["scale"] = 5.
+        mh_dict["n_trials"] = 1.0
+        mh_dict["n_steps"] = 3.0
+        mh_dict["scale"] = 5.0
 
         mh = MinimisationHandler.create(mh_dict)
-        res = mh.simulate_and_run(5.)
+        res = mh.simulate_and_run(5.0)
         analyse(mh_dict, cluster=False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

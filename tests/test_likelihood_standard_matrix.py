@@ -11,15 +11,9 @@ from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 
 llh_dict = {
     "llh_name": "standard_matrix",
-    "llh_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_bkg_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_energy_pdf": {
-        "energy_pdf_name": "power_law"
-    }
+    "llh_sig_time_pdf": {"time_pdf_name": "steady"},
+    "llh_bkg_time_pdf": {"time_pdf_name": "steady"},
+    "llh_energy_pdf": {"energy_pdf_name": "power_law"},
 }
 
 name = "tests/test_likelihood_spatial/"
@@ -36,7 +30,6 @@ true_parameters = [3.6426496568675617, 4.0]
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -64,5 +57,6 @@ class TestTimeIntegrated(unittest.TestCase):
         for i, x in enumerate(res["x"]):
             self.assertAlmostEqual(x, true_parameters[i], delta=5)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

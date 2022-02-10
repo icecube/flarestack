@@ -12,13 +12,8 @@ from flarestack.core.unblinding import create_unblinder
 
 llh_dict = {
     "llh_name": "fixed_energy",
-    "llh_sig_time_pdf": {
-        "time_pdf_name": "steady"
-    },
-    "llh_energy_pdf": {
-        "energy_pdf_name": "power_law",
-        "gamma": 3.0
-    }
+    "llh_sig_time_pdf": {"time_pdf_name": "steady"},
+    "llh_energy_pdf": {"energy_pdf_name": "power_law", "gamma": 3.0},
 }
 
 # Loop over sin(dec) values
@@ -30,15 +25,10 @@ sindecs = np.linspace(0.5, -0.5, 3)
 # and can be considered the "true" answers. The results we obtain will be
 # compared to these values.
 
-true_parameters = [
-    [0.0],
-    [0.0],
-    [2.0817298059169915]
-]
+true_parameters = [[0.0], [0.0], [2.0817298059169915]]
 
 
 class TestTimeIntegrated(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -67,5 +57,5 @@ class TestTimeIntegrated(unittest.TestCase):
             self.assertAlmostEqual(list(res["x"])[0], true_parameters[j], delta=0.1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
