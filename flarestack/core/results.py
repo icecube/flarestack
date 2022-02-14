@@ -7,19 +7,10 @@ import matplotlib.cm as cm
 import matplotlib.colors as colors
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
-from flarestack.shared import (
-    name_pickle_output_dir,
-    plot_output_dir,
-    k_to_flux,
-    inj_dir_name,
-    scale_shortener,
-    flux_to_k,
-)
-from flarestack.core.ts_distributions import (
-    plot_background_ts_distribution,
-    plot_fit_results,
-    get_ts_fit_type,
-)
+from flarestack.shared import name_pickle_output_dir, plot_output_dir, \
+    k_to_flux, inj_dir_name, scale_shortener, flux_to_k
+from flarestack.core.ts_distributions import plot_background_ts_distribution, \
+    plot_fit_results, get_ts_fit_type
 from flarestack.utils.neutrino_astronomy import calculate_astronomy
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.time_pdf import TimePDF
@@ -35,12 +26,13 @@ class OverfluctuationError(Exception):
 
 
 class ResultsHandler(object):
-    def __init__(self, rh_dict, do_sens=True, do_disc=True):
+
+    def __init__(self, rh_dict, do_sens=True, do_disc=True, bias_error='std'):
 
         self.sources = load_catalogue(rh_dict["catalogue"])
 
         self.name = rh_dict["name"]
-        self.mh_name = rh_dict["mh_name"]
+        self.mh_name = rh_dict['mh_name']
         self.scale = rh_dict["scale"]
 
         self.results = dict()
@@ -58,6 +50,7 @@ class ResultsHandler(object):
         #     self.make_plots = self.flare_plots
         # else:
         self.make_plots = self.noflare_plots
+        self.bias_error = bias_error
 
         # Checks whether negative n_s is fit or not
         #
@@ -169,23 +162,19 @@ class ResultsHandler(object):
     @property
     def ts_arrays(self):
         """returns the generated test statistic distributions as arrays for each injection step"""
-        return [np.array(self.results[scale]["TS"]) for scale in self.scales]
+        return [np.array(self.results[scale]['TS']) for scale in self.scales]
 
     @property
     def ns_injected(self):
         """returns the median of the injected number of signal neutrinos for each injection step"""
-        ns_arrays = np.array(
-            [
-                np.array(
-                    [
-                        np.median(self.results[scale]["Parameters"][key])
-                        for key in self.results[scale]["Parameters"]
-                        if "n_s" in key
-                    ]
-                )
-                for scale in self.scales
-            ]
-        )
+        ns_arrays = np.array([
+            np.array(
+                [np.median(self.results[scale]['Parameters'][key])
+                 for key in self.results[scale]['Parameters']
+                 if 'n_s' in key]
+            )
+            for scale in self.scales
+        ])
 
         # In the case of fitted weights there will be a number of injected neutrinos for each source thus we have
         # to take the sum. If this is not the case this won't do anything as ns_array will only have one entry.
@@ -197,9 +186,7 @@ class ResultsHandler(object):
             single_inj_time = 0
             for s_name in self._dataset.keys():
                 s = self._dataset[s_name]
-                tpdf = TimePDF.create(
-                    self._inj_dict["injection_sig_time_pdf"], s.get_time_pdf()
-                )
+                tpdf = TimePDF.create(self._inj_dict["injection_sig_time_pdf"], s.get_time_pdf())
                 single_inj_time += tpdf.raw_injection_time(src)
             inj_time_list.append(single_inj_time)
         return np.median(inj_time_list)
@@ -227,6 +214,7 @@ class ResultsHandler(object):
         astro_disc = self.nu_astronomy(self.disc_potential, e_pdf_dict)
 
         return astro_sens, astro_disc
+
 
     def nu_astronomy(self, flux, e_pdf_dict):
         """Function to convert a local flux in the detector at 1GeV to physical
@@ -274,20 +262,17 @@ class ResultsHandler(object):
                     with open(path, "rb") as f:
                         inj_values[os.path.splitext(file)[0]] = Pickle.load(f)
                 except EOFError as e:
-                    logger.warning(f"{path}: EOFError: {e}! Can not use this scale!")
+                    logger.warning(f'{path}: EOFError: {e}! Can not use this scale!')
 
             else:
-                logger.debug(f"Did not load {path}, not a file!")
+                logger.debug(f'Did not load {path}, not a file!')
 
         return inj_values
 
     def merge_pickle_data(self):
 
-        all_sub_dirs = [
-            x
-            for x in os.listdir(self.pickle_output_dir)
-            if x[0] != "." and x != "merged"
-        ]
+        all_sub_dirs = [x for x in os.listdir(self.pickle_output_dir)
+                        if x[0] != "." and x != "merged"]
 
         try:
             os.makedirs(self.merged_dir)
@@ -295,7 +280,7 @@ class ResultsHandler(object):
             pass
 
         for sub_dir_name in all_sub_dirs:
-            sub_dir = os.path.join(self.pickle_output_dir, sub_dir_name)
+            sub_dir = os.path.join(self.pickle_output_dir,  sub_dir_name)
 
             files = os.listdir(sub_dir)
 
@@ -327,12 +312,9 @@ class ResultsHandler(object):
                             merged_data[key] += info
                         else:
                             for (param_name, params) in info.items():
-                                try:
-                                    merged_data[key][param_name] += params
+                                try: merged_data[key][param_name] += params
                                 except KeyError as m:
-                                    logger.warning(
-                                        f"Keys [{key}][{param_name}] not found in \n {merged_data}"
-                                    )
+                                    logger.warning(f'Keys [{key}][{param_name}] not found in \n {merged_data}')
                                     raise KeyError(m)
 
             with open(merged_path, "wb") as mp:
@@ -343,9 +325,7 @@ class ResultsHandler(object):
 
         if len(list(self.results.keys())) == 0:
             logger.warning("No data was found by ResultsHandler object! \n")
-            logger.warning(
-                "Tried root directory: \n {0} \n ".format(self.pickle_output_dir)
-            )
+            logger.warning("Tried root directory: \n {0} \n ".format(self.pickle_output_dir))
             sys.exit()
 
     def find_ns_scale(self):
@@ -357,29 +337,23 @@ class ResultsHandler(object):
 
             if "n_s" in self.inj[self.scales[1]]:
 
-                self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(
-                    self.scales_float[1]
-                )
+                self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(self.scales_float[1])
 
             # if weights were fitted, or for cluster search, there is one n_s for each fitted source
             else:
                 sc_dict = self.inj[self.scales[1]]
-                self.flux_to_ns = sum(
-                    [sc_dict[k] for k in sc_dict if "n_s" in str(k)]
-                ) / k_to_flux(self.scales_float[1])
+                self.flux_to_ns = sum([sc_dict[k] for k in sc_dict if 'n_s' in str(k)]) / k_to_flux(self.scales_float[1])
 
             logger.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
 
         except KeyError as e:
-            logger.warning(
-                f'KeyError: key "n_s" not found and minimizer is {self.mh_name}!!: {e}'
-            )
+            logger.warning(f"KeyError: key \"n_s\" not found and minimizer is {self.mh_name}!!: {e}")
 
     def estimate_sens_disc_scale(self):
         results = []
 
-        logger.debug("  scale   avg_sigma     avg_TS")
-        logger.debug("  ----------------------------")
+        logger.debug('  scale   avg_sigma     avg_TS')
+        logger.debug('  ----------------------------')
 
         for scale, ts_array in zip(self.scales_float, self.ts_arrays):
 
@@ -388,13 +362,11 @@ class ResultsHandler(object):
             avg_sigma = np.sqrt(avg_ts)
 
             # error on average sigma is 1 sigma/sqrt(trials.size)
-            err_sigma = 1.0 / np.sqrt(ts_array.size)
+            err_sigma = 1. / np.sqrt(ts_array.size)
 
             # collect all sigma > 0
             if avg_sigma >= 0:
-                logger.debug(
-                    f"  {scale:.4f}   {avg_sigma:.2f}+/-{err_sigma:.2f}  {avg_ts:.4f}"
-                )
+                logger.debug(f'  {scale:.4f}   {avg_sigma:.2f}+/-{err_sigma:.2f}  {avg_ts:.4f}')
                 results.append([scale, avg_sigma, err_sigma, avg_ts])
             else:
                 pass
@@ -402,12 +374,10 @@ class ResultsHandler(object):
         results = np.transpose(results)
 
         # linear fit
-        p = np.polyfit(
-            results[0],  # x = scale
-            results[1],  # y = avg. sigma
-            1,  # 1st order poly
-            w=results[2],
-        )  # error = error on avg. sigma
+        p = np.polyfit(results[0],    # x = scale
+                       results[1],    # y = avg. sigma
+                       1,             # 1st order poly
+                       w=results[2])  # error = error on avg. sigma
 
         # discovery threshold is 5 sigma
         disc_scale_guess = (5 - p[1]) / p[0]
@@ -418,32 +388,23 @@ class ResultsHandler(object):
         # make a plot
         fig, ax = plt.subplots()
         # plot injection results
-        ax.errorbar(
-            results[0],
-            results[1],
-            yerr=results[2],
-            ls="",
-            color="k",
-            label="quick injections",
-        )
+        ax.errorbar(results[0], results[1], yerr=results[2], ls='', color='k', label='quick injections')
         # plot the linear fit
         xplot = np.linspace(min(results[0]), max(results[0]), 100)
         yplot = xplot * p[0] + p[1]
-        ax.plot(xplot, yplot, marker="", label="linear fit")
+        ax.plot(xplot, yplot, marker='', label='linear fit')
         # plot guessed scales
-        ax.axvline(disc_scale_guess, ls="--", color="red", label="DP scale guess")
-        ax.axvline(sens_scale_guess, ls="--", color="blue", label="Sens scale guess")
-        ax.set_xlabel("flux scale")
-        ax.set_ylabel("$\sigma_{mean}$")
+        ax.axvline(disc_scale_guess, ls='--', color='red', label='DP scale guess')
+        ax.axvline(sens_scale_guess, ls='--', color='blue', label='Sens scale guess')
+        ax.set_xlabel('flux scale')
+        ax.set_ylabel('$\sigma_{mean}$')
         ax.legend()
         fn = os.path.join(self.plot_dir, "quick_injection_scale_guess.pdf")
         fig.savefig(fn)
-        logger.debug(f"saved figure under {fn}")
+        logger.debug(f'saved figure under {fn}')
         plt.close()
 
-        logger.debug(
-            f"disc scale guess: {disc_scale_guess}; sens scale guess: {sens_scale_guess}"
-        )
+        logger.debug(f'disc scale guess: {disc_scale_guess}; sens scale guess: {sens_scale_guess}')
 
         return disc_scale_guess, sens_scale_guess
 
@@ -533,8 +494,9 @@ class ResultsHandler(object):
 
         for scale in x:
             ts_array = np.array(self.results[scale]["TS"])
-            frac = float(len(ts_array[ts_array > ts_val])) / (float(len(ts_array)))
-
+            frac = float(len(ts_array[ts_array > ts_val])) / (float(len(
+                ts_array)))
+            
             logger.info(
                 "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
                     frac, ts_val, len(ts_array), scale
@@ -547,14 +509,12 @@ class ResultsHandler(object):
             if len(ts_array) > 1:
                 y.append(frac)
                 x_acc.append(float(scale))
-                yerr.append(1.0 / np.sqrt(float(len(ts_array))))
+                yerr.append(1./np.sqrt(float(len(ts_array))))
 
                 self.make_plots(scale)
 
         if len(np.where(np.array(y) < 0.95)[0]) < 2:
-            raise OverfluctuationError(
-                f"Not enough points with overfluctuations under 95%, lower injection scale!"
-            )
+            raise OverfluctuationError(f"Not enough points with overfluctuations under 95%, lower injection scale!")
 
         x = np.array(x_acc)
         self.overfluctuations[ts_val] = x, y, yerr
@@ -568,31 +528,28 @@ class ResultsHandler(object):
 
         threshold = 0.9
 
-        b = 1 - min(y)
+        b = (1 - min(y))
 
         def f(x, a):
-            value = 1 - b * np.exp(-a * x)
+            value = (1 - b * np.exp(-a * x))
             return value
 
         popt, pcov = scipy.optimize.curve_fit(
-            f, x, y, sigma=yerr, absolute_sigma=True, p0=[1.0 / max(x)]
-        )
+            f, x, y,  sigma=yerr, absolute_sigma=True, p0=[1./max(x)])
 
         perr = np.sqrt(np.diag(pcov))
 
         best_a = popt[0]
 
-        def best_f(x, sd=0.0):
-            a = best_a + perr * sd
+        def best_f(x, sd=0.):
+            a = best_a + perr*sd
             return f(x, a)
 
-        fit = k_to_flux((1.0 / best_a) * np.log(b / (1 - threshold)))
+        fit = k_to_flux((1./best_a) * np.log(b / (1 - threshold)))
 
         if fit > max(x_flux):
-            extrapolation_msg = (
-                "The sensitivity is beyond the range of the tested scales."
-                "The number is probably not good."
-            )
+            extrapolation_msg = "The sensitivity is beyond the range of the tested scales." \
+                                "The number is probably not good."
             if self.allow_extrapolation:
                 logger.warning(extrapolation_msg)
                 extrapolated = True
@@ -603,42 +560,34 @@ class ResultsHandler(object):
 
         xrange = np.linspace(0.0, 1.1 * max(x), 1000)
 
-        lower = k_to_flux((1.0 / (best_a + perr)) * np.log(b / (1 - threshold)))
-        upper = k_to_flux((1.0 / (best_a - perr)) * np.log(b / (1 - threshold)))
+        lower = k_to_flux((1./(best_a + perr)) * np.log(b / (1 - threshold)))
+        upper = k_to_flux((1./(best_a - perr)) * np.log(b / (1 - threshold)))
 
         fig = plt.figure()
         ax1 = fig.add_subplot(111)
         ax1.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
         ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")
-        ax1.fill_between(
-            k_to_flux(xrange),
-            best_f(xrange, 1),
-            best_f(xrange, -1),
-            color="blue",
-            alpha=0.1,
-        )
+        ax1.fill_between(k_to_flux(xrange), best_f(xrange, 1), best_f(xrange, -1), color="blue", alpha=0.1)
         ax1.axhline(threshold, lw=1, color="red", linestyle="--")
         ax1.axvline(fit, lw=2, color="red")
         ax1.axvline(lower, lw=2, color="red", linestyle=":")
         ax1.axvline(upper, lw=2, color="red", linestyle=":")
-        ax1.set_ylim(0.0, 1.0)
-        ax1.set_xlim(0.0, k_to_flux(max(xrange)))
-        ax1.set_ylabel("Overfluctuations above TS=" + "{:.2f}".format(ts_val))
+        ax1.set_ylim(0., 1.)
+        ax1.set_xlim(0., k_to_flux(max(xrange)))
+        ax1.set_ylabel('Overfluctuations above TS=' + "{:.2f}".format(ts_val))
         plt.xlabel(r"Flux Normalisation @ 1GeV [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
 
         if not np.isnan(self.flux_to_ns):
             ax2 = ax1.twiny()
             ax2.grid(0)
-            ax2.set_xlim(0.0, self.flux_to_ns * k_to_flux(max(xrange)))
+            ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
             ax2.set_xlabel(r"Number of neutrinos")
 
         fig.savefig(savepath)
         plt.close()
 
         if len(np.where(np.array(y) < 0.95)[0]) < 2:
-            raise OverfluctuationError(
-                f"Not enough points with overfluctuations under 95%, lower injection scale!"
-            )
+            raise OverfluctuationError(f"Not enough points with overfluctuations under 95%, lower injection scale!")
 
         sens_err = np.array([fit - lower, upper - fit]).T[0]
 
@@ -661,8 +610,7 @@ class ResultsHandler(object):
         bkg_ts = bkg_dict["TS"]
 
         disc_threshold = plot_background_ts_distribution(
-            bkg_ts, ts_path, ts_type=self.ts_type
-        )
+            bkg_ts, ts_path, ts_type=self.ts_type)
 
         self.disc_ts_threshold = disc_threshold
 
@@ -676,8 +624,7 @@ class ResultsHandler(object):
         for scale in x:
             ts_array = np.array(self.results[scale]["TS"])
             frac = float(len(ts_array[ts_array > disc_threshold])) / (
-                float(len(ts_array))
-            )
+                float(len(ts_array)))
 
             logger.info(
                 "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
@@ -686,7 +633,8 @@ class ResultsHandler(object):
             )
 
             y.append(frac)
-            frac_25 = float(len(ts_array[ts_array > 25.0])) / (float(len(ts_array)))
+            frac_25 = float(len(ts_array[ts_array > 25.])) / (
+                float(len(ts_array)))
 
             logger.info(
                 "Fraction of overfluctuations is {0:.2f} above 25 (N_trials={1}) (Scale={2})".format(
@@ -716,8 +664,7 @@ class ResultsHandler(object):
 
             try:
                 res = scipy.optimize.curve_fit(
-                    f, x, y_val, p0=[6, -0.1 * max(x), 0.1 * max(x)]
-                )
+                    f, x, y_val,  p0=[6, -0.1 * max(x), 0.1 * max(x)])
 
                 best_a = res[0][0]
                 best_b = res[0][1]
@@ -727,9 +674,8 @@ class ResultsHandler(object):
                     return f(x, best_a, best_b, best_c)
 
                 sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
-                setattr(
-                    self, ["disc_potential", "disc_potential_25"][i], k_to_flux(sol)
-                )
+                setattr(self, ["disc_potential", "disc_potential_25"][i],
+                        k_to_flux(sol))
 
             except RuntimeError as e:
                 logger.warning(f"RuntimeError for discovery potential!: {e}")
@@ -748,15 +694,15 @@ class ResultsHandler(object):
             ax1.axhline(threshold, lw=1, color="red", linestyle="--")
             ax1.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
             ax1.axvline(self.disc_potential, lw=2, color="red")
-            ax1.set_ylim(0.0, 1.0)
-            ax1.set_xlim(0.0, k_to_flux(max(xrange)))
-            ax1.set_ylabel(r"Overfluctuations relative to 5 $\sigma$ Threshold")
+            ax1.set_ylim(0., 1.)
+            ax1.set_xlim(0., k_to_flux(max(xrange)))
+            ax1.set_ylabel(r'Overfluctuations relative to 5 $\sigma$ Threshold')
             plt.xlabel(r"Flux Normalisation @ 1GeV [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
 
             if not np.isnan(self.flux_to_ns):
                 ax2 = ax1.twiny()
                 ax2.grid(0)
-                ax2.set_xlim(0.0, self.flux_to_ns * k_to_flux(max(xrange)))
+                ax2.set_xlim(0., self.flux_to_ns * k_to_flux(max(xrange)))
                 ax2.set_xlabel(r"Number of neutrinos")
 
             fig.savefig(savepath)
@@ -770,18 +716,15 @@ class ResultsHandler(object):
         if self.extrapolated_disc:
             msg = "EXTRAPOLATED "
 
-        logger.info(
-            "{0}Discovery Potential is {1:.3g}".format(msg, self.disc_potential)
-        )
-        logger.info(
-            "Discovery Potential (TS=25) is {0:.3g}".format(self.disc_potential_25)
-        )
+        logger.info("{0}Discovery Potential is {1:.3g}".format(msg, self.disc_potential))
+        logger.info("Discovery Potential (TS=25) is {0:.3g}".format(self.disc_potential_25))
 
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = os.path.join(self.plot_dir, "ts_distributions/" + str(scale) + ".pdf")
 
-        plot_background_ts_distribution(ts_array, ts_path, ts_type=self.ts_type)
+        plot_background_ts_distribution(ts_array, ts_path,
+                                        ts_type=self.ts_type)
 
         param_path = os.path.join(self.plot_dir, "params/" + str(scale) + ".pdf")
 
@@ -789,15 +732,14 @@ class ResultsHandler(object):
         try:
             inj = self.inj[str(scale)]
 
-            plot_fit_results(self.results[scale]["Parameters"], param_path, inj=inj)
+            plot_fit_results(self.results[scale]["Parameters"], param_path,
+                             inj=inj)
         except KeyError as e:
-            logger.warning(
-                f"KeyError for scale {scale}: {e}! Can not plot fit results!"
-            )
+            logger.warning(f'KeyError for scale {scale}: {e}! Can not plot fit results!')
 
-    def ts_evolution_gif(self, n_scale_steps=None, cmap_name="winter"):
+    def ts_evolution_gif(self, n_scale_steps=None, cmap_name='winter'):
 
-        logger.debug("making animation")
+        logger.debug('making animation')
 
         all_scales_list = list(self.results.keys())
         n_scales_all = len(all_scales_list)
@@ -805,28 +747,22 @@ class ResultsHandler(object):
         n_scale_steps = n_scales_all - 1 if not n_scale_steps else n_scale_steps
 
         scale_step_length = int(round(n_scales_all / (n_scale_steps)))
-        scales = [
-            all_scales_list[min([i * scale_step_length, n_scales_all - 1])]
-            for i in range(n_scale_steps + 1)
-        ]
+        scales = [all_scales_list[min([i * scale_step_length, n_scales_all - 1])]
+                  for i in range(n_scale_steps + 1)]
 
-        ts_arrays = [np.array(self.results[scale]["TS"]) for scale in scales]
+        ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
 
-        ns_arrays = np.array(
-            [
-                np.array(
-                    [
-                        np.median(self.results[scale]["Parameters"][key])
-                        for key in self.results[scale]["Parameters"]
-                        if "n_s" in key
-                    ]
-                )
-                for scale in scales
-            ]
-        )
+        ns_arrays = np.array([
+            np.array(
+                [np.median(self.results[scale]['Parameters'][key])
+                 for key in self.results[scale]['Parameters']
+                 if 'n_s' in key]
+            )
+            for scale in scales
+        ])
 
         n_s = [sum(a) for a in ns_arrays]
-        logger.debug("numbers of injected neutrinos: " + str(n_s))
+        logger.debug('numbers of injected neutrinos: ' + str(n_s))
 
         norm = colors.Normalize(vmin=0, vmax=max(n_s))
         mappable = cm.ScalarMappable(norm=norm, cmap=cmap_name)
@@ -835,111 +771,78 @@ class ResultsHandler(object):
         sq_fig, sq_ax = plt.subplots()
         sq_fig.set_tight_layout(True)
         sq_ax.set_xlim([-5, max(ts_arrays[-1]) + 10])
-        sq_ax.set_yscale("log")
-        sq_ax.set_xlabel("Test Statistic")
-        sq_ax.set_ylabel("a.u.")
+        sq_ax.set_yscale('log')
+        sq_ax.set_xlabel('Test Statistic')
+        sq_ax.set_ylabel('a.u.')
 
         sqbar = sq_fig.colorbar(mappable, ax=sq_ax)
-        sqbar.set_label(r"n$_{\mathrm{injected}}$")
+        sqbar.set_label(r'n$_{\mathrm{injected}}$')
 
         def update(i):
             its = ts_arrays[i]
             ins = n_s[i]
-            sq_ax.hist(
-                its, histtype="stepfilled", density=True, color=cmap(ins / max(n_s))
-            )
-            sq_ax.set_title(r"n$_{\mathrm{injected}}=$" + "{:.2f}".format(ins))
+            sq_ax.hist(its, histtype='stepfilled', density=True, color=cmap(ins / max(n_s)))
+            sq_ax.set_title(r'n$_{\mathrm{injected}}=$' + '{:.2f}'.format(ins))
 
         anim = animation.FuncAnimation(
             sq_fig, update, frames=np.arange(0, n_scale_steps), interval=500
         )
 
-        anim_name = os.path.join(
-            self.plot_dir, "ts_distributions/ts_distributions_evolution.gif"
-        )
-        logger.debug("saving animation under " + anim_name)
-        anim.save(anim_name, dpi=80, writer="imagemagick")
+        anim_name = os.path.join(self.plot_dir, "ts_distributions/ts_distributions_evolution.gif")
+        logger.debug('saving animation under ' + anim_name)
+        anim.save(anim_name, dpi=80, writer='imagemagick')
 
     def ts_distribution_evolution(self):
 
-        logger.debug("plotting evolution of TS distribution")
+        logger.debug('plotting evolution of TS distribution')
 
         all_scales = np.array(list(self.results.keys()))
         all_scales_floats = [float(sc) for sc in all_scales]
 
-        logger.debug("all scales: " + str(all_scales_floats))
-        logger.debug("sensitivity scale: " + str(flux_to_k(self.sensitivity)))
+        logger.debug('all scales: ' + str(all_scales_floats))
+        logger.debug('sensitivity scale: ' + str(flux_to_k(self.sensitivity)))
 
-        sens_scale = all_scales[
-            all_scales_floats >= np.array(flux_to_k(self.sensitivity))
-        ][0]
-        disc_scale = all_scales[
-            all_scales_floats >= np.array(flux_to_k(self.disc_potential))
-        ][0]
+        sens_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.sensitivity))][0]
+        disc_scale = all_scales[all_scales_floats >= np.array(flux_to_k(self.disc_potential))][0]
+
 
         scales = [all_scales[0], sens_scale, disc_scale]
-        ts_arrays = [np.array(self.results[scale]["TS"]) for scale in scales]
-        ns_arrays = np.array(
-            [
-                np.array(
-                    [
-                        np.median(self.results[scale]["Parameters"][key])
-                        for key in self.results[scale]["Parameters"]
-                        if "n_s" in key
-                    ]
-                )
-                for scale in scales
-            ]
-        )
+        ts_arrays = [np.array(self.results[scale]['TS']) for scale in scales]
+        ns_arrays = np.array([
+            np.array(
+                    [np.median(self.results[scale]['Parameters'][key])
+                     for key in self.results[scale]['Parameters']
+                     if 'n_s' in key]
+            )
+            for scale in scales
+        ])
 
         n_s = [sum(a) for a in ns_arrays]
-        logger.debug("numbers of injected neutrinos: " + str(n_s))
+        logger.debug('numbers of injected neutrinos: ' + str(n_s))
 
         fig, ax = plt.subplots()
 
-        ax.hist(
-            ts_arrays[0],
-            histtype="stepfilled",
-            label="background",
-            density=True,
-            alpha=0.6,
-            color="blue",
-        )
+        ax.hist(ts_arrays[0], histtype='stepfilled', label='background', density=True, alpha=0.6, color='blue')
 
-        ax.hist(
-            ts_arrays[1],
-            histtype="step",
-            density=True,
-            color="orange",
-            label="signal: {:.2} signal neutrinos".format(n_s[1]),
-        )
-        ax.axvline(
-            self.bkg_median, ls="--", label="sensitivity threshold", color="orange"
-        )
 
-        ax.hist(
-            ts_arrays[2],
-            histtype="step",
-            density=True,
-            color="red",
-            label="signal: {:.2} signal neutrinos".format(n_s[2]),
-        )
-        ax.axvline(
-            self.disc_ts_threshold,
-            ls="--",
-            label="discovery potential threshold",
-            color="red",
-        )
+        ax.hist(ts_arrays[1], histtype='step', density=True, color='orange',
+                label='signal: {:.2} signal neutrinos'.format(n_s[1]))
+        ax.axvline(self.bkg_median, ls='--', label='sensitivity threshold', color='orange')
 
-        ax.set_xlabel("Test Statistic")
-        ax.set_ylabel("a.u.")
+        ax.hist(ts_arrays[2], histtype='step', density=True, color='red',
+                label='signal: {:.2} signal neutrinos'.format(n_s[2]))
+        ax.axvline(self.disc_ts_threshold, ls='--', label='discovery potential threshold',
+                   color='red')
+
+        ax.set_xlabel('Test Statistic')
+        ax.set_ylabel('a.u.')
         ax.legend()
-        ax.set_yscale("log")
+        ax.set_yscale('log')
 
         plt.tight_layout()
 
         sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_.pdf")
-        logger.debug("saving plot to " + sn)
+        logger.debug('saving plot to ' + sn)
         fig.savefig(sn)
 
         plt.close()
@@ -989,11 +892,22 @@ class ResultsHandler(object):
 
                 for scale in raw_x:
                     vals = self.results[scale]["Parameters"][param]
-                    med = np.median(vals)
-                    meds.append(med)
-                    sig = np.std(vals)
-                    ulims.append(med + sig)
-                    llims.append(med - sig)
+
+                    if self.bias_error == 'std':
+                        med = np.median(vals)
+                        meds.append(med)
+                        sig = np.std(vals)
+                        ulims.append(med + sig)
+                        llims.append(med - sig)
+
+                    elif self.bias_error == 'ci90':
+                        med, llim, ulim = np.quantile(vals, [0.5, 0.05, 0.95])
+                        meds.append(med)
+                        llims.append(llim)
+                        ulims.append(ulim)
+
+                    else:
+                        raise ValueError(f'Invalid value {self.bias_error} for bias_error!')
 
                     true = self.inj[scale][param]
                     trues.append(true)
@@ -1032,7 +946,7 @@ class ResultsHandler(object):
                     if do_ns_scale:
                         ax2 = ax.twiny()
                         ax2.grid(0)
-                        ax2.set_xlim(0.0, ns_scale)
+                        ax2.set_xlim(0., ns_scale)
                         ax2.set_xlabel(ns_scale_label)
                 except ValueError as e:
                     logger.warning(f"{param}: {e}")
@@ -1053,7 +967,16 @@ class ResultsHandler(object):
                 plt.savefig(savepath)
 
             except KeyError as e:
-                logger.warning(f"KeyError for {param}: {e}! Can not make bias plots!")
+                logger.warning(f'KeyError for {param}: {e}! Can not make bias plots!')
 
             finally:
                 plt.close()
+
+
+
+
+
+
+
+
+
