@@ -7,5 +7,5 @@ matplotlib==3.5.1
 numpy==1.22.2
 numexpr==2.8.1
 scipy==1.8.0
-setuptools==60.9.2
+setuptools==60.9.3
 sphinx==4.4.0
