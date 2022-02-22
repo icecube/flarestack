@@ -741,102 +741,335 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return f_final
 
-    def scan_likelihood(self, scale=0.0, scan_2d=False):
-        """Generic wrapper to perform a likelihood scan a background scramble
-        with an injection of signal given by scale.
+    # ------------------------------------------------------------------------------------ #
+    #                START scan likelihood
+    # ------------------------------------------------------------------------------------ #
 
-        :param scale: Flux scale to inject
+    def scan_likelihood_1d(
+            self,
+            param_name,
+            bound=None,
+            scale=None,
+            res_dict=None,
+            ax=None,
+            **kwargs
+    ):
         """
+        Scan the one dimensianl likelihood
+        :param param_name: str, name of the parameter
+        :param bound: list-like of float, bound on parameter
+        :param scale: float, scale to inject signal at when res_dict is not given
+        :param res_dict: dict, result of example scramble
+        :param ax: axis to plot
+        :param kwargs: additional kwargs are passed to matplotlib.pyplot.subplots
+        :return: pyplot figure and axis and a float, representing the upper 2 sigma bound on the parameter
+        """
+        if param_name not in self.param_names:
+            raise ValueError(f"No parameter called {param_name}")
 
-        res_dict = self.simulate_and_run(scale)
+        i = np.where(np.array(self.param_names) == param_name)[0][0]
+
+        if isinstance(bound, type(None)):
+            bound = self.bounds[i]
+
+        if not res_dict:
+            if isinstance(scale, type(None)):
+                raise ValueError(f"Either sale or res_dict has to be given!")
+            # run an example trial
+            res_dict = self.simulate_and_run(scale)
 
         res = res_dict["res"]
         g = res_dict["f"]
 
+        # extract default values for plotting
+        defaults = {
+            'xlabel': param_name,
+            'ylabel': r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
+            'line_color': 'C0'
+        }
+
+        plotting_info = {
+            k: kwargs.pop(k, v)
+            for k, v in defaults.items()
+        }
+
+        if not ax:
+            fig, ax = plt.subplots(**kwargs)
+        else:
+            fig = plt.gcf()
+
+        best = list(res.x)
+        min_llh = np.sum(float(g(best)))
+
+        factor = 0.9
+
+        # calculate upper bound for scan
+        if "n_s" in param_name:
+            best[i] = bound[1]
+            while g(best) > (min_llh + 5.0):
+                best[i] *= factor
+            ur = min(bound[1], max(best[i], 0))
+        else:
+            ur = bound[1]
+
+        scan_range = np.linspace(
+            float(max(bound[0], -100)),
+            ur,
+            int(1e2)
+        )
+
+        y = []
+
+        for n in scan_range:
+            best[i] = n
+
+            new = g(best) / 2.0
+            try:
+                y.append(new[0][0])
+            except IndexError:
+                y.append(new)
+
+        # plot the scan result
+        ax.plot(scan_range, y - min(y), color=plotting_info['line_color'])
+        ax.set_xlabel(plotting_info['xlabel'])
+        ax.set_ylabel(plotting_info['ylabel'])
+
+        logger.info(f"PARAM: {param_name}")
+        min_y = np.min(y)
+
+        min_index = y.index(min_y)
+        min_n = scan_range[min_index]
+
+        logger.info(f"Minimum value of {min_y} at {min_n}")
+
+        # Calculate 1 sigma interval
+        logger.info("One Sigma interval between")
+        l_y = np.array(y[:min_index])
+        try:
+            l_y = min(l_y[l_y > (min_y + 0.5)])
+            l_lim = scan_range[y.index(l_y)]
+            logger.info(l_lim)
+        except ValueError:
+            l_lim = min(scan_range)
+            logger.info(f"<{l_lim}")
+
+        logger.info("and")
+
+        u_y = np.array(y[min_index:])
+        try:
+            u_y = min(u_y[u_y > (min_y + 0.5)])
+            u_lim = scan_range[y.index(u_y)]
+            logger.info(u_lim)
+        except ValueError:
+            u_lim = max(scan_range)
+            logger.info(f">{u_lim}")
+
+        ax.axvspan(l_lim, u_lim, facecolor="grey", alpha=0.2)
+        ax.set_ylim(bottom=0.0)
+        ax.set_xlim((min(scan_range), max(scan_range)))
+
+        return fig, ax, ur
+
+    def scan_likelihood_2d(
+            self,
+            param_name1,
+            param_name2,
+            bound1=None,
+            bound2=None,
+            N_scanpoints1=100,
+            N_scanpoints2=100,
+            scale=None,
+            res_dict=None,
+            ax=None,
+            plot_full_llh=True,
+            **kwargs
+    ):
+        """
+        Scan the liklihood on a two dimensional grid
+
+        :param param_name1: str, name of parameter 1
+        :param param_name2: str, name of parameter 2
+        :param bound1: list-like of float, bounds for parameter 1
+        :param bound2: list-ike of float, bounds for parameter 2
+        :param N_scanpoints1: int, number of grid points for parameter 1
+        :param N_scanpoints2: int, number of grid point for parameter 2
+        :param scale: float, scale to use when injecting signal in the example scramble when no res_dict is given
+        :param res_dict: dict, result of a scramble
+        :param ax: matplotlib.pyplot.axis, axis used for plotting
+        :param plot_full_llh: bool, plot the colormap of the likelihood landscape
+        :param kwargs: all kwargs are passed to matplotlib.pyplot.subplots
+        :return: matplotlib figure and axis
+        """
+
+        for param_name in [param_name1, param_name2]:
+            if not param_name in self.param_names:
+                raise ValueError(f"No parameter called {param_name}")
+
+        i = np.where(np.array(self.param_names) == param_name1)[0][0]
+        j = np.where(np.array(self.param_names) == param_name2)[0][0]
+
+        if isinstance(bound1, type(None)):
+            bound1 = self.bounds[i]
+
+        if isinstance(bound2, type(None)):
+            bound2 = self.bounds[j]
+
+        if not res_dict:
+            if isinstance(scale, type(None)):
+                raise ValueError(f"Either sale or res_dict has to be given!")
+            # run an example trial
+            res_dict = self.simulate_and_run(scale)
+
+        res = res_dict["res"]
+        g = res_dict["f"]
+        best = list(res.x)
+
+        # extract default values for plotting
+        defaults = {
+            'xlabel': param_name1,
+            'ylabel': param_name2,
+            'colorbar_label': r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$"
+        }
+
+        plotting_info = {
+            k: kwargs.pop(k, v)
+            for k, v in defaults.items()
+        }
+
+        if not ax:
+            fig, ax = plt.subplots(**kwargs)
+        else:
+            fig = plt.gcf()
+
+        # ------------------ set up scan grid --------------- #
+        range1 = np.linspace(bound1[0], bound1[1], N_scanpoints1)
+        range2 = np.linspace(bound2[0], bound2[1], N_scanpoints2)
+        scangrid_param1, scangrid_param2 = np.meshgrid(range1, range2[::-1])
+        scangrid_llh_values = []
+
+        # ---------------- scan the grid ------------------ #
+
+        for scanvalue_param1 in range1:
+            best[i] = scanvalue_param1
+            scangrid_llh_value_row = []
+
+            for scanvalue_param2 in range2:
+                best[j] = scanvalue_param2
+                scangrid_llh_value_row.append((g(best) - g(res.x)) / 2.0)
+
+            scangrid_llh_values.append(scangrid_llh_value_row[::-1])
+
+        scangrid_llh_values = np.array(scangrid_llh_values).T
+
+        # -------------------- plot scan results ------------- #
+
+        # ------- set up custom colormap ------- #
+        N = 2560
+        mmax = np.max(scangrid_llh_values)
+        mmin = np.min(scangrid_llh_values)
+        break_ind = int(round(N / (1 + mmax / abs(mmin))))
+        top = cm.get_cmap("gray")
+        bottom = cm.get_cmap("jet_r", N)
+        colorlist = np.empty((N, 4))
+        colorlist[break_ind:] = bottom(np.linspace(0, 1, N - break_ind))
+        colorlist[:break_ind] = top(np.linspace(1, 0, break_ind))
+        cmap = ListedColormap(colorlist)
+        norm = Normalize(vmin=mmin, vmax=mmax, clip=True)
+        extent = (range1[0], range1[-1], range2[1], range2[-1])
+
+        if plot_full_llh:
+            # ----- plot the scan ----- #
+            ax.imshow(
+                scangrid_llh_values,
+                aspect="auto",
+                cmap=cmap,
+                norm=norm,
+                extent=extent,
+                interpolation="bilinear",
+            )
+
+            # ----- make a colorbar ----- #
+            cbar = fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap))
+
+        # ----------- draw contours ------------- #
+        levels = 0.5 * np.array([1.0, 2.0, 5.0]) ** 2
+        contour_color = "white" if plot_full_llh else "k"
+        CS = ax.contour(
+            scangrid_param1,
+            scangrid_param2,
+            scangrid_llh_values,
+            levels=levels,
+            colors=contour_color
+        )
+
+        fmt = {}
+        strs = [r"1$\sigma$", r"2$\sigma$", r"5$\sigma$"]
+        for l, s in zip(CS.levels, strs):
+            fmt[l] = s
+
+        try:
+            ax.clabel(
+                CS,
+                fmt=fmt,
+                inline=1,
+                fontsize=10,
+                levels=levels,
+                colors=contour_color,
+            )
+        except TypeError:
+            ax.clabel(
+                CS,
+                levels,
+                fmt=fmt,
+                inline=1,
+                fontsize=10,  # levels=levels,
+                colors=contour_color,
+            )
+
+        # plot the best fit point
+        ax.scatter(res.x[i], res.x[j], color=contour_color, marker="*")
+
+        # ----------  some cosmetics  ----------- #
+        ax.set_xlim((min(range1), max(range1)))
+        ax.set_ylim((min(range2), max(range2)))
+        ax.grid(color=contour_color, linestyle="--", alpha=0.5)
+        ax.set_xlabel(plotting_info['xlabel'])
+        ax.set_ylabel(plotting_info['ylabel'])
+        fig.tight_layout()
+
+        return fig, ax
+
+    def scan_likelihood(self, scale=0.0, scan_2d=False):
+        """
+        Scan the likelihood landscape
+
+        :param scale: float, scale to use for injecting signal in the example trials
+        :param scan_2d: bool, make 2d likelihood scans in the gamma-ns plane
+        """
+
+        res_dict = self.simulate_and_run(scale)
         bounds = list(self.bounds)
 
         if self.negative_n_s:
             bounds[0] = (-30, 30)
 
-        # Scan 1D Likelihood
+        # ------------------------------------------- #
+        #                 make 1d scans               #
 
-        plt.figure(figsize=(8, 4 + 2 * len(self.p0)))
+        fig, axs = plt.subplots(
+            len(bounds),
+            figsize=(8, 4 + 2 * len(self.p0))
+        )
 
-        u_ranges = []
-
-        for i, bound in enumerate(bounds):
-            ax = plt.subplot(len(self.p0), 1, 1 + i)
-
-            best = list(res.x)
-            min_llh = np.sum(float(g(best)))
-
-            factor = 0.9
-
-            if "n_s" in self.param_names[i]:
-
-                best[i] = bound[1]
-
-                while g(best) > (min_llh + 5.0):
-                    best[i] *= factor
-
-                ur = min(bound[1], max(best[i], 0))
-
-            else:
-                ur = bound[1]
-
-            u_ranges.append(ur)
-
-            n_range = np.linspace(float(max(bound[0], -100)), ur, int(1e2))
-
-            # n_range = np.linspace(-30, 30, 1e2)
-            y = []
-
-            for n in n_range:
-
-                best[i] = n
-
-                new = g(best) / 2.0
-                try:
-                    y.append(new[0][0])
-                except IndexError:
-                    y.append(new)
-
-            plt.plot(n_range, y - min(y))
-            plt.xlabel(self.param_names[i])
-            plt.ylabel(r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$")
-
-            logger.info(f"PARAM: {self.param_names[i]}")
-            min_y = np.min(y)
-
-            min_index = y.index(min_y)
-            min_n = n_range[min_index]
-
-            logger.info(f"Minimum value of {min_y} at {min_n}")
-
-            logger.info("One Sigma interval between")
-
-            l_y = np.array(y[:min_index])
-            try:
-                l_y = min(l_y[l_y > (min_y + 0.5)])
-                l_lim = n_range[y.index(l_y)]
-                logger.info(l_lim)
-            except ValueError:
-                l_lim = min(n_range)
-                logger.info(f"<{l_lim}")
-
-            logger.info("and")
-
-            u_y = np.array(y[min_index:])
-            try:
-                u_y = min(u_y[u_y > (min_y + 0.5)])
-                u_lim = n_range[y.index(u_y)]
-                logger.info(u_lim)
-            except ValueError:
-                u_lim = max(n_range)
-                logger.info(f">{u_lim}")
-
-            ax.axvspan(l_lim, u_lim, facecolor="grey", alpha=0.2)
-            ax.set_ylim(bottom=0.0)
+        upper_ranges = list()
+        for param_name, bound, ax in zip(self.param_names, bounds, axs):
+            fig, ax, ur = self.scan_likelihood_1d(
+                param_name=param_name,
+                bound=bound,
+                ax=ax,
+                res_dict=res_dict
+            )
+            upper_ranges.append(ur)
 
         path = plot_output_dir(self.name) + "llh_scan.pdf"
 
@@ -845,145 +1078,68 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             + " Likelihood Scans"
         )
 
-        plt.suptitle(title, y=1.02)
+        fig.suptitle(title, y=1.02)
 
         try:
             os.makedirs(os.path.dirname(path))
         except OSError:
             pass
 
-        plt.tight_layout()
-        plt.savefig(path)
+        fig.tight_layout()
+        fig.savefig(path)
         plt.close()
-
         logger.info("Saved to {0}".format(path))
 
-        # Scan 2D likelihood
+        #                 make 1d scans               #
+        # ------------------------------------------- #
 
+        # ------------------------------------------- #
+        #                 make 2d scans               #
+
+        # make 2d scans in the gamma-n_s plane
         if np.logical_and(scan_2d, "gamma" in self.param_names):
-
             gamma_index = self.param_names.index("gamma")
+            gamma_bound = bounds[gamma_index]
 
-            gamma_bounds = bounds[gamma_index]
+            ns_mask = np.array(["n_s" in b for b in self.param_names])
+            ns_names = np.array(self.param_names)[ns_mask]
+            ns_bounds = np.array(self.bounds)[ns_mask]
 
-            x = np.linspace(gamma_bounds[0], gamma_bounds[1])
+            for ns_name, ns_bound, upper_range in zip(ns_names, ns_bounds, upper_ranges):
+                xlabel = r"Spectral Index ($\gamma$)"
+                ylabel = "n$_{\mathrm{signal}}$" if ns_name == "n_s" else ns_name
 
-            mask = np.array(["n_s" in b for b in self.param_names])
+                use_bound = [ns_bound[0], upper_range]
 
-            n_s_bounds = np.array(self.bounds)[mask]
-
-            for j, bound in enumerate(n_s_bounds):
-                best = list(res.x)
-                plt.figure(figsize=(5.85, 3.6154988341868854))
-                ax = plt.subplot(111)
-
-                index = np.arange(len(self.param_names))[mask][j]
-
-                plt.xlabel(r"Spectral Index ($\gamma$)")
-
-                param_name = np.array(self.param_names)[mask][j]
-                ylabel = "n$_{\mathrm{signal}}$" if param_name == "n_s" else param_name
-                plt.ylabel(ylabel)
-
-                y = np.linspace(
-                    float(max(bound[0], -100)), np.array(u_ranges)[index], int(1e2)
-                )
-
-                X, Y = np.meshgrid(x, y[::-1])
-                Z = []
-
-                for gamma in x:
-                    best[gamma_index] = gamma
-                    z_row = []
-
-                    for n in y:
-                        best[index] = n
-                        z_row.append((g(best) - g(res.x)) / 2.0)
-
-                    Z.append(z_row[::-1])
-
-                Z = np.array(Z).T
-
-                levels = 0.5 * np.array([1.0, 2.0, 5.0]) ** 2
-
-                N = 2560
-                mmax = np.max(Z)
-                mmin = np.min(Z)
-                break_ind = int(round(N / (1 + mmax / abs(mmin))))
-                top = cm.get_cmap("gray")
-                bottom = cm.get_cmap("jet_r", N)
-                colorlist = np.empty((N, 4))
-                colorlist[break_ind:] = bottom(np.linspace(0, 1, N - break_ind))
-                colorlist[:break_ind] = top(np.linspace(1, 0, break_ind))
-                cmap = ListedColormap(colorlist)
-                norm = Normalize(vmin=mmin, vmax=mmax, clip=True)
-
-                plt.imshow(
-                    Z,
-                    aspect="auto",
-                    cmap=cmap,
-                    norm=norm,
-                    extent=(x[0], x[-1], y[0], y[-1]),
-                    interpolation="bilinear",
-                )
-
-                cbar = plt.colorbar()
-                CS = ax.contour(X, Y, Z, levels=levels, colors="white")
-
-                fmt = {}
-                strs = [r"1$\sigma$", r"2$\sigma$", r"5$\sigma$"]
-                for l, s in zip(CS.levels, strs):
-                    fmt[l] = s
-
-                try:
-                    ax.clabel(
-                        CS,
-                        fmt=fmt,
-                        inline=1,
-                        fontsize=10,
-                        levels=levels,
-                        colors="white",
-                    )
-                except TypeError:
-                    ax.clabel(
-                        CS,
-                        levels,
-                        fmt=fmt,
-                        inline=1,
-                        fontsize=10,  # levels=levels,
-                        colors="white",
-                    )
-
-                ax.set_xlim((min(x), max(x)))
-                ax.set_ylim((min(y), max(y)))
-
-                cbar.set_label(
-                    r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$", rotation=90
+                logger.info(f"scanning gamma-{ns_name} plane")
+                fig, ax = self.scan_likelihood_2d(
+                    param_name1='gamma',
+                    param_name2=ns_name,
+                    bound1=gamma_bound,
+                    bound2=use_bound,
+                    N_scanpoints1=50,
+                    N_scanpoints2=100,
+                    res_dict=res_dict,
+                    xlabel=xlabel,
+                    ylabel=ylabel,
                 )
 
                 path = (
-                    plot_output_dir(self.name)
-                    + (param_name + "_")[4:]
-                    + "contour_scan.pdf"
+                        plot_output_dir(self.name)
+                        + (ns_name + "_")[4:]
+                        + "contour_scan.pdf"
                 )
-
-                title = (
-                    os.path.basename(os.path.dirname(self.name[:-1])).replace("_", " ")
-                    + " Contour Scans"
-                )
-
-                plt.scatter(res.x[gamma_index], res.x[index], color="white", marker="*")
-
-                plt.grid(color="white", linestyle="--", alpha=0.5)
-
-                # plt.suptitle(title)
-                plt.tight_layout()
-                plt.savefig(path)
+                fig.savefig(path)
                 plt.close()
 
-                logger.info("Saved to {0}".format(path))
+                logger.info(f"Saved to {path}")
 
-        return res_dict
+        #                 make 2d scans               #
+        # ------------------------------------------- #
+
+    # ------------------------------------------------------------------------------------ #
+    #                END scan likelihood
+    # ------------------------------------------------------------------------------------ #
 
     def neutrino_lightcurve(self, seed=None):
 
