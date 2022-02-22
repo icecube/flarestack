@@ -1,5 +1,8 @@
 from flarestack.data.icecube.ic_season import IceCubeDataset, icecube_dataset_dir
-from flarestack.data.icecube.northern_tracks import NTSeasonNewStyle, get_diffuse_binning
+from flarestack.data.icecube.northern_tracks import (
+    NTSeasonNewStyle,
+    get_diffuse_binning,
+)
 
 
 nt_data_dir = icecube_dataset_dir + "northern_tracks/version-005-p00/"
@@ -17,7 +20,7 @@ def generate_diffuse_season(name):
         mc_path=nt_data_dir + "IC86_pass2_MC.npy",
         grl_path=nt_data_dir + f"GRL/{name}_exp.npy",
         sin_dec_bins=get_diffuse_binning(name)[0],
-        log_e_bins=get_diffuse_binning(name)[1]
+        log_e_bins=get_diffuse_binning(name)[1],
     )
     nt_v005_p00.add_season(season)
 
