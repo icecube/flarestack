@@ -1517,6 +1517,11 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             if not fn:
                 fn = plot_output_dir(self.name) + "corner_" + "_".join(params) + ".pdf"
                 fn = fn.replace(' ', '')
+
+            d = os.path.dirname(fn)
+            if not os.path.isdir(d):
+                os.makedirs(d)
+
             fig.savefig(fn)
             logger.info(f"saved under {fn}")
 
