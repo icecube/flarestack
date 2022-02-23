@@ -753,6 +753,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             res_dict=None,
             ax=None,
             adjust_bound=True,
+            upper_bound_level=2,
             **kwargs
     ):
         """
@@ -810,7 +811,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         if ("n_s" in param_name) and adjust_bound:
             logger.debug('adjusting bound')
             best[i] = bound[1]
-            while g(best) > (min_llh + 5.0):
+            while g(best) > (min_llh + upper_bound_level**2):
                 best[i] *= factor
             ur = min(bound[1], max(best[i], 0))
         else:
@@ -1044,15 +1045,18 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         return fig, ax
 
-    def scan_likelihood(self, scale=0.0, scan_2d=False):
+    def scan_likelihood(self, scale=0.0, scan_2d=False, res_dict=None):
         """
         Scan the likelihood landscape
 
         :param scale: float, scale to use for injecting signal in the example trials
         :param scan_2d: bool, make 2d likelihood scans in the gamma-ns plane
+        :param res_dict: dict,
         """
 
-        res_dict = self.simulate_and_run(scale)
+        if isinstance(res_dict, type(None)):
+            res_dict = self.simulate_and_run(scale)
+
         bounds = list(self.bounds)
 
         if self.negative_n_s:
@@ -1420,7 +1424,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             save=True,
             res_dict=None,
             scale=None,
-            upper_bounds_factor=1
+            upper_bound_level=6
         ):
         """
         Make a corner plot of likelohood scans
@@ -1463,11 +1467,12 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             fig, ax, ur = self.scan_likelihood_1d(
                 p,
                 bound=None if p not in bounds else bounds[p],  # if bound for parameter are explicitly given use those
-                adjust_bound=p not in bounds,                   # and do not adjust in the 1d scan
+                adjust_bound=p not in bounds,                  # and do not adjust in the 1d scan
                 res_dict=res_dict,
                 ax=axs[i][i],
                 xlabel=p if i + 1 == len(params) else '',
-                line_color='k'
+                line_color='k',
+                upper_bound_level=upper_bound_level
             )
 
             ax.yaxis.tick_right()
