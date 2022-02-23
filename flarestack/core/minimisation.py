@@ -1408,6 +1408,110 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
 
         return inj_params
 
+    def corner_likelihood_scan(
+            self,
+            params=None,
+            bounds=None,
+            fn=None,
+            save=True,
+            res_dict=None,
+            scale=None,
+            upper_bounds_factor=1
+        ):
+        """
+        Make a corner plot of likelohood scans
+        :param params: list-like od str, name of the parameters
+        :param bounds: dict, key is param name, value is bounds
+        :param fn: str, filename
+        :param save: bool, save the plot
+        :param res_dict: dict, result of example scramble
+        :param scale: float, scale to use for injecting signal if res_dict is not given
+        :return: pyplot figure and axis
+        """
+
+        # ----------------------  set defaults  ----------------------- #
+        if isinstance(res_dict, type(None)):
+            res_dict = self.simulate_and_run(scale)
+
+        if isinstance(params, type(None)):
+            params = self.param_names
+
+        if isinstance(bounds, type(None)):
+            bounds = dict()
+
+        # ----------------------  set up figure  ----------------------- #
+        fig, axs = plt.subplots(
+            nrows=len(params),
+            ncols=len(params),
+            sharex='col',
+            gridspec_kw={
+                'hspace': 0,
+                'wspace': 0
+            },
+            figsize=(10, 10)
+        )
+
+        # ----------------------  do 1d scans  ----------------------- #
+
+        gamma_bounds = tuple(np.array(self.bounds)[np.array(self.param_names) == 'gamma'][0])
+
+        for i, p in enumerate(params):
+            fig, ax, ur = self.scan_likelihood_1d(
+                p,
+                res_dict=res_dict,
+                ax=axs[i][i],
+                xlabel=p if i + 1 == len(params) else '',
+                line_color='k'
+            )
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position("right")
+            ax.set_title(p)
+            yticks = ax.get_yticks()
+            ax.set_yticks(yticks[1:])
+
+            # if no bounds where given for this parameter use the upper range
+            # provided by the 1d scan
+            if p not in bounds:
+                bounds[p] = (0, ur) if "gamma" not in p else gamma_bounds
+
+        # ----------------------  do 2d scans  ----------------------- #
+
+        for i, p1 in enumerate(params):
+            for j, p2 in enumerate(params[i + 1:]):
+                fig, ax = self.scan_likelihood_2d(
+                    p1,
+                    p2,
+                    bound1=bounds[p1],
+                    bound2=bounds[p2],
+                    N_scanpoints1=20,
+                    N_scanpoints2=20,
+                    res_dict=res_dict,
+                    plot_full_llh=False,
+                    ax=axs[j + i + 1][i],
+                    xlabel=p1 if (j + i + 2 == len(params)) else "",
+                    ylabel=p2 if i == 0 else ""
+                )
+
+                if i > 0:
+                    ax.set_yticklabels([])
+                if i + 1 < len(params):
+                    xticks = ax.get_xticks()
+                    if max(xticks) > 0.95 * max(bounds[p1]):
+                        ax.set_xticks(xticks[:-1])
+
+                axs[i][j + i + 1].axis("off")
+
+        fig.tight_layout()
+
+        # ----------------------  save figure  ----------------------- #
+        if save:
+            if not fn:
+                fn = plot_output_dir(self.name) + "corner_" + "_".join(params) + ".pdf"
+                fn = fn.replace(' ', '')
+            fig.savefig(fn)
+            logger.info(f"saved under {fn}")
+
+        return fig, axs
 
 @MinimisationHandler.register_subclass("flare")
 class FlareMinimisationHandler(FixedWeightMinimisationHandler):
