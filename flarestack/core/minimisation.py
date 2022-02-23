@@ -752,6 +752,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             scale=None,
             res_dict=None,
             ax=None,
+            adjust_bound=True,
             **kwargs
     ):
         """
@@ -764,6 +765,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         :param kwargs: additional kwargs are passed to matplotlib.pyplot.subplots
         :return: pyplot figure and axis and a float, representing the upper 2 sigma bound on the parameter
         """
+        logger.info(f"Scanning llh for {param_name}")
+
         if param_name not in self.param_names:
             raise ValueError(f"No parameter called {param_name}")
 
@@ -804,7 +807,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         factor = 0.9
 
         # calculate upper bound for scan
-        if "n_s" in param_name:
+        if ("n_s" in param_name) and adjust_bound:
+            logger.debug('adjusting bound')
             best[i] = bound[1]
             while g(best) > (min_llh + 5.0):
                 best[i] *= factor
@@ -900,6 +904,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         :param kwargs: all kwargs are passed to matplotlib.pyplot.subplots
         :return: matplotlib figure and axis
         """
+        logger.info(f"scanning {param_name1}-{param_name2} plane")
 
         for param_name in [param_name1, param_name2]:
             if not param_name in self.param_names:
@@ -1111,7 +1116,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
                 use_bound = [ns_bound[0], upper_range]
 
-                logger.info(f"scanning gamma-{ns_name} plane")
                 fig, ax = self.scan_likelihood_2d(
                     param_name1='gamma',
                     param_name2=ns_name,
@@ -1445,10 +1449,10 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             ncols=len(params),
             sharex='col',
             gridspec_kw={
-                'hspace': 0,
-                'wspace': 0
+                'hspace': 0.07,
+                'wspace': 0.07
             },
-            figsize=(10, 10)
+            figsize=(len(params)*2, len(params)*2)
         )
 
         # ----------------------  do 1d scans  ----------------------- #
@@ -1458,11 +1462,14 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         for i, p in enumerate(params):
             fig, ax, ur = self.scan_likelihood_1d(
                 p,
+                bound=None if p not in bounds else bounds[p],  # if bound for parameter are explicitly given use those
+                adjust_bound=p not in bounds,                   # and do not adjust in the 1d scan
                 res_dict=res_dict,
                 ax=axs[i][i],
                 xlabel=p if i + 1 == len(params) else '',
                 line_color='k'
             )
+
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position("right")
             ax.set_title(p)
@@ -1492,12 +1499,9 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
                     ylabel=p2 if i == 0 else ""
                 )
 
+                # hide ytick labels if plot is in the middle
                 if i > 0:
                     ax.set_yticklabels([])
-                if i + 1 < len(params):
-                    xticks = ax.get_xticks()
-                    if max(xticks) > 0.95 * max(bounds[p1]):
-                        ax.set_xticks(xticks[:-1])
 
                 axs[i][j + i + 1].axis("off")
 
