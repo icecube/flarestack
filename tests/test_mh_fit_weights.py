@@ -72,6 +72,11 @@ class TestTimeIntegrated(unittest.TestCase):
         res = mh.simulate_and_run(5.0)
         analyse(mh_dict, cluster=False)
 
+        mh.corner_likelihood_scan(
+            save=True,
+            res_dict=res,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
