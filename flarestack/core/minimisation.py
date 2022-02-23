@@ -746,15 +746,15 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     # ------------------------------------------------------------------------------------ #
 
     def scan_likelihood_1d(
-            self,
-            param_name,
-            bound=None,
-            scale=None,
-            res_dict=None,
-            ax=None,
-            adjust_bound=True,
-            upper_bound_level=2,
-            **kwargs
+        self,
+        param_name,
+        bound=None,
+        scale=None,
+        res_dict=None,
+        ax=None,
+        adjust_bound=True,
+        upper_bound_level=2,
+        **kwargs,
     ):
         """
         Scan the one dimensianl likelihood
@@ -787,15 +787,12 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         # extract default values for plotting
         defaults = {
-            'xlabel': param_name,
-            'ylabel': r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
-            'line_color': 'C0'
+            "xlabel": param_name,
+            "ylabel": r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
+            "line_color": "C0",
         }
 
-        plotting_info = {
-            k: kwargs.pop(k, v)
-            for k, v in defaults.items()
-        }
+        plotting_info = {k: kwargs.pop(k, v) for k, v in defaults.items()}
 
         if not ax:
             fig, ax = plt.subplots(**kwargs)
@@ -809,7 +806,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         # calculate upper bound for scan
         if ("n_s" in param_name) and adjust_bound:
-            logger.debug('adjusting bound')
+            logger.debug("adjusting bound")
             best[i] = bound[1]
             while g(best) > (min_llh + upper_bound_level**2):
                 best[i] *= factor
@@ -817,11 +814,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         else:
             ur = bound[1]
 
-        scan_range = np.linspace(
-            float(max(bound[0], -100)),
-            ur,
-            int(1e2)
-        )
+        scan_range = np.linspace(float(max(bound[0], -100)), ur, int(1e2))
 
         y = []
 
@@ -835,9 +828,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 y.append(new)
 
         # plot the scan result
-        ax.plot(scan_range, y - min(y), color=plotting_info['line_color'])
-        ax.set_xlabel(plotting_info['xlabel'])
-        ax.set_ylabel(plotting_info['ylabel'])
+        ax.plot(scan_range, y - min(y), color=plotting_info["line_color"])
+        ax.set_xlabel(plotting_info["xlabel"])
+        ax.set_ylabel(plotting_info["ylabel"])
 
         logger.info(f"PARAM: {param_name}")
         min_y = np.min(y)
@@ -876,18 +869,18 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         return fig, ax, ur
 
     def scan_likelihood_2d(
-            self,
-            param_name1,
-            param_name2,
-            bound1=None,
-            bound2=None,
-            N_scanpoints1=100,
-            N_scanpoints2=100,
-            scale=None,
-            res_dict=None,
-            ax=None,
-            plot_full_llh=True,
-            **kwargs
+        self,
+        param_name1,
+        param_name2,
+        bound1=None,
+        bound2=None,
+        N_scanpoints1=100,
+        N_scanpoints2=100,
+        scale=None,
+        res_dict=None,
+        ax=None,
+        plot_full_llh=True,
+        **kwargs,
     ):
         """
         Scan the liklihood on a two dimensional grid
@@ -932,15 +925,12 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
         # extract default values for plotting
         defaults = {
-            'xlabel': param_name1,
-            'ylabel': param_name2,
-            'colorbar_label': r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$"
+            "xlabel": param_name1,
+            "ylabel": param_name2,
+            "colorbar_label": r"$\Delta \log(\mathcal{L}/\mathcal{L}_{0})$",
         }
 
-        plotting_info = {
-            k: kwargs.pop(k, v)
-            for k, v in defaults.items()
-        }
+        plotting_info = {k: kwargs.pop(k, v) for k, v in defaults.items()}
 
         if not ax:
             fig, ax = plt.subplots(**kwargs)
@@ -1005,7 +995,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             scangrid_param2,
             scangrid_llh_values,
             levels=levels,
-            colors=contour_color
+            colors=contour_color,
         )
 
         fmt = {}
@@ -1039,8 +1029,8 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         ax.set_xlim((min(range1), max(range1)))
         ax.set_ylim((min(range2), max(range2)))
         ax.grid(color=contour_color, linestyle="--", alpha=0.5)
-        ax.set_xlabel(plotting_info['xlabel'])
-        ax.set_ylabel(plotting_info['ylabel'])
+        ax.set_xlabel(plotting_info["xlabel"])
+        ax.set_ylabel(plotting_info["ylabel"])
         fig.tight_layout()
 
         return fig, ax
@@ -1065,18 +1055,12 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         # ------------------------------------------- #
         #                 make 1d scans               #
 
-        fig, axs = plt.subplots(
-            len(bounds),
-            figsize=(8, 4 + 2 * len(self.p0))
-        )
+        fig, axs = plt.subplots(len(bounds), figsize=(8, 4 + 2 * len(self.p0)))
 
         upper_ranges = list()
         for param_name, bound, ax in zip(self.param_names, bounds, axs):
             fig, ax, ur = self.scan_likelihood_1d(
-                param_name=param_name,
-                bound=bound,
-                ax=ax,
-                res_dict=res_dict
+                param_name=param_name, bound=bound, ax=ax, res_dict=res_dict
             )
             upper_ranges.append(ur)
 
@@ -1114,14 +1098,16 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             ns_names = np.array(self.param_names)[ns_mask]
             ns_bounds = np.array(self.bounds)[ns_mask]
 
-            for ns_name, ns_bound, upper_range in zip(ns_names, ns_bounds, upper_ranges):
+            for ns_name, ns_bound, upper_range in zip(
+                ns_names, ns_bounds, upper_ranges
+            ):
                 xlabel = r"Spectral Index ($\gamma$)"
                 ylabel = "n$_{\mathrm{signal}}$" if ns_name == "n_s" else ns_name
 
                 use_bound = [ns_bound[0], upper_range]
 
                 fig, ax = self.scan_likelihood_2d(
-                    param_name1='gamma',
+                    param_name1="gamma",
                     param_name2=ns_name,
                     bound1=gamma_bound,
                     bound2=use_bound,
@@ -1133,9 +1119,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 )
 
                 path = (
-                        plot_output_dir(self.name)
-                        + (ns_name + "_")[4:]
-                        + "contour_scan.pdf"
+                    plot_output_dir(self.name)
+                    + (ns_name + "_")[4:]
+                    + "contour_scan.pdf"
                 )
                 fig.savefig(path)
                 plt.close()
@@ -1417,15 +1403,15 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         return inj_params
 
     def corner_likelihood_scan(
-            self,
-            params=None,
-            bounds=None,
-            fn=None,
-            save=True,
-            res_dict=None,
-            scale=None,
-            upper_bound_level=6
-        ):
+        self,
+        params=None,
+        bounds=None,
+        fn=None,
+        save=True,
+        res_dict=None,
+        scale=None,
+        upper_bound_level=6,
+    ):
         """
         Make a corner plot of likelohood scans
         :param params: list-like od str, name of the parameters
@@ -1451,28 +1437,29 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         fig, axs = plt.subplots(
             nrows=len(params),
             ncols=len(params),
-            sharex='col',
-            gridspec_kw={
-                'hspace': 0.07,
-                'wspace': 0.07
-            },
-            figsize=(len(params)*2, len(params)*2)
+            sharex="col",
+            gridspec_kw={"hspace": 0.07, "wspace": 0.07},
+            figsize=(len(params) * 2, len(params) * 2),
         )
 
         # ----------------------  do 1d scans  ----------------------- #
 
-        gamma_bounds = tuple(np.array(self.bounds)[np.array(self.param_names) == 'gamma'][0])
+        gamma_bounds = tuple(
+            np.array(self.bounds)[np.array(self.param_names) == "gamma"][0]
+        )
 
         for i, p in enumerate(params):
             fig, ax, ur = self.scan_likelihood_1d(
                 p,
-                bound=None if p not in bounds else bounds[p],  # if bound for parameter are explicitly given use those
-                adjust_bound=p not in bounds,                  # and do not adjust in the 1d scan
+                bound=None
+                if p not in bounds
+                else bounds[p],  # if bound for parameter are explicitly given use those
+                adjust_bound=p not in bounds,  # and do not adjust in the 1d scan
                 res_dict=res_dict,
                 ax=axs[i][i],
-                xlabel=p if i + 1 == len(params) else '',
-                line_color='k',
-                upper_bound_level=upper_bound_level
+                xlabel=p if i + 1 == len(params) else "",
+                line_color="k",
+                upper_bound_level=upper_bound_level,
             )
 
             ax.yaxis.tick_right()
@@ -1489,7 +1476,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         # ----------------------  do 2d scans  ----------------------- #
 
         for i, p1 in enumerate(params):
-            for j, p2 in enumerate(params[i + 1:]):
+            for j, p2 in enumerate(params[i + 1 :]):
                 fig, ax = self.scan_likelihood_2d(
                     p1,
                     p2,
@@ -1501,7 +1488,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
                     plot_full_llh=False,
                     ax=axs[j + i + 1][i],
                     xlabel=p1 if (j + i + 2 == len(params)) else "",
-                    ylabel=p2 if i == 0 else ""
+                    ylabel=p2 if i == 0 else "",
                 )
 
                 # hide ytick labels if plot is in the middle
@@ -1516,7 +1503,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         if save:
             if not fn:
                 fn = plot_output_dir(self.name) + "corner_" + "_".join(params) + ".pdf"
-                fn = fn.replace(' ', '')
+                fn = fn.replace(" ", "")
 
             d = os.path.dirname(fn)
             if not os.path.isdir(d):
@@ -1526,6 +1513,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             logger.info(f"saved under {fn}")
 
         return fig, axs
+
 
 @MinimisationHandler.register_subclass("flare")
 class FlareMinimisationHandler(FixedWeightMinimisationHandler):
