@@ -26,7 +26,7 @@ setuptools.setup(
     python_requires=">=3.8",
     install_requires=[
         "astropy==5.0.3",
-        "black==22.1.0",
+        "black==22.3.0",
         "coveralls==3.3.1",
         "healpy==1.15.2",
         "jupyter==1.0.0",
