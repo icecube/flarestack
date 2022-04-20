@@ -501,6 +501,9 @@ class WIPACSubmitter(Submitter):
     def __init__(self, *args, **kwargs):
         super(WIPACSubmitter, self).__init__(*args, **kwargs)
 
+        from flarestack.data.icecube import icecube_dataset_dir
+        self.icecube_dataset_dir = icecube_dataset_dir
+
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
         self.cluster_cpu = self.cluster_kwargs.get("cluster_cpu", self.n_cpu)
         self.ram_per_core = self.cluster_kwargs.get("ram_per_core", "2000")
@@ -533,7 +536,7 @@ class WIPACSubmitter(Submitter):
             f"export PYTHONPATH={WIPACSubmitter.root_dir}/ \n"
             f"export FLARESTACK_SCRATCH_DIR={flarestack_scratch_dir} \n"
             f"export HOME={WIPACSubmitter.home_dir} \n "
-            f"conda activate flarestack \n"
+            f"export FLARESTACK_DATA_DIR={self.icecube_dataset_dir} \n"
             f"python {fs_dir}core/multiprocess_wrapper.py -f {path} -n {self.cluster_cpu}"
         )
 
