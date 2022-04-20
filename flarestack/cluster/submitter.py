@@ -502,6 +502,7 @@ class WIPACSubmitter(Submitter):
         super(WIPACSubmitter, self).__init__(*args, **kwargs)
 
         from flarestack.data.icecube import icecube_dataset_dir
+
         self.icecube_dataset_dir = icecube_dataset_dir
 
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
