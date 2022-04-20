@@ -536,7 +536,7 @@ class WIPACSubmitter(Submitter):
             f"export PYTHONPATH={WIPACSubmitter.root_dir}/ \n"
             f"export FLARESTACK_SCRATCH_DIR={flarestack_scratch_dir} \n"
             f"export HOME={WIPACSubmitter.home_dir} \n "
-            f"export FLARESTACK_DATA_DIR={self.icecube_dataset_dir} \n"
+            f"export FLARESTACK_DATASET_DIR={self.icecube_dataset_dir} \n"
             f"python {fs_dir}core/multiprocess_wrapper.py -f {path} -n {self.cluster_cpu}"
         )
 

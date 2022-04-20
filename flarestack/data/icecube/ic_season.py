@@ -51,7 +51,7 @@ if icecube_dataset_dir is None:
     else:
         raise ImportError(
             "No IceCube data directory found. Run: \n"
-            "export FLARESTACK_DATA_DIR=/path/to/IceCube/data"
+            "export FLARESTACK_DATASET_DIR=/path/to/IceCube/data"
         )
 
 
