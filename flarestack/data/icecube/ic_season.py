@@ -81,90 +81,98 @@ class IceCubeRunList(DetectorOnOffList):
             logger.error("Runs are out of order!")
             self.on_off_list = np.sort(self.on_off_list, order="run")
 
-        mask = self.on_off_list["stop"][:-1] == self.on_off_list["start"][1:]
+        if self.t_dict.get("expect_gaps_in_grl", True):
 
-        if np.sum(mask) > 0:
+            mask = self.on_off_list["stop"][:-1] == self.on_off_list["start"][1:]
 
-            first_run = self.on_off_list["run"][:-1][mask][0]
+            if np.sum(mask) > 0:
 
-            logger.warning(
-                "\nMaybe the IceCube GoodRunList was not produced correctly. \n"
-                "Some runs in the GoodRunList start immediately after the preceding run ends. \n"
-                "For older files, there should be gaps between every run due to detector downtime, "
-                "but some are missing here. \n"
-                f"The first missing gap is between runs {first_run} and {first_run+1}. \n"
-                "Any livetime estimates using this GoodRunList will not be accurate. \n"
-                "This is a known problem affecting older IceCube GoodRunLists. \n"
-                "You should use a newer, corrected GoodRunList. \n"
-                "Flarestack will attempt to stitch these runs together. \n"
-                "However, livetime estimates may be off by several percentage points, "
-                "or even more for very short timescales. \n"
-                "You have been warned!"
-            )
+                first_run = self.on_off_list["run"][:-1][mask][0]
 
-            while np.sum(mask) > 0:
+                logger.warning(
+                    "\nMaybe the IceCube GoodRunList was not produced correctly. \n"
+                    "Some runs in the GoodRunList start immediately after the preceding run ends. \n"
+                    "For older files, there should be gaps between every run due to detector downtime, "
+                    "but some are missing here. \n"
+                    f"The first missing gap is between runs {first_run} and {first_run+1}. \n"
+                    "Any livetime estimates using this GoodRunList will not be accurate. \n"
+                    "This is a known problem affecting older IceCube GoodRunLists. \n"
+                    "You should use a newer, corrected GoodRunList. \n"
+                    "Flarestack will attempt to stitch these runs together. \n"
+                    "However, livetime estimates may be off by several percentage points, "
+                    "or even more for very short timescales. \n"
+                    "You have been warned!"
+                )
 
-                index = list(mask).index(True)
+                while np.sum(mask) > 0:
 
-                self.on_off_list[index]["stop"] = self.on_off_list[index + 1]["stop"]
-                self.on_off_list[index]["length"] += self.on_off_list[index + 1][
-                    "length"
-                ]
-                self.on_off_list[index]["events"] += self.on_off_list[index + 1][
-                    "events"
-                ]
+                    index = list(mask).index(True)
 
-                mod_mask = np.arange(len(self.on_off_list)) == index + 1
+                    self.on_off_list[index]["stop"] = self.on_off_list[index + 1][
+                        "stop"
+                    ]
+                    self.on_off_list[index]["length"] += self.on_off_list[index + 1][
+                        "length"
+                    ]
+                    self.on_off_list[index]["events"] += self.on_off_list[index + 1][
+                        "events"
+                    ]
 
-                self.on_off_list = self.on_off_list[~mod_mask]
+                    mod_mask = np.arange(len(self.on_off_list)) == index + 1
 
-                mask = self.on_off_list["stop"][:-1] == self.on_off_list["start"][1:]
+                    self.on_off_list = self.on_off_list[~mod_mask]
 
-        mask = self.on_off_list["stop"][:-1] < self.on_off_list["start"][1:]
+                    mask = (
+                        self.on_off_list["stop"][:-1] == self.on_off_list["start"][1:]
+                    )
 
-        if np.sum(~mask) > 0:
+            mask = self.on_off_list["stop"][:-1] < self.on_off_list["start"][1:]
 
-            first_run = self.on_off_list["run"][:-1][~mask][0]
+            if np.sum(~mask) > 0:
 
-            logger.error("The IceCube GoodRunList was not produced correctly.")
-            logger.error(
-                "Some runs in the GoodRunList start before the preceding run has ended."
-            )
-            logger.error("Under no circumstances should runs overlap.")
-            logger.error(
-                f"The first overlap is between runs {first_run} and {first_run+1}."
-            )
-            logger.error(
-                "Any livetime estimates using this GoodRunList will not be accurate."
-            )
-            logger.error(
-                "This is a known problem affecting older IceCube GoodRunLists."
-            )
-            logger.error("You should use a newer, corrected GoodRunList.")
-            logger.error("Flarestack will attempt to stitch these runs together.")
-            logger.error(
-                "However, livetime estimates may be off by several percentage points, "
-                "or even more for very short timescales."
-            )
-            logger.error("You have been warned!")
+                first_run = self.on_off_list["run"][:-1][~mask][0]
 
-            while np.sum(~mask) > 0:
+                logger.error("The IceCube GoodRunList was not produced correctly.")
+                logger.error(
+                    "Some runs in the GoodRunList start before the preceding run has ended."
+                )
+                logger.error("Under no circumstances should runs overlap.")
+                logger.error(
+                    f"The first overlap is between runs {first_run} and {first_run+1}."
+                )
+                logger.error(
+                    "Any livetime estimates using this GoodRunList will not be accurate."
+                )
+                logger.error(
+                    "This is a known problem affecting older IceCube GoodRunLists."
+                )
+                logger.error("You should use a newer, corrected GoodRunList.")
+                logger.error("Flarestack will attempt to stitch these runs together.")
+                logger.error(
+                    "However, livetime estimates may be off by several percentage points, "
+                    "or even more for very short timescales."
+                )
+                logger.error("You have been warned!")
 
-                index = list(~mask).index(True)
+                while np.sum(~mask) > 0:
 
-                self.on_off_list[index]["stop"] = self.on_off_list[index + 1]["stop"]
-                self.on_off_list[index]["length"] += self.on_off_list[index + 1][
-                    "length"
-                ]
-                self.on_off_list[index]["events"] += self.on_off_list[index + 1][
-                    "events"
-                ]
+                    index = list(~mask).index(True)
 
-                mod_mask = np.arange(len(self.on_off_list)) == index + 1
+                    self.on_off_list[index]["stop"] = self.on_off_list[index + 1][
+                        "stop"
+                    ]
+                    self.on_off_list[index]["length"] += self.on_off_list[index + 1][
+                        "length"
+                    ]
+                    self.on_off_list[index]["events"] += self.on_off_list[index + 1][
+                        "events"
+                    ]
 
-                self.on_off_list = self.on_off_list[~mod_mask]
+                    mod_mask = np.arange(len(self.on_off_list)) == index + 1
 
-                mask = self.on_off_list["stop"][:-1] < self.on_off_list["start"][1:]
+                    self.on_off_list = self.on_off_list[~mod_mask]
+
+                    mask = self.on_off_list["stop"][:-1] < self.on_off_list["start"][1:]
 
         t0 = min(self.on_off_list["start"])
         t1 = max(self.on_off_list["stop"])
@@ -235,6 +243,7 @@ class IceCubeSeason(SeasonWithMC):
         grl_path,
         sin_dec_bins,
         log_e_bins,
+        expect_gaps_in_grl=True,
         **kwargs,
     ):
         SeasonWithMC.__init__(
@@ -244,9 +253,7 @@ class IceCubeSeason(SeasonWithMC):
         self.all_paths.append(grl_path)
         self.sin_dec_bins = sin_dec_bins
         self.log_e_bins = log_e_bins
-
-    # def get_livetime_data(self):
-    #     return convert_grl(self)
+        self._expect_gaps_in_grl = expect_gaps_in_grl
 
     def check_data_quality(self):
         verify_grl_with_data(self)
@@ -268,6 +275,7 @@ class IceCubeSeason(SeasonWithMC):
         t_pdf_dict = {
             "time_pdf_name": "icecube_on_off_list",
             "on_off_list": self.get_grl(),
+            "expect_gaps_in_grl": self._expect_gaps_in_grl,
         }
 
         return t_pdf_dict

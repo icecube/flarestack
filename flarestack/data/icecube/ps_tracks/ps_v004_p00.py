@@ -53,6 +53,7 @@ ic40 = IceCubeSeason(
     grl_path=grl_data_dir + "IC40_exp.npy",
     sin_dec_bins=sinDec_bins,
     log_e_bins=energy_bins,
+    expect_gaps_in_grl=False,
 )
 
 ps_v004_p00.add_season(ic40)
@@ -82,6 +83,7 @@ ic59 = IceCubeSeason(
     grl_path=grl_data_dir + "IC59_exp.npy",
     sin_dec_bins=sinDec_bins,
     log_e_bins=energy_bins,
+    expect_gaps_in_grl=False,
 )
 
 ps_v004_p00.add_season(ic59)
@@ -101,6 +103,7 @@ ic79 = IceCubeSeason(
     grl_path=grl_data_dir + "IC79_exp.npy",
     sin_dec_bins=sinDec_bins,
     log_e_bins=energy_bins,
+    expect_gaps_in_grl=False,
 )
 ps_v004_p00.add_season(ic79)
 
@@ -136,6 +139,7 @@ for i in range(1, 10):
         grl_path=grl_data_dir + "IC86_201{0}_exp.npy".format(i),
         sin_dec_bins=sinDec_bins,
         log_e_bins=energy_bins,
+        expect_gaps_in_grl=False,
     )
     ps_v004_p00.add_subseason(ic86_i)
 
@@ -149,6 +153,7 @@ ic86_123456789 = IceCubeSeason(
     grl_path=[f"{grl_data_dir}IC86_201{i}_exp.npy" for i in range(1, 10)],
     sin_dec_bins=sinDec_bins,
     log_e_bins=energy_bins,
+    expect_gaps_in_grl=False,
 )
 
 ps_v004_p00.add_season(ic86_123456789)
