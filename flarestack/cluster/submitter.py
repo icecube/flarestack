@@ -533,7 +533,7 @@ class WIPACSubmitter(Submitter):
 
         txt = (
             f"#!/bin/sh \n"
-            f"eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/setup.sh) \n"
+            f"eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.2.0/setup.sh) \n"
             f"export PYTHONPATH={WIPACSubmitter.root_dir}/ \n"
             f"export FLARESTACK_SCRATCH_DIR={flarestack_scratch_dir} \n"
             f"export HOME={WIPACSubmitter.home_dir} \n "
