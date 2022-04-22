@@ -505,6 +505,8 @@ class WIPACSubmitter(Submitter):
 
         self.icecube_dataset_dir = icecube_dataset_dir
 
+        self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
+
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
         self.cluster_cpu = self.cluster_kwargs.get("cluster_cpu", self.n_cpu)
         self.ram_per_core = self.cluster_kwargs.get("ram_per_core", "2000")
@@ -588,16 +590,26 @@ class WIPACSubmitter(Submitter):
         self.make_executable_file(path)
         self.make_submit_file(n_tasks)
 
-        cmd = (
-            f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu "
-            f"'condor_submit {self.submit_file}'"
-        )
-        logger.debug(f"command is {cmd}")
-        prc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        msg = prc.stdout.read().decode()
-        logger.info(msg)
+        if not self.manual_submit:
+            cmd = (
+                f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu "
+                f"'condor_submit {self.submit_file}'"
+            )
+            logger.debug(f"command is {cmd}")
+            prc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            msg = prc.stdout.read().decode()
+            logger.info(msg)
 
-        self.job_id = str(msg).split("cluster ")[-1].split(".")[0]
+            self.job_id = str(msg).split("cluster ")[-1].split(".")[0]
+
+        else:
+            input(
+                f"You selected manual submit mode: \n"
+                f"\tThe submit file can be found here: \n"
+                f"\t{self.submit_file} \n"
+                f"\tPlease submit this to the cluster and hit enter when all jobs are done! \n"
+                f"[ENTER]"
+            )
 
     @staticmethod
     def get_condor_status():
