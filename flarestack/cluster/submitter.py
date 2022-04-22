@@ -303,6 +303,21 @@ class DESYSubmitter(Submitter):
     root_dir = os.path.dirname(fs_dir[:-1])
 
     def __init__(self, mh_dict, use_cluster, n_cpu=None, **cluster_kwargs):
+        """
+        Initialises a DESYSubmitter instance.
+
+        :param mh_dict: the MinimisationHandler dict
+        :type mh_dict: dict
+        :param use_cluster: wjether to use the cluster
+        :type use_cluster: bool
+        :param n_cpu: how many CPUs to use on the local machine
+        :type n_cpu: int
+        :param cluster_kwargs: keyword arguments for the cluster, available are:
+            h_cpu in the form "hh:mm:ss": how long the cluster jobs run
+            trials_per_task: int, how many trials to run per cluster job
+            cluster_cpu: int, how many CPUs to use on the cluster machines
+            ram_per_core in the form "<number>G": e.g. 6G to use 6GB RAM for each cluster job
+        """
         super(DESYSubmitter, self).__init__(
             mh_dict, use_cluster, n_cpu, **cluster_kwargs
         )
@@ -499,6 +514,18 @@ class WIPACSubmitter(Submitter):
     scratch_on_nodes = f"/scratch/{username}"
 
     def __init__(self, *args, **kwargs):
+        """
+        A class that takes care of submitting the trial calculations.
+        Also can estimate the sensitivity scale before submitting.
+
+        :param args: arguments to be passed to Submitter class
+        :param kwargs: keyword arguments used by the cluster, available are:
+            manual_submit: bool, if True only prints out the location of the submit file without actually
+            submitting to the cluster
+            trials_per_task: int, how many trials to run per cluster job
+            cluster_cpu: int, how many CPUs to use per cluster job
+            ram_per_core: float, how much RAM for each cluster jobs in MB
+        """
         super(WIPACSubmitter, self).__init__(*args, **kwargs)
 
         from flarestack.data.icecube import icecube_dataset_dir
