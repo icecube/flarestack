@@ -25,9 +25,9 @@ copyright = "2018, Robert Stein"
 author = "Robert Stein"
 
 # The short X.Y version
-version = "2.0.b.1"
+version = "2.4.3"
 # The full version, including alpha/beta/rc tags
-release = "2.0-beta.1"
+release = "2.4.3"
 
 # -- General configuration ---------------------------------------------------
 
@@ -196,7 +196,7 @@ epub_exclude_files = ["search.html"]
 
 html_context = {
     "display_github": True,  # Integrate GitHub
-    "github_user": "IceCubeOpenSource",  # Username
+    "github_user": "icecube",  # Username
     "github_repo": "flarestack",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/source/",  # Path in the checkout to the docs root
