@@ -581,9 +581,9 @@ class WIPACSubmitter(Submitter):
         """
         text = (
             f"executable = {self.executable_file} \n"
-            f"log = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.log \n"
-            f"output = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.out \n"
-            f"error = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.err \n"
+            f"log = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.log \n"
+            f"output = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.out \n"
+            f"error = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.err \n"
             f"should_transfer_files   = YES \n"
             f"when_to_transfer_output = ON_EXIT \n"
             f"arguments = $(process) \n"
