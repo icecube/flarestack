@@ -24,6 +24,7 @@ from flarestack.core.time_pdf import TimePDF, Box, Steady
 from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
+import emcee
 
 logger = logging.getLogger(__name__)
 
@@ -1514,6 +1515,71 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             logger.info(f"saved under {fn}")
 
         return fig, axs
+
+    
+@MinimisationHandler.register_subclass("fit_weights_mcmc")
+class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
+    def __init__(self, mh_dict):
+        super().__init__(mh_dict)
+        self.p0, self.bounds, self.names = self.return_parameter_info(mh_dict)
+        
+    def run_trial(self, full_dataset):
+
+        raw_f = self.trial_function(full_dataset)
+
+        def log_llh(params):
+            return -np.sum(raw_f(params))
+        
+        ndim = len(self.p0)
+        np.random.seed(42)
+        nwalkers = 30 # TODO: Add to mh_dict
+        p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
+        
+        p0 *= np.diff(self.bounds).reshape(-1, len(self.bounds))
+        p0 += np.array(self.bounds)[:, 0]
+        
+
+        def log_prior(params):
+            """Joint prior on all parameters."""
+            l_prior = 0
+            for param, bounds in zip(params, self.bounds):
+                if bounds[1] < param or bounds[0] > param:
+                    return -np.inf
+                else:
+                    l_prior += -np.log(bounds[1] - bounds[0])
+            return l_prior
+            
+
+        def log_prob(params):
+            return -log_llh(params) -log_prior(params)
+
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob)
+
+        state = sampler.run_mcmc(p0, 100)
+        sampler.reset()
+
+        sampler.run_mcmc(state, 10000)
+
+        chain = sampler.get_chain()
+        
+        fit_param = np.median(chain, axis=0).mean(axis=0)
+        
+        parameters = {
+            name: val for name, val in zip(self.names, fit_param)
+        }
+        
+        ts = log_llh(fit_param)
+        
+        
+        res_dict = {
+            "chain": chain,
+            "Parameters": parameters,
+            "TS": ts,
+            "Flag": True, # TODO: figure out how to evaluate this
+            "f": log_llh
+        }
+
+        return res_dict
 
 
 @MinimisationHandler.register_subclass("flare")
