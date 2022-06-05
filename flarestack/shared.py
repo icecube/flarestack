@@ -113,7 +113,7 @@ for dirname in all_dirs:
 # Check host and specify path to dataset storage
 # ==============================================================================
 
-host = socket.gethostname()
+host = socket.getfqdn()
 
 if np.logical_or("ifh.de" in host, "zeuthen.desy.de" in host):
     host_server = "DESY"

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flarestack",
-    version="2.4.2",
+    version="2.4.4",
     author="Robert Stein",
     author_email="robert.stein@desy.de",
     description="Package for unbinned likelihood analysis of physics data",
@@ -30,7 +30,7 @@ setuptools.setup(
         "coveralls==3.3.1",
         "healpy==1.15.2",
         "jupyter==1.0.0",
-        "matplotlib==3.5.1",
+        "matplotlib==3.5.2",
         "numexpr==2.8.1",
         "numpy==1.22.3",
         "scipy==1.8.0",

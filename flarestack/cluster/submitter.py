@@ -303,6 +303,21 @@ class DESYSubmitter(Submitter):
     root_dir = os.path.dirname(fs_dir[:-1])
 
     def __init__(self, mh_dict, use_cluster, n_cpu=None, **cluster_kwargs):
+        """
+        Initialises a DESYSubmitter instance.
+
+        :param mh_dict: the MinimisationHandler dict
+        :type mh_dict: dict
+        :param use_cluster: wjether to use the cluster
+        :type use_cluster: bool
+        :param n_cpu: how many CPUs to use on the local machine
+        :type n_cpu: int
+        :param cluster_kwargs: keyword arguments for the cluster, available are:
+            h_cpu in the form "hh:mm:ss": how long the cluster jobs run
+            trials_per_task: int, how many trials to run per cluster job
+            cluster_cpu: int, how many CPUs to use on the cluster machines
+            ram_per_core in the form "<number>G": e.g. 6G to use 6GB RAM for each cluster job
+        """
         super(DESYSubmitter, self).__init__(
             mh_dict, use_cluster, n_cpu, **cluster_kwargs
         )
@@ -499,7 +514,25 @@ class WIPACSubmitter(Submitter):
     scratch_on_nodes = f"/scratch/{username}"
 
     def __init__(self, *args, **kwargs):
+        """
+        A class that takes care of submitting the trial calculations.
+        Also can estimate the sensitivity scale before submitting.
+
+        :param args: arguments to be passed to Submitter class
+        :param kwargs: keyword arguments used by the cluster, available are:
+            manual_submit: bool, if True only prints out the location of the submit file without actually
+            submitting to the cluster
+            trials_per_task: int, how many trials to run per cluster job
+            cluster_cpu: int, how many CPUs to use per cluster job
+            ram_per_core: float, how much RAM for each cluster jobs in MB
+        """
         super(WIPACSubmitter, self).__init__(*args, **kwargs)
+
+        from flarestack.data.icecube import icecube_dataset_dir
+
+        self.icecube_dataset_dir = icecube_dataset_dir
+
+        self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
 
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
         self.cluster_cpu = self.cluster_kwargs.get("cluster_cpu", self.n_cpu)
@@ -529,11 +562,11 @@ class WIPACSubmitter(Submitter):
 
         txt = (
             f"#!/bin/sh \n"
-            f"eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/setup.sh) \n"
+            f"eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.2.0/setup.sh) \n"
             f"export PYTHONPATH={WIPACSubmitter.root_dir}/ \n"
             f"export FLARESTACK_SCRATCH_DIR={flarestack_scratch_dir} \n"
             f"export HOME={WIPACSubmitter.home_dir} \n "
-            f"conda activate flarestack \n"
+            f"export FLARESTACK_DATASET_DIR={self.icecube_dataset_dir} \n"
             f"python {fs_dir}core/multiprocess_wrapper.py -f {path} -n {self.cluster_cpu}"
         )
 
@@ -548,9 +581,9 @@ class WIPACSubmitter(Submitter):
         """
         text = (
             f"executable = {self.executable_file} \n"
-            f"log = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.log \n"
-            f"output = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.out \n"
-            f"error = {WIPACSubmitter.scratch_on_nodes}/$(cluster)job.err \n"
+            f"log = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.log \n"
+            f"output = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.out \n"
+            f"error = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.err \n"
             f"should_transfer_files   = YES \n"
             f"when_to_transfer_output = ON_EXIT \n"
             f"arguments = $(process) \n"
@@ -584,16 +617,26 @@ class WIPACSubmitter(Submitter):
         self.make_executable_file(path)
         self.make_submit_file(n_tasks)
 
-        cmd = (
-            f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu "
-            f"'condor_submit {self.submit_file}'"
-        )
-        logger.debug(f"command is {cmd}")
-        prc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        msg = prc.stdout.read().decode()
-        logger.info(msg)
+        if not self.manual_submit:
+            cmd = (
+                f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu "
+                f"'condor_submit {self.submit_file}'"
+            )
+            logger.debug(f"command is {cmd}")
+            prc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            msg = prc.stdout.read().decode()
+            logger.info(msg)
 
-        self.job_id = str(msg).split("cluster ")[-1].split(".")[0]
+            self.job_id = str(msg).split("cluster ")[-1].split(".")[0]
+
+        else:
+            input(
+                f"You selected manual submit mode: \n"
+                f"\tThe submit file can be found here: \n"
+                f"\t{self.submit_file} \n"
+                f"\tPlease submit this to the cluster and hit enter when all jobs are done! \n"
+                f"[ENTER]"
+            )
 
     @staticmethod
     def get_condor_status():
