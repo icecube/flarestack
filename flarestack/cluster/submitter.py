@@ -222,10 +222,10 @@ class Submitter(object):
 
         if self.do_sensitivity_scale_estimation:
 
-            if "asimov" in self.do_sensitivity_scale_estimation:
+            if self.do_sensitivity_scale_estimation in ["asimov"]:
                 self.do_asimov_scale_estimation()
 
-            if "quick_injections" in self.do_sensitivity_scale_estimation:
+            if self.do_sensitivity_scale_estimation in ["quick_injections"]:
                 self.run_quick_injections_to_estimate_sensitivity_scale()
 
             if not do_disc:
