@@ -153,7 +153,7 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
             ),
         )
         inj = season.make_injector(dummy_sources, **inj_dict)
-
+        print(inj)
         for j, dummy_source in enumerate(dummy_sources):
 
             lower, upper = bounds[j]
@@ -161,7 +161,7 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
             n_eff = n_eff_sources[j]
 
             source_mc = inj.calculate_single_source(dummy_source, scale=raw_scale)
-
+            print(source_mc)
             if len(source_mc) == 0:
                 logging.warning(
                     "Warning, no MC found for dummy source at declinbation ".format(
