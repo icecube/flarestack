@@ -1551,14 +1551,17 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
             
 
         def log_prob(params):
-            return -log_llh(params) -log_prior(params)
+            l_prior = log_prior(params)
+            if l_prior == -np.inf:
+                return l_prior
+            return l_prior + log_llh(params)
 
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob)
 
         state = sampler.run_mcmc(p0, 100)
         sampler.reset()
 
-        sampler.run_mcmc(state, 10000)
+        sampler.run_mcmc(state, 500)
 
         chain = sampler.get_chain()
         
@@ -1570,12 +1573,11 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         
         ts = log_llh(fit_param)
         
-        
         res_dict = {
             "chain": chain,
             "Parameters": parameters,
             "TS": ts,
-            "Flag": True, # TODO: figure out how to evaluate this
+            "Flag": True,  # TODO: figure out how to evaluate this
             "f": log_llh
         }
 
