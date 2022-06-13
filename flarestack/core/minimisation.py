@@ -566,6 +566,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             "Flags": flags,
         }
 
+        if 'chain' in res_dict.keys():
+            with open(os.path.join(os.environ['FLARESTACK_SCRATCH_DIR'],
+                                   'flarestack__data/storage/pickles', 'chains.pickle'), 'wb') as p:
+                Pickle.dump(res_dict['chain'], p)
+
         self.dump_results(results, scale, seed)
         return res_dict
 
@@ -1553,8 +1558,8 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         def log_prob(params):
             l_prior = log_prior(params)
             if l_prior == -np.inf:
-                return l_prior
-            return l_prior + log_llh(params)
+                return -l_prior
+            return -l_prior +log_llh(params)
 
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob)
 
