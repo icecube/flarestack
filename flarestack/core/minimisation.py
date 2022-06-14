@@ -1521,28 +1521,28 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
 
         return fig, axs
 
-    
+
 @MinimisationHandler.register_subclass("fit_weights_mcmc")
 class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
     def __init__(self, mh_dict):
         super().__init__(mh_dict)
         self.p0, self.bounds, self.names = self.return_parameter_info(mh_dict)
-        
+
     def run_trial(self, full_dataset):
 
         raw_f = self.trial_function(full_dataset)
 
         def log_llh(params):
             return -np.sum(raw_f(params))
-        
+
         ndim = len(self.p0)
         np.random.seed(42)
         nwalkers = 30 # TODO: Add to mh_dict
         p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
-        
+
         p0 *= np.diff(self.bounds).reshape(-1, len(self.bounds))
         p0 += np.array(self.bounds)[:, 0]
-        
+
 
         def log_prior(params):
             """Joint prior on all parameters."""
@@ -1553,13 +1553,13 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
                 else:
                     l_prior += -np.log(bounds[1] - bounds[0])
             return l_prior
-            
+
 
         def log_prob(params):
             l_prior = log_prior(params)
             if l_prior == -np.inf:
                 return -l_prior
-            return -l_prior +log_llh(params)
+            return -l_prior + log_llh(params)
 
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob)
 
@@ -1569,15 +1569,15 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         sampler.run_mcmc(state, 500)
 
         chain = sampler.get_chain()
-        
+
         fit_param = np.median(chain, axis=0).mean(axis=0)
-        
+
         parameters = {
             name: val for name, val in zip(self.names, fit_param)
         }
-        
+
         ts = log_llh(fit_param)
-        
+
         res_dict = {
             "chain": chain,
             "Parameters": parameters,
