@@ -289,6 +289,9 @@ class ResultsHandler(object):
             for x in os.listdir(self.pickle_output_dir)
             if x[0] != "." and x != "merged"
         ]
+        
+        if 'chains.pkl' in all_sub_dirs:
+            all_sub_dirs.remove('chains.pkl')
 
         try:
             os.makedirs(self.merged_dir)

@@ -565,11 +565,38 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             "Parameters": param_vals,
             "Flags": flags,
         }
-
+        
         if 'chain' in res_dict.keys():
-            with open(os.path.join(os.environ['FLARESTACK_SCRATCH_DIR'],
-                                   'flarestack__data/storage/pickles', 'chains.pickle'), 'wb') as p:
-                Pickle.dump(res_dict['chain'], p)
+                        
+            if self.name == " /":
+                logger.warning(
+                    "No field 'name' was specified in mh_dict object. "
+                    "Cannot save results without a unique directory"
+                    " name being specified."
+                )
+
+            else:
+                
+                write_dir = os.path.join(self.pickle_output_dir)
+
+                # Tries to create the parent directory, unless it already exists
+                try:
+                    os.makedirs(write_dir)
+                except OSError:
+                    pass
+
+                file_name = os.path.join(write_dir, "chains.pkl")
+
+                logger.debug("Saving to {0}".format(file_name))
+
+                with open(file_name, "wb") as f:
+                    Pickle.dump(res_dict['chain'], f)
+
+#         if 'chain' in res_dict.keys():
+#             with open(os.path.join(os.environ['FLARESTACK_SCRATCH_DIR'],
+#                                    'flarestack__data/storage/pickles/', 
+#                                    self.mh_dict['name'], 'chains.pkl'), 'wb') as p:
+#                 Pickle.dump(res_dict['chain'], p)
 
         self.dump_results(results, scale, seed)
         return res_dict
@@ -1533,11 +1560,11 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         raw_f = self.trial_function(full_dataset)
 
         def log_llh(params):
-            return -np.sum(raw_f(params))
+            return np.sum(raw_f(params))
 
         ndim = len(self.p0)
         np.random.seed(42)
-        nwalkers = 30 # TODO: Add to mh_dict
+        nwalkers = 10 # TODO: Add to mh_dict
         p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
 
         p0 *= np.diff(self.bounds).reshape(-1, len(self.bounds))
@@ -1558,15 +1585,16 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         def log_prob(params):
             l_prior = log_prior(params)
             if l_prior == -np.inf:
-                return -l_prior
+                return l_prior
             return -l_prior + log_llh(params)
-
+        
+        # Option: Provide kwarg "moves=emcee.moves.WalkMove()" sampler
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob)
 
         state = sampler.run_mcmc(p0, 100)
         sampler.reset()
 
-        sampler.run_mcmc(state, 500)
+        sampler.run_mcmc(state, 2000)
 
         chain = sampler.get_chain()
 
