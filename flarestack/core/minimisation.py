@@ -1588,7 +1588,7 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
                 return l_prior
             return -l_prior + log_llh(params)
         
-        # Option: Provide kwarg "moves=emcee.moves.WalkMove()" sampler
+        # Option: Provide kwarg "moves=emcee.moves.WalkMove()" to sampler
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob)
 
         state = sampler.run_mcmc(p0, 100)
