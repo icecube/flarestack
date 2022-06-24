@@ -32,7 +32,7 @@ setuptools.setup(
         "jupyter==1.0.0",
         "matplotlib==3.5.2",
         "numexpr==2.8.1",
-        "numpy==1.22.3",
+        "numpy==1.23.0",
         "scipy==1.8.0",
         "setuptools==62.1.0",
         "sphinx==5.0.2",
