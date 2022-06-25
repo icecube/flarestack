@@ -25,6 +25,10 @@ from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
 import emcee
+from autograd import grad
+import autograd.numpy as grad_np
+import scipy.stats as st
+import numdifftools as nd
 
 logger = logging.getLogger(__name__)
 
@@ -1564,7 +1568,7 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
 
         ndim = len(self.p0)
         np.random.seed(42)
-        nwalkers = 10 # TODO: Add to mh_dict
+        nwalkers = 50 # TODO: Add to mh_dict
         p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
 
         p0 *= np.diff(self.bounds).reshape(-1, len(self.bounds))
@@ -1588,17 +1592,189 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
                 return l_prior
             return -l_prior + log_llh(params)
         
-        # Option: Provide kwarg "moves=emcee.moves.WalkMove()" to sampler
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob)
+        
+        n_initial_steps = 200
+        
+        n_maximum_steps = 10000
+        
+        n_minimum_steps = 3000
 
-        state = sampler.run_mcmc(p0, 100)
+        state = sampler.run_mcmc(p0, n_initial_steps)
+                
         sampler.reset()
 
-        sampler.run_mcmc(state, 2000)
+        sampler.run_mcmc(state, n_maximum_steps)
+        
+#         act = np.max(sampler.get_autocorr_time(quiet=True))
+        
+#         # Sampler will always run in the range [1000, 100000] steps
+#         # cutoff refers to end of burn-in time step number
+#         if act > 0.5 * n_initial_steps:
+#             # Sampler will run for 12 times ACT steps or 10,000 steps (smallest)
+#             cutoff = np.min((12 * act, n_maximum_steps))
+           
+#         else:
+#             # If ACT is very small, run for 1000 steps
+#             cutoff = n_minimum_steps
 
         chain = sampler.get_chain()
 
         fit_param = np.median(chain, axis=0).mean(axis=0)
+
+        parameters = {
+            name: val for name, val in zip(self.names, fit_param)
+        }
+
+        ts = log_llh(fit_param)
+
+        res_dict = {
+            "chain": chain,
+            "Parameters": parameters,
+            "TS": ts,
+            "Flag": True,  # TODO: figure out how to evaluate this
+            "f": log_llh
+        }
+
+        return res_dict
+    
+@MinimisationHandler.register_subclass("fit_weights_hmc")
+class FitWeightHMCMinimisationHandler(FitWeightMinimisationHandler):
+    def __init__(self, mh_dict):
+        super().__init__(mh_dict)
+        self.p0, self.bounds, self.names = self.return_parameter_info(mh_dict)
+
+    def run_trial(self, full_dataset):
+
+        raw_f = self.trial_function(full_dataset)
+
+        def log_llh(params):
+            return np.sum(raw_f(params))
+
+        ndim = len(self.p0)
+        np.random.seed(42)
+        nwalkers = 10 # TODO: Add to mh_dict
+        p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
+
+        p0 *= np.diff(self.bounds).reshape(-1, len(self.bounds))
+        p0 += np.array(self.bounds)[:, 0]
+
+
+        def log_prior(params):
+            """Joint prior on all parameters."""
+            l_prior = 0
+            for param, bounds in zip(params, self.bounds):
+                if bounds[1] < param or bounds[0] > param:
+                    return -np.inf
+                else:
+                    l_prior += -np.log(bounds[1] - bounds[0])
+            return l_prior
+
+
+        def log_prob(params):
+            l_prior = log_prior(params)
+            if l_prior == -np.inf:
+                return l_prior
+            # This is negative LLH (signs flipped)
+            return l_prior - log_llh(params)
+        
+        def hamiltonian_monte_carlo(n_samples, negative_log_prob, initial_position, path_len=1,
+                                    step_size=0.5):
+            """Run Hamiltonian Monte Carlo sampling.
+
+            Parameters
+            ----------
+            n_samples : int
+                Number of samples to return
+            negative_log_prob : callable
+                The negative log probability to sample from
+            initial_position : np.array
+                A place to start sampling from.
+            path_len : float
+                How long each integration path is. Smaller is faster and more correlated.
+            step_size : float
+                How long each integration step is. Smaller is slower and more accurate.
+
+            Returns
+            -------
+            np.array
+                Array of length `n_samples`.
+            """
+            # autograd magic
+            dVdq = nd.Gradient(negative_log_prob)
+
+            # collect all our samples in a list
+            samples = [initial_position]
+
+            # Keep a single object for momentum resampling
+            momentum = st.norm(0, 1)
+
+            # If initial_position is a 10d vector and n_samples is 100, we want
+            # 100 x 10 momentum draws. We can do this in one call to momentum.rvs, and
+            # iterate over rows
+            size = (n_samples,) + initial_position.shape[:1]
+            for p0 in momentum.rvs(size=size):
+                # Integrate over our path to get a new position and momentum
+                q_new, p_new = leapfrog(
+                    samples[-1],
+                    p0,
+                    dVdq,
+                    path_len=path_len,
+                    step_size=step_size,
+                )
+
+                # Check Metropolis acceptance criterion
+                start_log_p = negative_log_prob(samples[-1]) - np.sum(momentum.logpdf(p0))
+                new_log_p = negative_log_prob(q_new) - np.sum(momentum.logpdf(p_new))
+                if np.log(np.random.rand()) < start_log_p - new_log_p:
+                    samples.append(q_new)
+                else:
+                    samples.append(np.copy(samples[-1]))
+
+            return np.array(samples[1:])
+        
+        def leapfrog(q, p, dVdq, path_len, step_size):
+            """Leapfrog integrator for Hamiltonian Monte Carlo.
+
+            Parameters
+            ----------
+            q : np.floatX
+                Initial position
+            p : np.floatX
+                Initial momentum
+            dVdq : callable
+                Gradient of the velocity
+            path_len : float
+                How long to integrate for
+            step_size : float
+                How long each integration step should be
+
+            Returns
+            -------
+            q, p : np.floatX, np.floatX
+                New position and momentum
+            """
+            q, p = np.copy(q), np.copy(p)
+            _dVdq = dVdq(q)
+            p -= step_size * _dVdq / 2  # half step
+            for _ in range(int(path_len / step_size) - 1):
+                q += step_size * p  # whole step
+                _dVdq = dVdq(q)
+                p -= step_size * _dVdq  # whole step
+            q += step_size * p  # whole step
+            _dVdq = dVdq(q)
+            p -= step_size * _dVdq / 2  # half step
+
+            # momentum flip at end
+            return q, -p
+        
+        hmc_samples = hamiltonian_monte_carlo(2000, lambda p: np.asarray(log_prob(p), dtype=float),
+                                              p0[0], path_len=1, step_size=0.5)
+        
+#         hmc_samples = hamiltonian_monte_carlo(2000, lambda p: log_prob(p), 
+#                                               p0[0], path_len=1, step_size=0.5)
+        
+        fit_param = np.median(hmc_samples, axis=0).mean(axis=0)
 
         parameters = {
             name: val for name, val in zip(self.names, fit_param)
