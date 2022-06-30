@@ -25,8 +25,6 @@ from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
 import emcee
-from autograd import grad
-import autograd.numpy as grad_np
 import scipy.stats as st
 import numdifftools as nd
 
