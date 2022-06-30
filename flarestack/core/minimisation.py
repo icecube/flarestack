@@ -1486,6 +1486,8 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             np.array(self.bounds)[np.array(self.param_names) == "gamma"][0]
         )
 
+        # gamma_bounds = tuple((2,4))
+
         for i, p in enumerate(params):
             fig, ax, ur = self.scan_likelihood_1d(
                 p,
@@ -1598,13 +1600,13 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         
         n_maximum_steps = 10000
         
-        n_minimum_steps = 3000
+        n_minimum_steps = 4000
 
         state = sampler.run_mcmc(p0, n_initial_steps)
                 
         sampler.reset()
 
-        sampler.run_mcmc(state, n_maximum_steps)
+        sampler.run_mcmc(state, n_minimum_steps)
         
 #         act = np.max(sampler.get_autocorr_time(quiet=True))
         
