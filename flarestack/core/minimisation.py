@@ -16,6 +16,7 @@ from flarestack.shared import (
     scale_shortener,
     flux_to_k,
 )
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize, ListedColormap
@@ -25,7 +26,7 @@ from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
 import emcee
-import scipy.stats as st
+import scipy.stats as stats
 import numdifftools as nd
 
 logger = logging.getLogger(__name__)
@@ -1392,7 +1393,14 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
     def return_parameter_info(mh_dict):
         sources = load_catalogue(mh_dict["catalogue"])
         p0 = [1.0 for _ in sources]
-        bounds = [(0.0, 1000.0) for _ in sources]
+        # bounds = [(0.0, 1000.0) for _ in sources]
+
+        # bounds = [(0.0, 7.0), (0.0, 25.0)]
+
+        sin_dec = np.sin(sources["dec_rad"])
+        upper_bounds = flux_to_k(reference_sensitivity(sin_dec)) * 3
+        bounds = [(0.0, upper_bounds[_]) for _ in range(len(sources))]
+
         names = [FitWeightMinimisationHandler.source_param_name(x) for x in sources]
         params = [p0, bounds, names]
 
@@ -1484,8 +1492,6 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             np.array(self.bounds)[np.array(self.param_names) == "gamma"][0]
         )
 
-        # gamma_bounds = tuple((2,4))
-
         for i, p in enumerate(params):
             fig, ax, ur = self.scan_likelihood_1d(
                 p,
@@ -1567,13 +1573,59 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
             return np.sum(raw_f(params))
 
         ndim = len(self.p0)
+        nwalkers = 25 # TODO: Add to mh_dict
+
+        # np.random.seed(42)
+        # p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
+        # p0 *= np.diff(self.bounds).reshape(-1, len(self.bounds))
+        # p0 += np.array(self.bounds)[:, 0]
+
+        mu_14il = 2.6438
+        std_14il = 3.8452
+        mu_15ab = 1.5559
+        std_15ab = 1.8908
+        mu_15hs = 5.2987
+        std_15hs = 6.7936
+        mu_15ik = 10.1746
+        std_15ik = 13.1440
+        mu_15nx = 3.2112
+        std_15nx = 4.5574
+        mu_gamma = 2.4369
+        std_gamma = 0.9235
+
+        # Standard normal distribution (all values)
+        # p0 = np.zeros((nwalkers, ndim))
+        # np.random.seed(42)
+        # for i in range(nwalkers):
+        #     p0[i][0] = np.random.normal(mu_14il, std_14il)
+        #     p0[i][1] = np.random.normal(mu_15ab, std_15ab)
+        #     p0[i][-1] = np.random.normal(mu_gamma, std_gamma)
+
+        lowers = np.array(self.bounds)[:, 0]
+        uppers = np.array(self.bounds)[:, 1]
+
+        # Truncated standard normal distribution (range [self.bounds])
+        p0 = np.zeros((nwalkers, ndim))
         np.random.seed(42)
-        nwalkers = 50 # TODO: Add to mh_dict
-        p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
-
-        p0 *= np.diff(self.bounds).reshape(-1, len(self.bounds))
-        p0 += np.array(self.bounds)[:, 0]
-
+        for i in range(nwalkers):
+            p0[i][0] = stats.truncnorm.rvs(
+                (lowers[0] - mu_14il) / std_14il, (uppers[0] - mu_14il) / std_14il,
+                loc=mu_14il, scale=std_14il)
+            p0[i][1] = stats.truncnorm.rvs(
+                (lowers[1] - mu_15ab) / std_15ab, (uppers[1] - mu_15ab) / std_15ab,
+                loc=mu_15ab, scale=std_15ab)
+            p0[i][2] = stats.truncnorm.rvs(
+                (lowers[2] - mu_15hs) / std_15hs, (uppers[2] - mu_15hs) / std_15hs,
+                loc=mu_15hs, scale=std_15hs)
+            p0[i][3] = stats.truncnorm.rvs(
+                (lowers[3] - mu_15ik) / std_15ik, (uppers[3] - mu_15ik) / std_15ik,
+                loc=mu_15ik, scale=std_15ik)
+            p0[i][4] = stats.truncnorm.rvs(
+                (lowers[4] - mu_15nx) / std_15nx, (uppers[4] - mu_15nx) / std_15nx,
+                loc=mu_15nx, scale=std_15nx)
+            p0[i][-1] = stats.truncnorm.rvs(
+                (lowers[-1] - mu_gamma) / std_gamma, (uppers[-1] - mu_gamma) / std_gamma,
+                loc=mu_gamma, scale=std_gamma)
 
         def log_prior(params):
             """Joint prior on all parameters."""
@@ -1598,7 +1650,7 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         
         n_maximum_steps = 10000
         
-        n_minimum_steps = 4000
+        n_minimum_steps = 10000
 
         state = sampler.run_mcmc(p0, n_initial_steps)
                 
@@ -1707,7 +1759,7 @@ class FitWeightHMCMinimisationHandler(FitWeightMinimisationHandler):
             samples = [initial_position]
 
             # Keep a single object for momentum resampling
-            momentum = st.norm(0, 1)
+            momentum = stats.norm(0, 1)
 
             # If initial_position is a 10d vector and n_samples is 100, we want
             # 100 x 10 momentum draws. We can do this in one call to momentum.rvs, and
@@ -1783,7 +1835,7 @@ class FitWeightHMCMinimisationHandler(FitWeightMinimisationHandler):
         ts = log_llh(fit_param)
 
         res_dict = {
-            "chain": chain,
+            # "chain": chain,
             "Parameters": parameters,
             "TS": ts,
             "Flag": True,  # TODO: figure out how to evaluate this
