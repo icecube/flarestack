@@ -1393,13 +1393,11 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
     def return_parameter_info(mh_dict):
         sources = load_catalogue(mh_dict["catalogue"])
         p0 = [1.0 for _ in sources]
-        # bounds = [(0.0, 1000.0) for _ in sources]
+        bounds = [(0.0, 1000.0) for _ in sources]
 
-        # bounds = [(0.0, 7.0), (0.0, 25.0)]
-
-        sin_dec = np.sin(sources["dec_rad"])
-        upper_bounds = flux_to_k(reference_sensitivity(sin_dec)) * 3
-        bounds = [(0.0, upper_bounds[_]) for _ in range(len(sources))]
+        # sin_dec = np.sin(sources["dec_rad"])
+        # upper_bounds = flux_to_k(reference_sensitivity(sin_dec)) * 3
+        # bounds = [(0.0, upper_bounds[_]) for _ in range(len(sources))]
 
         names = [FitWeightMinimisationHandler.source_param_name(x) for x in sources]
         params = [p0, bounds, names]
@@ -1573,59 +1571,31 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
             return np.sum(raw_f(params))
 
         ndim = len(self.p0)
-        nwalkers = 25 # TODO: Add to mh_dict
+        nwalkers = 20 # TODO: Add to mh_dict
 
         # np.random.seed(42)
         # p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
         # p0 *= np.diff(self.bounds).reshape(-1, len(self.bounds))
         # p0 += np.array(self.bounds)[:, 0]
 
-        mu_14il = 2.6438
-        std_14il = 3.8452
-        mu_15ab = 1.5559
-        std_15ab = 1.8908
-        mu_15hs = 5.2987
-        std_15hs = 6.7936
-        mu_15ik = 10.1746
-        std_15ik = 13.1440
-        mu_15nx = 3.2112
-        std_15nx = 4.5574
-        mu_gamma = 2.4369
-        std_gamma = 0.9235
-
-        # Standard normal distribution (all values)
-        # p0 = np.zeros((nwalkers, ndim))
-        # np.random.seed(42)
-        # for i in range(nwalkers):
-        #     p0[i][0] = np.random.normal(mu_14il, std_14il)
-        #     p0[i][1] = np.random.normal(mu_15ab, std_15ab)
-        #     p0[i][-1] = np.random.normal(mu_gamma, std_gamma)
-
         lowers = np.array(self.bounds)[:, 0]
         uppers = np.array(self.bounds)[:, 1]
+
+        mu = [0.821, 0.8388, 2.574]
+        std = [1.2633, 1.2946, 0.8701]
 
         # Truncated standard normal distribution (range [self.bounds])
         p0 = np.zeros((nwalkers, ndim))
         np.random.seed(42)
+
         for i in range(nwalkers):
-            p0[i][0] = stats.truncnorm.rvs(
-                (lowers[0] - mu_14il) / std_14il, (uppers[0] - mu_14il) / std_14il,
-                loc=mu_14il, scale=std_14il)
-            p0[i][1] = stats.truncnorm.rvs(
-                (lowers[1] - mu_15ab) / std_15ab, (uppers[1] - mu_15ab) / std_15ab,
-                loc=mu_15ab, scale=std_15ab)
-            p0[i][2] = stats.truncnorm.rvs(
-                (lowers[2] - mu_15hs) / std_15hs, (uppers[2] - mu_15hs) / std_15hs,
-                loc=mu_15hs, scale=std_15hs)
-            p0[i][3] = stats.truncnorm.rvs(
-                (lowers[3] - mu_15ik) / std_15ik, (uppers[3] - mu_15ik) / std_15ik,
-                loc=mu_15ik, scale=std_15ik)
-            p0[i][4] = stats.truncnorm.rvs(
-                (lowers[4] - mu_15nx) / std_15nx, (uppers[4] - mu_15nx) / std_15nx,
-                loc=mu_15nx, scale=std_15nx)
-            p0[i][-1] = stats.truncnorm.rvs(
-                (lowers[-1] - mu_gamma) / std_gamma, (uppers[-1] - mu_gamma) / std_gamma,
-                loc=mu_gamma, scale=std_gamma)
+            # n_s and gamma seeds, source by source
+            for k in range(ndim):
+                p0[i][k] = stats.truncnorm.rvs(
+                    (lowers[k] - mu[k]) / std[k],
+                    (uppers[k] - mu[k]) / std[k],
+                    loc=mu[k], scale=std[k]
+                )
 
         def log_prior(params):
             """Joint prior on all parameters."""
@@ -1650,7 +1620,7 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         
         n_maximum_steps = 10000
         
-        n_minimum_steps = 10000
+        n_minimum_steps = 6000
 
         state = sampler.run_mcmc(p0, n_initial_steps)
                 
