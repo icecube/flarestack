@@ -1587,13 +1587,11 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         # Truncated standard normal distribution (range [self.bounds])
         p0 = np.zeros((nwalkers, ndim))
         np.random.seed(42)
-
         for i in range(nwalkers):
             # n_s and gamma seeds, source by source
             for k in range(ndim):
                 p0[i][k] = stats.truncnorm.rvs(
-                    (lowers[k] - mu[k]) / std[k],
-                    (uppers[k] - mu[k]) / std[k],
+                    lowers[k], uppers[k],
                     loc=mu[k], scale=std[k]
                 )
 
