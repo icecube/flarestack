@@ -1571,7 +1571,7 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
             return np.sum(raw_f(params))
 
         ndim = len(self.p0)
-        nwalkers = 20 # TODO: Add to mh_dict
+        nwalkers = 25 # TODO: Add to mh_dict
 
         # np.random.seed(42)
         # p0 = np.random.rand(nwalkers, ndim) # (n x m) matrix
@@ -1581,8 +1581,8 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         lowers = np.array(self.bounds)[:, 0]
         uppers = np.array(self.bounds)[:, 1]
 
-        mu = [0.821, 0.8388, 2.574]
-        std = [1.2633, 1.2946, 0.8701]
+        mu = [0.8909, 0.6021, 0.4473, 0.5099, 1.3661, 2.5608]
+        std = [1.363, 1.0598, 0.8188, 0.9523, 1.9725, 0.9677]
 
         # Truncated standard normal distribution (range [self.bounds])
         p0 = np.zeros((nwalkers, ndim))
