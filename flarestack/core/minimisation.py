@@ -1581,8 +1581,8 @@ class FitWeightMCMCMinimisationHandler(FitWeightMinimisationHandler):
         lowers = np.array(self.bounds)[:, 0]
         uppers = np.array(self.bounds)[:, 1]
 
-        mu = [0.8909, 0.6021, 0.4473, 0.5099, 1.3661, 2.5608]
-        std = [1.363, 1.0598, 0.8188, 0.9523, 1.9725, 0.9677]
+        mu = [0.8879, 0.6049, 0.475, 0.5136, 1.3415, 2.5521]
+        std = [1.3461, 1.1324, 0.8447, 0.9072, 1.9671, 0.9663]
 
         # Truncated standard normal distribution (range [self.bounds])
         p0 = np.zeros((nwalkers, ndim))
