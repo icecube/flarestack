@@ -15,7 +15,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../.."))
 
 
 # -- Project information -----------------------------------------------------
@@ -47,7 +47,6 @@ extensions = [
     "myst_nb",
 ]
 
-nbsphinx_execute = "never"
 nb_execution_mode = "off"
 autodoc_mock_imports = ["healpy"]
 
