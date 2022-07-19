@@ -44,12 +44,11 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.autodoc",
-
-    "myst_nb"
+    "myst_nb",
 ]
 
-nbsphinx_execute = 'never'
-nb_execution_mode = 'off'
+nbsphinx_execute = "never"
+nb_execution_mode = "off"
 autodoc_mock_imports = ["healpy"]
 
 myst_enable_extensions = [
