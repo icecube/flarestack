@@ -6,4 +6,6 @@ build:
     python: "3.10"
 
 python:
+  install:
+    - requirements: requirements.txt
   system_packages: true
