@@ -46,7 +46,7 @@ extensions = [
     "sphinx.ext.autodoc",
 ]
 
-autodoc_mock_imports = ["healpy"]
+autodoc_mock_imports = ["healpy", "numpy"]
 
 autodoc_default_options = {
     "member-order": "bysource",
