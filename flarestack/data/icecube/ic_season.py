@@ -15,10 +15,19 @@ logger = logging.getLogger(__name__)
 
 try:
     icecube_dataset_dir = os.environ["FLARESTACK_DATASET_DIR"]
-
-    if os.path.isdir(icecube_dataset_dir + "mirror-7year-PS-sens/"):
-        ref_dir_7yr = icecube_dataset_dir + "mirror-7year-PS-sens/"
     logger.info(f"Loading datasets from {icecube_dataset_dir} (local)")
+
+    if os.path.isdir(icecube_dataset_dir + "/mirror-7year-PS-sens/"):
+        ref_dir_7yr = icecube_dataset_dir + "/mirror-7year-PS-sens/"
+
+    else:
+        raise RuntimeError(f"No 7yr sensitivity found at {icecube_dataset_dir + '/mirror-7year-PS-sens/'}")
+    
+    ref_10yr = icecube_dataset_dir + "/TenYr_E2andE3_sensitivity_and_discpot.npy"
+
+    logger.info(ref_dir_7yr)
+    logger.info(ref_10yr)
+
 except KeyError:
     logger.info("Local dataset directory not found. Will try to fetch from central storage, assuming we are running on an supported datacenter. ")
     icecube_dataset_dir = None
@@ -47,7 +56,7 @@ if icecube_dataset_dir is None:
 
 
 def get_published_sens_ref_dir():
-    if (ref_dir_7yr is not None and ref_10yr is not None):
+    if (ref_dir_7yr is not None) and (ref_10yr is not None):
         return ref_dir_7yr, ref_10yr
     else:
         error_msg = f"No reference sensitivity directory found. Please create one at {icecube_dataset_dir + '/mirror-7year-PS-sens/'}"
