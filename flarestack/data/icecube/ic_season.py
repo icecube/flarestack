@@ -20,6 +20,7 @@ try:
         ref_dir_7yr = icecube_dataset_dir + "mirror-7year-PS-sens/"
     logger.info(f"Loading datasets from {icecube_dataset_dir} (local)")
 except KeyError:
+    logger.info("Local dataset directory not found. Will try to fetch from central storage, assuming we are running on an supported datacenter. ")
     icecube_dataset_dir = None
 
 if icecube_dataset_dir is None:
