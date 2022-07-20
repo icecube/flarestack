@@ -22,16 +22,6 @@ try:
 except KeyError:
     icecube_dataset_dir = None
 
-try:
-    ref_dir_7yr = os.environ["7YR_SENS_REF"]
-except KeyError:
-    ref_dir_7yr = None
-
-try:
-    ref_10yr = os.environ["10YR_SENS_REF"]
-except KeyError:
-    ref_10yr = None
-
 if icecube_dataset_dir is None:
     if host_server == "DESY":
         icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
