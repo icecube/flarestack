@@ -16,17 +16,17 @@ logger = logging.getLogger(__name__)
 try:
     icecube_dataset_dir = os.environ["FLARESTACK_DATASET_DIR"]
 
-    if os.path.isdir(icecube_dataset_dir + "mirror-7year-PS-sens/"):
-        ref_dir_7yr = icecube_dataset_dir + "mirror-7year-PS-sens/"
+    if os.path.isdir(os.path.join(icecube_dataset_dir, "mirror-7year-PS-sens")):
+        ref_dir_7yr = os.path.join(icecube_dataset_dir, "mirror-7year-PS-sens")
     logger.info(f"Loading datasets from {icecube_dataset_dir} (local)")
 except KeyError:
     icecube_dataset_dir = None
 
-try:
-    ref_dir_7yr = os.environ["7YR_SENS_REF"]
-except KeyError:
-    ref_dir_7yr = None
-
+# try:
+#     ref_dir_7yr = os.environ["7YR_SENS_REF"]
+# except KeyError:
+#     ref_dir_7yr = None
+#
 try:
     ref_10yr = os.environ["10YR_SENS_REF"]
 except KeyError:

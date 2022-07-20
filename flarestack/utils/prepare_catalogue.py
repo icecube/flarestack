@@ -153,7 +153,7 @@ def custom_sources(
 
     :return: Catalogue Array
     """
-    sources = np.empty(np.array([ra]).__len__(), dtype=cat_dtype)
+    sources = np.empty(ra.size, dtype=cat_dtype)
 
     sources["ra_rad"] = np.deg2rad(np.array([ra]))
     sources["dec_rad"] = np.deg2rad(np.array([dec]))
