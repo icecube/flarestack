@@ -56,16 +56,12 @@ if icecube_dataset_dir is None:
 
 
 def get_published_sens_ref_dir():
-    try:
+    if (ref_dir_7yr is not None and ref_10yr is not None):
         return ref_dir_7yr, ref_10yr
-    except NameError:
-        logger.error(
-            "No reference sensitivity directory found. "
-            "Please create one at {0}".format(
-                icecube_dataset_dir + "mirror-7year-PS-sens/"
-            )
-        )
-        raise
+    else:
+        error_msg = f"No reference sensitivity directory found. Please create one at {icecube_dataset_dir + '/mirror-7year-PS-sens/'}"
+        #logger.error(error_msg)
+        raise RuntimeError(error_msg)
 
 
 @TimePDF.register_subclass("icecube_on_off_list")
