@@ -88,9 +88,9 @@ if icecube_dataset_dir is None:
 
 def get_dataset_dir() -> str:
     """
-    Returns the path to the IceCube dataset directory.
+    Returns the path to the IceCube dataset directory. This ensures compatibility with all modules still using the path as a string.
     """
-    dataset_dir = icecube_dataset_dir
+    dataset_dir = str(icecube_dataset_dir)
     if not dataset_dir.endswith("/"):
         dataset_dir += "/"
     return dataset_dir
