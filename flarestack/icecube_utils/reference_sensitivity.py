@@ -44,7 +44,7 @@ def reference_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     :param sindec: Sin(declination)
     :return: 7 year PS sensitivity at sindec
     """
-    skylab_sens_path = ref_dir_7yr + "sens.npy"
+    skylab_sens_path = ref_dir_7yr / "sens.npy"
     data = np.load(skylab_sens_path)
     sindecs = np.sin(np.array([x[0] for x in data]))
     gammas = [1.0, 2.0, 3.0]

@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from flarestack.data import Dataset, SeasonWithMC
+from flarestack.data import Dataset, SeasonWithMC, icecube
 from flarestack.icecube_utils.dataset_loader import (
     data_loader,
     grl_loader,
@@ -10,43 +10,77 @@ from flarestack.shared import host_server
 from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
 from scipy.interpolate import interp1d
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-try:
-    icecube_dataset_dir = os.environ["FLARESTACK_DATASET_DIR"]
+# ref_dir_7yr = os.environ.get("7YR_SENS_REF")
+# ref_10yr = os.environ.get("10YR_SENS_REF")
+
+icecube_dataset_dir = os.environ.get("FLARESTACK_DATASET_DIR")
+
+"""
+Source data on the WIPAC cluster.
+- The 7yr sensitivity data are contained in a directory.
+- The 10yr sensitivity data are in a single file. 
+"""
+WIPAC_dataset_dir = Path("/data/ana/analyses/")
+WIPAC_7yr_dir = Path(
+    "/data/ana/PointSource/PS/version-002-p01/results/time_integrated_fullsky"
+)
+WIPAC_10yr_dir = Path(
+    "/data/user/tcarver/skylab_scripts/skylab_trunk/doc/analyses/combined_tracks"
+)
+ref_10yr_filename = (
+    "TenYr_E2andE3_sensitivity_and_discpot.npy"  # expected identical at all locations
+)
+
+"""
+When mirroring the data locally, the expected structure is the following:
+- 7yr: ${FLARESTACK_DATASET_DIR}/mirror-7year-PS-sens
+- 10yr: ${FLARESTACK_DATASET_DIR}/TenYr_E2andE3_sensitivity_and_discpot.npy
+
+In the DESY mirror, the structure is a bit different:
+- 7yr: ${FLARESTACK_DATASET_DIR}/ref_sensitivity/mirror-7year-PS-sens
+- 10yr: ${FLARESTACK_DATASET_DIR}/ref_sensitivity/TenYr_E2andE3_sensitivity_and_discpot.npy
+"""
+mirror_7yr_dirname = "mirror-7year-PS-sens"  # expected identical at all mirrors
+
+DESY_data_path = Path("/lustre/fs22/group/icecube/data_mirror")
+DESY_sens_path = DESY_data_path / "ref_sensitivity"
+
+if icecube_dataset_dir is not None:
     logger.info(f"Loading datasets from {icecube_dataset_dir} (local)")
 
-    if os.path.isdir(icecube_dataset_dir + "/mirror-7year-PS-sens/"):
-        ref_dir_7yr = icecube_dataset_dir + "/mirror-7year-PS-sens/"
+    icecube_dataset_path = Path(icecube_dataset_dir)
 
-    else:
-        raise RuntimeError(f"No 7yr sensitivity found at {icecube_dataset_dir + '/mirror-7year-PS-sens/'}")
-    
-    ref_10yr = icecube_dataset_dir + "/TenYr_E2andE3_sensitivity_and_discpot.npy"
+    ref_dir_7yr = icecube_dataset_path / mirror_7yr_dirname
+    if not ref_dir_7yr.is_dir():
+        logger.warning(f"No 7yr sensitivity directory found at {ref_dir_7yr}")
+        ref_dir_7yr = None
 
-    logger.info(ref_dir_7yr)
-    logger.info(ref_10yr)
+    ref_10yr = Path(icecube_dataset_dir) / ref_10yr_filename
+    if not ref_10yr.is_file():
+        logger.warning(f"No 10yr sensitivity found at {ref_10yr}")
+        ref_10yr = None
+else:
+    logger.info(
+        "Local dataset directory not found. Assuming we are running on an supported datacenter (WIPAC, DESY), I will try to fetch the data from central storage."
+    )
 
-except KeyError:
-    logger.info("Local dataset directory not found. Will try to fetch from central storage, assuming we are running on an supported datacenter. ")
-    icecube_dataset_dir = None
-
+# Only load from central storage if $FLARESTACK_DATASET_DIR is not set.
 if icecube_dataset_dir is None:
+    # NOTE: he following block has no failsafe against changes in the directory structure.
     if host_server == "DESY":
-        icecube_dataset_dir = "/lustre/fs22/group/icecube/data_mirror/"
-        ref_dir_7yr = icecube_dataset_dir + "ref_sensitivity/mirror-7year-PS-sens/"
-        ref_10yr = (
-            icecube_dataset_dir
-            + "ref_sensitivity/TenYr_E2andE3_sensitivity_and_discpot.npy"
-        )
+        icecube_dataset_dir = DESY_data_path
+        ref_dir_7yr = DESY_sens_path / mirror_7yr_dirname
+        ref_10yr = DESY_sens_path / ref_10yr_filename
         logger.info(f"Loading datasets from {icecube_dataset_dir} (DESY)")
+
     elif host_server == "WIPAC":
-        icecube_dataset_dir = "/data/ana/analyses/"
-        ref_dir_7yr = (
-            "/data/ana/PointSource/PS/version-002-p01/results/time_integrated_fullsky/"
-        )
-        ref_10yr = "/data/user/tcarver/skylab_scripts/skylab_trunk/doc/analyses/combined_tracks/TenYr_E2andE3_sensitivity_and_discpot.npy"
+        icecube_dataset_dir = WIPAC_dataset_dir
+        ref_dir_7yr = WIPAC_7yr_dir
+        ref_10yr = WIPAC_10yr_dir / ref_10yr_filename
         logger.info(f"Loading datasets from {icecube_dataset_dir} (WIPAC)")
     else:
         raise ImportError(
@@ -55,12 +89,24 @@ if icecube_dataset_dir is None:
         )
 
 
-def get_published_sens_ref_dir():
+def get_dataset_dir() -> str:
+    """
+    Returns the path to the IceCube dataset directory.
+    """
+    dataset_dir = icecube_dataset_dir
+    if not dataset_dir.endswith("/"):
+        dataset_dir += "/"
+    return dataset_dir
+
+
+def get_published_sens_ref_dir() -> (Path, Path):
+    """
+    Returns the paths to reference sensitivities.
+    """
     if (ref_dir_7yr is not None) and (ref_10yr is not None):
         return ref_dir_7yr, ref_10yr
     else:
-        error_msg = f"No reference sensitivity directory found. Please create one at {icecube_dataset_dir + '/mirror-7year-PS-sens/'}"
-        #logger.error(error_msg)
+        error_msg = f"The reference sensitivities were not found. Please set FLARESTACK_DATASET_DIR and ensure it contains the required data."
         raise RuntimeError(error_msg)
 
 

@@ -1,9 +1,10 @@
-from flarestack.data.icecube.ic_season import IceCubeDataset, icecube_dataset_dir
+from flarestack.data.icecube.ic_season import IceCubeDataset, get_dataset_dir
 from flarestack.data.icecube.northern_tracks import (
     NTSeasonNewStyle,
     get_diffuse_binning,
 )
 
+icecube_dataset_dir = get_dataset_dir()
 
 nt_data_dir = icecube_dataset_dir + "northern_tracks/version-005-p00/"
 

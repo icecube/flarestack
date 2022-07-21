@@ -8,16 +8,18 @@
     https://drive.google.com/file/d/1E1I8kgRmlWdLdXX_p7UweXn7gJIYx9Mg/view?usp=sharing
 """
 
+from flarestack.data import icecube
 import numpy as np
 import copy
 
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,
-    icecube_dataset_dir,
+    get_dataset_dir,
 )
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 
+icecube_dataset_dir = get_dataset_dir()
 
 ps_data_dir = icecube_dataset_dir + "ps_tracks/version-004-p00/"
 grl_data_dir = ps_data_dir + "GRL/"
