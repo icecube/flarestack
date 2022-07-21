@@ -8,7 +8,6 @@
     https://drive.google.com/file/d/1E1I8kgRmlWdLdXX_p7UweXn7gJIYx9Mg/view?usp=sharing
 """
 
-from flarestack.data import icecube
 import numpy as np
 import copy
 

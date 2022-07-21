@@ -81,7 +81,7 @@ with following README:
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,
-    get_dataset_dir
+    get_dataset_dir,
 )
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 import numpy as np

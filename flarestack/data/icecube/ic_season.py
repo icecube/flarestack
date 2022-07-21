@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from flarestack.data import Dataset, SeasonWithMC, icecube
+from flarestack.data import Dataset, SeasonWithMC
 from flarestack.icecube_utils.dataset_loader import (
     data_loader,
     grl_loader,
@@ -13,9 +13,6 @@ import logging
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
-
-# ref_dir_7yr = os.environ.get("7YR_SENS_REF")
-# ref_10yr = os.environ.get("10YR_SENS_REF")
 
 icecube_dataset_dir = os.environ.get("FLARESTACK_DATASET_DIR")
 

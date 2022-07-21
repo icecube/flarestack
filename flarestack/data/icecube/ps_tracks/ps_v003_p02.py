@@ -1,7 +1,6 @@
 """PS Tracks v003_p02, as used by Alex Pizzuto in the Anita analysis.
 It includes runs 125865-125867 with 2 dropped strings.
 """
-from flarestack.data import icecube
 from flarestack.data.icecube.ic_season import (
     IceCubeSeason,
     IceCubeDataset,

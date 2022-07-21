@@ -57,7 +57,6 @@ Path to local copy of point source tracks, downloaded on 24/04/18 from
       MC File    IC86-2014_corrected_MC_v2.npy
 
 """
-from flarestack.data import icecube
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,
