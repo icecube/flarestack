@@ -3,10 +3,12 @@
 from flarestack.data.icecube.ic_season import (
     IceCubeSeason,
     IceCubeDataset,
-    icecube_dataset_dir,
+    get_dataset_dir,
 )
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 import numpy as np
+
+icecube_dataset_dir = get_dataset_dir()
 
 ps_data_dir = icecube_dataset_dir + "ps_tracks/version-003-p01/"
 grl_data_dir = ps_data_dir + "GRL/"

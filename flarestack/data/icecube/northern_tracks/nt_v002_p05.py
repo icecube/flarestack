@@ -67,9 +67,10 @@ Path to local copy of point source tracks, downloaded on 18/09/18 from
 
 
 """
-from flarestack.data.icecube.ic_season import IceCubeDataset, icecube_dataset_dir
+from flarestack.data.icecube.ic_season import IceCubeDataset, get_dataset_dir
 from flarestack.data.icecube.northern_tracks import NTSeason, get_diffuse_binning
 
+icecube_dataset_dir = get_dataset_dir()
 
 nt_data_dir = icecube_dataset_dir + "northern_tracks/version-002-p05/"
 

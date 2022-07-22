@@ -81,7 +81,7 @@ with following README:
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,
-    icecube_dataset_dir,
+    get_dataset_dir,
 )
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 import numpy as np
@@ -89,6 +89,8 @@ import logging
 
 
 logger = logging.getLogger(__name__)
+
+icecube_dataset_dir = get_dataset_dir()
 
 ps_data_dir = icecube_dataset_dir + "ps_tracks/version-002-p03/"
 grl_data_dir = ps_data_dir + "GRL/"

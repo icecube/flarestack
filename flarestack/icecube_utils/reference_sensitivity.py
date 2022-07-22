@@ -1,8 +1,13 @@
 import os
 import numpy as np
+import logging
 from scipy.interpolate import interp1d, interp2d
 from flarestack.data.icecube.ic_season import get_published_sens_ref_dir
 
+
+logger = logging.getLogger(__name__)
+
+logger.info("Retrieving reference sensititivity data from `ic_season` module")
 ref_dir_7yr, ref_10yr = get_published_sens_ref_dir()
 
 
@@ -39,7 +44,7 @@ def reference_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     :param sindec: Sin(declination)
     :return: 7 year PS sensitivity at sindec
     """
-    skylab_sens_path = ref_dir_7yr + "sens.npy"
+    skylab_sens_path = ref_dir_7yr / "sens.npy"
     data = np.load(skylab_sens_path)
     sindecs = np.sin(np.array([x[0] for x in data]))
     gammas = [1.0, 2.0, 3.0]

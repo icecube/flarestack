@@ -7,10 +7,12 @@ from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,
-    icecube_dataset_dir,
+    get_dataset_dir,
 )
 from flarestack.data.icecube.gfu import gfu_binning
 import numpy as np
+
+icecube_dataset_dir = get_dataset_dir()
 
 gfu_data_dir = icecube_dataset_dir + "gfu/version-002-p02/"
 
