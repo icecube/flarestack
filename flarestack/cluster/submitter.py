@@ -479,10 +479,9 @@ class DESYSubmitter(Submitter):
             self.job_id = int(str(msg).split("job-array")[1].split(".")[0])
         else:
             logger.warning(
-                f"Submit command {DESYSubmitter.submit_cmd} not found. If you are not running on a submission host, consider submitting the job manually by running on an enabled terminal \n:
-                {submit_cmd}"
+                f"Submit command {DESYSubmitter.submit_cmd} not found. If you are not running on a submission host, consider submitting the job manually by running on an enabled terminal the following command: \n {submit_cmd}"
             )
-            
+
     # @staticmethod
     # def _wait_for_cluster(job_ids=None):
     #     """Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs"""
