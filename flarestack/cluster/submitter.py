@@ -467,16 +467,22 @@ class DESYSubmitter(Submitter):
         submit_cmd += (
             f"-t 1-{n_tasks}:1 {DESYSubmitter.submit_file} {path} {self.cluster_cpu}"
         )
-        logger.debug(f"Ram per core: {self.ram_per_core}")
+        logger.info(f"Ram per core: {self.ram_per_core}")
         logger.info(f"{time.asctime(time.localtime())}: {submit_cmd}")
 
         self.make_cluster_submission_script()
 
-        process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
-        msg = process.stdout.read().decode()
-        logger.info(str(msg))
-        self.job_id = int(str(msg).split("job-array")[1].split(".")[0])
-
+        if shutil.which(DESYSubmitter.submit_cmd) is not None:
+            process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
+            msg = process.stdout.read().decode()
+            logger.info(str(msg))
+            self.job_id = int(str(msg).split("job-array")[1].split(".")[0])
+        else:
+            logger.warning(
+                f"Submit command {DESYSubmitter.submit_cmd} not found. If you are not running on a submission host, consider submitting the job manually by running on an enabled terminal \n:
+                {submit_cmd}"
+            )
+            
     # @staticmethod
     # def _wait_for_cluster(job_ids=None):
     #     """Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs"""
