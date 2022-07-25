@@ -299,7 +299,7 @@ class DESYSubmitter(Submitter):
     submit_file = os.path.join(cluster_dir, "SubmitDESY.sh")
     username = os.path.basename(os.environ["HOME"])
     status_cmd = f"qstat -u {username}"
-    submit_cmd = "qsub "
+    submit_cmd = "qsub"
     root_dir = os.path.dirname(fs_dir[:-1])
 
     def __init__(self, mh_dict, use_cluster, n_cpu=None, **cluster_kwargs):
@@ -334,8 +334,6 @@ class DESYSubmitter(Submitter):
         self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
 
         if not self.manual_submit:
-            print(shutil.which("qsub"))
-            print(shutil.which(DESYSubmitter.submit_cmd))
             if shutil.which(DESYSubmitter.submit_cmd) is None:
                 logger.warning(
                     f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. Forcing 'manual_submit' mode."
@@ -474,9 +472,9 @@ class DESYSubmitter(Submitter):
         # assemble the submit command
         submit_cmd = DESYSubmitter.submit_cmd
         if self.cluster_cpu > 1:
-            submit_cmd += " -pe multicore {0} -R y ".format(self.cluster_cpu)
+            submit_cmd += " -pe multicore {0} -R y".format(self.cluster_cpu)
         submit_cmd += (
-            f"-t 1-{n_tasks}:1 {DESYSubmitter.submit_file} {path} {self.cluster_cpu}"
+            f" -t 1-{n_tasks}:1 {DESYSubmitter.submit_file} {path} {self.cluster_cpu}"
         )
         logger.info(f"Ram per core: {self.ram_per_core}")
         logger.info(f"{time.asctime(time.localtime())}: {submit_cmd}")
