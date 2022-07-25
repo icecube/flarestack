@@ -481,7 +481,7 @@ class DESYSubmitter(Submitter):
 
         self.make_cluster_submission_script()
 
-        if self.manual_submit is not None:
+        if not self.manual_submit:
             process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
             msg = process.stdout.read().decode()
             logger.info(str(msg))
