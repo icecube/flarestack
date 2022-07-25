@@ -299,7 +299,7 @@ class DESYSubmitter(Submitter):
     submit_file = os.path.join(cluster_dir, "SubmitDESY.sh")
     username = os.path.basename(os.environ["HOME"])
     status_cmd = f"qstat -u {username}"
-    submit_cmd = "qsub "
+    submit_cmd = "qsub"
     root_dir = os.path.dirname(fs_dir[:-1])
 
     def __init__(self, mh_dict, use_cluster, n_cpu=None, **cluster_kwargs):
@@ -330,6 +330,15 @@ class DESYSubmitter(Submitter):
             "ram_per_core", "{0:.1f}G".format(6.0 / float(self.cluster_cpu) + 2.0)
         )
         self.remove_old_logs = self.cluster_kwargs.get("remove_old_logs", True)
+
+        self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
+
+        if not self.manual_submit:
+            if shutil.which(DESYSubmitter.submit_cmd) is None:
+                logger.warning(
+                    f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. Forcing 'manual_submit' mode."
+                )
+                self.manual_submit = True
 
     @staticmethod
     def _qstat_output(qstat_command):
@@ -463,19 +472,27 @@ class DESYSubmitter(Submitter):
         # assemble the submit command
         submit_cmd = DESYSubmitter.submit_cmd
         if self.cluster_cpu > 1:
-            submit_cmd += " -pe multicore {0} -R y ".format(self.cluster_cpu)
+            submit_cmd += " -pe multicore {0} -R y".format(self.cluster_cpu)
         submit_cmd += (
-            f"-t 1-{n_tasks}:1 {DESYSubmitter.submit_file} {path} {self.cluster_cpu}"
+            f" -t 1-{n_tasks}:1 {DESYSubmitter.submit_file} {path} {self.cluster_cpu}"
         )
-        logger.debug(f"Ram per core: {self.ram_per_core}")
+        logger.info(f"Ram per core: {self.ram_per_core}")
         logger.info(f"{time.asctime(time.localtime())}: {submit_cmd}")
 
         self.make_cluster_submission_script()
 
-        process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
-        msg = process.stdout.read().decode()
-        logger.info(str(msg))
-        self.job_id = int(str(msg).split("job-array")[1].split(".")[0])
+        if not self.manual_submit:
+            process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
+            msg = process.stdout.read().decode()
+            logger.info(str(msg))
+            self.job_id = int(str(msg).split("job-array")[1].split(".")[0])
+        else:
+            input(
+                f"Running in 'manual_submit' mode. Login to a submission host and launch the following command:\n"
+                f"{submit_cmd}\n"
+                f"Press enter to continue after the jobs are finished.\n"
+                f"[ENTER]"
+            )
 
     # @staticmethod
     # def _wait_for_cluster(job_ids=None):
