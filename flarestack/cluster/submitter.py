@@ -334,6 +334,8 @@ class DESYSubmitter(Submitter):
         self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
 
         if not self.manual_submit:
+            print(shutil.which("qsub"))
+            print(shutil.which(DESYSubmitter.submit_cmd))
             if shutil.which(DESYSubmitter.submit_cmd) is None:
                 logger.warning(
                     f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. Forcing 'manual_submit' mode."
