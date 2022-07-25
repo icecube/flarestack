@@ -331,6 +331,15 @@ class DESYSubmitter(Submitter):
         )
         self.remove_old_logs = self.cluster_kwargs.get("remove_old_logs", True)
 
+        self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
+
+        if not self.manual_submit:
+            if shutil.which(DESYSubmitter.submit_cmd) is None:
+                logger.warning(
+                    f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. Forcing 'manual_submit' mode."
+                )
+                self.manual_submit = True
+
     @staticmethod
     def _qstat_output(qstat_command):
         """return the output of the qstat_command"""
@@ -472,14 +481,15 @@ class DESYSubmitter(Submitter):
 
         self.make_cluster_submission_script()
 
-        if shutil.which(DESYSubmitter.submit_cmd) is not None:
+        if self.manual_submit is not None:
             process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
             msg = process.stdout.read().decode()
             logger.info(str(msg))
             self.job_id = int(str(msg).split("job-array")[1].split(".")[0])
         else:
-            logger.warning(
-                f"Submit command {DESYSubmitter.submit_cmd} not found. If you are not running on a submission host, consider submitting the job manually by running on an enabled terminal the following command: \n {submit_cmd}"
+            print(
+                "Running in 'manual_submit' mode. Login to a submission host and launch the following command:\n",
+                submit_cmd,
             )
 
     # @staticmethod
