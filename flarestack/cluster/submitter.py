@@ -487,9 +487,11 @@ class DESYSubmitter(Submitter):
             logger.info(str(msg))
             self.job_id = int(str(msg).split("job-array")[1].split(".")[0])
         else:
-            print(
-                "Running in 'manual_submit' mode. Login to a submission host and launch the following command:\n",
-                submit_cmd,
+            input(
+                f"Running in 'manual_submit' mode. Login to a submission host and launch the following command:\n"
+                f"{submit_cmd}\n"
+                f"Press enter to continue after the jobs are finished.\n"
+                f"[ENTER]"
             )
 
     # @staticmethod
