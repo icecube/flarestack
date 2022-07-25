@@ -35,7 +35,7 @@ setuptools.setup(
         "numpy==1.23.1",
         "scipy==1.8.1",
         "setuptools==63.2.0",
-        "sphinx==5.0.2",
+        "sphinx==5.1.0",
     ],
     package_data={
         "flarestack": [
