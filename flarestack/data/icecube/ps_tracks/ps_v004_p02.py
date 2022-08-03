@@ -20,12 +20,14 @@ sample_name = "ps_tracks_v004_p02"
 dataset_path = "ps_tracks/version-004-p02"
 
 data_path = icecube_dataset_dir / dataset_path
-grl_path = ps_data_dir / "GRL"
+grl_path = data_path / "GRL"
 
 # the path handling is a bit hacky down the line, one day this will be fixed
 ps_data_dir = str(data_path) + "/"
 grl_data_dir = str(grl_path) + "/"
 
+
+# instantiate the empty dataset to populate
 ps_v004_p02 = IceCubeDataset()
 
 ##########################
