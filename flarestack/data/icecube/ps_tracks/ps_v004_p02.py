@@ -156,7 +156,7 @@ for yr in IC86_timerange:
 # add the combined season
 
 ic86_combo = IceCubeSeason(
-    season_name="IC86_1-10",
+    season_name="IC86_1-11",
     sample_name=sample_name,
     exp_path=[f"{ps_data_dir}IC86_{yr}_exp.npy" for yr in IC86_timerange],
     mc_path=mc_path,
