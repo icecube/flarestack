@@ -119,6 +119,13 @@ class ResultsHandler(object):
         # else:
         #     self.inj = None
 
+        # check if the analysis result is actually available
+        if not os.path.exists(inj_dir_name(self.name)):
+            logger.error(
+                f"Results directory not found at {load_dir}. Analysis '{self.name}' was never run successfully."
+            )
+            return None
+
         try:
             self.merge_pickle_data()
         except FileNotFoundError:
