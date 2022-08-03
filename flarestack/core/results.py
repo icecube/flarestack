@@ -112,13 +112,6 @@ class ResultsHandler(object):
         self.extrapolated_disc = False
         self.flux_to_ns = np.nan
 
-        # if self.show_inj:
-        self.inj = self.load_injection_values()
-        self._inj_dict = rh_dict["inj_dict"]
-        self._dataset = rh_dict["dataset"]
-        # else:
-        #     self.inj = None
-
         # check if the analysis result is actually available
         if not os.path.exists(inj_dir_name(self.name)):
             logger.error(
@@ -126,6 +119,13 @@ class ResultsHandler(object):
             )
             return None
 
+        # if self.show_inj:
+        self.inj = self.load_injection_values()
+        self._inj_dict = rh_dict["inj_dict"]
+        self._dataset = rh_dict["dataset"]
+        # else:
+        #     self.inj = None
+        
         try:
             self.merge_pickle_data()
         except FileNotFoundError:
