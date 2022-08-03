@@ -56,6 +56,8 @@ eff_a_plot_dir = dataset_plot_dir + "effective_area_plots/"
 energy_proxy_plot_dir = dataset_plot_dir + "energy_proxy_map/"
 ang_res_plot_dir = dataset_plot_dir + "angular_resolution_plots/"
 
+illustration_dir = plots_dir + "illustrations/"
+
 acc_f_dir = input_dir + "acceptance_functions/"
 SoB_spline_dir = input_dir + "SoB_splines/"
 energy_spline_dir = input_dir + "energy_pdf_splines/"
@@ -81,6 +83,7 @@ all_dirs = [
     plots_dir,
     SoB_spline_dir,
     analysis_dir,
+    illustration_dir,
     transients_dir,
     bkg_spline_dir,
     dataset_plot_dir,
