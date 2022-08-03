@@ -81,7 +81,6 @@ all_dirs = [
     plots_dir,
     SoB_spline_dir,
     analysis_dir,
-    illustration_dir,
     transients_dir,
     bkg_spline_dir,
     dataset_plot_dir,
