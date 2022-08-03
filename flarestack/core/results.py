@@ -113,9 +113,10 @@ class ResultsHandler(object):
         self.flux_to_ns = np.nan
 
         # check if the analysis result is actually available
+        inj_dir = inj_dir_name(self.name)
         if not os.path.exists(inj_dir_name(self.name)):
             logger.error(
-                f"Results directory not found at {load_dir}. Analysis '{self.name}' was never run successfully."
+                f"Results directory not found at {inj_dir}. Analysis '{self.name}' was never run successfully."
             )
             return None
 
@@ -125,7 +126,7 @@ class ResultsHandler(object):
         self._dataset = rh_dict["dataset"]
         # else:
         #     self.inj = None
-        
+
         try:
             self.merge_pickle_data()
         except FileNotFoundError:
