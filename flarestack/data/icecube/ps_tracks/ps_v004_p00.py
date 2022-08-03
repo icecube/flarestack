@@ -18,6 +18,14 @@ from flarestack.data.icecube.ic_season import (
 )
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+logger.warning(
+    "This dataset is known to have errors in the good run list (GRL). Consider updating to PSTracks v4.1 or v4.2"
+)
+
 icecube_dataset_dir = get_dataset_dir()
 
 ps_data_dir = icecube_dataset_dir + "ps_tracks/version-004-p00/"
