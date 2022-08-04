@@ -2,10 +2,14 @@ import numpy as np
 from numpy.lib.recfunctions import append_fields, rename_fields
 
 
-def calculate_source_weight(sources):
-    """Calculate the sum of the weight for a given sources. If normalised by
-    the weight assigned to all sources, this gives the fraction of the
-    diffuse flux that is produced by one source."""
+def calculate_source_weight(sources) -> float:
+    """
+    Depending on the dimension of the input, calculate:
+    - the sum of the weights for a vector of sources
+    - the absolute weight of an individual source.
+
+    Dividing the absolute weight of a single source by the sum of the weights of all sources in the catalogue gives the relative weight of the source, i.e. the fraction of the fitted flux that is produced by it. The fraction of the injected flux may be different, since the "injection weight modifier" is not accounted for.
+    """
     return np.sum(sources["base_weight"] * sources["distance_mpc"] ** -2)
 
 
