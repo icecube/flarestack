@@ -112,14 +112,6 @@ class ResultsHandler(object):
         self.extrapolated_disc = False
         self.flux_to_ns = np.nan
 
-        # check if the analysis result is actually available
-        inj_dir = inj_dir_name(self.name)
-        if not os.path.exists(inj_dir_name(self.name)):
-            logger.error(
-                f"Results directory not found at {inj_dir}. Analysis '{self.name}' was never run successfully."
-            )
-            return None
-
         # if self.show_inj:
         self.inj = self.load_injection_values()
         self._inj_dict = rh_dict["inj_dict"]
