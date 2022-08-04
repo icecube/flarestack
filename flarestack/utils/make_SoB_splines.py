@@ -579,7 +579,9 @@ def load_spline(season, **kwargs):
         with open(path, "rb") as f:
             res = Pickle.load(f)
     except (FileNotFoundError, ModuleNotFoundError):
-        logger.info(f"No cached or incompatible spline found at {path}. Creating this file instead.")
+        logger.info(
+            f"No cached or incompatible spline found at {path}. Creating this file instead."
+        )
         logger.info(f"Cause: {err}")
         make_individual_spline_set(season, path, **kwargs)
         with open(path, "rb") as f:
@@ -597,7 +599,9 @@ def load_bkg_spatial_spline(season):
         with open(path, "rb") as f:
             res = Pickle.load(f)
     except (FileNotFoundError, ModuleNotFoundError) as err:
-        logger.info(f"No cached or incompatible spline found at {path}. Creating this file instead.")
+        logger.info(
+            f"No cached or incompatible spline found at {path}. Creating this file instead."
+        )
         logger.info(f"Cause: {err}")
         make_background_spline(season)
         with open(path, "rb") as f:
