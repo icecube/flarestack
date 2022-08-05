@@ -578,7 +578,7 @@ def load_spline(season, **kwargs):
     try:
         with open(path, "rb") as f:
             res = Pickle.load(f)
-    except (FileNotFoundError, ModuleNotFoundError):
+    except (FileNotFoundError, ModuleNotFoundError) as err:
         logger.info(
             f"No cached or incompatible spline found at {path}. Creating this file instead."
         )
