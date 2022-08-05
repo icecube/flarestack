@@ -1412,7 +1412,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         res_dict=None,
         scale=None,
         upper_bound_level=6,
-        **kwargs
+        **kwargs,
     ):
         """
         Make a corner plot of likelohood scans
