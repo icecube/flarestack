@@ -21,6 +21,7 @@ def box_func(t, t0, t1):
 def decay_fct(t, t0, decay_time, truncation=np.inf):
     """
     Decay function that is equal to 0 before t0, equal to 1 at t0 and then decays with a decay time
+
     :param t: time to be evaluated
     :param t0: start time of the function
     :param decay_time: decay time
@@ -38,6 +39,7 @@ def decay_fct(t, t0, decay_time, truncation=np.inf):
 def decay_fct_integral(tstart, tend, t0, decay_time, truncation=np.inf):
     """
     The integral function of decay_function based on the analytical form
+
     :param tstart: float, integrating from
     :param tend: float, integrating to
     :param t0: float, parameter t0 in decay_function, start time of the decay function
@@ -677,6 +679,30 @@ class DetectorOnOffList(TimePDF):
 
 @TimePDF.register_subclass("decay")
 class DecayPDF(TimePDF):
+    r"""
+    Describing a decaying emission as expected for interacting supernovae (type IIn) following
+
+    Zirakashvili, V.N., und V.S. Ptuskin.
+    „Type IIn supernovae as sources of high energy astrophysical neutrinos“.
+    Astropart. Phys. 78 (2016): 28–34.
+    https://doi.org/10.1016/j.astropartphys.2016.02.004.
+
+    .. math::
+        \mathcal{T}(t) \varpropto \left( 1 + \frac{t}{t_{\mathrm{decay}}} \right)^{-1}
+
+    The elements in the `t_pdf_dict` are
+
+        - `decay_time`: :math:`t_{\mathrm{decay}}` in the equation above
+        - `decay_length`: A time after which :math:`\mathcal{T}(t)` is truncated such that
+
+    .. math::
+        \mathcal{T}(t) \varpropto \begin{cases}
+            \left( 1 + \frac{t}{t_{\mathrm{decay}}} \right)^{-1},\, &\mathrm{for}\, t < t_{\mathrm{length}} \\
+            0, &\mathrm{else}
+        \end{cases}
+
+    """
+
     def __init__(self, t_pdf_dict, season):
         TimePDF.__init__(self, t_pdf_dict, season)
 
@@ -687,9 +713,9 @@ class DecayPDF(TimePDF):
 
         self.decay_time = self.t_dict["decay_time"]
         self.decay_length = (
-            self.t_dict["decay_length"] if "decay_time" in self.t_dict else np.inf
+            self.t_dict["decay_length"] if "decay_length" in self.t_dict else np.inf
         )
-        if not "decay_time" in self.t_dict:
+        if not "decay_length" in self.t_dict:
             logger.warning("No decay length given! Assuming endless decay")
 
     def decay_function(self, t, t0):
