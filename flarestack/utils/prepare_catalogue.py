@@ -11,6 +11,10 @@ import logging
 import random
 import zlib
 from flarestack.shared import catalogue_dir
+
+""" 
+Previously `cat_dtype` was defined here. Old analyses import the type definition from this module.
+"""
 from flarestack.core.data_types import catalogue_dtype as cat_dtype
 
 
