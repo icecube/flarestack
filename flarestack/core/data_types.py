@@ -1,7 +1,7 @@
 import numpy as np
 
 """ Catalogue data type """
-cat_dtype = [
+catalogue_dtype = [
     ("ra_rad", np.float),
     ("dec_rad", np.float),
     ("base_weight", np.float),

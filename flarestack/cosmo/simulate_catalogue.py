@@ -4,7 +4,7 @@ from astropy.coordinates import Distance
 import os
 import logging
 from flarestack.shared import catalogue_dir
-from flarestack.utils.prepare_catalogue import cat_dtype
+from flarestack.core.data_types import catalogue_dtype
 from flarestack.cosmo.neutrino_cosmology import (
     define_cosmology_functions,
     integrate_over_z,
@@ -100,7 +100,7 @@ def simulate_transient_catalogue(
     if not np.logical_and(
         np.sum([os.path.isfile(x) for x in cat_names]) == len(cat_names), not resimulate
     ):
-        catalogue = np.empty(n_local, dtype=cat_dtype)
+        catalogue = np.empty(n_local, dtype=catalogue_dtype)
 
         catalogue["source_name"] = ["src" + str(i) for i in range(n_local)]
         catalogue["ra_rad"] = np.random.uniform(0.0, 2 * np.pi, n_local)

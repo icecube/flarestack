@@ -11,7 +11,7 @@ import logging
 import random
 import zlib
 from flarestack.shared import catalogue_dir
-from flarestack.core.data_types import cat_dtype
+from flarestack.core.data_types import catalogue_dtype as cat_dtype
 
 
 def single_source(sindec, ra_rad=np.pi):
