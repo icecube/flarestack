@@ -30,7 +30,7 @@ setuptools.setup(
         "coveralls==3.3.1",
         "healpy==1.16.1",
         "jupyter==1.0.0",
-        "matplotlib==3.5.2",
+        "matplotlib==3.5.3",
         "numexpr==2.8.3",
         "numpy==1.23.1",
         "scipy==1.9.0",
