@@ -34,7 +34,7 @@ setuptools.setup(
         "numexpr==2.8.3",
         "numpy==1.23.2",
         "scipy==1.9.0",
-        "setuptools==65.1.0",
+        "setuptools==65.2.0",
         "sphinx==5.1.1",
     ],
     package_data={
