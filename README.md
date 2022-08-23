@@ -110,4 +110,5 @@ If you use *flarestack* for analysis, please cite it! A DOI is provided by Zenod
 * Federica Bradascio [@fbradascio](https://github.com/fbradascio)
 * Simone Garrappa [@simonegarrappa](https://github.com/simonegarrappa)
 * Jannis Necker [@JannisNe](https://github.com/jannisne)
+* Massimilanio Lincetto [@mlincett](https://github.com/mlincett)
 * Robert Stein [@robertdstein](https://github.com/robertdstein)
