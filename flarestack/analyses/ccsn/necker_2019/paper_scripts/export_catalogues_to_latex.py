@@ -24,14 +24,14 @@ if __name__ == '__main__':
     with open(references_fn, "r") as f:
         references = json.load(f)
 
-    # set up dictionary to build reference map
-    used_refs = {"": 0}
-
     # build latex tables
 
     for cat_name in sn_cats:
         fn = updated_sn_catalogue_name(cat_name)
         cat = pd.DataFrame(np.load(fn)).sort_values("ref_time_mjd")
+
+        # set up dictionary to build reference map
+        used_refs = {"": 0}
 
         txt = ""
         for i, r in cat.iterrows():
@@ -73,12 +73,12 @@ if __name__ == '__main__':
         with open(latex_fn, "w") as f:
             f.write(txt)
 
-    # write reference map
+        # write reference map
 
-    refmap_fn = os.path.join(plot_output_dir(name_root), f"reference_map.tex")
-    logger.info(f"saving reference map under {refmap_fn}")
+        refmap_fn = os.path.join(plot_output_dir(name_root), f"{cat_name}_reference_map.tex")
+        logger.info(f"saving reference map under {refmap_fn}")
 
-    refmap = [f"({refnum}) \\citet{{{ref}}}" for ref, refnum in used_refs.items() if refnum > 0]
-    refmap_txt = ", ".join(refmap)
-    with open(refmap_fn, "w") as f:
-        f.write(refmap_txt)
+        refmap = [f"({refnum}) \\citet{{{ref}}}" for ref, refnum in used_refs.items() if refnum > 0]
+        refmap_txt = ", ".join(refmap)
+        with open(refmap_fn, "w") as f:
+            f.write(refmap_txt)
