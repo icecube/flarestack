@@ -113,5 +113,64 @@
   },
   "SN2014G": {
     "references": ["denisenkoSupernova2014GNGC2014"]
+  },
+  "MASTER OT J120451.50+265946.6": {
+    "references": ["chandraTypeIbSupernova2019", "singhObservationalPropertiesType2019", "srivastavSpectroscopicClassificationMASTER2014"]
+  },
+  "SN2012fh": {
+    "references": ["johnsonProgenitorTypeIbc2017", "takakiSupernova2012fhNGC2012", "tomasellaSupernova2012fhNGC2012"]
+  },
+  "SN2008dv": {
+    "references": ["silvermanSupernovae2008dv2008dz2008"]
+  },
+  "SN2011dh": {
+    "references": ["silvermanSupernovae2008dv2008dz2008"]
+  },
+  "SN2013df": {
+    "references": ["ciabattariSupernova2013dfNGC2013", "vandykTypeIIbSupernova2014"]
+  },
+  "SN2011jm": {
+    "references": ["foleySupernova2011jmNGC2011"]
+  },
+  "SN2014C": {
+    "references": ["kimSupernova2014CNGC2014", "milisavljevicMetamorphosisSN2014C2015", "tinyanontSystematicStudyMidinfrared2016"]
+  },
+  "SN2010br": {
+    "references": ["maxwellSupernova2010brNGC2010"]
+  },
+  "iPTF13bvn": {
+    "references": ["fremlingPTF12osIPTF13bvnTwo2016","caoDiscoveryProgenitorEarly2013", "milisavljevicOpticalSpectroscopyIPTF13bvn2013", "srivastavOpticalObservationsFast2014"]
+  },
+  "SN2012cw": {
+    "references": ["itagakiSupernova2012cwNGC2012", "wangSupernova2012cwNGC2012"]
+  },
+  "SN2013ge": {
+    "references": ["droutDoublepeakedSN2013ge2016", "nakanoSupernova2013geNGC2013"]
+  },
+  "PTF12os": {
+    "references": ["borsatoSupernova2012PNGC2012", "fremlingPTF12osIPTF13bvnTwo2016"],
+    "aliases": ["SN2012P"],
+    "show_name": "SN2012P"
+  },
+  "SN2008ax": {
+    "references": ["chornockSupernova2008axNGC2008", "pastorelloTypeIIbSN2008"]
+  },
+  "SN2007gr": {
+    "references": ["chornockSupernova2007grNGC2007", "valentiCarbonrichTypeIc2008"]
+  },
+  "SN2009dq": {
+    "references": ["andersonSupernovae2009dp2009dq2009"]
+  },
+  "SN2009gj": {
+    "references": ["stockdaleSupernova2009gjNGC2009"]
+  },
+  "SN2010gi": {
+    "references": ["yamanakaSupernova2010giIC2010"]
+  },
+  "SN2009mk": {
+    "references": ["chornockSupernova2009mkPgc2009", "marplesSupernova2009mkPgc2009"]
+  },
+  "SN2009mu": {
+    "references": ["stritzingerSupernova2009muESO2010"]
   }
 }
