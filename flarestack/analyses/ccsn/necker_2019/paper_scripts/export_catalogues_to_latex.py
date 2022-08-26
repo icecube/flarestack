@@ -36,27 +36,20 @@ if __name__ == '__main__':
         txt = ""
         for i, r in cat.iterrows():
 
-            if r.source_name in references:
+            # get the reference number
+            refs = references[r.source_name]["references"]
+            cite_strings = [f"\citet{{{ref}}}" for ref in refs]
+            cite_string = ", ".join(cite_strings)
+            ref_numbers = list()
+            for ref in refs:
 
-                # get the reference number
-                refs = references[r.source_name]["references"]
-                cite_strings = [f"\citet{{{ref}}}" for ref in refs]
-                cite_string = ", ".join(cite_strings)
-                ref_numbers = list()
-                for ref in refs:
+                # if reference is not in the reference map, make the entry
+                if not ref in used_refs:
+                    used_refs[ref] = max(used_refs.values()) + 1
+                ref_numbers.append(used_refs[ref])
 
-                    # if reference is not in the reference map, make the entry
-                    if not ref in used_refs:
-                        used_refs[ref] = max(used_refs.values()) + 1
-                    ref_numbers.append(used_refs[ref])
-
-                show_numbers = ", ".join(np.array(ref_numbers).astype(str))
-                sn_name = references[r.source_name].get("show_name", r.source_name)
-
-            # TODO: remove, should never end up here
-            else:
-                show_numbers = cite_string = "NO REFS!!!"
-                sn_name = r.source_name
+            show_numbers = ", ".join(np.array(ref_numbers).astype(str))
+            sn_name = references[r.source_name].get("show_name", r.source_name)
 
             txt += (
                 f"{sn_name:30} & "
