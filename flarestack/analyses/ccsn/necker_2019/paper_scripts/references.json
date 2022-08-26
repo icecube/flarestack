@@ -1,0 +1,117 @@
+{
+  "SN2014bc": {
+    "references": ["ochnerAsiagoClassificationPS114xz2014"]
+  },
+  "SN2011ja": {
+    "references": ["andrewsEarlyDustFormation2016"]
+  },
+  "SN2013ej": {
+    "references": ["dhunganaExtensiveSpectroscopyPhotometry2016"]
+  },
+  "SN2006ov": {
+    "references": ["liProgenitorsTwoType2007"]
+  },
+  "SNhunt141": {
+    "references": ["cellier-holzemPESSTOSpectroscopicClassification2012"]
+  },
+  "iPTF13aaz": {
+    "references": ["benettiPSNJ1118569513034942013"],
+    "aliases": ["SN2013am"],
+    "show_name": "SN2013am"
+  },
+  "SN2009js": {
+    "references": ["gandhiSN2009jsCrossroads2013"]
+  },
+  "iPTF13ut": {
+    "references": ["boseSN2013abNormal2015"],
+    "aliases": ["SN2013ab"],
+    "show_name": "SN2013ab"
+  },
+  "SN2012ab": {
+    "references": ["bilinskiSN2012abPeculiarType2018"]
+  },
+  "PSN J14041297-0938168": {
+    "references": ["challisSpectraIDRecent2013a"]
+  },
+  "MASTER OT J044212.20+230616.7": {
+    "references": ["shivversSpectroscopicClassificationMASTER2014"]
+  },
+  "PSN J13522411+3941286": {
+    "references": ["zhangSpectroscopicClassificationPSN2015", "tartagliaLonglivedTypeIIn2020"],
+    "aliases": ["SN2015da", "iPTF16tu"],
+    "show_name": "SN2015da"
+  },
+  "SN1999em": {
+    "references": ["jhaSupernova1999emNGC1999"]
+  },
+  "SN2004dj": {
+    "references": ["patatSupernova2004djNGC2004"]
+  },
+  "SN2005cs": {
+    "references": ["modjazSupernova2005csM512005", "pastorelloSN2005csM512009"]
+  },
+  "SN208S": {
+    "references": ["stanishevSupernova2008SNGC2008"]
+  },
+  "SN2009md": {
+    "references": ["sollermanSupernova2009mdNGC2009"]
+  },
+  "PTF10aaxf": {
+    "references": ["benettiSupernova2010jlUGC2010"],
+    "aliases": ["SN2010jl"],
+    "show_name": "SN2010jl"
+  },
+  "SN2011an": {
+    "references": ["marionSupernova2011anUGC2011"]
+  },
+  "SN2011dq": {
+    "references": ["valentiSupernova2011dqNGC2011"]
+  },
+  "SN2011ht": {
+    "references": ["prietoSupernova2011htUGC2011"]
+  },
+  "SN2012A": {
+    "references": ["stanishevSupernova2012ANGC2012"]
+  },
+  "SN2012aw": {
+    "references": ["quadriSupernova2012awM952012"]
+  },
+  "SN2012ec": {
+    "references": ["monardSupernova2012ecNGC2012"]
+  },
+  "SN2013bu": {
+    "references": ["itagakiSupernova2013buNGC2013"]
+  },
+  "SN2013gc": {
+    "references": ["antezanaSupernova2013gcESO2013"]
+  },
+  "SN2008bk": {
+    "references": ["morrellSupernovae2008bk2008br2008"]
+  },
+  "SN2009kr": {
+    "references": ["steeleSupernovae2009kn2009ko2009"]
+  },
+  "SN2009mf": {
+    "references": ["steeleSupernovae2009lu2009md2009"]
+  },
+  "SN2004et": {
+    "references": ["zwitterSupernova2004etNGC2004", "liProgenitorTypeII2005"]
+  },
+  "CSS140111:060437-123740": {
+    "references": ["challisSpectraIDRecent2013a"],
+    "aliases": ["TCP J06043671-1237406", "SNhunt223"],
+    "show_name": "CSS140111:060437-123740"
+  },
+  "SN2002bu": {
+    "references": ["kochanekUnmaskingSupernovaImpostors2012", "smithLuminousBlueVariable2011a", "szczygielSN2002buAnother2012"]
+  },
+  "SN1999bw": {
+    "references": ["kochanekUnmaskingSupernovaImpostors2012", "smithLuminousBlueVariable2011a"]
+  },
+  "SN2013by": {
+    "references": ["marguttiXrayEmissionPosition2013", "parkerSupernova2013byESO2013"]
+  },
+  "SN2014G": {
+    "references": ["denisenkoSupernova2014GNGC2014"]
+  }
+}
