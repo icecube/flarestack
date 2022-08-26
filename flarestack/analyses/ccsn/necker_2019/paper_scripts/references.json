@@ -50,7 +50,7 @@
   "SN2005cs": {
     "references": ["modjazSupernova2005csM512005", "pastorelloSN2005csM512009"]
   },
-  "SN208S": {
+  "SN2008S": {
     "references": ["stanishevSupernova2008SNGC2008"]
   },
   "SN2009md": {
@@ -123,8 +123,10 @@
   "SN2008dv": {
     "references": ["silvermanSupernovae2008dv2008dz2008"]
   },
-  "SN2011dh": {
-    "references": ["silvermanSupernovae2008dv2008dz2008"]
+  "PTF11eon": {
+    "references": ["silvermanSupernovae2008dv2008dz2008"],
+    "aliases": ["SN2011dh"],
+    "show_name": "SN2011dh"
   },
   "SN2013df": {
     "references": ["ciabattariSupernova2013dfNGC2013", "vandykTypeIIbSupernova2014"]
