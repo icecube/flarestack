@@ -3,7 +3,6 @@
 import numpy as np
 import math, pickle, os, logging, time, shutil
 from flarestack.core.results import ResultsHandler, OverfluctuationError
-from flarestack.core.experimental_results import ExperimentalResultHandler
 from flarestack.data.icecube import ps_v002_p03
 from flarestack.shared import (
     flux_to_k,
@@ -20,7 +19,6 @@ from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
     raw_output_dir,
     pdf_names,
 )
-from flarestack.cluster import analyse
 from flarestack.cluster.run_desy_cluster import wait_for_cluster
 from flarestack.utils.custom_dataset import custom_dataset
 
@@ -300,7 +298,6 @@ if __name__ == "__main__":
                             sens_rh = ResultsHandler(
                                 sens_mh_dict, do_disc=False, do_sens=False
                             )
-                            # sens_rh = ExperimentalResultHandler(sens_mh_dict, do_sens=False, do_disc=False)
                             bkg_res = sens_rh.results[scale_shortener(0.0)]
 
                             # load the signal trials
@@ -309,7 +306,6 @@ if __name__ == "__main__":
                                 logging.info(
                                     "----------- loading energy range calculations ------------"
                                 )
-                                # rh = ExperimentalResultHandler(mh_dict, do_sens=False, do_disc=False)
                                 rh = ResultsHandler(
                                     mh_dict, do_sens=False, do_disc=False
                                 )
