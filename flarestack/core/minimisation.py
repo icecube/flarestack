@@ -985,7 +985,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             )
 
             # ----- make a colorbar ----- #
-            cbar = fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap))
+            cbar = fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax)
 
         # ----------- draw contours ------------- #
         levels = 0.5 * np.array([1.0, 2.0, 5.0]) ** 2
