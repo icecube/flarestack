@@ -1,5 +1,6 @@
 import numpy as np
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+from flarestack.data.icecube import ps_v002_p03
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
     sn_cats,
     sn_times,
@@ -49,7 +50,7 @@ for cat in sn_cats:
                 "name": name,
                 "ts_type": "Fit Weights",
                 "mh_name": "fit_weights",
-                "dataset": custom_dataset(ps_v002_p01, catalogue, llh_time),
+                "dataset": custom_dataset(ps_v002_p03, catalogue, llh_time),
                 "catalogue": cat_path,
                 "llh_dict": unblind_llh,
                 "background_ts": f"{bkg_ts}/{time}/",
