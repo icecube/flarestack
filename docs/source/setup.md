@@ -21,7 +21,7 @@ poetry add flarestack
 
 This will resolve your environment and install all dependencies.
 
-A less flexible option is to use *pip*
+Another option is to use *pip*
 ```bash
 pip install flarestack.
 ```
