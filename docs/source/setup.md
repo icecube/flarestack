@@ -12,12 +12,19 @@ The "Binder" provides a pre-built Docker image containing all necessary dependen
 
 ### OPTION A: I only want to do an analysis, and trust the under-the-hood code
 
+We recommend installing flarestack using [*poetry*](https://python-poetry.org)
+
 In that case:
 ```bash
-pip install flarestack
+poetry add flarestack
 ```
- 
-The entire package can simply be pip installed, and this will automatically install all dependencies.
+
+This will resolve your environment and install all dependencies.
+
+A less flexible option is to use *pip*
+```bash
+pip install flarestack.
+```
 
  ### OPTION B: Actually, I want to see the backend code myself. Maybe I want to contribute to it!
  
