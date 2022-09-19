@@ -4,7 +4,7 @@ version = "2.4.5"
 description = "Package for unbinned likelihood analysis of physics data"
 authors = ["Robert Stein <rdstein@caltech.edu>"]
 maintainers = [
-    "Robert Stein <robert.stein@desy.de>",
+    "Robert Stein <rdstein@caltech.edu>",
     "Jannis Necker <jannis.necker@desy.de>",
     "Massimiliano Lincetto <lincetto@astro.ruhr-uni-bochum.de>"
 ]
