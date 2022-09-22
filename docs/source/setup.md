@@ -12,25 +12,50 @@ The "Binder" provides a pre-built Docker image containing all necessary dependen
 
 ### OPTION A: I only want to do an analysis, and trust the under-the-hood code
 
+We recommend installing flarestack using [*poetry*](https://python-poetry.org)
+
 In that case:
 ```bash
-pip install flarestack
+poetry add flarestack
 ```
- 
-The entire package can simply be pip installed, and this will automatically install all dependencies.
+
+This will resolve your environment and install all dependencies.
+
+Another option is to use *pip*
+```bash
+pip install flarestack.
+```
 
  ### OPTION B: Actually, I want to see the backend code myself. Maybe I want to contribute to it!
  
- Now you will need a couple of extra code lines:
+ Now you will need a couple of extra code lines.
+
+First clone the `git` repository:
 
 ```bash
 git clone git@github.com:icecube/flarestack.git
+```
+
+We again recommend using `poetry` to install the code in your working tree. 
+For this, go to the directory you cloned the repo into (i.e. `~/flarestack`) and execute:
+
+```bash
+poetry install
+```
+This will install all packages as documented in the `poetry.lock` file.
+
+
+You can still use `pip` if you want to:
+
+```bash
 pip install -e flarestack/
 ```
  
-This will give you the very latest copy of the code, update the installed version if you git pull or modify scripts yourself, and still enable you to import flarestack.
+Either way will give you the very latest copy of the code, update the installed version if you git pull or modify scripts 
+yourself, and still enable you to import flarestack.
 
-If you do want to contribute to _flarestack_, you can check out some guidelines [here](https://github.com/icecube/flarestack/blob/master/.github/CONTRIBUTING.md).
+If you do want to contribute to _flarestack_, you can check out some guidelines 
+[here](https://github.com/icecube/flarestack/blob/master/.github/CONTRIBUTING.md).
 
 
 ## Right, anyway, I've now downloaded *flarestack*. Can I use it right away?
