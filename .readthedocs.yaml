@@ -13,6 +13,8 @@ build:
       - $HOME/.local/bin/poetry config virtualenvs.create false
       # Install project's dependencies
       - $HOME/.local/bin/poetry install --with docs
+      # test print myst_nb version
+      - $HOME/.local/bin/poetry run python -c "import myst_nb; print(myst_nb.__version__)"
 
 python:
    install:
