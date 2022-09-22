@@ -15,9 +15,17 @@ and when you finish and issue you can close it with a commit too! (e.g `git comm
 
 ### 2. Use Pull Requests
 After you checked GitHub Issues and found that no one else is working on your idea, be the hero and do so yourself!
-Create a new branch, implement your changes and when you're done, request review by the current maintainers 
-(you can find who that is in the documentation). This ensures that the people in charge know what's going on and can
-keep an overview over the changes.
+
+#### Major contribution
+Create a new branch and implement your changes and when you're done, 
+request review by the current maintainers (you can find who that is in the documentation). 
+This ensures that the people in charge know what's going on and can keep an overview over the changes. 
+You can expect reviewers to give an answer within about a week. Do not hesitate to contact them if there is no reaction
+within that time.
+
+#### Small minor change
+If you want to only make small minor changes, you can also do so directly on the `master` branch 
+(given you have the permission). If in doubt please do take the detour through the review route!
 
 ### 3. Keep the CI happy!
 GitHub Actions runs all of our unit tests (also for non-master branches), to make sure you didn't break anything with your commit. 
