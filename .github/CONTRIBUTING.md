@@ -60,3 +60,5 @@ You should also create a `readme.md`/`readme.txt` file in your analysis director
 listing the software you used, including all catalogues, 
 and giving some brief instructions for how another person would reproduce your results. 
 An example can be found [here](https://github.com/icecube/flarestack/blob/master/flarestack/analyses/tde/README.txt).
+In general, be sure to follow the most up-to-date reproducibility guidelines of the Collaboration.
+While it has been done in the past, storage of data such as catalogues in the flarestack repository is not currently recommended.
