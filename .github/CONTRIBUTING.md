@@ -24,8 +24,10 @@ You can expect reviewers to give an answer within about a week. Do not hesitate 
 within that time.
 
 #### Small minor change
-If you want to only make small minor changes, you can also do so directly on the `master` branch 
-(given you have the permission). If in doubt please do take the detour through the review route!
+If you want to only make small minor changes, you should also create a branch and submit a pull request. 
+But if your changes are minimal and do not touch core functionality (and you have the GitHib access rights), 
+you can also merge your pull request directly. 
+If in doubt please do take the detour through the review route!
 
 ### 3. Keep the CI happy!
 GitHub Actions runs all of our unit tests (also for non-master branches), to make sure you didn't break anything with your commit. 
