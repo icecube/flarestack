@@ -14,7 +14,7 @@ build:
       # Install project's dependencies
       - $HOME/.local/bin/poetry install --with docs
       # test print myst_nb version
-      - python -c "import myst_nb; print(nbsphinx.__version__)"
+      - python -c "import nbsphinx; print(nbsphinx.__version__)"
 
 python:
    install:
