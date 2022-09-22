@@ -1,8 +1,8 @@
 # Contributing to _flarestack_
 
-Since _flarestack_ is an open-source software project, *anyone* can contribute it. You simply need to create a fork of the repository, commit your changes, and then make a pull request.
+Since _flarestack_ is a free and open-source software project, *anyone* can contribute it. You simply need to create a fork of the repository, commit your changes, and then make a pull request.
 
-If you are a member of the IceCube collaboration, you can also ask for permission to commit changes directly to the master branch. 
+If you are a member of the IceCube collaboration, you can also ask for permission to merge directly to the master branch. 
 
 In either case, we have a few general guidelines that are helpful for keeping things organised:
 
@@ -14,18 +14,18 @@ Every time you make a relevant commit, remember to tag the issue (e.g `git commi
 and when you finish and issue you can close it with a commit too! (e.g `git commit -m 'Close #12`')
 
 ### 2. Use Pull Requests
-After you checked GitHub Issues and found that no one else is working on your idea, be the hero and do so yourself!
+After you checked GitHub Issues and found that no one else is working on your idea, be the hero and do so yourself! Create a branch to track your development and submit a PR when it is ready.
 
 #### Major contribution
 Create a new branch and implement your changes and when you're done, 
-request review by the current maintainers (you can find who that is in the documentation). 
+request review by the current maintainers (you can find who they are in the documentation). 
 This ensures that the people in charge know what's going on and can keep an overview over the changes. 
 You can expect reviewers to give an answer within about a week. Do not hesitate to contact them if there is no reaction
 within that time.
 
-#### Small minor change
-If you want to only make small minor changes, you should also create a branch and submit a pull request. 
-But if your changes are minimal and do not touch core functionality (and you have the GitHib access rights), 
+#### Minor changes
+If you want to only make minor changes, you should also create a branch and submit a pull request. 
+But if your changes are minimal and do not touch core functionality (and you have the GitHub access rights), 
 you can also merge your pull request directly. 
 If in doubt please do take the detour through the review route!
 
@@ -36,7 +36,7 @@ You can see if travis is happy by checking on the GitHub page
 [![CI](https://github.com/icecube/flarestack/actions/workflows/continous_integration.yml/badge.svg)](https://github.com/icecube/flarestack/actions/workflows/continous_integration.yml), 
 or a tick/cross next to your commit), or on the [GitHub actions website](https://github.com/icecube/flarestack/actions). 
 If your commit failed, be sure to check the logs, to see exactly what went wrong. 
-If you have access to the IceCube slack, 
+If you have access to the IceCube Slack, 
 you will see Travis posting directly in the #flarestack channel after each commit.
 
 ### 4. Keep the CI busy!
@@ -52,7 +52,7 @@ If you want to know more about how to design unit tests, you can check out a gui
 [here](https://medium.com/swlh/introduction-to-unit-testing-in-python-using-unittest-framework-6faa06cc3ee1).
 
 ### 5. Keep your analysis reproducible! 
-If you are a member of the Icecube collaboration that is ready for an analysis unblinding, 
+If you are a member of the IceCube Collaboration that is ready for an analysis unblinding, 
 you should create a release of the flarestack software beforehand and include it in your analysis wiki. 
 This ensures that, in the future, anyone can reproduce your analysis exactly by downloading the same version of 
 your software. 
