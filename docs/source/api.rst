@@ -1,7 +1,10 @@
 API
 ===
-
-
+###############
+Data types
+###############
+.. automodule:: flarestack.core.data_types
+    :members:
 
 ###############
 Base PDFs
