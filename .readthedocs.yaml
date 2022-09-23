@@ -12,9 +12,12 @@ build:
       # Tell poetry to not use a virtual environment
       - $HOME/.local/bin/poetry config virtualenvs.create false
       # Install project's dependencies
-      - $HOME/.local/bin/poetry install
+      - $HOME/.local/bin/poetry install --with docs
+      # export to pip installable req.txt
+      - $HOME/.local/bin/poetry export -f requirements.txt -o docs/req.txt --with docs
 
 python:
    install:
-   - method: pip
-     path: .
+     - requirements: docs/req.txt
+     - method: pip
+       path: .

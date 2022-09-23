@@ -1,5 +1,5 @@
 # flarestack
-[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=latest)](https://flarestack.readthedocs.io/en/latest/?badge=latest) 
+[![Documentation Status](https://readthedocs.org/projects/flarestack/badge/?version=master)](https://flarestack.readthedocs.io/en/latest/?badge=master) 
 [![CI](https://github.com/icecube/flarestack/actions/workflows/continous_integration.yml/badge.svg)](https://github.com/icecube/flarestack/actions/workflows/continous_integration.yml) 
 [![PyPI version](https://badge.fury.io/py/flarestack.svg)](https://badge.fury.io/py/flarestack) 
 [![Coverage Status](https://coveralls.io/repos/github/icecube/flarestack/badge.svg?branch=master)](https://coveralls.io/github/icecube/flarestack?branch=master) 

@@ -37,6 +37,16 @@ sphinx = "^5.1.1"
 
 [tool.poetry.dev-dependencies]
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+Sphinx = "^5.1.1"
+sphinx-rtd-theme = "^1.0.0"
+myst-parser = "^0.18.0"
+nbsphinx = "^0.8.9"
+myst-nb = "^0.16.0"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
