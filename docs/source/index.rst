@@ -14,13 +14,18 @@ Welcome to Flarestack's documentation!
 
 by Robert Stein `@robertdstein <https://github.com/robertdstein>`_
 
-Contributions by
+Currently also maintained by
+
+* Jannis Necker `@JannisNe <https://github.com/jannisne>`_
+
+* Massimiliano Lincetto `@mlincett <https://github.com/mlincett>`_
+
+More contributions by
 
 * Federica Bradascio `@fbradascio <https://github.com/fbradascio>`_
 
 * Simone Garrappa `@simonegarrappa <https://github.com/simonegarrappa>`_
 
-* Jannis Necker `@JannisNe <https://github.com/jannisne>`_
 
 Code for unbinned likelihood analysis of astroparticle physics data.
 Both time-dependent and time-independent analyses can be performed, as well as a "flare-search" algorithm to find event clustering in time as well as space.
