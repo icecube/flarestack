@@ -49,6 +49,7 @@ CONTENTS
 
 .. toctree::
    setup
+   data_types
    flarestack_llh_workshop
    api
    :maxdepth: 2
