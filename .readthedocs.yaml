@@ -13,10 +13,11 @@ build:
       - $HOME/.local/bin/poetry config virtualenvs.create false
       # Install project's dependencies
       - $HOME/.local/bin/poetry install --with docs
-      # test print myst_nb version
-      - python -c "import nbsphinx; print(nbsphinx.__version__)"
+      # export to pip installable req.txt
+      - $HOME/.local/bin/poetry export -f requirements.txt -o docs/req.txt --with docs
 
 python:
    install:
-   - method: pip
-     path: .
+     - requirements: docs/req.txt
+     - method: pip
+       path: .
