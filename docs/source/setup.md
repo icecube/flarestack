@@ -84,6 +84,13 @@ export FLARESTACK_SCRATCH_DIR=/path/to/scratch
 
 A folder `flarestack__data` will be created in that directory. This is where you will find plots, pickle files and other files produced by the code.
 
+## Building documentation
+*flarestack* documentation is available at [Read the Docs](flarestack.readthedocs.io), however you may want to build it locally (especially if you are contributing to the project). To do this, run `sphinx-build` from the root directory of the repository:
+
+```bash
+sphinx-build -b html docs/source/ docs/build/html
+```
+
 ## Testing *flarestack*
 
 Is *flarestack* actually working? You can check the functionality of *flarestack* with *unit tests*. There are a suite of unit tests to cover *flarestack* functionality, which can be run from the base *flarestack* directory with:
