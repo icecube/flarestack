@@ -43,7 +43,7 @@ This will resolve your environment and install all dependencies.
 
 Another option is to use *pip*
 ```bash
-pip install flarestack.
+pip install flarestack
 ```
 
  ### OPTION B: Actually, I want to see the backend code myself. Maybe I want to contribute to it!
@@ -62,6 +62,11 @@ poetry install
 ```
 This will install all packages as documented in the `poetry.lock` file.
 
+If you want to also build the documentation locally, you should install the respective dependencies:
+
+```bash
+poetry install --with docs
+```
 
 You can still use `pip` if you want to:
 
