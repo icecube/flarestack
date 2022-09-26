@@ -4,7 +4,7 @@ The module `core.data_types` is meant to collect different data types used by th
 Currently, it only includes `catalogue_dtype`.
 
 ## Catalogue
-A *flarestack* catalogue takes the form of a `numpy` [https://numpy.org/doc/stable/user/basics.rec.html](structured array), consisting of the following fields:
+A *flarestack* catalogue takes the form of a `numpy` [structured array](https://numpy.org/doc/stable/user/basics.rec.html), consisting of the following fields:
 - `ra_rad` (`np.float`): right ascension (J2000.0) of the source in radians;
 - `dec_rad` (`np.float`): declination of the source in radians;
 - `base_weight` (`np.float`): base weight of the source for injection and fitting. Base weights should **not** include the distance scaling (this is handled implicitly by *flarestack*). *flarestack* takes care of normalising base weights to their sum, so the absolute scale of `base_weight` is not important.
