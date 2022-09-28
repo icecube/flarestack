@@ -12,17 +12,10 @@ import random
 import zlib
 from flarestack.shared import catalogue_dir
 
-cat_dtype = [
-    ("ra_rad", np.float),
-    ("dec_rad", np.float),
-    ("base_weight", np.float),
-    ("injection_weight_modifier", np.float),
-    ("ref_time_mjd", np.float),
-    ("start_time_mjd", np.float),
-    ("end_time_mjd", np.float),
-    ("distance_mpc", np.float),
-    ("source_name", "a30"),
-]
+""" 
+Previously `cat_dtype` was defined here. Old analyses import the type definition from this module.
+"""
+from flarestack.core.data_types import catalogue_dtype as cat_dtype
 
 
 def single_source(sindec, ra_rad=np.pi):
