@@ -12,6 +12,8 @@ from flarestack.data.icecube.ic_season import (
 )
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 
+from flarestack.data.dataset_index import dataset_index
+
 sample_name = "ps_tracks_v004_p02"
 
 dataset_path = "ps_tracks/version-004-p02"
@@ -168,3 +170,9 @@ ps_v004_p02.add_season(ic86_combo)
 ########################
 #  END ADDING SEASONS  #
 ########################
+
+#########################
+#  ADD ITSELF TO INDEX  #
+#########################
+
+dataset_index.add_dataset("icecube." + sample_name, ps_v004_p02)
