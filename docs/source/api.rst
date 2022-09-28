@@ -1,7 +1,13 @@
-API
-===
-
-
+..
+    As long as data types are defined as names (instead of classes), it is not possible to provide a sphinx-friendly docstring.
+..
+    API
+    ===
+    ###############
+    Data types
+    ###############
+    .. automodule:: flarestack.core.data_types
+        :members:
 
 ###############
 Base PDFs
