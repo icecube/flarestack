@@ -50,6 +50,8 @@ class ResultsHandler(object):
 
         self.allow_extrapolation = rh_dict.get("allow_extrapolated_sensitivity", True)
 
+        self.valid = True
+
         # Checks if the code should search for flares. By default, this is
         # not done.
         # self.flare = self.mh_name == "flare"
@@ -112,12 +114,20 @@ class ResultsHandler(object):
         self.extrapolated_disc = False
         self.flux_to_ns = np.nan
 
-        # if self.show_inj:
-        self.inj = self.load_injection_values()
-        self._inj_dict = rh_dict["inj_dict"]
-        self._dataset = rh_dict["dataset"]
-        # else:
-        #     self.inj = None
+        try:
+            # if self.show_inj:
+            self.inj = self.load_injection_values()
+            self._inj_dict = rh_dict["inj_dict"]
+            self._dataset = rh_dict["dataset"]
+            # else:
+            #     self.inj = None
+        except FileNotFoundError as err:
+            logger.error(
+                "Unable to load injection values. Have you run this analysis at least once?"
+            )
+            logger.error(err)
+            self.valid = False
+            return
 
         try:
             self.merge_pickle_data()
@@ -148,6 +158,15 @@ class ResultsHandler(object):
                 logger.warning("TypeError for discovery potential: \n {0}".format(e))
             except ValueError as e:
                 logger.warning("TypeError for discovery potential: \n {0}".format(e))
+
+    def is_valid(self):
+        """If results are valid, returns True.
+            If something went wrong during the instantiation, returns False.
+
+        Returns:
+            bool: whether results are valid or not.
+        """
+        return self.valid
 
     @property
     def scales_float(self):
