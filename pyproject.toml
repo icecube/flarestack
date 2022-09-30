@@ -1,0 +1,52 @@
+[tool.poetry]
+name = "flarestack"
+version = "2.4.5"
+description = "Package for unbinned likelihood analysis of physics data"
+authors = ["Robert Stein <rdstein@caltech.edu>"]
+maintainers = [
+    "Robert Stein <rdstein@caltech.edu>",
+    "Jannis Necker <jannis.necker@desy.de>",
+    "Massimiliano Lincetto <lincetto@astro.ruhr-uni-bochum.de>"
+]
+license = "MIT"
+repository = "https://github.com/icecube/flarestack"
+documentation = "https://flarestack.readthedocs.io/en/latest/?badge=latest"
+keywords = ["astroparticle physics", "science", "unbinned likelihood", "IceCube"]
+readme = "README.md"
+classifiers = [
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8, <3.12"
+astropy = "^5.1"
+black = "^22.6.0"
+coveralls = "^3.3.1"
+healpy = "^1.16.1"
+jupyter = "^1.0.0"
+matplotlib = "^3.5.2"
+numexpr = "^2.8.3"
+numpy = "^1.23.1"
+scipy = "^1.9.0"
+sphinx = "^5.1.1"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+Sphinx = "^5.1.1"
+sphinx-rtd-theme = "^1.0.0"
+myst-parser = "^0.18.0"
+nbsphinx = "^0.8.9"
+myst-nb = "^0.16.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

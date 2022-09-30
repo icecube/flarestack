@@ -1,12 +1,9 @@
 """
-    This is a work in progress implementation of the PS Tracks v4.2 dataset
-
-    For changes, see the readme file contained in the
-    dataset folder and the presentations here:
+    This is the interface to the IceCube PS Tracks v4.2 dataset
+    For further information, see the readme file contained in the dataset folder.
 """
 
 import numpy as np
-from flarestack import data
 
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
@@ -14,6 +11,8 @@ from flarestack.data.icecube.ic_season import (
     icecube_dataset_dir,
 )
 from flarestack.data.icecube.ps_tracks import get_ps_binning
+
+from flarestack.data.dataset_index import dataset_index
 
 sample_name = "ps_tracks_v004_p02"
 
@@ -171,3 +170,9 @@ ps_v004_p02.add_season(ic86_combo)
 ########################
 #  END ADDING SEASONS  #
 ########################
+
+#########################
+#  ADD ITSELF TO INDEX  #
+#########################
+
+dataset_index.add_dataset("icecube." + sample_name, ps_v004_p02)

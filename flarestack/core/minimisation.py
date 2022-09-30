@@ -985,7 +985,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             )
 
             # ----- make a colorbar ----- #
-            cbar = fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap))
+            cbar = fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax)
 
         # ----------- draw contours ------------- #
         levels = 0.5 * np.array([1.0, 2.0, 5.0]) ** 2
@@ -1412,6 +1412,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         res_dict=None,
         scale=None,
         upper_bound_level=6,
+        **kwargs,
     ):
         """
         Make a corner plot of likelohood scans
@@ -1435,12 +1436,13 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
             bounds = dict()
 
         # ----------------------  set up figure  ----------------------- #
+        figsize = kwargs.pop("figsize", (len(params) * 2, len(params) * 2))
         fig, axs = plt.subplots(
             nrows=len(params),
             ncols=len(params),
             sharex="col",
             gridspec_kw={"hspace": 0.07, "wspace": 0.07},
-            figsize=(len(params) * 2, len(params) * 2),
+            figsize=figsize,
         )
 
         # ----------------------  do 1d scans  ----------------------- #
