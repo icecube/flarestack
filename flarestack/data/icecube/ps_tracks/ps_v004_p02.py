@@ -136,7 +136,6 @@ IC86_start_year = 2011
 IC86_stop_year = 2021
 IC86_timerange = range(IC86_start_year, IC86_stop_year + 1)
 
-
 # full detector configurations have a unified processing now
 # so it is not necessary anymore to treat IC86, 2011 differently
 for yr in IC86_timerange:
