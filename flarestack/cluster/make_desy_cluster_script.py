@@ -2,6 +2,10 @@ import logging
 import os
 from flarestack.shared import fs_dir, log_dir, fs_scratch_dir
 
+"""
+WARNING: this module is deprecated. Check `flarestack.cluster.submitter` instead.
+"""
+
 logger = logging.getLogger(__name__)
 
 username = os.path.basename(os.environ["HOME"])
