@@ -10,6 +10,11 @@
         :members:
 
 ###############
+Data formats and datasets
+###############
+.. automodule:: flarestack.data.dataset_index
+
+###############
 Base PDFs
 ###############
 
