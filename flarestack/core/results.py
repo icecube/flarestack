@@ -147,7 +147,7 @@ class ResultsHandler(object):
             try:
                 self.find_sensitivity()
             except ValueError as e:
-                logger.warning("RuntimeError for discovery potential: \n {0}".format(e))
+                logger.warning("RuntimeError for sensitivity: \n {0}".format(e))
 
         if do_disc:
             try:
@@ -569,8 +569,13 @@ class ResultsHandler(object):
                 x_acc.append(float(scale))
                 yerr.append(1.0 / np.sqrt(float(len(ts_array))))
 
-                self.make_plots(scale)
-
+                if frac != 0.0:
+                    logger.info(f"Making plot for {scale=}, {frac=}")
+                    self.make_plots(scale)
+                else:
+                    logger.warning(
+                        f"Fraction of overfluctuations is {frac=}, skipping plot for {scale=}"
+                    )
         if len(np.where(np.array(y) < 0.95)[0]) < 2:
             raise OverfluctuationError(
                 f"Not enough points with overfluctuations under 95%, lower injection scale!"
@@ -693,19 +698,28 @@ class ResultsHandler(object):
 
         x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
 
+        if np.isnan(disc_threshold):
+            logger.warning(
+                f"Invalid discovery threshold {disc_threshold=} will be ingnored. Using TS = 25.0 only."
+            )
+
         for scale in x:
             ts_array = np.array(self.results[scale]["TS"])
-            frac = float(len(ts_array[ts_array > disc_threshold])) / (
-                float(len(ts_array))
-            )
 
-            logger.info(
-                "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
-                    frac, disc_threshold, len(ts_array), scale
+            if not np.isnan(disc_threshold):
+
+                frac = float(len(ts_array[ts_array > disc_threshold])) / (
+                    float(len(ts_array))
                 )
-            )
 
-            y.append(frac)
+                logger.info(
+                    "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
+                        frac, disc_threshold, len(ts_array), scale
+                    )
+                )
+
+                y.append(frac)
+
             frac_25 = float(len(ts_array[ts_array > 25.0])) / (float(len(ts_array)))
 
             logger.info(
@@ -716,7 +730,13 @@ class ResultsHandler(object):
 
             y_25.append(frac_25)
 
+            # if frac != 0.0:
+            #    logger.info(f"Making plot for {scale=}, {frac=}")
             self.make_plots(scale)
+            # else:
+            #    logger.warning(
+            #        f"Fraction of overfluctuations is {frac=}, skipping plot for {scale=}"
+            #    )
 
         x = np.array([float(s) for s in x])
 
@@ -798,6 +818,7 @@ class ResultsHandler(object):
         )
 
     def noflare_plots(self, scale):
+
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = os.path.join(self.plot_dir, "ts_distributions/" + str(scale) + ".pdf")
 
