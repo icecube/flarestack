@@ -746,7 +746,14 @@ class ResultsHandler(object):
 
         sols = []
 
-        for i, y_val in enumerate([y, y_25]):
+        if np.isnan(disc_threshold):
+            y_list = [y_25]
+            out_list = ["disc_potential_25"]
+        else:
+            y_list = [y, y_25]
+            out_list = ["disc_potential", "disc_potential_25"]
+
+        for i, y_val in enumerate(y_list):
 
             def f(x, a, b, c):
                 value = scipy.stats.gamma.cdf(x, a, b, c)
@@ -767,9 +774,7 @@ class ResultsHandler(object):
                     return f(x, best_a, best_b, best_c)
 
                 sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
-                setattr(
-                    self, ["disc_potential", "disc_potential_25"][i], k_to_flux(sol)
-                )
+                setattr(self, out_list[i], k_to_flux(sol))
 
             except RuntimeError as e:
                 logger.warning(f"RuntimeError for discovery potential!: {e}")
