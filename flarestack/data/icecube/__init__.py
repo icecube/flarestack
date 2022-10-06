@@ -7,6 +7,7 @@ from flarestack.data.icecube.ps_tracks.ps_v004_p02 import ps_v004_p02
 from flarestack.data.icecube.northern_tracks.nt_v002_p05 import nt_v002_p05
 from flarestack.data.icecube.northern_tracks.nt_v005_p00 import nt_v005_p00
 from flarestack.data.icecube.northern_tracks.nt_v005_p01 import nt_v005_p01
+from flarestack.data.icecube.northern_tracks.nt_v005_p01a import nt_v005_p01a
 from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_v002_p01, txs_sample_v1
 from flarestack.data.icecube.gfu.gfu_v002_p02 import gfu_v002_p02, txs_sample_v2
 from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
