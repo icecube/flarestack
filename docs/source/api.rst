@@ -9,10 +9,11 @@
     .. automodule:: flarestack.core.data_types
         :members:
 
-###############
+#########################
 Data formats and datasets
-###############
+#########################
 .. automodule:: flarestack.data.dataset_index
+    :members:
 
 ###############
 Base PDFs

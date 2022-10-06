@@ -12,9 +12,10 @@ class DatasetIndex:
     """Class storing an index for available datasets"""
 
     def __init__(self) -> None:
+        """constructor"""
         self.index = dict()
 
-    def add_dataset(self, name: str, object: Dataset):
+    def add_dataset(self, name: str, object: Dataset) -> None:
         """adds a dataset to the index
 
         Args:
@@ -23,7 +24,7 @@ class DatasetIndex:
         """
         self.index[name] = object
 
-    def add_alias(self, alias: str, name: str):
+    def add_alias(self, alias: str, name: str) -> None:
         """adds an alias for a dataset
 
         Args:
@@ -53,12 +54,13 @@ class DatasetIndex:
             logger.info(f"{name} is an alias for {dest}")
             return self.index[dest]
 
-    def get_dataset_list(self) -> List[str]:
+    def get_dataset_list(self):
         """Get list of indexed datasets"""
         return self.index.keys()
 
 
 dataset_index = DatasetIndex()
 
+# Datasets will in turn import dataset_index and register themselves in the index.
 import flarestack.data.public
 import flarestack.data.icecube
