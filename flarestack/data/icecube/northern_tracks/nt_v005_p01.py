@@ -14,6 +14,17 @@ nt_v005_p01 = IceCubeDataset()
 
 sample_name = "northern_tracks_v005_p01"
 
+IC86_start_year = 2011
+IC86_stop_year = 2021
+IC86_timerange = range(IC86_start_year, IC86_stop_year + 1)
+
+seasons = [f"IC86_{yr}" for yr in IC86_timerange]
+
+
+# ==================================
+# Add individual years as subseasons
+# ==================================
+
 
 def generate_diffuse_season(name):
     season = NTSeasonNewStyle(
@@ -25,16 +36,30 @@ def generate_diffuse_season(name):
         sin_dec_bins=get_diffuse_binning(name)[0],
         log_e_bins=get_diffuse_binning(name)[1],
     )
-    nt_v005_p01.add_season(season)
+    return season
 
-
-IC86_start_year = 2011
-IC86_stop_year = 2021
-IC86_timerange = range(IC86_start_year, IC86_stop_year + 1)
-
-seasons = [f"IC86_{yr}" for yr in IC86_timerange]
 
 for season in seasons:
-    generate_diffuse_season(season)
+    subseason = generate_diffuse_season(season)
+    nt_v005_p01.add_subseason(subseason)
+
+
+# ==================================
+# Add combo season
+# ==================================
+
+name = "IC86_1-11"
+
+combo_season = NTSeasonNewStyle(
+    season_name=name,
+    sample_name=sample_name,
+    exp_path=[nt_data_dir + f"IC86_{yr}_exp.npy" for yr in IC86_timerange],
+    mc_path=nt_data_dir + "IC86_pass2_MC.npy",
+    grl_path=[nt_data_dir + f"GRL/IC86_{yr}_exp.npy" for yr in IC86_timerange],
+    sin_dec_bins=get_diffuse_binning(name)[0],
+    log_e_bins=get_diffuse_binning(name)[1],
+)
+
+nt_v005_p01.add_season(combo_season)
 
 dataset_index.add_dataset("icecube." + sample_name, nt_v005_p01)
