@@ -10,6 +10,7 @@ from flarestack.data.icecube.ic_season import (
     IceCubeSeason,
     icecube_dataset_dir,
 )
+
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 
 from flarestack.data.dataset_index import dataset_index
@@ -19,15 +20,11 @@ sample_name = "ps_tracks_v004_p02"
 dataset_path = "ps_tracks/version-004-p02"
 
 data_path = icecube_dataset_dir / dataset_path
+
 grl_path = data_path / "GRL"
 
-# the path handling is a bit hacky down the line, one day this will be fixed
-ps_data_dir = str(data_path) + "/"
-grl_data_dir = str(grl_path) + "/"
 
-
-# instantiate the empty dataset to populate
-ps_v004_p02 = IceCubeDataset()
+ps_v004_p02 = IceCubeDataset()  # instantiate empty dataset to be populated
 
 ##########################
 #  START ADDING SEASONS  #
@@ -52,9 +49,9 @@ energy_bins = np.arange(2.0, 9.0 + 0.01, 0.125)
 ic40 = IceCubeSeason(
     season_name="IC40",
     sample_name=sample_name,
-    exp_path=ps_data_dir + "IC40_exp.npy",
-    mc_path=ps_data_dir + "IC40_MC.npy",
-    grl_path=grl_data_dir + "IC40_exp.npy",
+    exp_path=data_path / "IC40_exp.npy",
+    mc_path=data_path / "IC40_MC.npy",
+    grl_path=grl_path / "IC40_exp.npy",
     sin_dec_bins=sinDec_bins,
     log_e_bins=energy_bins,
     expect_gaps_in_grl=False,
@@ -82,9 +79,9 @@ energy_bins = np.arange(2.0, 9.5 + 0.01, 0.125)
 ic59 = IceCubeSeason(
     season_name="IC59",
     sample_name=sample_name,
-    exp_path=ps_data_dir + "IC59_exp.npy",
-    mc_path=ps_data_dir + "IC59_MC.npy",
-    grl_path=grl_data_dir + "IC59_exp.npy",
+    exp_path=data_path / "IC59_exp.npy",
+    mc_path=data_path / "IC59_MC.npy",
+    grl_path=grl_path / "IC59_exp.npy",
     sin_dec_bins=sinDec_bins,
     log_e_bins=energy_bins,
     expect_gaps_in_grl=False,
@@ -102,9 +99,9 @@ energy_bins = np.arange(2.0, 9.0 + 0.01, 0.125)
 ic79 = IceCubeSeason(
     season_name="IC79",
     sample_name=sample_name,
-    exp_path=ps_data_dir + "IC79_exp.npy",
-    mc_path=ps_data_dir + "IC79_MC.npy",
-    grl_path=grl_data_dir + "IC79_exp.npy",
+    exp_path=data_path / "IC79_exp.npy",
+    mc_path=data_path / "IC79_MC.npy",
+    grl_path=grl_path / "IC79_exp.npy",
     sin_dec_bins=sinDec_bins,
     log_e_bins=energy_bins,
     expect_gaps_in_grl=False,
@@ -130,7 +127,7 @@ sinDec_bins = np.unique(
 
 energy_bins = np.arange(1.0, 9.5 + 0.01, 0.125)
 
-mc_path = ps_data_dir + "IC86_2016_MC.npy"
+mc_path = data_path / "IC86_2016_MC.npy"
 
 IC86_start_year = 2011
 IC86_stop_year = 2021
@@ -142,9 +139,9 @@ for yr in IC86_timerange:
     ic86_i = IceCubeSeason(
         season_name=f"IC86_{yr}",
         sample_name=sample_name,
-        exp_path=ps_data_dir + f"IC86_{yr}_exp.npy",
+        exp_path=data_path / f"IC86_{yr}_exp.npy",
         mc_path=mc_path,
-        grl_path=grl_data_dir + f"IC86_{yr}_exp.npy",
+        grl_path=grl_path / f"IC86_{yr}_exp.npy",
         sin_dec_bins=sinDec_bins,
         log_e_bins=energy_bins,
         expect_gaps_in_grl=False,
@@ -156,9 +153,9 @@ for yr in IC86_timerange:
 ic86_combo = IceCubeSeason(
     season_name="IC86_1-11",
     sample_name=sample_name,
-    exp_path=[f"{ps_data_dir}IC86_{yr}_exp.npy" for yr in IC86_timerange],
+    exp_path=[data_path / f"IC86_{yr}_exp.npy" for yr in IC86_timerange],
     mc_path=mc_path,
-    grl_path=[f"{grl_data_dir}IC86_{yr}_exp.npy" for yr in IC86_timerange],
+    grl_path=[grl_path / f"IC86_{yr}_exp.npy" for yr in IC86_timerange],
     sin_dec_bins=sinDec_bins,
     log_e_bins=energy_bins,
     expect_gaps_in_grl=False,
