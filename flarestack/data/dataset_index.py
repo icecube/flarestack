@@ -65,10 +65,9 @@ class DatasetIndex:
 
 dataset_index = DatasetIndex()
 
-############################
-# Register datasets to index
-############################
-
-dataset_index.add_dataset("icecube." + ps_v004_p00.sample_name, ps_v004_p00)
-dataset_index.add_dataset("icecube." + nt_v005_p00.sample_name, nt_v005_p00)
-dataset_index.add_dataset("icecube." + gfu_v002_p04.sample_name, gfu_v002_p04)
+"""
+Register datasets to index.
+Currently, only the last release of each dataset is tracked.
+"""
+for dataset in [ps_v004_p02, nt_v005_p01, gfu_v002_p04]:
+    dataset_index.add_dataset("icecube." + dataset.sample_name, dataset)

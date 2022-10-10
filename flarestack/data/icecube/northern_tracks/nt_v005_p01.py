@@ -4,9 +4,6 @@ from flarestack.data.icecube.northern_tracks import (
     get_diffuse_binning,
 )
 
-from flarestack.data.dataset_index import dataset_index
-
-
 nt_data_dir = icecube_dataset_dir / "northern_tracks/version-005-p01"
 
 nt_v005_p01 = IceCubeDataset()
@@ -59,5 +56,3 @@ combo_season = NTSeasonNewStyle(
 )
 
 nt_v005_p01.add_season(combo_season)
-
-dataset_index.add_dataset("icecube." + sample_name, nt_v005_p01)
