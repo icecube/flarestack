@@ -746,12 +746,16 @@ class ResultsHandler(object):
 
         sols = []
 
-        if np.isnan(disc_threshold):
-            y_list = [y_25]
-            out_list = ["disc_potential_25"]
-        else:
-            y_list = [y, y_25]
-            out_list = ["disc_potential", "disc_potential_25"]
+        """
+        Calculate the discovery potential based on the 5-sigma threshold of the TS distribution only if the distribution is non-degenerate. Otherwise, use only the TS=25 threshold.
+        """
+
+        y_list = [y_25]
+        out_list = ["disc_potential_25"]
+
+        if not np.isnan(disc_threshold):
+            y_list.append(y)
+            out_list.append("disc_potential")
 
         for i, y_val in enumerate(y_list):
 
