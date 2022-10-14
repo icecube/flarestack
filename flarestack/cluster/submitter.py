@@ -1,4 +1,4 @@
-import os, subprocess, time, logging, shutil, copy
+import os, subprocess, time, logging, shutil, copy, sys
 import numpy as np
 from flarestack.shared import (
     fs_dir,
@@ -437,7 +437,7 @@ class DESYSubmitter(Submitter):
             "eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/setup.sh) \n"
             "export PYTHONPATH=" + DESYSubmitter.root_dir + "/ \n"
             "export FLARESTACK_SCRATCH_DIR=" + flarestack_scratch_dir + " \n"
-            "python " + fs_dir + "core/multiprocess_wrapper.py -f $1 -n $2 \n"
+            f"{sys.executable} {fs_dir} core/multiprocess_wrapper.py -f $1 -n $2 \n"
             "cp $TMPDIR/${JOB_ID}_stdout.txt " + log_dir + "\n"
             "cp $TMPDIR/${JOB_ID}_stderr.txt " + log_dir + "\n "
         )
