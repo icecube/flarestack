@@ -435,7 +435,7 @@ def make_plot(
 
 def make_individual_spline_set(season, SoB_path, **kwargs):
     try:
-        logger.info("Making splines for {0}".format(season.season_name))
+        logger.info(f"Making splines for {season.season_name}")
         # path = SoB_spline_path(season)
 
         exp = season.get_background_model()
@@ -446,7 +446,7 @@ def make_individual_spline_set(season, SoB_path, **kwargs):
 
         splines = create_2d_splines(exp, mc, sin_dec_bins, log_e_bins, **kwargs)
 
-        logger.info("Saving to {0}".format(SoB_path))
+        logger.info(f"Saving to {SoB_path}.")
 
         try:
             os.makedirs(os.path.dirname(SoB_path))
@@ -545,7 +545,7 @@ def make_background_spline(season):
 
     bkg_spline = create_bkg_spatial_spline(bkg, sin_dec_bins)
 
-    logger.info("Saving to".format(bkg_path))
+    logger.info(f"Saving to {bkg_path}")
     try:
         os.makedirs(os.path.dirname(bkg_path))
     except OSError:
@@ -578,11 +578,19 @@ def load_spline(season, **kwargs):
     try:
         with open(path, "rb") as f:
             res = Pickle.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError) as err:
         logger.info(f"No cached spline found at {path}. Creating this file instead.")
+        logger.info(f"Cause: {err}")
         make_individual_spline_set(season, path, **kwargs)
         with open(path, "rb") as f:
             res = Pickle.load(f)
+
+    except (ModuleNotFoundError) as err:
+        logger.error(
+            f"A spline was found but it seems incompatible with this installation."
+        )
+        logger.error(f"Cause: {err}")
+        raise
 
     return res
 
@@ -595,11 +603,19 @@ def load_bkg_spatial_spline(season):
     try:
         with open(path, "rb") as f:
             res = Pickle.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError) as err:
         logger.info(f"No cached spline found at {path}. Creating this file instead.")
+        logger.info(f"Cause: {err}")
         make_background_spline(season)
         with open(path, "rb") as f:
             res = Pickle.load(f)
+
+    except (ModuleNotFoundError) as err:
+        logger.error(
+            f"A spline was found but it seems incompatible with this installation."
+        )
+        logger.error(f"Cause: {err}")
+        raise
 
     return res
 
