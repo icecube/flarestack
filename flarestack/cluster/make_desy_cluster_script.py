@@ -4,6 +4,10 @@ from flarestack.shared import fs_dir, log_dir, fs_scratch_dir
 
 logger = logging.getLogger(__name__)
 
+logger.warning(
+    "WARNING: this module is deprecated. Check `flarestack.cluster.submitter` instead."
+)
+
 username = os.path.basename(os.environ["HOME"])
 
 root_dir = os.path.dirname(fs_dir[:-1])
