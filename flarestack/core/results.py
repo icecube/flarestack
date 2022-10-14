@@ -50,6 +50,8 @@ class ResultsHandler(object):
 
         self.allow_extrapolation = rh_dict.get("allow_extrapolated_sensitivity", True)
 
+        self.valid = True
+
         # Checks if the code should search for flares. By default, this is
         # not done.
         # self.flare = self.mh_name == "flare"
@@ -112,12 +114,20 @@ class ResultsHandler(object):
         self.extrapolated_disc = False
         self.flux_to_ns = np.nan
 
-        # if self.show_inj:
-        self.inj = self.load_injection_values()
-        self._inj_dict = rh_dict["inj_dict"]
-        self._dataset = rh_dict["dataset"]
-        # else:
-        #     self.inj = None
+        try:
+            # if self.show_inj:
+            self.inj = self.load_injection_values()
+            self._inj_dict = rh_dict["inj_dict"]
+            self._dataset = rh_dict["dataset"]
+            # else:
+            #     self.inj = None
+        except FileNotFoundError as err:
+            logger.error(
+                "Unable to load injection values. Have you run this analysis at least once?"
+            )
+            logger.error(err)
+            self.valid = False
+            return
 
         try:
             self.merge_pickle_data()
@@ -137,7 +147,7 @@ class ResultsHandler(object):
             try:
                 self.find_sensitivity()
             except ValueError as e:
-                logger.warning("RuntimeError for discovery potential: \n {0}".format(e))
+                logger.warning("RuntimeError for sensitivity: \n {0}".format(e))
 
         if do_disc:
             try:
@@ -148,6 +158,15 @@ class ResultsHandler(object):
                 logger.warning("TypeError for discovery potential: \n {0}".format(e))
             except ValueError as e:
                 logger.warning("TypeError for discovery potential: \n {0}".format(e))
+
+    def is_valid(self):
+        """If results are valid, returns True.
+            If something went wrong during the instantiation, returns False.
+
+        Returns:
+            bool: whether results are valid or not.
+        """
+        return self.valid
 
     @property
     def scales_float(self):
@@ -550,8 +569,13 @@ class ResultsHandler(object):
                 x_acc.append(float(scale))
                 yerr.append(1.0 / np.sqrt(float(len(ts_array))))
 
-                self.make_plots(scale)
-
+                if frac != 0.0:
+                    logger.info(f"Making plot for {scale=}, {frac=}")
+                    self.make_plots(scale)
+                else:
+                    logger.warning(
+                        f"Fraction of overfluctuations is {frac=}, skipping plot for {scale=}"
+                    )
         if len(np.where(np.array(y) < 0.95)[0]) < 2:
             raise OverfluctuationError(
                 f"Not enough points with overfluctuations under 95%, lower injection scale!"
@@ -674,19 +698,28 @@ class ResultsHandler(object):
 
         x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
 
+        if np.isnan(disc_threshold):
+            logger.warning(
+                f"Invalid discovery threshold {disc_threshold=} will be ingnored. Using TS = 25.0 only."
+            )
+
         for scale in x:
             ts_array = np.array(self.results[scale]["TS"])
-            frac = float(len(ts_array[ts_array > disc_threshold])) / (
-                float(len(ts_array))
-            )
 
-            logger.info(
-                "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
-                    frac, disc_threshold, len(ts_array), scale
+            if not np.isnan(disc_threshold):
+
+                frac = float(len(ts_array[ts_array > disc_threshold])) / (
+                    float(len(ts_array))
                 )
-            )
 
-            y.append(frac)
+                logger.info(
+                    "Fraction of overfluctuations is {0:.2f} above {1:.2f} (N_trials={2}) (Scale={3})".format(
+                        frac, disc_threshold, len(ts_array), scale
+                    )
+                )
+
+                y.append(frac)
+
             frac_25 = float(len(ts_array[ts_array > 25.0])) / (float(len(ts_array)))
 
             logger.info(
@@ -697,7 +730,13 @@ class ResultsHandler(object):
 
             y_25.append(frac_25)
 
+            # if frac != 0.0:
+            #    logger.info(f"Making plot for {scale=}, {frac=}")
             self.make_plots(scale)
+            # else:
+            #    logger.warning(
+            #        f"Fraction of overfluctuations is {frac=}, skipping plot for {scale=}"
+            #    )
 
         x = np.array([float(s) for s in x])
 
@@ -707,7 +746,18 @@ class ResultsHandler(object):
 
         sols = []
 
-        for i, y_val in enumerate([y, y_25]):
+        """
+        Calculate the discovery potential based on the 5-sigma threshold of the TS distribution only if the distribution is non-degenerate. Otherwise, use only the TS=25 threshold.
+        """
+
+        y_list = [y_25]
+        out_list = ["disc_potential_25"]
+
+        if not np.isnan(disc_threshold):
+            y_list.append(y)
+            out_list.append("disc_potential")
+
+        for i, y_val in enumerate(y_list):
 
             def f(x, a, b, c):
                 value = scipy.stats.gamma.cdf(x, a, b, c)
@@ -728,9 +778,7 @@ class ResultsHandler(object):
                     return f(x, best_a, best_b, best_c)
 
                 sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
-                setattr(
-                    self, ["disc_potential", "disc_potential_25"][i], k_to_flux(sol)
-                )
+                setattr(self, out_list[i], k_to_flux(sol))
 
             except RuntimeError as e:
                 logger.warning(f"RuntimeError for discovery potential!: {e}")
@@ -779,6 +827,7 @@ class ResultsHandler(object):
         )
 
     def noflare_plots(self, scale):
+
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = os.path.join(self.plot_dir, "ts_distributions/" + str(scale) + ".pdf")
 
