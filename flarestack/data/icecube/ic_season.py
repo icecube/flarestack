@@ -11,6 +11,8 @@ from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
 from scipy.interpolate import interp1d
 import logging
 from pathlib import Path
+from typing import Tuple
+
 
 logger = logging.getLogger(__name__)
 
@@ -43,20 +45,17 @@ In the DESY mirror, the structure is a bit different:
 """
 mirror_7yr_dirname = "mirror-7year-PS-sens"  # expected identical at all mirrors
 
-DESY_data_path = Path("/lustre/fs22/group/icecube/data_mirror")
-DESY_sens_path = DESY_data_path / "ref_sensitivity"
-
 if icecube_dataset_dir is not None:
     logger.info(f"Loading datasets from {icecube_dataset_dir} (local)")
 
-    icecube_dataset_path = Path(icecube_dataset_dir)
+    icecube_dataset_dir = Path(icecube_dataset_dir)
 
-    ref_dir_7yr = icecube_dataset_path / mirror_7yr_dirname
+    ref_dir_7yr = icecube_dataset_dir / mirror_7yr_dirname
     if not ref_dir_7yr.is_dir():
         logger.warning(f"No 7yr sensitivity directory found at {ref_dir_7yr}")
         ref_dir_7yr = None
 
-    ref_10yr = Path(icecube_dataset_dir) / ref_10yr_filename
+    ref_10yr = icecube_dataset_dir / ref_10yr_filename
     if not ref_10yr.is_file():
         logger.warning(f"No 10yr sensitivity found at {ref_10yr}")
         ref_10yr = None
@@ -64,6 +63,9 @@ else:
     logger.info(
         "Local dataset directory not found. Assuming we are running on an supported datacenter (WIPAC, DESY), I will try to fetch the data from central storage."
     )
+
+DESY_data_path = Path("/lustre/fs22/group/icecube/data_mirror")
+DESY_sens_path = DESY_data_path / "ref_sensitivity"
 
 # Only load from central storage if $FLARESTACK_DATASET_DIR is not set.
 if icecube_dataset_dir is None:
@@ -96,7 +98,7 @@ def get_dataset_dir() -> str:
     return dataset_dir
 
 
-def get_published_sens_ref_dir() -> (Path, Path):
+def get_published_sens_ref_dir() -> Tuple[Path]:
     """
     Returns the paths to reference sensitivities.
     """
