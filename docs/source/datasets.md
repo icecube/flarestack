@@ -31,16 +31,9 @@ To add a new dataset to *flarestack*:
 - create an interface module under `flarestack/data`;
 - import the corresponding dataset object in `flarestack/data/__init__.py`.
 
-To add the dataset to the index, first import the index in the dataset interface module:
+To add the dataset to the index, edit `flarestack/data/dataset_index.py` and add a line following this example:
 ```python
-from flarestack.data.dataset_index import dataset_index
-
-sample_name = "ps_tracks_v004_p02" # give the dataset a meaningful name
-ps_v004_p02 = IceCubeDataset() # instantiate the dataset
-"""
-[...] dataset is populated here [...]
-"""
-dataset_index.add_dataset("icecube." + sample_name, ps_v004_p02) # add the dataset to the index
+dataset_index.add_dataset("icecube." + sample_name, ps_v004_p02)
 ```
 
-**Important**: for the correct population of the index, the dataset needs to be added to `flarestack/data/__init.py__` (see above).
+**Important**: the dataset has to be previously added to `flarestack/data/__init.py__` (see above).
