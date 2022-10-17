@@ -307,8 +307,16 @@ def plot_background_ts_distribution(
 
     ts_array = ts_array[~np.isnan(ts_array)]
 
+    max_ts = np.max(ts_array)
+
     if np.median(ts_array) < 0.0:
         plot_expanded_negative(ts_array, path)
+
+    if max_ts == 0:
+        logger.warning(
+            f"Maximum of TS is {max_ts=}, unable to calculate discovery threshold (too few trials?)"
+        )
+        return np.NaN
 
     fig = plt.figure()
 
@@ -321,8 +329,6 @@ def plot_background_ts_distribution(
     five_sigma = (raw_five_sigma - frac_under) / (1.0 - frac_under)
 
     plt.axhline(frac_over * (1 - five_sigma), color="r", linestyle="--")
-
-    max_ts = np.max(ts_array)
 
     disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
 
