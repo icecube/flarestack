@@ -51,6 +51,7 @@ class Dataset:
     def __init__(self, **kwargs):
         self.seasons = dict()
         self.subseasons = dict()
+        self.name = kwargs.get("name", None)
 
     def add_season(self, season, **kwargs):
         self.seasons[season.season_name] = copy.copy(season)
