@@ -4,13 +4,13 @@ from flarestack.data.dataset_index import dataset_index
 
 
 class TestDatasetIndex(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         pass
 
-    def test_dataset_index(self):
+    def test_dataset_index(self) -> None:
         for key in dataset_index.get_dataset_list():
             dataset = dataset_index.get_dataset(key)
-            self.assertTrue(dataset.sample_name in key)
+            self.assertTrue(dataset.name in key)
 
 
 if __name__ == "__main__":
