@@ -88,7 +88,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
     src_astro = calculate_source_astronomy(
-        total_flux, phi_integral, e_integral, catalogue, src_1
+        total_flux, phi_integral, e_integral, f_cr_to_nu, catalogue, source=src_1
     )
 
     logger.debug(f"Fraction of total flux from nearest source: {src_astro['frac']}")
