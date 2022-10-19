@@ -271,7 +271,8 @@ class IceCubeRunList(DetectorOnOffList):
 
 
 class IceCubeDataset(Dataset):
-    pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class IceCubeSeason(SeasonWithMC):
