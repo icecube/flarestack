@@ -101,7 +101,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
     )
     logger.debug(f"The required neutrino luminosity was {src_astro['E_tot']}.")
 
-    astro_res["Flux from nearest source"] = src_astro["flux"].value
+    astro_res["Flux from nearest source"] = src_astro["flux"]
     astro_res["Mean Luminosity (erg/s)"] = src_astro["E_tot"].value
     astro_res["CR luminosity"] = src_astro["cr_e"].value
 
