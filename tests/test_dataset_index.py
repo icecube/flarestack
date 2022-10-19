@@ -1,10 +1,10 @@
 import unittest
 import logging
 import os
-
 @unittest.mock.patch.dict(os.environ, {"FLARESTACK_DATASET_DIR": "/"}, clear=True)
-
 from flarestack.data.dataset_index import dataset_index
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
