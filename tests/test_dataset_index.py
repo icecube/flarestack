@@ -1,11 +1,13 @@
 import unittest
+import logging
+import os
 
 from flarestack.data.dataset_index import dataset_index
 
-import logging
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+os.environ["FLARESTACK_DATASET_DIR"] = ""
 
 
 class TestDatasetIndex(unittest.TestCase):
