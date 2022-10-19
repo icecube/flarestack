@@ -56,6 +56,8 @@ def calculate_source_astronomy(
     astro_dict["E_tot"] = etot
     astro_dict["cr_e"] = cr_e
 
+    return astro_dict
+
 
 def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
     logger.debug(f"Calculating astronomy for total flux: {flux}")
