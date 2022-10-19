@@ -10,9 +10,7 @@ sample_name = "northern_tracks_v005_p01"
 
 dataset_name = "icecube." + sample_name
 
-nt_v005_p01 = IceCubeDataset(
-    name=dataset_name
-) 
+nt_v005_p01 = IceCubeDataset(name=dataset_name)
 
 IC86_start_year = 2011
 IC86_stop_year = 2021
