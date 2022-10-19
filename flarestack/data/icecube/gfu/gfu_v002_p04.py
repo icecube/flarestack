@@ -29,9 +29,11 @@ def get_grl_path(year):
 
 all_years = ["2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018"]
 
-gfu_v002_p04 = IceCubeDataset()
-
 sample_name = "gfu_v002_p04"
+
+dataset_name = "icecube." + sample_name
+
+gfu_v002_p04 = IceCubeDataset(name=dataset_name)
 
 gfu_8_year = IceCubeSeason(
     season_name="gfu_8_year",
