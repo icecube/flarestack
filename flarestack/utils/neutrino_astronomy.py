@@ -5,7 +5,9 @@ import numpy as np
 import math
 from astropy.coordinates import Distance
 from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.utils.catalogue_loader import calculate_source_weight
+from flarestack.utils.catalogue_loader import (
+    get_relative_source_weight,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,73 +31,75 @@ def find_zfactor(distance):
     zfactor = 1 + redshift
     return zfactor
 
+def calculate_source_astronomy(total_flux, phi_integral, e_integral, f_cr_to_nu, catalogue, source) -> dict:
+        astro_dict = dict()
+        frac = get_relative_source_weight(catalogue, source)
+        si = total_flux * frac
 
-def calculate_astronomy(flux, e_pdf_dict, catalogue):
+        lumdist = source["distance_mpc"] * u.Mpc
+        area = 4 * math.pi * (lumdist.to(u.cm)) ** 2
+        dNdA = (si * phi_integral).to(u.s**-1 * u.cm**-2)
+        N = dNdA * area
 
-    flux /= u.GeV * u.cm**2 * u.s
+        # Energy requires a 1/(1+z) factor
+        zfactor = find_zfactor(lumdist)
+        etot = (si * area * e_integral).to(u.erg / u.s) * zfactor
 
-    energy_PDF = EnergyPDF.create(e_pdf_dict)
+        cr_e = etot / f_cr_to_nu
 
+        astro_dict["frac"] = frac
+        astro_dict["flux"] = si
+        astro_dict["n_nu"] = N
+        astro_dict["E_tot"] = etot
+        astro_dict["cr_e"] = cr_e
+
+
+def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
+    logger.debug(f"Calculating astronomy for total flux: {flux}")
+
+    # result
     astro_res = dict()
+
+    # convert total flux to number
+    # what's the result type / units?
+    total_flux = flux / (u.GeV * u.cm**2 * u.s)
+    print(total_flux)
+
+    # get flux and energy integrals
+    energy_PDF = EnergyPDF.create(e_pdf_dict)
 
     phi_integral = energy_PDF.flux_integral() * u.GeV
 
     e_integral = energy_PDF.fluence_integral() * u.GeV**2
 
-    # Calculate fluence
+    # calculate fluence
+    # is this correct to call this a fluence?
+    total_fluence = total_flux * e_integral
+    print(total_fluence)
 
-    tot_fluence = flux * e_integral
+    # building the result
+    logger.debug("Energy Flux:{0}".format(total_fluence))
+    astro_res["Energy flux (GeV cm^{-2} s^{-1})"] = total_fluence.value
 
-    astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = tot_fluence.value
-
-    logger.debug("Energy Flux:{0}".format(tot_fluence))
-
+    # getting nearest source
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
-    frac = calculate_source_weight(src_1) / calculate_source_weight(catalogue)
+    src_astro = calculate_source_astronomy(total_flux, phi_integral, e_integral, catalogue, src_1)
 
-    si = flux * frac
+    logger.debug(f"Fraction of total flux from nearest source: {src_astro["frac"]}")
+    logger.debug(f"Flux from nearest source: {src_astro["flux"]}")
+    logger.debug(f"There would be {N:.3g} neutrinos emitted.")
+    logger.debug(f"The energy range was assumed to be between {energy_PDF.integral_e_min} and {energy_PDF.integral_e_max}.")
+    logger.debug(f"The required neutrino luminosity was {src_astro["E_tot"]}.")
 
-    astro_res["Flux from nearest source"] = si
+    astro_res["Flux from nearest source"] = src_astro["flux"].value
+    astro_res["Mean Luminosity (erg/s)"] = src_astro["E_tot"].value
+    astro_res["CR luminosity"] = src_astro["cr_e"].value
 
-    logger.debug("Total flux: {0}".format(flux))
-    logger.debug("Fraction from nearest source: {0}".format(frac))
-    logger.debug("Flux from nearest source: {0}".format(flux * frac))
-
-    lumdist = src_1["distance_mpc"] * u.Mpc
-
-    area = 4 * math.pi * (lumdist.to(u.cm)) ** 2
-
-    dNdA = (si * phi_integral).to(u.s**-1 * u.cm**-2)
-
-    # int_dNdA += dNdA
-
-    N = dNdA * area
-
-    logger.debug("There would be {:.3g} neutrinos emitted.".format(N))
-    logger.debug(
-        "The energy range was assumed to be between {0} and {1}".format(
-            energy_PDF.integral_e_min, energy_PDF.integral_e_max
-        )
-    )
-    # Energy requires a 1/(1+z) factor
-
-    zfactor = find_zfactor(lumdist)
-    etot = (si * area * e_integral).to(u.erg / u.s) * zfactor
-
-    astro_res["Mean Luminosity (erg/s)"] = etot.value
-
-    logger.debug("The required neutrino luminosity was {0}".format(etot))
-
-    cr_e = etot / f_cr_to_nu
-
-    logger.debug(
-        "Assuming {0:.3g}% was transferred from CR to neutrinos, we would require a total CR luminosity of {1}".format(
-            100 * f_cr_to_nu, cr_e
-        )
-    )
+    logger.debug(f"Assuming {100 * f_cr_to_nu:.3g}% was transferred from CR to neutrinos, we would require a total CR luminosity of {src_astro["cr_e"]}")
 
     return astro_res
+
 
 
 # def calculate_neutrinos(source, season, inj_kwargs):
