@@ -15,6 +15,8 @@ from flarestack.data.icecube.ps_tracks import get_ps_binning
 
 sample_name = "ps_tracks_v004_p02"
 
+dataset_name = "icecube." + sample_name
+
 dataset_path = "ps_tracks/version-004-p02"
 
 data_path = icecube_dataset_dir / dataset_path
@@ -22,7 +24,9 @@ data_path = icecube_dataset_dir / dataset_path
 grl_path = data_path / "GRL"
 
 
-ps_v004_p02 = IceCubeDataset()  # instantiate empty dataset to be populated
+ps_v004_p02 = IceCubeDataset(
+    name=dataset_name
+)  # instantiate empty dataset to be populated
 
 ##########################
 #  START ADDING SEASONS  #
