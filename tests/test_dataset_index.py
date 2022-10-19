@@ -6,8 +6,8 @@ from flarestack.data.dataset_index import dataset_index
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class TestDatasetIndex(unittest.TestCase):
 
+class TestDatasetIndex(unittest.TestCase):
     def setUp(self) -> None:
         pass
 
