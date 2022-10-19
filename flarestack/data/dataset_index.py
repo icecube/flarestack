@@ -5,9 +5,9 @@ import logging
 from typing import List
 from flarestack.data import Dataset
 
-from flarestack.data.icecube.ps_tracks import ps_v004_p02
-from flarestack.data.icecube.northern_tracks import nt_v005_p01
-from flarestack.data.icecube.gfu import gfu_v002_p04
+from flarestack.data.icecube.ps_tracks.ps_v004_p02 import ps_v004_p02
+from flarestack.data.icecube.northern_tracks.nt_v005_p01 import nt_v005_p01
+from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
 
 import flarestack.data.public
 import flarestack.data.icecube
