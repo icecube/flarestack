@@ -5,12 +5,7 @@ import logging
 from typing import List
 from flarestack.data import Dataset
 
-from flarestack.data.icecube.ps_tracks.ps_v004_p02 import ps_v004_p02
-from flarestack.data.icecube.northern_tracks.nt_v005_p01 import nt_v005_p01
-from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
-
-import flarestack.data.public
-import flarestack.data.icecube
+from flarestack.data.icecube import ps_v004_p02, nt_v005_p01, gfu_v002_p04
 
 logger = logging.getLogger(__name__)
 
