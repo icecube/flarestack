@@ -1,6 +1,5 @@
 import unittest
 import logging
-import os
 
 from flarestack.data.dataset_index import dataset_index
 
