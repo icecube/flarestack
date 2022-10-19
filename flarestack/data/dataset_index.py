@@ -17,14 +17,14 @@ class DatasetIndex:
         """constructor"""
         self.index = dict()
 
-    def add_dataset(self, name: str, object: Dataset) -> None:
+    def add_dataset(self, dataset: Dataset) -> None:
         """adds a dataset to the index
 
         Args:
             name (str): assigned name of the dataset
             object (Dataset): dataset object
         """
-        self.index[name] = object
+        self.index[dataset.name] = dataset
 
     def add_alias(self, alias: str, name: str) -> None:
         """adds an alias for a dataset
@@ -68,4 +68,4 @@ Register datasets to index.
 Currently, only the last release of each dataset is tracked.
 """
 for dataset in [ps_v004_p02, nt_v005_p01, gfu_v002_p04]:
-    dataset_index.add_dataset("icecube." + dataset.name, dataset)
+    dataset_index.add_dataset(dataset)
