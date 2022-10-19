@@ -13,6 +13,13 @@ def calculate_source_weight(sources) -> float:
     return np.sum(sources["base_weight"] * sources["distance_mpc"] ** -2)
 
 
+def get_relative_source_weight(catalogue, source):
+    """
+    Get the relative weight of a source.
+    """
+    return calculate_source_weight(source) / calculate_source_weight(catalogue)
+
+
 def load_catalogue(path):
 
     sources = np.load(path)
