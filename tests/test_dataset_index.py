@@ -10,7 +10,7 @@ class TestDatasetIndex(unittest.TestCase):
     def test_dataset_index(self):
         for key in dataset_index.get_dataset_list():
             dataset = dataset_index.get_dataset(key)
-            self.assertTrue(dataset.name in key)
+            self.assertTrue(dataset.sample_name in key)
 
 
 if __name__ == "__main__":
