@@ -31,27 +31,30 @@ def find_zfactor(distance):
     zfactor = 1 + redshift
     return zfactor
 
-def calculate_source_astronomy(total_flux, phi_integral, e_integral, f_cr_to_nu, catalogue, source) -> dict:
-        astro_dict = dict()
-        frac = get_relative_source_weight(catalogue, source)
-        si = total_flux * frac
 
-        lumdist = source["distance_mpc"] * u.Mpc
-        area = 4 * math.pi * (lumdist.to(u.cm)) ** 2
-        dNdA = (si * phi_integral).to(u.s**-1 * u.cm**-2)
-        N = dNdA * area
+def calculate_source_astronomy(
+    total_flux, phi_integral, e_integral, f_cr_to_nu, catalogue, source
+) -> dict:
+    astro_dict = dict()
+    frac = get_relative_source_weight(catalogue, source)
+    si = total_flux * frac
 
-        # Energy requires a 1/(1+z) factor
-        zfactor = find_zfactor(lumdist)
-        etot = (si * area * e_integral).to(u.erg / u.s) * zfactor
+    lumdist = source["distance_mpc"] * u.Mpc
+    area = 4 * math.pi * (lumdist.to(u.cm)) ** 2
+    dNdA = (si * phi_integral).to(u.s**-1 * u.cm**-2)
+    N = dNdA * area
 
-        cr_e = etot / f_cr_to_nu
+    # Energy requires a 1/(1+z) factor
+    zfactor = find_zfactor(lumdist)
+    etot = (si * area * e_integral).to(u.erg / u.s) * zfactor
 
-        astro_dict["frac"] = frac
-        astro_dict["flux"] = si
-        astro_dict["n_nu"] = N
-        astro_dict["E_tot"] = etot
-        astro_dict["cr_e"] = cr_e
+    cr_e = etot / f_cr_to_nu
+
+    astro_dict["frac"] = frac
+    astro_dict["flux"] = si
+    astro_dict["n_nu"] = N
+    astro_dict["E_tot"] = etot
+    astro_dict["cr_e"] = cr_e
 
 
 def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
@@ -84,22 +87,27 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
     # getting nearest source
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
 
-    src_astro = calculate_source_astronomy(total_flux, phi_integral, e_integral, catalogue, src_1)
+    src_astro = calculate_source_astronomy(
+        total_flux, phi_integral, e_integral, catalogue, src_1
+    )
 
-    logger.debug(f"Fraction of total flux from nearest source: {src_astro["frac"]}")
-    logger.debug(f"Flux from nearest source: {src_astro["flux"]}")
-    logger.debug(f"There would be {N:.3g} neutrinos emitted.")
-    logger.debug(f"The energy range was assumed to be between {energy_PDF.integral_e_min} and {energy_PDF.integral_e_max}.")
-    logger.debug(f"The required neutrino luminosity was {src_astro["E_tot"]}.")
+    logger.debug(f"Fraction of total flux from nearest source: {src_astro['frac']}")
+    logger.debug(f"Flux from nearest source: {src_astro['flux']}")
+    logger.debug(f"There would be {src_astro['n_nu']:.3g} neutrinos emitted.")
+    logger.debug(
+        f"The energy range was assumed to be between {energy_PDF.integral_e_min} and {energy_PDF.integral_e_max}."
+    )
+    logger.debug(f"The required neutrino luminosity was {src_astro['E_tot']}.")
 
     astro_res["Flux from nearest source"] = src_astro["flux"].value
     astro_res["Mean Luminosity (erg/s)"] = src_astro["E_tot"].value
     astro_res["CR luminosity"] = src_astro["cr_e"].value
 
-    logger.debug(f"Assuming {100 * f_cr_to_nu:.3g}% was transferred from CR to neutrinos, we would require a total CR luminosity of {src_astro["cr_e"]}")
+    logger.debug(
+        f"Assuming {100 * f_cr_to_nu:.3g}% was transferred from CR to neutrinos, we would require a total CR luminosity of {src_astro['cr_e']}"
+    )
 
     return astro_res
-
 
 
 # def calculate_neutrinos(source, season, inj_kwargs):
