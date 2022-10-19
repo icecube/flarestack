@@ -84,7 +84,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
 
     # building the result
     logger.debug("Energy Flux:{0}".format(total_fluence))
-    astro_res["Energy flux (GeV cm^{-2} s^{-1})"] = total_fluence.value
+    astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = total_fluence.value
 
     # getting nearest source
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
