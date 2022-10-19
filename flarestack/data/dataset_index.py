@@ -68,4 +68,4 @@ Register datasets to index.
 Currently, only the last release of each dataset is tracked.
 """
 for dataset in [ps_v004_p02, nt_v005_p01, gfu_v002_p04]:
-    dataset_index.add_dataset("icecube." + dataset.sample_name, dataset)
+    dataset_index.add_dataset("icecube." + dataset.name, dataset)
