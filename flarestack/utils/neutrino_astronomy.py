@@ -60,7 +60,6 @@ def calculate_source_astronomy(
 
 
 def debug_source_astronomy(src_astro: dict, energy_PDF) -> None:
-    logger.debug("NEW BRANCH")
     logger.debug(f"Fraction of total flux from nearest source: {src_astro['frac']}")
     logger.debug(f"Flux from nearest source: {src_astro['flux']}")
     logger.debug(f"There would be {src_astro['n_nu']:.3g} neutrinos emitted.")
