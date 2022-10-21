@@ -72,16 +72,13 @@ def debug_source_astronomy(src_astro: dict, energy_PDF) -> None:
     )
 
 
-def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
+def calculate_astronomy(flux: float, e_pdf_dict: dict, catalogue) -> dict():
     logger.debug(f"Calculating astronomy for total flux: {flux}")
 
-    # result
-    astro_res = dict()
+    astro_res = dict()  # result
 
-    # convert total flux to number
-    # what's the result type / units?
+    # assign units to total flux
     total_flux = flux / (u.GeV * u.cm**2 * u.s)
-    print(total_flux)
 
     # get flux and energy integrals
     energy_PDF = EnergyPDF.create(e_pdf_dict)
@@ -93,10 +90,9 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
     # calculate fluence
     # is this correct to call this a fluence?
     total_fluence = total_flux * e_integral
-    print(total_fluence)
 
     # building the result
-    logger.debug("Energy Flux:{0}".format(total_fluence))
+    logger.debug(f"Energy Flux:{total_fluence}")
 
     astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = total_fluence.value
 
