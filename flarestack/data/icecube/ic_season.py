@@ -271,8 +271,7 @@ class IceCubeRunList(DetectorOnOffList):
 
 
 class IceCubeDataset(Dataset):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    pass
 
     """
     Just a placeholder in case this __init__ method is needed in the future. 
