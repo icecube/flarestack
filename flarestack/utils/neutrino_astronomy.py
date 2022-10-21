@@ -87,14 +87,12 @@ def calculate_astronomy(flux: float, e_pdf_dict: dict, catalogue) -> dict():
 
     e_integral = energy_PDF.fluence_integral() * u.GeV**2
 
-    # calculate fluence
-    # is this correct to call this a fluence?
-    total_fluence = total_flux * e_integral
+    energy_flux = total_flux * e_integral
 
     # building the result
-    logger.debug(f"Energy Flux:{total_fluence}")
+    logger.debug(f"Energy Flux:{energy_flux}")
 
-    astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = total_fluence.value
+    astro_res["Energy Flux (GeV cm^{-2} s^{-1})"] = energy_flux.value
 
     # getting nearest source
     src_1 = np.sort(catalogue, order="distance_mpc")[0]
