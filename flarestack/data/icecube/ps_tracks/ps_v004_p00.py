@@ -22,10 +22,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-logger.warning(
-    "This dataset is known to have errors in the good run list (GRL). Consider updating to PSTracks v4.1 or v4.2"
-)
-
 icecube_dataset_dir = get_dataset_dir()
 
 ps_data_dir = icecube_dataset_dir + "ps_tracks/version-004-p00/"
@@ -33,6 +29,10 @@ grl_data_dir = ps_data_dir + "GRL/"
 ps_v004_p00 = IceCubeDataset()
 
 sample_name = "ps_tracks_v004_p00"
+
+logger.warning(
+    f"{sample_name}: This dataset is known to have errors in the good run list (GRL). Consider updating to PSTracks v4.1 or v4.2"
+)
 
 ##########################
 #  START ADDING SEASONS  #
