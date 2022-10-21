@@ -107,7 +107,7 @@ def calculate_astronomy(flux, e_pdf_dict, catalogue) -> dict():
         total_flux, phi_integral, e_integral, f_cr_to_nu, catalogue, source=src_1
     )
 
-    self.debug_source_astronomy(src_astro, energy_PDF)
+    debug_source_astronomy(src_astro, energy_PDF)
 
     astro_res["Flux from nearest source"] = src_astro["flux"]
     astro_res["Mean Luminosity (erg/s)"] = src_astro["E_tot"].value
