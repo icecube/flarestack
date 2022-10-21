@@ -274,6 +274,12 @@ class IceCubeDataset(Dataset):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    """
+    Just a placeholder in case this __init__ method is needed in the future. 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+    """
+
 
 class IceCubeSeason(SeasonWithMC):
     def __init__(
