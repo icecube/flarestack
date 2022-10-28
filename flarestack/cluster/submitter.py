@@ -504,8 +504,8 @@ class HTCondorSubmitter(Submitter):
 class WIPACSubmitter(HTCondorSubmitter):
     ssh_cmd = ["ssh", f"{HTCondorSubmitter.username}@submit-1.icecube.wisc.edu"]
 
-    def __init__(self):
-        super(WIPACSubmitter, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(WIPACSubmitter, self).__init__(*args, **kwargs)
         self.submit_cmd = WIPACSubmitter.ssh_cmd + [f"'condor_submit {self.submit_file}'"]
 
 
@@ -513,6 +513,6 @@ class WIPACSubmitter(HTCondorSubmitter):
 class DESYSubmitter(HTCondorSubmitter):
     status_cmd = ["condor_q"]
 
-    def __init__(self):
-        super(DESYSubmitter, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(DESYSubmitter, self).__init__(*args, **kwargs)
         self.status_cmd = f"condor_submit {self.submit_file}"
