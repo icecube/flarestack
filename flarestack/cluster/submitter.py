@@ -327,18 +327,19 @@ class HTCondorSubmitter(Submitter):
         self.ram_per_core = self.cluster_kwargs.get("ram_per_core", "2000")
         self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
 
-        # Check whether automatic submission is desired and possible
-        if not self.manual_submit:
-            if shutil.which(self.submit_cmd) is None:
-                logger.warning(
-                    f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. Forcing 'manual_submit' mode."
-                )
-                self.manual_submit = True
-
         # Set up a directory for cluster files
         self.cluster_files_directory = os.path.join(cluster_dir, self.mh_dict["name"] if self.mh_dict else "")
         self.submit_file = os.path.join(self.cluster_files_directory, "job.submit")
         self.executable_file = os.path.join(self.cluster_files_directory, "job.sh")
+
+        # Check whether automatic submission is desired and possible
+        if not self.manual_submit:
+            if shutil.which(self.submit_cmd) is None:
+                logger.warning(
+                    f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. "
+                    f"Forcing 'manual_submit' mode."
+                )
+                self.manual_submit = True
 
         self._status_output = None
 
@@ -506,7 +507,10 @@ class WIPACSubmitter(HTCondorSubmitter):
 
     def __init__(self, *args, **kwargs):
         super(WIPACSubmitter, self).__init__(*args, **kwargs)
-        self.submit_cmd = WIPACSubmitter.ssh_cmd + [f"'condor_submit {self.submit_file}'"]
+
+    @property
+    def submit_cmd(self):
+        return WIPACSubmitter.ssh_cmd + [f"'condor_submit {self.submit_file}'"]
 
 
 @Submitter.register_submitter_class("DESY")
@@ -515,4 +519,7 @@ class DESYSubmitter(HTCondorSubmitter):
 
     def __init__(self, *args, **kwargs):
         super(DESYSubmitter, self).__init__(*args, **kwargs)
-        self.status_cmd = f"condor_submit {self.submit_file}"
+
+    @property
+    def submit_cmd(self):
+        return f"condor_submit {self.submit_file}"
