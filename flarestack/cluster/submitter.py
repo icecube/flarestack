@@ -329,7 +329,7 @@ class HTCondorSubmitter(Submitter):
 
         # Check whether automatic submission is desired and possible
         if not self.manual_submit:
-            if shutil.which(DESYSubmitter.submit_cmd) is None:
+            if shutil.which(self.submit_cmd) is None:
                 logger.warning(
                     f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. Forcing 'manual_submit' mode."
                 )
