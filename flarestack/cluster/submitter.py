@@ -300,7 +300,7 @@ class HTCondorSubmitter(Submitter):
     status_cmd = "condor_q"
     submit_cmd = "condor_submit"
     root_dir = os.path.dirname(fs_dir[:-1])
-    scratch_on_nodes = f"/scratch/{username}"
+    scratch_on_nodes = ""
 
     def __init__(self, *args, **kwargs):
         """
@@ -371,9 +371,9 @@ class HTCondorSubmitter(Submitter):
         """
         text = (
             f"executable = {self.executable_file} \n"
-            f"log = {HTCondorSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.log \n"
-            f"output = {HTCondorSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.out \n"
-            f"error = {HTCondorSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.err \n"
+            f"log = {HTCondorSubmitter.scratch_on_nodes}$(cluster)_$(process)job.log \n"
+            f"output = {HTCondorSubmitter.scratch_on_nodes}$(cluster)_$(process)job.out \n"
+            f"error = {HTCondorSubmitter.scratch_on_nodes}$(cluster)_$(process)job.err \n"
             f"should_transfer_files   = YES \n"
             f"when_to_transfer_output = ON_EXIT \n"
             f"arguments = $(process) \n"
@@ -503,6 +503,7 @@ class HTCondorSubmitter(Submitter):
 
 @Submitter.register_submitter_class("WIPAC")
 class WIPACSubmitter(HTCondorSubmitter):
+    scratch_on_nodes = f"/scratch/{HTCondorSubmitter.username}/"
     pass
 
 
