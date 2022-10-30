@@ -1,3 +1,4 @@
+import json
 import os, subprocess, time, logging, shutil, copy, sys
 import numpy as np
 from flarestack.shared import (
@@ -319,6 +320,8 @@ class HTCondorSubmitter(Submitter):
 
         from flarestack.data.icecube import icecube_dataset_dir
         self.icecube_dataset_dir = icecube_dataset_dir
+
+        logger.debug(f"cluster kwargs: {json.dumps(self.cluster_kwargs, indent=4)}")
 
         # Get the kwargs that are specific to cluster operation
         self.remove_old_logs = self.cluster_kwargs.get("remove_old_logs", True)
