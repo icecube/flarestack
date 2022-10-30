@@ -6,6 +6,7 @@ from flarestack.shared import flux_to_k
 from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.cluster.submitter import Submitter, LocalSubmitter
+from flarestack.core.results import ResultsHandler
 
 
 logger = logging.getLogger(__name__)
@@ -63,43 +64,43 @@ class TestSubmitter(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_submitter_locally(self):
-        logging.info("testing Submitter class")
-        this_mh_dict = dict(mh_dict)
-        this_mh_dict["name"] += "test_submitter/"
-        this_mh_dict["n_trials"] = 10
-        sb = Submitter.get_submitter(
-            this_mh_dict, use_cluster=False, n_cpu=5, remove_old_results=True
-        )
-        sb.analyse()
-
-    def test_scale_estimation(self):
-        this_mh_dict = dict(mh_dict)
-        this_mh_dict["name"] += "test_scale_estimation/"
-        this_mh_dict["scale"] *= 5.1
-        this_mh_dict["n_steps"] = 6
-        sb = Submitter.get_submitter(
-            this_mh_dict,
-            use_cluster=False,
-            n_cpu=5,
-            do_sensitivity_scale_estimation="quick_injections",
-        )
-        sb.run_quick_injections_to_estimate_sensitivity_scale()
-        true_value = flux_to_k(public_sens_3yr)
-        self.assertAlmostEqual(
-            sb.sens_guess, true_value / 0.9, delta=true_value / 0.9 * 0.6
-        )
-        self.assertGreater(sb.sens_guess / 0.5, true_value)
+    # def test_submitter_locally(self):
+    #     logging.info("testing Submitter class")
+    #     this_mh_dict = dict(mh_dict)
+    #     this_mh_dict["name"] += "test_submitter/"
+    #     this_mh_dict["n_trials"] = 10
+    #     sb = Submitter.get_submitter(
+    #         this_mh_dict, use_cluster=False, n_cpu=5, remove_old_results=True
+    #     )
+    #     sb.analyse()
+    #
+    # def test_scale_estimation(self):
+    #     this_mh_dict = dict(mh_dict)
+    #     this_mh_dict["name"] += "test_scale_estimation/"
+    #     this_mh_dict["scale"] *= 5.1
+    #     this_mh_dict["n_steps"] = 6
+    #     sb = Submitter.get_submitter(
+    #         this_mh_dict,
+    #         use_cluster=False,
+    #         n_cpu=5,
+    #         do_sensitivity_scale_estimation="quick_injections",
+    #     )
+    #     sb.run_quick_injections_to_estimate_sensitivity_scale()
+    #     true_value = flux_to_k(public_sens_3yr)
+    #     self.assertAlmostEqual(
+    #         sb.sens_guess, true_value / 0.9, delta=true_value / 0.9 * 0.6
+    #     )
+    #     self.assertGreater(sb.sens_guess / 0.5, true_value)
 
     def test_submitter_cluster(self):
         this_mh_dict = dict(mh_dict)
         this_mh_dict["name"] += "test_submitter_cluster/"
         this_mh_dict["n_trials"] = 10
-        this_mh_dict["trials_per_task"] = 10
 
         submitter = Submitter.get_submitter(
             this_mh_dict,
-            use_cluster=True
+            use_cluster=True,
+            trials_per_task=10
         )
 
         if isinstance(submitter, LocalSubmitter):
@@ -107,8 +108,16 @@ class TestSubmitter(unittest.TestCase):
 
         else:
             submitter.analyse()
+            submitter.wait_for_job()
+            rh = ResultsHandler(
+                this_mh_dict,
+                do_sens=False,
+                do_disc=False
+            )
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
     logging.getLogger().setLevel("DEBUG")
+    logging.getLogger("matplotlib").setLevel("WARNING")
     unittest.main()
