@@ -100,7 +100,8 @@ class TestSubmitter(unittest.TestCase):
         submitter = Submitter.get_submitter(
             this_mh_dict,
             use_cluster=True,
-            trials_per_task=10
+            trials_per_task=10,
+            ram_per_core="100M"
         )
 
         if isinstance(submitter, LocalSubmitter):
