@@ -297,8 +297,8 @@ class HTCondorSubmitter(Submitter):
 
     home_dir = os.environ["HOME"]
     username = os.path.basename(home_dir)
-    status_cmd = None
-    submit_cmd = None
+    status_cmd = "condor_q"
+    submit_cmd = "condor_submit"
     root_dir = os.path.dirname(fs_dir[:-1])
     scratch_on_nodes = f"/scratch/{username}"
 
@@ -336,7 +336,7 @@ class HTCondorSubmitter(Submitter):
         if not self.manual_submit:
             if shutil.which(self.submit_cmd) is None:
                 logger.warning(
-                    f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. "
+                    f"Submit command {self.submit_cmd} is not available on the current host. "
                     f"Forcing 'manual_submit' mode."
                 )
                 self.manual_submit = True
@@ -412,7 +412,7 @@ class HTCondorSubmitter(Submitter):
         self.make_submit_file(n_tasks)
 
         if not self.manual_submit:
-            cmd = self.status_cmd + [self.submit_file]
+            cmd = [self.submit_cmd, self.submit_file]
             logger.debug(f"command is {cmd}")
             msg = subprocess.check_output(cmd).decode()
             logger.info(msg)
@@ -503,23 +503,9 @@ class HTCondorSubmitter(Submitter):
 
 @Submitter.register_submitter_class("WIPAC")
 class WIPACSubmitter(HTCondorSubmitter):
-    ssh_cmd = ["ssh", f"{HTCondorSubmitter.username}@submit-1.icecube.wisc.edu"]
-
-    def __init__(self, *args, **kwargs):
-        super(WIPACSubmitter, self).__init__(*args, **kwargs)
-
-    @property
-    def submit_cmd(self):
-        return WIPACSubmitter.ssh_cmd + [f"'condor_submit {self.submit_file}'"]
+    pass
 
 
 @Submitter.register_submitter_class("DESY")
 class DESYSubmitter(HTCondorSubmitter):
-    status_cmd = ["condor_q"]
-
-    def __init__(self, *args, **kwargs):
-        super(DESYSubmitter, self).__init__(*args, **kwargs)
-
-    @property
-    def submit_cmd(self):
-        return f"condor_submit {self.submit_file}"
+    pass
