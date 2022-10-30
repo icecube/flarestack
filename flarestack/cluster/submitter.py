@@ -319,6 +319,7 @@ class HTCondorSubmitter(Submitter):
         super(HTCondorSubmitter, self).__init__(*args, **kwargs)
 
         from flarestack.data.icecube import icecube_dataset_dir
+
         self.icecube_dataset_dir = icecube_dataset_dir
 
         logger.debug(f"cluster kwargs: {json.dumps(self.cluster_kwargs, indent=4)}")
@@ -331,7 +332,9 @@ class HTCondorSubmitter(Submitter):
         self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
 
         # Set up a directory for cluster files
-        self.cluster_files_directory = os.path.join(cluster_dir, self.mh_dict["name"] if self.mh_dict else "")
+        self.cluster_files_directory = os.path.join(
+            cluster_dir, self.mh_dict["name"] if self.mh_dict else ""
+        )
         self.submit_file = os.path.join(self.cluster_files_directory, "job.submit")
         self.executable_file = os.path.join(self.cluster_files_directory, "job.sh")
 
