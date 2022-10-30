@@ -98,13 +98,14 @@ class TestSubmitter(unittest.TestCase):
         this_mh_dict["n_trials"] = 10
 
         submitter = Submitter.get_submitter(
-            this_mh_dict, use_cluster=True, trials_per_task=10, ram_per_core="100M"
+            this_mh_dict, use_cluster=False, trials_per_task=10, ram_per_core="10GB"
         )
 
         if isinstance(submitter, LocalSubmitter):
             logger.info("Can not test cluster because on local machine.")
 
         else:
+            submitter.use_cluster = True
             submitter.analyse()
             submitter.wait_for_job()
             rh = ResultsHandler(this_mh_dict, do_sens=False, do_disc=False)
