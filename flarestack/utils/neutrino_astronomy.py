@@ -18,7 +18,7 @@ def calculate_astronomy(flux, e_pdf_dict, _catalogue=None):
 
     astro_res = dict()
 
-    phi_integral = energy_PDF.flux_integral() * u.GeV
+    # phi_integral = energy_PDF.flux_integral() * u.GeV # unused
 
     e_integral = energy_PDF.fluence_integral() * u.GeV**2
 
