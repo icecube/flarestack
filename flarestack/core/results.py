@@ -265,7 +265,7 @@ class ResultsHandler(object):
         :param e_pdf_dict: Dictionary containing energy PDF information
         :return: Value for the neutrino luminosity
         """
-        return calculate_astronomy(flux, e_pdf_dict, self.sources)
+        return calculate_astronomy(flux, e_pdf_dict)
 
     def clean_merged_data(self):
         """Function to clear cache of all data"""
