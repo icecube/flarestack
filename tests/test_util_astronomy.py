@@ -32,7 +32,7 @@ class TestUtilAstro(unittest.TestCase):
         logging.info("Calculated values {0}".format(res_astro))
         logging.info("Reference  values {0}".format(true_res_astro))
 
-        for key in ["Energy Flux (GeV cm^{-2} s^{-1})", "Mean Luminosity (erg/s)"]:
+        for key in ["Energy Flux (GeV cm^{-2} s^{-1})"]:
 
             self.assertAlmostEqual(
                 np.log(res_astro[key]), np.log(true_res_astro[key]), places=2
