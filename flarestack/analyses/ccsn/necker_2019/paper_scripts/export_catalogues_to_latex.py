@@ -21,6 +21,8 @@ references_fn = os.path.join(os.path.dirname(__file__), "references.json")
 
 if __name__ == '__main__':
 
+    logging.basicConfig()
+
     with open(references_fn, "r") as f:
         references = json.load(f)
 
@@ -56,6 +58,7 @@ if __name__ == '__main__':
                 f"{r.ra_rad:5.2f} & "
                 f"{r.dec_rad:5.2f} & "
                 f"{Time(r.ref_time_mjd, format='mjd').strftime('%Y-%M-%d')} & "
+                f"{r.redshift:5.4f} & "
                 f"{r.distance_mpc:5.2f} & "
                 f"{show_numbers}"
                 f"\\\\\n"
