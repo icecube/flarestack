@@ -306,6 +306,7 @@ class HTCondorSubmitter(Submitter):
 
     # Log path
     log_path = Path(log_dir)
+    override_log_path = None
 
     def __init__(self, *args, **kwargs):
         """
@@ -329,7 +330,7 @@ class HTCondorSubmitter(Submitter):
         logger.debug(f"cluster kwargs: {json.dumps(self.cluster_kwargs, indent=4)}")
 
         # Get the kwargs that are specific to cluster operation
-        self.remove_old_logs = self.cluster_kwargs.get("remove_old_logs", True)
+        self.remove_old_logs = self.cluster_kwargs.get("remove_old_logs", False)
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
         self.cluster_cpu = self.cluster_kwargs.get("cluster_cpu", self.n_cpu)
         self.ram_per_core = self.cluster_kwargs.get("ram_per_core", "2000")
@@ -374,24 +375,35 @@ class HTCondorSubmitter(Submitter):
         with open(self.executable_file, "w") as f:
             f.write(txt)
 
-    def get_job_outfile_path(self, extension: str):
+    @staticmethod
+    def format_jobfile(extension: str):
+        return f"job-$(cluster)-$(process).{extension}"
+
+    def get_logfile_path(self, extension: str):
+        if self.override_log_path is not None:
+            log_path = self.override_log_path
+        else:
+            log_path = Path(log_dir)
+        logfile_path = Path(log_path) / self.format_jobfile(extension)
+        return str(logfile_path)
+
+    def get_outfile_path(self, extension: str):
         """Formats an output filename for a job given an extension.
 
         Args:
             extension (str): file extension
         """
-        fname = f"job-$(cluster)-$(process).{extension}"
-        outpath = Path(log_dir) / fname
-        return str(outpath)
+        outfile_path = Path(log_dir) / self.format_jobfile(extension)
+        return str(outfile_path)
 
     def make_submit_file(self, n_tasks):
         """
         Produces the submit file that will be submitted to the NPX cluster.
         :param n_tasks: Number of jobs that will be created
         """
-        log_file = self.get_job_outfile_path("log")
-        stdout_file = self.get_job_outfile_path("out")
-        stderr_file = self.get_job_outfile_path("err")
+        log_file = self.get_logfile_path("log")
+        stdout_file = self.get_outfile_path("out")
+        stderr_file = self.get_outfile_path("err")
 
         text = (
             f"executable = {self.executable_file} \n"
@@ -536,7 +548,7 @@ class WIPACSubmitter(HTCondorSubmitter):
     ref: https://wiki.icecube.wisc.edu/index.php/Condor/BestPractices#Local_storage_on_submit_host
     """
 
-    log_path = Path("/scratch") / HTCondorSubmitter.username
+    override_log_path = Path("/scratch") / HTCondorSubmitter.username
     pass
 
 
