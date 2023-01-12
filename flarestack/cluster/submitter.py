@@ -378,7 +378,7 @@ class HTCondorSubmitter(Submitter):
         Args:
             extension (str): file extension
         """
-        fname =  f"job-$(cluster)-$(process).{extension}"
+        fname = f"job-$(cluster)-$(process).{extension}"
         outpath = HTCondorSubmitter.scratch_dir / fname
         return str(outpath)
 
@@ -387,14 +387,18 @@ class HTCondorSubmitter(Submitter):
         Produces the submit file that will be submitted to the NPX cluster.
         :param n_tasks: Number of jobs that will be created
         """
+        log_file = self.get_job_outfile_path("log")
+        stdout_file = self.get_job_outfile_path("out")
+        stderr_file = self.get_job_outfile_path("err")
+
         text = (
             f"executable = {self.executable_file} \n"
             f"arguments = $(process) \n"
             f"should_transfer_files   = YES \n"
             f"when_to_transfer_output = ON_EXIT \n"
-            f"log = {self.get_job_outfile_path("log")} \n"
-            f"output = {self.get_job_outfile_path("out")} \n"
-            f"error = {self.get_job_outfile_path("err")} \n"
+            f"log = {log_file} \n"
+            f"output = {stdout_file} \n"
+            f"error = {stderr_file} \n"
             f"RequestMemory = {self.ram_per_core} \n"
             f"\n"
             f"queue {n_tasks}"
