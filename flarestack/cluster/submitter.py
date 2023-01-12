@@ -365,7 +365,7 @@ class HTCondorSubmitter(Submitter):
             f"eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.2.0/setup.sh) \n"
             f"export PYTHONPATH={HTCondorSubmitter.root_dir}/ \n"
             f"export FLARESTACK_SCRATCH_DIR={flarestack_scratch_dir} \n"
-            f"export HOME={HTCondorSubmitter.home_dir} \n "
+            f"export HOME={HTCondorSubmitter.home_dir} \n"
             f"export FLARESTACK_DATASET_DIR={self.icecube_dataset_dir} \n"
             f"{sys.executable} {fs_dir}core/multiprocess_wrapper.py -f {path} -n {self.cluster_cpu}"
         )
@@ -395,7 +395,7 @@ class HTCondorSubmitter(Submitter):
 
         text = (
             f"executable = {self.executable_file} \n"
-            f"arguments = $(process) \n"
+            # f"arguments = $(process) \n"
             f"should_transfer_files   = YES \n"
             f"when_to_transfer_output = ON_EXIT \n"
             f"log = {log_file} \n"
