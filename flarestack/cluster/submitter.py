@@ -15,6 +15,8 @@ from flarestack.core.multiprocess_wrapper import run_multiprocess
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 
+from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
 
@@ -301,7 +303,7 @@ class HTCondorSubmitter(Submitter):
     status_cmd = "condor_q"
     submit_cmd = "condor_submit"
     root_dir = os.path.dirname(fs_dir[:-1])
-    scratch_on_nodes = ""
+    scratch_dir = ""
 
     def __init__(self, *args, **kwargs):
         """
@@ -370,6 +372,16 @@ class HTCondorSubmitter(Submitter):
         with open(self.executable_file, "w") as f:
             f.write(txt)
 
+    def get_job_outfile_path(self, extension: str):
+        """Formats an output filename for a job given an extension.
+
+        Args:
+            extension (str): file extension
+        """
+        fname =  f"job-$(cluster)-$(process).{extension}"
+        outpath = HTCondorSubmitter.scratch_dir / fname
+        return str(outpath)
+
     def make_submit_file(self, n_tasks):
         """
         Produces the submit file that will be submitted to the NPX cluster.
@@ -377,12 +389,12 @@ class HTCondorSubmitter(Submitter):
         """
         text = (
             f"executable = {self.executable_file} \n"
-            f"log = {HTCondorSubmitter.scratch_on_nodes}$(cluster)_$(process)job.log \n"
-            f"output = {HTCondorSubmitter.scratch_on_nodes}$(cluster)_$(process)job.out \n"
-            f"error = {HTCondorSubmitter.scratch_on_nodes}$(cluster)_$(process)job.err \n"
+            f"arguments = $(process) \n"
             f"should_transfer_files   = YES \n"
             f"when_to_transfer_output = ON_EXIT \n"
-            f"arguments = $(process) \n"
+            f"log = {self.get_job_outfile_path("log")} \n"
+            f"output = {self.get_job_outfile_path("out")} \n"
+            f"error = {self.get_job_outfile_path("err")} \n"
             f"RequestMemory = {self.ram_per_core} \n"
             f"\n"
             f"queue {n_tasks}"
@@ -509,10 +521,11 @@ class HTCondorSubmitter(Submitter):
 
 @Submitter.register_submitter_class("WIPAC")
 class WIPACSubmitter(HTCondorSubmitter):
-    scratch_on_nodes = f"/scratch/{HTCondorSubmitter.username}/"
+    scratch_dir = Path("/scratch") / HTCondorSubmitter.username
     pass
 
 
 @Submitter.register_submitter_class("DESY")
 class DESYSubmitter(HTCondorSubmitter):
+    scratch_dir = Path(cluster_dir)
     pass
