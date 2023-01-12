@@ -303,7 +303,9 @@ class HTCondorSubmitter(Submitter):
     status_cmd = "condor_q"
     submit_cmd = "condor_submit"
     root_dir = os.path.dirname(fs_dir[:-1])
-    scratch_dir = ""
+
+    # Log path
+    log_path = Path(log_dir)
 
     def __init__(self, *args, **kwargs):
         """
@@ -379,7 +381,7 @@ class HTCondorSubmitter(Submitter):
             extension (str): file extension
         """
         fname = f"job-$(cluster)-$(process).{extension}"
-        outpath = HTCondorSubmitter.scratch_dir / fname
+        outpath = Path(log_dir) / fname
         return str(outpath)
 
     def make_submit_file(self, n_tasks):
@@ -517,6 +519,9 @@ class HTCondorSubmitter(Submitter):
 
     @staticmethod
     def clear_log_dir():
+        """Removes all files from log_dir.
+        Note that logs may exist outside of log_dir in case of a subclass overriding log_path.
+        """
         for f in os.listdir(log_dir):
             ff = f"{log_dir}/{f}"
             logger.debug(f"removing {ff}")
@@ -525,11 +530,16 @@ class HTCondorSubmitter(Submitter):
 
 @Submitter.register_submitter_class("WIPAC")
 class WIPACSubmitter(HTCondorSubmitter):
-    scratch_dir = Path("/scratch") / HTCondorSubmitter.username
+    """
+    override log_path so that logging is done on local storage of submit host (rather than network storage)
+    this is the IceCube best recommended practice
+    ref: https://wiki.icecube.wisc.edu/index.php/Condor/BestPractices#Local_storage_on_submit_host
+    """
+
+    log_path = Path("/scratch") / HTCondorSubmitter.username
     pass
 
 
 @Submitter.register_submitter_class("DESY")
 class DESYSubmitter(HTCondorSubmitter):
-    scratch_dir = Path(cluster_dir)
     pass
