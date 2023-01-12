@@ -10,8 +10,6 @@ import numpy as np
 
 true_res_astro = {
     "Energy Flux (GeV cm^{-2} s^{-1})": 1.151292546497023e-08,
-    "Flux from nearest source": 8.61854306789315e-10 / (u.cm**2 * u.GeV * u.s),
-    "Mean Luminosity (erg/s)": 9.384215679708581e45,
 }
 
 catalogue = tde_catalogue_name("jetted")
@@ -29,22 +27,16 @@ class TestUtilAstro(unittest.TestCase):
 
         cat = load_catalogue(catalogue)
 
-        res_astro = calculate_astronomy(1.0e-9, injection_energy_pdf, cat)
+        res_astro = calculate_astronomy(1.0e-9, injection_energy_pdf)
 
         logging.info("Calculated values {0}".format(res_astro))
         logging.info("Reference  values {0}".format(true_res_astro))
 
-        for key in ["Energy Flux (GeV cm^{-2} s^{-1})", "Mean Luminosity (erg/s)"]:
+        for key in ["Energy Flux (GeV cm^{-2} s^{-1})"]:
 
             self.assertAlmostEqual(
                 np.log(res_astro[key]), np.log(true_res_astro[key]), places=2
             )
-
-        self.assertAlmostEqual(
-            np.log(res_astro["Flux from nearest source"].value),
-            np.log(true_res_astro["Flux from nearest source"].value),
-            places=2,
-        )
 
 
 if __name__ == "__main__":
