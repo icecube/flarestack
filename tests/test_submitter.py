@@ -1,11 +1,16 @@
-"""simple script to test the scale estimation implemented in the Submitter class"""
+"""simple script to test the Submitter class"""
 
 import logging
 import unittest
 from flarestack.shared import flux_to_k
 from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.cluster.submitter import Submitter, DESYSubmitter
+from flarestack.cluster.submitter import Submitter, LocalSubmitter
+from flarestack.core.results import ResultsHandler
+
+
+logger = logging.getLogger(__name__)
+
 
 injection_energy = {
     "energy_pdf_name": "power_law",
@@ -59,7 +64,7 @@ class TestSubmitter(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_submitter(self):
+    def test_submitter_locally(self):
         logging.info("testing Submitter class")
         this_mh_dict = dict(mh_dict)
         this_mh_dict["name"] += "test_submitter/"
@@ -87,12 +92,27 @@ class TestSubmitter(unittest.TestCase):
         )
         self.assertGreater(sb.sens_guess / 0.5, true_value)
 
-    def test_desy_submitter(self):
+    def test_submitter_cluster(self):
         this_mh_dict = dict(mh_dict)
-        this_mh_dict["name"] += "test_desy_submitter/"
-        desy_sb = DESYSubmitter(this_mh_dict, use_cluster=False, n_cpu=5)
-        desy_sb.make_cluster_submission_script()
+        this_mh_dict["name"] += "test_submitter_cluster/"
+        this_mh_dict["n_trials"] = 10
+
+        submitter = Submitter.get_submitter(
+            this_mh_dict, use_cluster=False, trials_per_task=10, ram_per_core="10GB"
+        )
+
+        if isinstance(submitter, LocalSubmitter):
+            logger.info("Can not test cluster because on local machine.")
+
+        else:
+            submitter.use_cluster = True
+            submitter.analyse()
+            submitter.wait_for_job()
+            rh = ResultsHandler(this_mh_dict, do_sens=False, do_disc=False)
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
+    logging.getLogger().setLevel("DEBUG")
+    logging.getLogger("matplotlib").setLevel("WARNING")
     unittest.main()

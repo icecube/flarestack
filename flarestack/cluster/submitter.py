@@ -1,3 +1,4 @@
+import json
 import os, subprocess, time, logging, shutil, copy, sys
 import numpy as np
 from flarestack.shared import (
@@ -13,6 +14,8 @@ from flarestack.shared import (
 from flarestack.core.multiprocess_wrapper import run_multiprocess
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
+
+from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
@@ -293,242 +296,17 @@ class LocalSubmitter(Submitter):
         )
 
 
-@Submitter.register_submitter_class("DESY")
-class DESYSubmitter(Submitter):
+class HTCondorSubmitter(Submitter):
 
-    submit_file = os.path.join(cluster_dir, "SubmitDESY.sh")
-    username = os.path.basename(os.environ["HOME"])
-    status_cmd = f"qstat -u {username}"
-    submit_cmd = "qsub"
-    root_dir = os.path.dirname(fs_dir[:-1])
-
-    def __init__(self, mh_dict, use_cluster, n_cpu=None, **cluster_kwargs):
-        """
-        Initialises a DESYSubmitter instance.
-
-        :param mh_dict: the MinimisationHandler dict
-        :type mh_dict: dict
-        :param use_cluster: wjether to use the cluster
-        :type use_cluster: bool
-        :param n_cpu: how many CPUs to use on the local machine
-        :type n_cpu: int
-        :param cluster_kwargs: keyword arguments for the cluster, available are:
-            h_cpu in the form "hh:mm:ss": how long the cluster jobs run
-            trials_per_task: int, how many trials to run per cluster job
-            cluster_cpu: int, how many CPUs to use on the cluster machines
-            ram_per_core in the form "<number>G": e.g. 6G to use 6GB RAM for each cluster job
-        """
-        super(DESYSubmitter, self).__init__(
-            mh_dict, use_cluster, n_cpu, **cluster_kwargs
-        )
-
-        # extract information that will be used by the cluster script
-        self.h_cpu = self.cluster_kwargs.get("h_cpu", "23:59:00")
-        self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
-        self.cluster_cpu = self.cluster_kwargs.get("cluster_cpu", self.n_cpu)
-        self.ram_per_core = self.cluster_kwargs.get(
-            "ram_per_core", "{0:.1f}G".format(6.0 / float(self.cluster_cpu) + 2.0)
-        )
-        self.remove_old_logs = self.cluster_kwargs.get("remove_old_logs", True)
-
-        self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
-
-        if not self.manual_submit:
-            if shutil.which(DESYSubmitter.submit_cmd) is None:
-                logger.warning(
-                    f"Submit command {DESYSubmitter.submit_cmd} is not available on the current host. Forcing 'manual_submit' mode."
-                )
-                self.manual_submit = True
-
-    @staticmethod
-    def _qstat_output(qstat_command):
-        """return the output of the qstat_command"""
-        # start a subprocess to query the cluster
-        process = subprocess.Popen(qstat_command, stdout=subprocess.PIPE, shell=True)
-        # read the output
-        tmp = process.stdout.read().decode()
-        return str(tmp)
-
-    @staticmethod
-    def get_ids(qstat_command):
-        """Takes a command that queries the DESY cluster and returns a list of job IDs"""
-        st = DESYSubmitter._qstat_output(qstat_command)
-        # If the output is an empty string there are no tasks left
-        if st == "":
-            ids = list()
-        else:
-            # Extract the list of job IDs
-            ids = np.array([int(s.split(" ")[2]) for s in st.split("\n")[2:-1]])
-        return ids
-
-    def _ntasks_from_qstat_command(self, qstat_command):
-        """Returns the number of tasks from the output of qstat_command"""
-        # get the output of qstat_command
-        ids = self.get_ids(qstat_command)
-        ntasks = 0 if len(ids) == 0 else len(ids[ids == self.job_id])
-        return ntasks
-
-    @property
-    def ntasks_total(self):
-        """Returns the total number of tasks"""
-        return self._ntasks_from_qstat_command(DESYSubmitter.status_cmd)
-
-    @property
-    def ntasks_running(self):
-        """Returns the number of running tasks"""
-        return self._ntasks_from_qstat_command(DESYSubmitter.status_cmd + " -s r")
-
-    def wait_for_job(self):
-        if self.job_id:
-            time.sleep(10)
-            i = 31
-            j = 6
-            while self.ntasks_total != 0:
-                if i > 3:
-                    logger.info(
-                        f"{time.asctime(time.localtime())} - Job{self.job_id}:"
-                        f" {self.ntasks_total} entries in queue. "
-                        f"Of these, {self.ntasks_running} are running tasks, and "
-                        f"{self.ntasks_total - self.ntasks_running} are tasks still waiting to be executed."
-                    )
-                    i = 0
-                    j += 1
-
-                if j > 7:
-                    logger.info(self._qstat_output(self.status_cmd))
-                    j = 0
-
-                time.sleep(30)
-                i += 1
-
-        else:
-            logger.info(f"No Job ID!")
-
-    def make_cluster_submission_script(self):
-        """Produces the shell script used to run on the DESY cluster."""
-        flarestack_scratch_dir = os.path.dirname(fs_scratch_dir[:-1]) + "/"
-
-        text = (
-            "#!/bin/zsh \n"
-            "## \n"
-            "##(otherwise the default shell would be used) \n"
-            "#$ -S /bin/zsh \n"
-            "## \n"
-            "##(the running time for this job) \n"
-            f"#$ -l h_cpu={self.h_cpu} \n"
-            "#$ -l h_rss=" + str(self.ram_per_core) + "\n"
-            "## \n"
-            "## \n"
-            "##(send mail on job's abort) \n"
-            "#$ -m a \n"
-            "## \n"
-            "##(stderr and stdout are merged together to stdout) \n"
-            "#$ -j y \n"
-            "## \n"
-            "## name of the job \n"
-            "## -N Flarestack script " + DESYSubmitter.username + " \n"
-            "## \n"
-            "##(redirect output to:) \n"
-            "#$ -o /dev/null \n"
-            "## \n"
-            "sleep $(( ( RANDOM % 60 )  + 1 )) \n"
-            'exec > "$TMPDIR"/${JOB_ID}_stdout.txt '
-            '2>"$TMPDIR"/${JOB_ID}_stderr.txt \n'
-            "eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/setup.sh) \n"
-            "export PYTHONPATH=" + DESYSubmitter.root_dir + "/ \n"
-            "export FLARESTACK_SCRATCH_DIR=" + flarestack_scratch_dir + " \n"
-            f"{sys.executable} {fs_dir} core/multiprocess_wrapper.py -f $1 -n $2 \n"
-            "cp $TMPDIR/${JOB_ID}_stdout.txt " + log_dir + "\n"
-            "cp $TMPDIR/${JOB_ID}_stderr.txt " + log_dir + "\n "
-        )
-
-        logger.info("Creating file at {0}".format(DESYSubmitter.submit_file))
-
-        with open(DESYSubmitter.submit_file, "w") as f:
-            f.write(text)
-
-        logger.debug("Bash file created: \n {0}".format(text))
-
-        cmd = "chmod +x " + DESYSubmitter.submit_file
-        os.system(cmd)
-
-    def submit_cluster(self, mh_dict):
-        """Submits the job to the cluster"""
-        # if specified, remove old logs from log directory
-        if self.remove_old_logs:
-            self.clear_log_dir()
-
-        # Get the number of tasks that will have to be submitted in order to get ntrials
-        ntrials = mh_dict["n_trials"]
-        n_tasks = int(ntrials / self.trials_per_task)
-        logger.debug(f"running {ntrials} trials in {n_tasks} tasks")
-
-        # The mh_dict will be submitted n_task times and will perform mh_dict['n_trials'] each time.
-        # Therefore we have to adjust mh_dict['n_trials'] in order to actually perform the number
-        # specified in self.mh_dict['n_trials']
-        mh_dict["n_trials"] = self.trials_per_task
-        path = make_analysis_pickle(mh_dict)
-
-        # assemble the submit command
-        submit_cmd = DESYSubmitter.submit_cmd
-        if self.cluster_cpu > 1:
-            submit_cmd += " -pe multicore {0} -R y".format(self.cluster_cpu)
-        submit_cmd += (
-            f" -t 1-{n_tasks}:1 {DESYSubmitter.submit_file} {path} {self.cluster_cpu}"
-        )
-        logger.info(f"Ram per core: {self.ram_per_core}")
-        logger.info(f"{time.asctime(time.localtime())}: {submit_cmd}")
-
-        self.make_cluster_submission_script()
-
-        if not self.manual_submit:
-            process = subprocess.Popen(submit_cmd, stdout=subprocess.PIPE, shell=True)
-            msg = process.stdout.read().decode()
-            logger.info(str(msg))
-            self.job_id = int(str(msg).split("job-array")[1].split(".")[0])
-        else:
-            input(
-                f"Running in 'manual_submit' mode. Login to a submission host and launch the following command:\n"
-                f"{submit_cmd}\n"
-                f"Press enter to continue after the jobs are finished.\n"
-                f"[ENTER]"
-            )
-
-    # @staticmethod
-    # def _wait_for_cluster(job_ids=None):
-    #     """Waits until the cluster is done. Wait for all jobs if job_ids is None or give a list of IDs"""
-    #     # If no job IDs are specified, get all IDs currently listed for this user
-    #     if not job_ids:
-    #         job_ids = np.unique(DESYSubmitter.get_ids(DESYSubmitter.status_cmd))
-    #
-    #     for id in job_ids:
-    #         logger.info(f'waiting for job {id}')
-    #         # create a submitter, it does not need the mh_dict when no functions are calles
-    #         s = DESYSubmitter(None, None)
-    #         s.job_id = id     # set the right job_id
-    #         s.wait_for_job()  # use the built-in function to wait for completion of that job
-
-    @staticmethod
-    def get_pending_ids():
-        return np.unique(np.unique(DESYSubmitter.get_ids(DESYSubmitter.status_cmd)))
-
-    @staticmethod
-    def clear_log_dir():
-        for f in os.listdir(log_dir):
-            ff = f"{log_dir}/{f}"
-            logger.debug(f"removing {ff}")
-            os.remove(ff)
-
-
-@Submitter.register_submitter_class("WIPAC")
-class WIPACSubmitter(Submitter):
-
-    wipac_cluster_dir = os.path.join(cluster_dir, "WIPAC")
     home_dir = os.environ["HOME"]
     username = os.path.basename(home_dir)
-    status_cmd = f"condor_q {username}"
+    status_cmd = "condor_q"
+    submit_cmd = "condor_submit"
     root_dir = os.path.dirname(fs_dir[:-1])
-    scratch_on_nodes = f"/scratch/{username}"
+
+    # Log path
+    log_path = Path(log_dir)
+    override_log_path = None
 
     def __init__(self, *args, **kwargs):
         """
@@ -543,30 +321,36 @@ class WIPACSubmitter(Submitter):
             cluster_cpu: int, how many CPUs to use per cluster job
             ram_per_core: float, how much RAM for each cluster jobs in MB
         """
-        super(WIPACSubmitter, self).__init__(*args, **kwargs)
+        super(HTCondorSubmitter, self).__init__(*args, **kwargs)
 
         from flarestack.data.icecube import icecube_dataset_dir
 
         self.icecube_dataset_dir = icecube_dataset_dir
 
-        self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
+        logger.debug(f"cluster kwargs: {json.dumps(self.cluster_kwargs, indent=4)}")
 
+        # Get the kwargs that are specific to cluster operation
+        self.remove_old_logs = self.cluster_kwargs.get("remove_old_logs", False)
         self.trials_per_task = self.cluster_kwargs.get("trials_per_task", 1)
         self.cluster_cpu = self.cluster_kwargs.get("cluster_cpu", self.n_cpu)
         self.ram_per_core = self.cluster_kwargs.get("ram_per_core", "2000")
+        self.manual_submit = self.cluster_kwargs.get("manual_submit", False)
 
+        # Set up a directory for cluster files
         self.cluster_files_directory = os.path.join(
-            WIPACSubmitter.wipac_cluster_dir,
-            self.mh_dict["name"] if self.mh_dict else "",
+            cluster_dir, self.mh_dict["name"] if self.mh_dict else ""
         )
-
         self.submit_file = os.path.join(self.cluster_files_directory, "job.submit")
         self.executable_file = os.path.join(self.cluster_files_directory, "job.sh")
 
-        self.submit_cmd = (
-            f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu "
-            f"'condor_submit " + self.submit_file + "'"
-        )
+        # Check whether automatic submission is desired and possible
+        if not self.manual_submit:
+            if shutil.which(self.submit_cmd) is None:
+                logger.warning(
+                    f"Submit command {self.submit_cmd} is not available on the current host. "
+                    f"Forcing 'manual_submit' mode."
+                )
+                self.manual_submit = True
 
         self._status_output = None
 
@@ -580,30 +364,55 @@ class WIPACSubmitter(Submitter):
         txt = (
             f"#!/bin/sh \n"
             f"eval $(/cvmfs/icecube.opensciencegrid.org/py3-v4.2.0/setup.sh) \n"
-            f"export PYTHONPATH={WIPACSubmitter.root_dir}/ \n"
+            f"export PYTHONPATH={HTCondorSubmitter.root_dir}/ \n"
             f"export FLARESTACK_SCRATCH_DIR={flarestack_scratch_dir} \n"
-            f"export HOME={WIPACSubmitter.home_dir} \n "
+            f"export HOME={HTCondorSubmitter.home_dir} \n"
             f"export FLARESTACK_DATASET_DIR={self.icecube_dataset_dir} \n"
-            f"python {fs_dir}core/multiprocess_wrapper.py -f {path} -n {self.cluster_cpu}"
+            f"{sys.executable} {fs_dir}core/multiprocess_wrapper.py -f {path} -n {self.cluster_cpu}"
         )
 
         logger.debug("writing executable to " + self.executable_file)
         with open(self.executable_file, "w") as f:
             f.write(txt)
 
+    @staticmethod
+    def format_jobfile(extension: str):
+        return f"job-$(cluster)-$(process).{extension}"
+
+    def get_logfile_path(self, extension: str):
+        if self.override_log_path is not None:
+            log_path = self.override_log_path
+        else:
+            log_path = Path(log_dir)
+        logfile_path = Path(log_path) / self.format_jobfile(extension)
+        return str(logfile_path)
+
+    def get_outfile_path(self, extension: str):
+        """Formats an output filename for a job given an extension.
+
+        Args:
+            extension (str): file extension
+        """
+        outfile_path = Path(log_dir) / self.format_jobfile(extension)
+        return str(outfile_path)
+
     def make_submit_file(self, n_tasks):
         """
         Produces the submit file that will be submitted to the NPX cluster.
         :param n_tasks: Number of jobs that will be created
         """
+        log_file = self.get_logfile_path("log")
+        stdout_file = self.get_outfile_path("out")
+        stderr_file = self.get_outfile_path("err")
+
         text = (
             f"executable = {self.executable_file} \n"
-            f"log = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.log \n"
-            f"output = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.out \n"
-            f"error = {WIPACSubmitter.scratch_on_nodes}/$(cluster)_$(process)job.err \n"
+            # f"arguments = $(process) \n"
             f"should_transfer_files   = YES \n"
             f"when_to_transfer_output = ON_EXIT \n"
-            f"arguments = $(process) \n"
+            f"log = {log_file} \n"
+            f"output = {stdout_file} \n"
+            f"error = {stderr_file} \n"
             f"RequestMemory = {self.ram_per_core} \n"
             f"\n"
             f"queue {n_tasks}"
@@ -615,6 +424,10 @@ class WIPACSubmitter(Submitter):
 
     def submit_cluster(self, mh_dict):
         """Submits the job to the cluster"""
+
+        if self.remove_old_logs:
+            self.clear_log_dir()
+
         # Get the number of tasks that will have to be submitted in order to get ntrials
         ntrials = self.mh_dict["n_trials"]
         n_tasks = int(ntrials / self.trials_per_task)
@@ -635,13 +448,9 @@ class WIPACSubmitter(Submitter):
         self.make_submit_file(n_tasks)
 
         if not self.manual_submit:
-            cmd = (
-                f"ssh {WIPACSubmitter.username}@submit-1.icecube.wisc.edu "
-                f"'condor_submit {self.submit_file}'"
-            )
+            cmd = [self.submit_cmd, self.submit_file]
             logger.debug(f"command is {cmd}")
-            prc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-            msg = prc.stdout.read().decode()
+            msg = subprocess.check_output(cmd).decode()
             logger.info(msg)
 
             self.job_id = str(msg).split("cluster ")[-1].split(".")[0]
@@ -655,17 +464,13 @@ class WIPACSubmitter(Submitter):
                 f"[ENTER]"
             )
 
-    @staticmethod
-    def get_condor_status():
+    @classmethod
+    def get_condor_status(cls):
         """
         Queries condor to get cluster status.
         :return: str, output of query command
         """
-        cmd = [
-            "ssh",
-            f"{WIPACSubmitter.username}@submit-1.icecube.wisc.edu",
-            "'condor_q'",
-        ]
+        cmd = cls.status_cmd
         return subprocess.check_output(cmd).decode()
 
     def collect_condor_status(self):
@@ -713,13 +518,40 @@ class WIPACSubmitter(Submitter):
                 time.sleep(90)
                 self.collect_condor_status()
 
-            logger.info("Done waiting for jon with ID " + str(self.job_id))
+            logger.info("Done waiting for job with ID " + str(self.job_id))
 
         else:
             logger.info(f"No Job ID!")
 
     @staticmethod
     def get_pending_ids():
-        condor_status = WIPACSubmitter.get_condor_status()
+        condor_status = HTCondorSubmitter.get_condor_status()
         ids = np.array([ii.split(" ")[2] for ii in condor_status.split("\n")[4:-6]])
         return ids
+
+    @staticmethod
+    def clear_log_dir():
+        """Removes all files from log_dir.
+        Note that logs may exist outside of log_dir in case of a subclass overriding log_path.
+        """
+        for f in os.listdir(log_dir):
+            ff = f"{log_dir}/{f}"
+            logger.debug(f"removing {ff}")
+            os.remove(ff)
+
+
+@Submitter.register_submitter_class("WIPAC")
+class WIPACSubmitter(HTCondorSubmitter):
+    """
+    override log_path so that logging is done on local storage of submit host (rather than network storage)
+    this is the IceCube best recommended practice
+    ref: https://wiki.icecube.wisc.edu/index.php/Condor/BestPractices#Local_storage_on_submit_host
+    """
+
+    override_log_path = Path("/scratch") / HTCondorSubmitter.username
+    pass
+
+
+@Submitter.register_submitter_class("DESY")
+class DESYSubmitter(HTCondorSubmitter):
+    pass
