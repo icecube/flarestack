@@ -43,6 +43,9 @@ def single_source(sindec, ra_rad=np.pi):
 
 
 def build_ps_cat_name(sindec):
+    """
+    Builds a path/name for a single-source catalogue.
+    """
     return catalogue_dir + "single_source/sindec_" + "{0:.2f}".format(sindec) + ".npy"
 
 
@@ -64,6 +67,9 @@ def make_single_source(sindec):
 
 
 def ps_catalogue_name(sindec):
+    """
+    Generates a catalogue with a single source of given `sindec` and returns its path (name).
+    """
     name = build_ps_cat_name(sindec)
 
     if not os.path.isfile(name):
@@ -73,9 +79,13 @@ def ps_catalogue_name(sindec):
 
 
 def make_stacked_source(sindecs):
+
+    print("make stacked source ", sindecs)
     cat = []
 
     for sindec in sindecs:
+
+        print(sindec)
 
         ra_rad = random.random() ** 2 * np.pi
 
@@ -96,10 +106,10 @@ def make_stacked_source(sindecs):
 
 def ps_stack_catalogue_name(*args):
 
-    name = build_ps_stack_cat_name(args)
+    name = build_ps_stack_cat_name(*args)
 
     if not os.path.isfile(name):
-        make_stacked_source(args)
+        make_stacked_source(*args)
 
     return name
 
