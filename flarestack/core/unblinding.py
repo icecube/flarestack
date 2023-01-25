@@ -284,7 +284,7 @@ def create_unblinder(
                         else self.background_median_gamma[subdir]
                     )
                     logger.debug(f"background median is {bkg_median}")
-                    ul, extrapolated, err = rh.find_overfluctuations(
+                    ul, err, extrapolated = rh.find_overfluctuations(
                         max(self.ts, bkg_median), savepath
                     )
 
