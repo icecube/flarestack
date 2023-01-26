@@ -80,12 +80,9 @@ def ps_catalogue_name(sindec):
 
 def make_stacked_source(sindecs):
 
-    print("make stacked source ", sindecs)
     cat = []
 
     for sindec in sindecs:
-
-        print(sindec)
 
         ra_rad = random.random() ** 2 * np.pi
 
