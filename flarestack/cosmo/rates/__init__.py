@@ -5,6 +5,7 @@ from flarestack.cosmo.rates.tde_rates import get_tde_rate
 from flarestack.cosmo.rates.grb_rates import get_grb_rate
 from flarestack.cosmo.rates.fbot_rates import get_fbot_rate
 from flarestack.cosmo.rates.frb_rates import get_frb_rate
+from flarestack.cosmo.rates.blazar_rates import get_blazar_rate
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ source_maps = {
     "grb": ["GRB", "gamma_ray_burst"],
     "fbot": ["FBOT", "fast_blue_optical_transient"],
     "frb": ["FRB", "fast_radio_bursts"],
+    "blazar": ["Blazar", "blazar"]
 }
 
 sources = {
@@ -24,6 +26,7 @@ sources = {
     "grb": get_grb_rate,
     "fbot": get_fbot_rate,
     "frb": get_frb_rate,
+    "blazar": get_blazar_rate
 }
 
 
