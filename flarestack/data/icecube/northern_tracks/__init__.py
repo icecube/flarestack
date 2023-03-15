@@ -50,27 +50,31 @@ def get_diffuse_binning(season):
 
 
 class NTSeason(IceCubeSeason):
-    def get_background_model(self):
+    def get_background_model(self) -> dict:
+        """Loads Monte Carlo dataset from file according to object path set in object properties.
+
+        Returns:
+            dict: Monte Carlo data set.
+        """
         mc = self.load_data(self.mc_path, cut_fields=False)
+        # According to NT specifications (README):
+        #  "conv" gives the weight for conventional atmospheric neutrinos [1/s]
+        #  flarestack renames it to "weight"
         mc = rename_fields(mc, {"conv": "weight"})
         return mc
 
     def simulate_background(self):
-        if isinstance(self.loaded_background_model, type(None)):
-            self.load_background_model()
+        if self.loaded_background_model is None: 
+            raise RuntimeError("Monte Carlo background is not loaded. Call `load_background_model` before `simulate_background`.")
 
-        # base = self.get_background_model()
-
-        n_exp = np.sum(self.loaded_background_model["weight"])
-        # n_exp = np.sum(base["weight"])
+        n_exp = np.sum(self.loaded_background_model["weight"]) # 1/s
 
         # Simulates poisson noise around the expectation value n_inj.
         n_bkg = np.random.poisson(n_exp)
 
-        # Creates a normalised array of OneWeights
+        # Creates a normalised array of OneWeights.
         p_select = self.loaded_background_model["weight"] / n_exp
-        # p_select = base['weight'] / n_exp
-
+        
         # Creates an array with n_signal entries.
         # Each entry is a random integer between 0 and no. of sources.
         # The probability for each integer is equal to the OneWeight of
