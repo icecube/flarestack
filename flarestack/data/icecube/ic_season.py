@@ -266,7 +266,9 @@ class IceCubeRunList(DetectorOnOffList):
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
     def signal_integral(self, t, source=None):
-        return quad(self.season_f, self.t0, t)
+        integral = np.zeros(shape=len(t))
+        for i, time in enumerate(t):
+            integral[i] = quad(func=self.season_f, a=self.t0, b=t)
 
 
 class IceCubeDataset(Dataset):
