@@ -9,6 +9,7 @@ from flarestack.icecube_utils.dataset_loader import (
 from flarestack.shared import host_server
 from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
 from scipy.interpolate import interp1d
+from scipy.integrate import quad
 import logging
 from pathlib import Path
 from typing import Tuple
@@ -116,18 +117,15 @@ class IceCubeRunList(DetectorOnOffList):
     """
 
     def parse_list(self):
-
         if list(self.on_off_list["run"]) != sorted(list(self.on_off_list["run"])):
             logger.error("Error in ordering GoodRunList!")
             logger.error("Runs are out of order!")
             self.on_off_list = np.sort(self.on_off_list, order="run")
 
         if self.t_dict.get("expect_gaps_in_grl", True):
-
             mask = self.on_off_list["stop"][:-1] == self.on_off_list["start"][1:]
 
             if np.sum(mask) > 0:
-
                 first_run = self.on_off_list["run"][:-1][mask][0]
 
                 logger.warning(
@@ -146,7 +144,6 @@ class IceCubeRunList(DetectorOnOffList):
                 )
 
                 while np.sum(mask) > 0:
-
                     index = list(mask).index(True)
 
                     self.on_off_list[index]["stop"] = self.on_off_list[index + 1][
@@ -170,7 +167,6 @@ class IceCubeRunList(DetectorOnOffList):
             mask = self.on_off_list["stop"][:-1] < self.on_off_list["start"][1:]
 
             if np.sum(~mask) > 0:
-
                 first_run = self.on_off_list["run"][:-1][~mask][0]
 
                 logger.error("The IceCube GoodRunList was not produced correctly.")
@@ -196,7 +192,6 @@ class IceCubeRunList(DetectorOnOffList):
                 logger.error("You have been warned!")
 
                 while np.sum(~mask) > 0:
-
                     index = list(~mask).index(True)
 
                     self.on_off_list[index]["stop"] = self.on_off_list[index + 1][
@@ -261,13 +256,17 @@ class IceCubeRunList(DetectorOnOffList):
                 f"Runs in GoodRunList are out of order for {self.on_off_list}. Check that!"
             )
 
-        mjd.append(1e5)
+        mjd.append(1e5)  # why?
+
         livetime.append(total_t)
 
         season_f = interp1d(stitch_t, np.array(stitch_f), kind="linear")
         mjd_to_livetime = interp1d(mjd, livetime, kind="linear")
         livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
+
+    def signal_integral(t, source=None):
+        return quad(self.t0, t)
 
 
 class IceCubeDataset(Dataset):
@@ -313,8 +312,7 @@ class IceCubeSeason(SeasonWithMC):
 
     def build_time_pdf_dict(self):
         """Function to build a pdf for the livetime of the season. By
-        default, this is assumed to be uniform, spanning from the first to
-        the last event found in the data.
+        default, this exploits the good run list (GRL)
 
         :return: Time pdf dictionary
         """
