@@ -86,6 +86,9 @@ class NTSeason(IceCubeSeason):
         ind = rng.choice(n_mc, size=n_bkg, p=p_select)
         sim_bkg = self.loaded_background_model[ind]
 
+        # Simulates random times
+        sim_bkg["time"] = self.get_time_pdf().simulate_times(source=None, n_s=n_bkg)
+
         # Reduce the data to the relevant fields for analysis.
         analysis_keys = list(self.get_background_dtype().names)
         return sim_bkg[analysis_keys]
@@ -99,6 +102,6 @@ class NTSeasonNewStyle(NTSeason):
         # possibly not the best course of action
         mc = super(NTSeasonNewStyle, self).get_background_model()
         livetime = self.get_time_pdf().get_livetime()
-        for w_tag in ("astro", "weight", "prompt"):
-            mc[w_tag] *= livetime * 86400.0
+        for weight in ("astro", "weight", "prompt"):
+            mc[weight] *= livetime * 86400.0
         return mc
