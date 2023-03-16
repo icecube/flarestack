@@ -265,7 +265,7 @@ class IceCubeRunList(DetectorOnOffList):
         livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
-    def signal_integral(t, source=None):
+    def signal_integral(self, t, source=None):
         return quad(self.t0, t)
 
 
