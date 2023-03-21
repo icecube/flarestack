@@ -1,10 +1,19 @@
-name: Lint
+name: Black Lint
 
-on: [push, pull_request]
-
+on:
+  push:
+  pull_request:
+  
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: psf/black@stable
+      - name: Get Black version
+        run: echo "::set-output name=black_version::$(grep 'black' pyproject.toml | sed -nE 's/.*= *(.*)/\1/p')"
+        id: get_black_version
+      - name: Run Black
+        uses: psf/black@stable
+        with:
+          version: ${{ steps.get_black_version.outputs.black_version }}
+          args: .
