@@ -3,7 +3,7 @@ name: Black Lint
 on:
   push:
   pull_request:
-  
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -16,4 +16,3 @@ jobs:
         uses: psf/black@stable
         with:
           version: ${{ steps.get_black_version.outputs.black_version }}
-          args: .
