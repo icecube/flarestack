@@ -6,16 +6,17 @@ on:
 
 jobs:
   lint:
-    name: Black Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Get Black version
-        id: get_black_version
-        run: |
-          BLACK_VERSION=$(grep 'black' pyproject.toml | sed -nE 's/.*= *(.*)/\1/p')
-          echo "::set-output name=black_version::$BLACK_VERSION"
-      - name: Run Black
-        uses: psf/black@stable
+      - uses: actions/setup-python@v2
         with:
-          version: ${{ steps.get_black_version.outputs.black_version }}
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+      - name: Run Black
+        run: |
+          poetry run black .
