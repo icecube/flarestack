@@ -1,4 +1,4 @@
-name: Black Lint
+name: Lint
 
 on:
   push:
@@ -6,13 +6,17 @@ on:
 
 jobs:
   lint:
+    name: Black Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Get Black version
-        run: echo "::set-output name=black_version::$(grep 'black' pyproject.toml | sed -nE 's/.*= *(.*)/\1/p')"
         id: get_black_version
+        run: |
+          BLACK_VERSION=$(grep 'black' pyproject.toml | sed -nE 's/.*= *(.*)/\1/p')
+          echo "::set-output name=black_version::$BLACK_VERSION"
       - name: Run Black
         uses: psf/black@stable
         with:
           version: ${{ steps.get_black_version.outputs.black_version }}
+          args: .
