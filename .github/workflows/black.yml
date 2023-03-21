@@ -19,4 +19,3 @@ jobs:
         uses: psf/black@stable
         with:
           version: ${{ steps.get_black_version.outputs.black_version }}
-          black_args: .
