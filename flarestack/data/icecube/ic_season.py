@@ -282,6 +282,8 @@ class IceCubeRunList(DetectorOnOffList):
         livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
+"""
+    # try to use TimePDF.signal_integral() 
     def signal_integral(self, t, source=None):
         if isinstance(t, np.ndarray):
             integral = np.zeros_like(t)
@@ -295,7 +297,7 @@ class IceCubeRunList(DetectorOnOffList):
             raise TypeError(
                 f"Found {type(t)} object when expecting numpy.float64 or numpy.ndarray object."
             )
-
+"""
 
 class IceCubeDataset(Dataset):
     pass
