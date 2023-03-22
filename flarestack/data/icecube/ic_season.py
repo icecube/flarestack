@@ -266,9 +266,18 @@ class IceCubeRunList(DetectorOnOffList):
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
     def signal_integral(self, t, source=None):
-        integral = np.zeros(shape=t.shape)
-        for time in np.nditer(t):
-            integral[i] = quad(func=self.season_f, a=self.t0, b=time)
+        if isinstance(t, np.ndarray):
+            integral = np.zeros_like(t)
+            it = np.nditer(t, flags=["f_index"])
+            for t_i in it:
+                integral[it.index] = quad(func=self.season_f, a=self.t0, b=t_i)
+            return integral
+        elif isinstance(t, np.float64):
+            return quad(func=self.season_f, a=self.t0, b=t)
+        else:
+            raise TypeError(
+                f"Found {type(t)} object when expecting numpy.float64 or numpy.ndarray object."
+            )
 
 
 class IceCubeDataset(Dataset):
