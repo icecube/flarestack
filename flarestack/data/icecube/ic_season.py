@@ -228,14 +228,14 @@ class IceCubeRunList(DetectorOnOffList):
         step = 1e-12
 
         t_range = [t0 - step]
-        
+
         f = [0.0]
 
         # MJD timestaps marking start and stop time of each run
         mjd = [0.0]
-        # cumulative livetime at each timestamp
+        # cumulative livetime at each timestamp [unit to be checked]
         livetime = [0.0]
-        # cumulative sum of run lengths
+        # cumulative sum of run lengths [unit to be checked]
         total_t = 0.0
 
         for i, run in enumerate(self.on_off_list):
@@ -278,26 +278,12 @@ class IceCubeRunList(DetectorOnOffList):
         livetime.append(total_t)
 
         season_f = interp1d(stitch_t, np.array(stitch_f), kind="linear")
+        # cumulative livetime [[unit to be checked]] as a function of the date [mjd]
         mjd_to_livetime = interp1d(mjd, livetime, kind="linear")
+        # date [mjd] at which a given livetime [unit to be checked] is reached
         livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
-"""
-    # try to use TimePDF.signal_integral() 
-    def signal_integral(self, t, source=None):
-        if isinstance(t, np.ndarray):
-            integral = np.zeros_like(t)
-            it = np.nditer(t, flags=["f_index"])
-            for t_i in it:
-                integral[it.index] = trapz(func=self.season_f, a=self.t0, b=t_i)
-            return integral
-        elif isinstance(t, np.float64):
-            return trapz(func=self.season_f, a=self.t0, b=t)
-        else:
-            raise TypeError(
-                f"Found {type(t)} object when expecting numpy.float64 or numpy.ndarray object."
-            )
-"""
 
 class IceCubeDataset(Dataset):
     pass
