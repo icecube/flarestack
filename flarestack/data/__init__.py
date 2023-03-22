@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 class DatasetHolder:
     def __init__(self, sample_name):
-
         self.sample_name = sample_name
 
         self.datasets = dict()
@@ -134,7 +133,6 @@ class Season:
             raise TypeError(f"Season got unexpected keyword argument {min(kwargs)}")
 
     def setup(self, **kwargs):
-
         trial_with_data = kwargs.pop("trial_with_data", None)
         subselection_fraction = kwargs.pop("subselection_fraction", None)
 
@@ -146,7 +144,6 @@ class Season:
         # Subselection fraction
 
         if subselection_fraction is not None:
-
             if float(subselection_fraction) > 1.0:
                 raise ValueError(
                     "Subselection {0} is greater than 1."
@@ -224,9 +221,7 @@ class Season:
         data["ra"] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
         np.random.shuffle(data["time"])
-        return np.array(data[list(self.get_background_dtype().names)].copy())[
-            :,
-        ]
+        return np.array(data[list(self.get_background_dtype().names)].copy())[:,]
 
     def simulate_background(self):
         data = self.pseudo_background()
@@ -295,7 +290,6 @@ class Season:
         return self.load_data(self.pseudo_mc_path, **kwargs)
 
     def check_files_exist(self):
-
         all_paths = []
 
         for x in self.all_paths:
@@ -333,7 +327,6 @@ class SeasonWithMC(Season):
 
 class SeasonWithoutMC(Season):
     def __init__(self, season_name, sample_name, exp_path, pseudo_mc_path, **kwargs):
-
         Season.__init__(self, season_name, sample_name, exp_path, **kwargs)
         self.pseudo_mc_path = pseudo_mc_path
         self.all_paths.append(self.pseudo_mc_path)
