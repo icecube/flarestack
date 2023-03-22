@@ -168,6 +168,19 @@ class ResultsHandler(object):
         """
         return self.valid
 
+    def __str__(self):
+        out = f"Analysis result for `{self.name}`\n"
+        if self.valid:
+            extrapolated = (
+                "extrapolated" if self.extrapolated_sens else "not extrapolated"
+            )
+            out += f"Sensitivity = {self.sensitivity:.2e} (+{self.sensitivity_err[0]:.2e}/-{self.sensitivity_err[1]:.2e}) [{extrapolated}]\n"
+            out += f"Discovery potential (5 sigma from TS distribution) = {self.disc_potential:.2e}\n"
+            out += f"Discovery potential (TS = 25) = {self.disc_potential_25:.2e}"
+        else:
+            out += "Result is invalid. Check the log messages."
+        return out
+
     @property
     def scales_float(self):
         """directly return the injected scales as floats"""
@@ -265,7 +278,7 @@ class ResultsHandler(object):
         :param e_pdf_dict: Dictionary containing energy PDF information
         :return: Value for the neutrino luminosity
         """
-        return calculate_astronomy(flux, e_pdf_dict, self.sources)
+        return calculate_astronomy(flux, e_pdf_dict)
 
     def clean_merged_data(self):
         """Function to clear cache of all data"""
@@ -487,18 +500,14 @@ class ResultsHandler(object):
 
         savepath = os.path.join(self.plot_dir, "sensitivity.pdf")
 
-        self.find_overfluctuations(bkg_median, savepath)
-        # self.sensitivity_fit(savepath, bkg_median)
-        # self.sensitivity, self.extrapolated_sens, self.sensitivity_err = self.find_overfluctuations(
-        #     bkg_median, savepath, bkg_median
-        # )
+        (
+            self.sensitivity,
+            self.sensitivity_err,
+            self.extrapolated_sens,
+        ) = self.find_overfluctuations(bkg_median, savepath)
 
-        msg = ""
-
-        if self.extrapolated_sens:
-            msg = "EXTRAPOLATED "
-
-        logger.info("{0}Sensitivity is {1:.3g}".format(msg, self.sensitivity))
+        msg = "EXTRAPOLATED " if self.extrapolated_sens else ""
+        logger.info(f"{msg}Sensitivity is {self.sensitivity:.3g}")
 
     # def set_upper_limit(self, ts_val, savepath):
     #     """Set an upper limit, based on a Test Statistic value from
@@ -534,13 +543,18 @@ class ResultsHandler(object):
 
     def find_overfluctuations(self, ts_val, savepath=None):
         """Uses the values of injection trials to fit an 1-exponential decay
-        function to the overfluctuations, allowing for calculation of the
-        sensitivity. Where the injected flux was not sufficient to reach the
-        sensitivity, extrapolation will be used instead of interpolation,
+        function to the fraction of overfluctuations above `ts_val` as a function
+        of the injected flux (or n_s).
+
+        For ts_val equal to the background median, this allows to calculate the sensitivity.
+        For ts_val equal to an unblinded value of the TS, this allows to calculate an upper limit.
+
+        Where the injected flux was not sufficient to reach the
+        sensitivity, extrapolation is be used instead of interpolation,
         but this will obviously have larger associated errors. If
-        extrapolation is used, self.extrapolated_sens is set to true. In
+        extrapolation is used, the third return value is set to True. In
         either case, a plot of the overfluctuations as a function of the
-        injected signal will be made.
+        injected signal is produced.
         """
 
         x = sorted(self.results.keys())
@@ -584,7 +598,8 @@ class ResultsHandler(object):
         x = np.array(x_acc)
         self.overfluctuations[ts_val] = x, y, yerr
 
-        return self.sensitivity_fit(savepath, ts_val)
+        fit, err, extrapolated = self.sensitivity_fit(savepath, ts_val)
+        return fit, err, extrapolated
 
     def sensitivity_fit(self, savepath, ts_val):
 
@@ -665,13 +680,9 @@ class ResultsHandler(object):
                 f"Not enough points with overfluctuations under 95%, lower injection scale!"
             )
 
-        sens_err = np.array([fit - lower, upper - fit]).T[0]
+        fit_err = np.array([fit - lower, upper - fit]).T[0]
 
-        self.sensitivity = fit
-        self.extrapolated_sens = extrapolated
-        self.sensitivity_err = sens_err
-
-        return fit, extrapolated, sens_err
+        return fit, fit_err, extrapolated
 
     def find_disc_potential(self):
 
@@ -778,6 +789,9 @@ class ResultsHandler(object):
                     return f(x, best_a, best_b, best_c)
 
                 sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
+
+                # "disc_potential" and "disc_potential_25" attributes are set here
+                # use of `setattr` makes the code a bit obscure and could be improved
                 setattr(self, out_list[i], k_to_flux(sol))
 
             except RuntimeError as e:
