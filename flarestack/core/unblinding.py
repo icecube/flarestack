@@ -237,11 +237,13 @@ def create_unblinder(
 
                 flux_uls = []
                 fluence_uls = []
-                e_per_source_uls = []
                 energy_flux = []
                 x_axis = []
 
+                # e_per_source_uls = []
+
                 for subdir in sorted(os.listdir(self.pickle_dir)):
+                    # this is a loop over different `gamma` values!
 
                     root = os.path.join(self.unblind_dict["background_ts"], subdir)
 
@@ -282,7 +284,7 @@ def create_unblinder(
                         else self.background_median_gamma[subdir]
                     )
                     logger.debug(f"background median is {bkg_median}")
-                    ul, extrapolated, err = rh.find_overfluctuations(
+                    ul, err, extrapolated = rh.find_overfluctuations(
                         max(self.ts, bkg_median), savepath
                     )
 
@@ -316,9 +318,10 @@ def create_unblinder(
 
                     fluence_uls.append(astro_dict[key] * inj_time)
 
-                    e_per_source_uls.append(
-                        astro_dict["Mean Luminosity (erg/s)"] * inj_time
-                    )
+                    # this functionality has been retired
+                    # e_per_source_uls.append(
+                    #    astro_dict["Mean Luminosity (erg/s)"] * inj_time
+                    # )
 
                     energy_flux.append(astro_dict[key])
                     x_axis.append(float(subdir))
@@ -345,10 +348,10 @@ def create_unblinder(
 
                 plt.figure()
                 ax1 = plt.subplot(111)
-                ax2 = ax1.twinx()
+                # ax2 = ax1.twinx()
 
                 ax1.plot(x_axis, fluence_uls, marker="o")
-                ax2.plot(x_axis, e_per_source_uls, marker="o")
+                # ax2.plot(x_axis, e_per_source_uls, marker="o")
 
                 if self.mock_unblind:
                     ax1.text(
@@ -360,16 +363,20 @@ def create_unblinder(
                         transform=ax1.transAxes,
                     )
 
-                ax2.grid(True, which="both")
+                ax1.grid(True, which="both")
+                # ax2.grid(True, which="both")
                 ax1.set_xlabel("Gamma")
-                ax2.set_xlabel("Gamma")
+                # ax2.set_xlabel("Gamma")
                 ax1.set_ylabel(r"Total Fluence [GeV cm$^{-2}$ s$^{-1}$]")
-                ax2.set_ylabel(r"Isotropic-Equivalent Luminosity $L_{\nu}$ (erg/s)")
+                # ax2.set_ylabel(r"Isotropic-Equivalent Luminosity $L_{\nu}$ (erg/s)")
                 ax1.set_yscale("log")
-                ax2.set_yscale("log")
+                # ax2.set_yscale("log")
 
-                for k, ax in enumerate([ax1, ax2]):
-                    y = [fluence_uls, e_per_source_uls][k]
+                axes = [ax1]  # was: axes = [ax1, ax2]
+                ordinates = [fluence_uls]  # was: [fluence_uls, e_per_source_uls]
+
+                for k, ax in enumerate(axes):
+                    y = ordinates[k]
                     ax.set_ylim(0.95 * min(y), 1.1 * max(y))
 
                 plt.tight_layout()
@@ -387,7 +394,7 @@ def create_unblinder(
                     "flux": flux_uls,
                     "energy_flux": energy_flux,
                     "fluence": fluence_uls,
-                    "energy": e_per_source_uls,
+                    # "energy": e_per_source_uls,
                 }
 
                 with open(self.limit_path, "wb") as f:
