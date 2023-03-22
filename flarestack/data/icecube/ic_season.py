@@ -9,7 +9,6 @@ from flarestack.icecube_utils.dataset_loader import (
 from flarestack.shared import host_server
 from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
 from scipy.interpolate import interp1d
-from scipy.integrate import trapz
 import logging
 from pathlib import Path
 from typing import Tuple
