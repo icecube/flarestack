@@ -646,12 +646,6 @@ class DetectorOnOffList(TimePDF):
             self.livetime_to_mjd,
         ) = self.parse_list()
 
-    def parse_list(self):
-        t0 = min(self.on_off_list["start"])
-        t1 = max(self.on_off_list["stop"])
-        livetime = np.sum(self.on_off_list["length"])
-        return t0, t1, livetime
-
     def f(self, t, source=None):
         return self.season_f(t) / self.livetime
 
