@@ -68,8 +68,7 @@ def read_t_pdf_dict(t_pdf_dict):
         ("Max Flare", "max_flare"),
     ]
 
-    for (old_key, new_key) in maps:
-
+    for old_key, new_key in maps:
         if old_key in list(t_pdf_dict.keys()):
             logger.warning(
                 "Deprecated t_pdf_key '{0}' was used. "
@@ -84,7 +83,7 @@ def read_t_pdf_dict(t_pdf_dict):
         ("FixedEndBox", "custom_source_box"),  # Not a typo! Class renamed.
     ]
 
-    for (old_key, new_key) in name_maps:
+    for old_key, new_key in name_maps:
         if t_pdf_dict["time_pdf_name"] == old_key:
             logger.warning(
                 "Deprecated time_pdf_name '{0}' was used. "
@@ -129,7 +128,6 @@ class TimePDF(object):
 
     @classmethod
     def create(cls, t_pdf_dict, livetime_pdf=None):
-
         t_pdf_dict = read_t_pdf_dict(t_pdf_dict)
 
         t_pdf_name = t_pdf_dict["time_pdf_name"]
@@ -368,7 +366,6 @@ class Box(TimePDF):
     """
 
     def __init__(self, t_pdf_dict, season):
-
         TimePDF.__init__(self, t_pdf_dict, season)
         self.pre_window = self.t_dict["pre_window"]
         self.post_window = self.t_dict["post_window"]
