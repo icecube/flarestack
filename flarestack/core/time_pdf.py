@@ -667,6 +667,9 @@ class DetectorOnOffList(TimePDF):
     def get_mjd_conversion(self):
         return self.mjd_to_livetime, self.livetime_to_mjd
 
+    def signal_integral(self, t, source=None):
+        return self.mjd_to_livetime(t) / self.get_livetime()
+
 
 @TimePDF.register_subclass("decay")
 class DecayPDF(TimePDF):
