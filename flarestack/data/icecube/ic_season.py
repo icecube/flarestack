@@ -9,7 +9,7 @@ from flarestack.icecube_utils.dataset_loader import (
 from flarestack.shared import host_server
 from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
 from scipy.interpolate import interp1d
-from scipy.integrate import quad
+from scipy.integrate import trapz
 import logging
 from pathlib import Path
 from typing import Tuple
@@ -117,6 +117,16 @@ class IceCubeRunList(DetectorOnOffList):
     """
 
     def parse_list(self):
+        """Parses the GoodRunList to build a TimePDF
+
+        Returns:
+            t0, t1: min and max time of the GRL
+            full_livetime: livetime
+            season_f: interpolating function returning 1 or 0 as a function of time
+            mjd_to_livetime: function to convert a mjd to livetime [s]
+            livetime_to_mjd: function to convert a livetime [s] to mjd
+
+        """
         if list(self.on_off_list["run"]) != sorted(list(self.on_off_list["run"])):
             logger.error("Error in ordering GoodRunList!")
             logger.error("Runs are out of order!")
@@ -218,10 +228,14 @@ class IceCubeRunList(DetectorOnOffList):
         step = 1e-12
 
         t_range = [t0 - step]
+        
         f = [0.0]
 
+        # MJD timestaps marking start and stop time of each run
         mjd = [0.0]
+        # cumulative livetime at each timestamp
         livetime = [0.0]
+        # cumulative sum of run lengths
         total_t = 0.0
 
         for i, run in enumerate(self.on_off_list):
@@ -231,6 +245,8 @@ class IceCubeRunList(DetectorOnOffList):
             mjd.append(run["stop"])
             livetime.append(total_t)
 
+            # extends t_range and f with a box function of value 1 between the start and stop of the run
+            # adds zero values at times immediately adjacent to the start and stop of the run
             t_range.extend(
                 [run["start"] - step, run["start"], run["stop"], run["stop"] + step]
             )
@@ -256,7 +272,8 @@ class IceCubeRunList(DetectorOnOffList):
                 f"Runs in GoodRunList are out of order for {self.on_off_list}. Check that!"
             )
 
-        mjd.append(1e5)  # why?
+        # end of the livetime function domain
+        mjd.append(1e5)
 
         livetime.append(total_t)
 
@@ -270,10 +287,10 @@ class IceCubeRunList(DetectorOnOffList):
             integral = np.zeros_like(t)
             it = np.nditer(t, flags=["f_index"])
             for t_i in it:
-                integral[it.index] = quad(func=self.season_f, a=self.t0, b=t_i)
+                integral[it.index] = trapz(func=self.season_f, a=self.t0, b=t_i)
             return integral
         elif isinstance(t, np.float64):
-            return quad(func=self.season_f, a=self.t0, b=t)
+            return trapz(func=self.season_f, a=self.t0, b=t)
         else:
             raise TypeError(
                 f"Found {type(t)} object when expecting numpy.float64 or numpy.ndarray object."
