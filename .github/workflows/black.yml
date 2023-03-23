@@ -20,4 +20,4 @@ jobs:
           poetry install
       - name: Run Black
         run: |
-          poetry run black .
+          poetry run black --check .
