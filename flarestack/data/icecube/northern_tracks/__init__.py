@@ -86,8 +86,19 @@ class NTSeason(IceCubeSeason):
         ind = rng.choice(n_mc, size=n_bkg, p=p_select)
         sim_bkg = self.loaded_background_model[ind]
 
+        time_pdf = self.get_time_pdf()
+
         # Simulates random times
-        sim_bkg["time"] = self.get_time_pdf().simulate_times(source=None, n_s=n_bkg)
+        sim_bkg["time"] = time_pdf.simulate_times(source=None, n_s=n_bkg)
+
+        # Check that the time pdf evaluates to 1 for all the simulated times.
+        pdf_sum = np.sum(time_pdf.season_f(sim_bkg["time"]))
+        if pdf_sum < n_bkg:
+            raise RuntimeError(
+                f"The time PDF does not evaluate to 1 for all generated event times.\n \
+                The sum of the PDF values over {n_bkg} events is {pdf_sum}.\n \
+                This means the sampling of background times is not reliable and must be fixed."
+            )
 
         # Reduce the data to the relevant fields for analysis.
         analysis_keys = list(self.get_background_dtype().names)
