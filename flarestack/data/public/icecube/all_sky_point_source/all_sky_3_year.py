@@ -48,12 +48,12 @@ def pseudo_mc_binning(season):
 
 data_dtype = np.dtype(
     [
-        ("ra", np.float),
-        ("dec", np.float),
-        ("logE", np.float),
-        ("sigma", np.float),
-        ("time", np.float),
-        ("sinDec", np.float),
+        ("ra", float),
+        ("dec", float),
+        ("logE", float),
+        ("sigma", float),
+        ("time", float),
+        ("sinDec", float),
     ]
 )
 
