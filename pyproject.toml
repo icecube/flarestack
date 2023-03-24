@@ -25,7 +25,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.8, <3.12"
 astropy = "^5.1"
-black = "^22"
+black = ">=22,<24"
 coveralls = "^3.3.1"
 healpy = "^1.16.1"
 jupyter = "^1.0.0"
