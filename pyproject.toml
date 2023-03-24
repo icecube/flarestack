@@ -45,7 +45,7 @@ Sphinx = "^5.1.1"
 sphinx-rtd-theme = "^1.0.0"
 myst-parser = "^0.18.0"
 nbsphinx = ">=0.8.9,<0.10.0"
-myst-nb = "^0.16.0"
+myst-nb = ">=0.16,<0.18"
 
 [build-system]
 requires = ["poetry-core>=1.2.0"]
