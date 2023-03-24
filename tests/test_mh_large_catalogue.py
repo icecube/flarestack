@@ -43,7 +43,6 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
         logging.info(
             "Testing 'large_catalogue' MinimisationHandler class "
             "with {0} sources and IC40 data".format(n_sources)

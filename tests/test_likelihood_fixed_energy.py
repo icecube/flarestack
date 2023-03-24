@@ -38,7 +38,6 @@ class TestTimeIntegrated(unittest.TestCase):
         # Test three declinations
 
         for j, sindec in enumerate(sindecs):
-
             unblind_dict = {
                 "name": f"tests/test_fixed_energy/{sindec:.2f}/",
                 "mh_name": "fixed_weights",

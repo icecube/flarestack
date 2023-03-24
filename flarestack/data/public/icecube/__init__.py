@@ -110,7 +110,6 @@ class PublicICSeason(SeasonWithoutMC):
         return lambda e: np.exp(map_f(np.log10(e)))
 
     def plot_effective_area(self, show=False):
-
         savepath = eff_a_plot_dir + self.sample_name + "/" + self.season_name + ".pdf"
 
         try:
@@ -145,7 +144,6 @@ class PublicICSeason(SeasonWithoutMC):
             plt.close()
 
     def get_raw_pseudo_mc(self):
-
         data_dtype = np.dtype(
             [
                 ("logE", np.float),
@@ -161,11 +159,9 @@ class PublicICSeason(SeasonWithoutMC):
         pseudo_mc = []
 
         with open(self.a_eff_path, "r") as f:
-
             csv_reader = csv.reader(f, delimiter=" ")
 
             for i, row in enumerate(csv_reader):
-
                 if i > 0:
                     row = [float(x) for x in row if x != ""]
 
@@ -187,7 +183,6 @@ class PublicICSeason(SeasonWithoutMC):
         return pseudo_mc
 
     def map_energy_proxy(self, show=False):
-
         exp = self.get_background_model()
 
         pseudo_mc = self.get_raw_pseudo_mc()

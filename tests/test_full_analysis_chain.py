@@ -18,13 +18,11 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_full_chain(self):
-
         logging.info("Testing MinimisationHandler analysis chain")
 
         base_name = "tests/test_analysis_chain"
 
         try:
-
             for j, gamma in enumerate([2.0, 2.5]):
                 # Initialise Injectors/LLHs
 

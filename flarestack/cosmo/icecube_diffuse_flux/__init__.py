@@ -154,8 +154,7 @@ def plot_diffuse_flux(fit="joint_15"):
             color=f"C{i}",
         )
 
-        for (index, norm) in all_c:
-
+        for index, norm in all_c:
             plt.plot(e_range, e_range**2 * flux_f(e_range, norm, index), alpha=0.15)
 
     plt.yscale("log")

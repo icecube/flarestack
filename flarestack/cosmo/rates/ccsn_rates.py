@@ -71,7 +71,6 @@ def get_sn_fraction(sn_subclass=None, sn_subclass_fractions_name=None):
         return 1.0
 
     else:
-
         sn_types = get_sn_subfraction(sn_subclass_fractions_name)
 
         if sn_subclass in sn_types.keys():
@@ -122,7 +121,6 @@ def get_kcc_rate(kcc_name=None, with_range=False):
         logging.info(f"Loaded kcc '{kcc_name}' ({ref})")
 
     if with_range:
-
         if lower_lim is None:
             logging.warning(
                 f"No one sigma kcc range found for kcc '{kcc_name}'. "
@@ -158,7 +156,6 @@ def get_local_ccsn_rate(
     subclass_fraction = get_sn_fraction(sn_subclass=sn_subclass)
 
     if with_range:
-
         return (
             sfr_rate * kcc[0] * subclass_fraction,
             sfr_rate * kcc[1] * subclass_fraction,

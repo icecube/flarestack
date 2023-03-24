@@ -48,8 +48,7 @@ def read_llh_dict(llh_dict):
         ("llh_time_pdf", "llh_sig_time_pdf"),
     ]
 
-    for (old_key, new_key) in maps:
-
+    for old_key, new_key in maps:
         if old_key in list(llh_dict.keys()):
             logger.warning(
                 "Deprecated llh_dict key'{0}' was used. Please use '{1}' in future.".format(
@@ -60,7 +59,7 @@ def read_llh_dict(llh_dict):
 
     pairs = [("llh_energy_pdf", read_e_pdf_dict), ("llh_sig_time_pdf", read_t_pdf_dict)]
 
-    for (key, f) in pairs:
+    for key, f in pairs:
         if key in list(llh_dict.keys()):
             llh_dict[key] = f(llh_dict[key])
         else:
@@ -130,7 +129,6 @@ class LLH(object):
 
     @classmethod
     def create(cls, season, sources, llh_dict):
-
         llh_dict = read_llh_dict(llh_dict)
         llh_name = llh_dict["llh_name"]
 
@@ -277,7 +275,6 @@ class LLH(object):
         veto = np.ones_like(data["ra"], dtype=bool)
 
         for source in sources:
-
             # Sets half width of spatial box
             width = np.deg2rad(self.spatial_box_width)
 
@@ -415,14 +412,12 @@ class SpatialLLH(LLH):
         assumed_bkg_mask = np.ones(len(data), dtype=bool)
 
         for i, source in enumerate(self.sources):
-
             s_mask = self.select_spatially_coincident_data(data, [source])
 
             assumed_bkg_mask *= ~s_mask
             coincident_data = data[s_mask]
 
             if len(coincident_data) > 0:
-
                 sig = self.signal_pdf(source, coincident_data)
 
                 bkg = np.array(self.background_pdf(source, coincident_data))
@@ -436,7 +431,6 @@ class SpatialLLH(LLH):
         SoB_spacetime = np.array(SoB_spacetime)
 
         def test_statistic(params, weights):
-
             return self.calculate_test_statistic(
                 params,
                 weights,
@@ -471,7 +465,6 @@ class SpatialLLH(LLH):
             llh_value = -50.0 + all_n_j
 
         else:
-
             llh_value = np.array([np.sum(np.log(y)) for y in x])
 
             llh_value += self.assume_background(
@@ -489,11 +482,9 @@ class SpatialLLH(LLH):
 
 @LLH.register_subclass("fixed_energy")
 class FixedEnergyLLH(LLH):
-
     fit_energy = False
 
     def __init__(self, season, sources, llh_dict):
-
         try:
             e_pdf_dict = llh_dict["llh_energy_pdf"]
             self.energy_pdf = EnergyPDF.create(e_pdf_dict)
@@ -580,7 +571,6 @@ class FixedEnergyLLH(LLH):
         acc = np.ones_like(dec_range, dtype=float)
 
         for i, dec in enumerate(dec_range):
-
             # Sets half width of band
             dec_width = np.deg2rad(5.0)
 
@@ -651,14 +641,12 @@ class FixedEnergyLLH(LLH):
         assumed_bkg_mask = np.ones(len(data), dtype=bool)
 
         for i, source in enumerate(self.sources):
-
             s_mask = self.select_spatially_coincident_data(data, [source])
 
             assumed_bkg_mask *= ~s_mask
             coincident_data = data[s_mask]
 
             if len(coincident_data) > 0:
-
                 sig = self.signal_pdf(source, coincident_data)
                 bkg = np.array(self.background_pdf(source, coincident_data))
 
@@ -694,7 +682,6 @@ class FixedEnergyLLH(LLH):
             llh_value = -50.0 + all_n_j
 
         else:
-
             llh_value = np.array([np.sum(np.log(y)) for y in x])
 
             llh_value += self.assume_background(
@@ -712,11 +699,9 @@ class FixedEnergyLLH(LLH):
 
 @LLH.register_subclass("standard")
 class StandardLLH(FixedEnergyLLH):
-
     fit_energy = True
 
     def __init__(self, season, sources, llh_dict):
-
         FixedEnergyLLH.__init__(self, season, sources, llh_dict)
 
         # Bins for energy Log(E/GeV)
@@ -854,7 +839,6 @@ class StandardLLH(FixedEnergyLLH):
         return self.acceptance_f(dec, gamma)
 
     def create_kwargs(self, data, pull_corrector, weight_f=None):
-
         kwargs = dict()
 
         kwargs["n_all"] = float(len(data))
@@ -864,7 +848,6 @@ class StandardLLH(FixedEnergyLLH):
         assumed_background_mask = np.ones(len(data), dtype=bool)
 
         for i, source in enumerate(self.sources):
-
             s_mask = self.select_spatially_coincident_data(data, [source])
 
             coincident_data = data[s_mask].copy()
@@ -885,7 +868,6 @@ class StandardLLH(FixedEnergyLLH):
                 coincident_data = data[s_mask]
 
                 if len(coincident_data) > 0:
-
                     SoB_pdf = lambda x: self.signal_pdf(
                         source, x
                     ) / self.background_pdf(source, x)
@@ -936,7 +918,6 @@ class StandardLLH(FixedEnergyLLH):
         # If n_s if negative, then removes the energy term from the likelihood
 
         for i, n_j in enumerate(all_n_j):
-
             SoB_spacetime = kwargs["SoB_spacetime_cache"][i]
             # Switches off Energy term for negative n_s, which should in theory
             # be a continuous change that does not alter the likelihood for
@@ -946,7 +927,6 @@ class StandardLLH(FixedEnergyLLH):
                 x.append(np.array([1.0]))
 
             else:
-
                 SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
                     gamma, SoB_spacetime
                 )
@@ -955,7 +935,6 @@ class StandardLLH(FixedEnergyLLH):
                     x.append(1.0 + (n_j / kwargs["n_all"]) * (SoB_spacetime - 1.0))
 
                 else:
-
                     SoB_energy = self.estimate_energy_weights(
                         gamma, kwargs["SoB_energy_cache"][i]
                     )
@@ -972,7 +951,6 @@ class StandardLLH(FixedEnergyLLH):
             llh_value = -50.0 + all_n_j
 
         else:
-
             llh_value = np.sum([np.sum(np.log(y)) for y in x])
 
             llh_value += np.sum(
@@ -1057,9 +1035,7 @@ class StandardLLH(FixedEnergyLLH):
 
     @staticmethod
     def return_injected_parameters(mh_dict):
-
         try:
-
             inj = mh_dict["inj_dict"]["injection_energy_pdf"]
             llh = mh_dict["llh_dict"]["llh_energy_pdf"]
 
@@ -1082,7 +1058,6 @@ class StandardLLH(FixedEnergyLLH):
 @LLH.register_subclass("standard_overlapping")
 class StandardOverlappingLLH(StandardLLH):
     def create_kwargs(self, data, pull_corrector, weight_f=None):
-
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1098,7 +1073,6 @@ class StandardOverlappingLLH(StandardLLH):
         assumed_background_mask = np.ones(len(data), dtype=bool)
 
         for i, source in enumerate(self.sources):
-
             s_mask = self.select_spatially_coincident_data(data, [source])
 
             coincident_data = data[s_mask]
@@ -1186,7 +1160,6 @@ class StandardOverlappingLLH(StandardLLH):
 @LLH.register_subclass("standard_matrix")
 class StandardMatrixLLH(StandardOverlappingLLH):
     def create_kwargs(self, data, pull_corrector, weight_f=None):
-
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1204,7 +1177,6 @@ class StandardMatrixLLH(StandardOverlappingLLH):
         sources = self.sources
 
         for i, source in enumerate(sources):
-
             s_mask = self.select_spatially_coincident_data(data, [source])
 
             coincident_data = data[s_mask]
@@ -1243,7 +1215,6 @@ class StandardMatrixLLH(StandardOverlappingLLH):
         SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
 
         def joint_SoB(dataset, gamma):
-
             weight = np.array(season_weight(gamma))
             weight /= np.sum(weight)
 
@@ -1275,7 +1246,6 @@ class StandardMatrixLLH(StandardOverlappingLLH):
 
 
 def generate_dynamic_flare_class(season, sources, llh_dict):
-
     try:
         mh_name = llh_dict["llh_name"]
     except KeyError:
@@ -1294,7 +1264,6 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
         def create_flare_llh_function(
             self, data, flare_veto, n_all, src, n_season, pull_corrector
         ):
-
             coincident_data = data[~flare_veto]
             kwargs = self.create_kwargs(coincident_data, pull_corrector)
             kwargs["n_all"] = n_all

@@ -31,7 +31,6 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
         logging.info("Testing 'fixed_weight' MinimisationHandler class")
 
         # Test three declinations

@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_astronomy(flux, e_pdf_dict):
-
     flux /= u.GeV * u.cm**2 * u.s
 
     energy_PDF = EnergyPDF.create(e_pdf_dict)

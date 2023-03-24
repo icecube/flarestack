@@ -85,7 +85,6 @@ def create_unblinder(
 
     class Unblinder(ParentMiminisationHandler):
         def __init__(self, unblind_dict, seed=None, scan_2d=False, **kwargs):
-
             self.unblind_dict = unblind_dict
             unblind_dict["unblind_bool"] = True
             unblind_dict["mock_unblind_bool"] = mock_unblind
@@ -149,7 +148,6 @@ def create_unblinder(
             # Avoid redoing unblinding
 
             if not reunblind:
-
                 try:
                     logger.info(
                         "Not re-unblinding, loading results from {0}".format(
@@ -212,7 +210,6 @@ def create_unblinder(
                 )
 
             if full_plots:
-
                 self.calculate_upper_limits()
                 if isinstance(self, FlareMinimisationHandler):
                     self.neutrino_lightcurve()
@@ -226,7 +223,6 @@ def create_unblinder(
                 return MockUnblindedInjector(season, sources, **self.inj_dict)
 
         def calculate_upper_limits(self):
-
             try:
                 ul_dir = os.path.join(self.plot_dir, "upper_limits/")
 
@@ -304,7 +300,7 @@ def create_unblinder(
                     else:
                         logger.debug("calculating injection time from TimePDF")
                         inj_time = 0.0
-                        for (name, season) in seasons.items():
+                        for name, season in seasons.items():
                             t_pdf = TimePDF.create(
                                 mh_dict["inj_dict"]["injection_sig_time_pdf"],
                                 season.get_time_pdf(),
@@ -414,11 +410,9 @@ def create_unblinder(
             )
 
             try:
-
                 ts_array = list()
 
                 for subdir in os.listdir(self.pickle_dir):
-
                     merged_pkl = os.path.join(
                         os.path.join(self.pickle_dir, subdir), "merged/0.pkl"
                     )
@@ -450,7 +444,6 @@ def create_unblinder(
                 )
 
             except (IOError, OSError):
-
                 try:
                     ts_array = list()
 
@@ -518,7 +511,7 @@ def create_unblinder(
             print("\n")
             print("The following LLH will be used:")
             print("\n")
-            for (key, val) in self.unblind_dict["llh_dict"].items():
+            for key, val in self.unblind_dict["llh_dict"].items():
                 print(key, val)
             print("\n")
             confirm()

@@ -24,7 +24,6 @@ def read_e_pdf_dict(e_pdf_dict):
     """
 
     if e_pdf_dict != {}:
-
         maps = [
             ("E Min", "e_min_gev"),
             ("E Max", "e_max_gev"),
@@ -34,8 +33,7 @@ def read_e_pdf_dict(e_pdf_dict):
             ("Source Energy (erg)", "source_energy_erg"),
         ]
 
-        for (old_key, new_key) in maps:
-
+        for old_key, new_key in maps:
             if old_key in list(e_pdf_dict.keys()):
                 logger.warning(
                     "Deprecated e_pdf_key '{0}' was used. "
@@ -49,7 +47,7 @@ def read_e_pdf_dict(e_pdf_dict):
             ("Spline", "spline"),
         ]
 
-        for (old_key, new_key) in name_maps:
+        for old_key, new_key in name_maps:
             if e_pdf_dict["energy_pdf_name"] == old_key:
                 logger.warning(
                     "Deprecated energy_pdf_name '{0}' was used. "
@@ -104,7 +102,6 @@ class EnergyPDF(object):
 
     @classmethod
     def create(cls, e_pdf_dict):
-
         e_pdf_dict = read_e_pdf_dict(e_pdf_dict)
 
         e_pdf_name = e_pdf_dict["energy_pdf_name"]
@@ -287,7 +284,6 @@ class PowerLaw(EnergyPDF):
         if self.gamma == 1.0:
             phi_integral = np.log(e_max / e_min)
         else:
-
             phi_power = 1 - self.gamma
 
             phi_integral = (1.0 / phi_power) * (

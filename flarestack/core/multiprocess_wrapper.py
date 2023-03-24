@@ -17,7 +17,6 @@ except RuntimeError:
 
 
 def generate_dynamic_mh_class(mh_dict):
-
     # mh_dict = read_mh_dict(mh_dict)
 
     try:
@@ -80,7 +79,6 @@ class MultiProcessor:
             self.mh.dump_injection_values(scale)
 
     def run_trial(self, **kwargs):
-
         qh = QueueHandler(self.log_queue)
         logger.addHandler(qh)
 

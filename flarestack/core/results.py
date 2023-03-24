@@ -36,7 +36,6 @@ class OverfluctuationError(Exception):
 
 class ResultsHandler(object):
     def __init__(self, rh_dict, do_sens=True, do_disc=True, bias_error="std"):
-
         self.sources = load_catalogue(rh_dict["catalogue"])
 
         self.name = rh_dict["name"]
@@ -315,7 +314,6 @@ class ResultsHandler(object):
         return inj_values
 
     def merge_pickle_data(self):
-
         all_sub_dirs = [
             x
             for x in os.listdir(self.pickle_output_dir)
@@ -355,11 +353,11 @@ class ResultsHandler(object):
                 if merged_data == {}:
                     merged_data = data
                 else:
-                    for (key, info) in data.items():
+                    for key, info in data.items():
                         if isinstance(info, list):
                             merged_data[key] += info
                         else:
-                            for (param_name, params) in info.items():
+                            for param_name, params in info.items():
                                 try:
                                     merged_data[key][param_name] += params
                                 except KeyError as m:
@@ -389,7 +387,6 @@ class ResultsHandler(object):
             # if weights were not fitted, number of neutrinos is stored in just one parameter
 
             if "n_s" in self.inj[self.scales[1]]:
-
                 self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(
                     self.scales_float[1]
                 )
@@ -415,7 +412,6 @@ class ResultsHandler(object):
         logger.debug("  ----------------------------")
 
         for scale, ts_array in zip(self.scales_float, self.ts_arrays):
-
             # calculate averages
             avg_ts = ts_array.sum() / ts_array.size
             avg_sigma = np.sqrt(avg_ts)
@@ -602,7 +598,6 @@ class ResultsHandler(object):
         return fit, err, extrapolated
 
     def sensitivity_fit(self, savepath, ts_val):
-
         x, y, yerr = self.overfluctuations[ts_val]
         x_flux = k_to_flux(x)
 
@@ -685,7 +680,6 @@ class ResultsHandler(object):
         return fit, fit_err, extrapolated
 
     def find_disc_potential(self):
-
         ts_path = os.path.join(self.plot_dir, "ts_distributions/0.pdf")
 
         try:
@@ -718,7 +712,6 @@ class ResultsHandler(object):
             ts_array = np.array(self.results[scale]["TS"])
 
             if not np.isnan(disc_threshold):
-
                 frac = float(len(ts_array[ts_array > disc_threshold])) / (
                     float(len(ts_array))
                 )
@@ -841,7 +834,6 @@ class ResultsHandler(object):
         )
 
     def noflare_plots(self, scale):
-
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = os.path.join(self.plot_dir, "ts_distributions/" + str(scale) + ".pdf")
 
@@ -860,7 +852,6 @@ class ResultsHandler(object):
             )
 
     def ts_evolution_gif(self, n_scale_steps=None, cmap_name="winter"):
-
         logger.debug("making animation")
 
         all_scales_list = list(self.results.keys())
@@ -925,7 +916,6 @@ class ResultsHandler(object):
         anim.save(anim_name, dpi=80, writer="imagemagick")
 
     def ts_distribution_evolution(self):
-
         logger.debug("plotting evolution of TS distribution")
 
         all_scales = np.array(list(self.results.keys()))
@@ -1039,9 +1029,7 @@ class ResultsHandler(object):
         base_x_label = r"$\Phi_{1GeV}$ (GeV$^{-1}$ cm$^{-2}$)"
 
         for i, param in enumerate(self.param_names):
-
             try:
-
                 plt.figure()
 
                 ax = plt.subplot(111)

@@ -36,7 +36,6 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
         print("\n")
         print("\n")
         print("Testing AsimovEstimator")

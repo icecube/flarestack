@@ -24,7 +24,6 @@ def simulate_transient_catalogue(
     local_z=0.1,
     seed=None,
 ):
-
     tpdfs = [season.get_time_pdf() for season in mh_dict["dataset"].values()]
 
     data_start = min([time_pdf.sig_t0() for time_pdf in tpdfs])
@@ -132,9 +131,7 @@ def simulate_transient_catalogue(
         ]
 
         for i, n in enumerate(n_catalogue):
-
-            for (key, dec_min, dec_max) in dec_ranges:
-
+            for key, dec_min, dec_max in dec_ranges:
                 index = int(n)
 
                 cat = catalogue[:index]
@@ -158,7 +155,6 @@ def simulate_transient_catalogue(
 
 
 def simulate_transients(sim_length_year, rate, injection_gamma=2.0, local_z=0.1):
-
     rate_per_z, nu_flux_per_z, cumulative_nu_flux = define_cosmology_functions(
         rate, 1 * u.erg, injection_gamma, nu_bright_fraction=1.0
     )

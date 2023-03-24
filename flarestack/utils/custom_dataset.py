@@ -16,7 +16,7 @@ def custom_dataset(dataset, sources, time_pdf):
 
     relevant_seasons = dict()
 
-    for (name, season) in dataset.seasons.items():
+    for name, season in dataset.seasons.items():
         time = TimePDF.create(time_pdf, season.get_time_pdf())
 
         overlap = np.sum([time.effective_injection_time(src) for src in sources])

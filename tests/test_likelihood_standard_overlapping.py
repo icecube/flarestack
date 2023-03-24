@@ -33,7 +33,6 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
         logging.info("Testing 'standard_overlapping' LLH class")
 
         # Test stacking

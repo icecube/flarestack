@@ -46,7 +46,6 @@ def parse_numpy_dataset():
         path = data_dir + dataset
 
         with open(path, "r") as f:
-
             csv_reader = csv.reader(f, delimiter=" ")
 
             for i, row in enumerate(csv_reader):
@@ -85,7 +84,6 @@ def parse_effective_areas():
     data = []
 
     with open(file_name, "r") as f:
-
         csv_reader = csv.reader(f, delimiter=" ")
 
         for i, row in enumerate(csv_reader):

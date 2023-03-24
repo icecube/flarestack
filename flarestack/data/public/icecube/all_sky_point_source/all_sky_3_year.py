@@ -27,7 +27,6 @@ pseudo_mc_dir = output_data_dir + "pseudo_mc/"
 
 
 for path in [output_data_dir, pseudo_mc_dir]:
-
     try:
         os.makedirs(path)
     except OSError:
@@ -67,13 +66,11 @@ def parse_numpy_dataset():
     """
 
     for dataset in datasets:
-
         data = []
 
         path = data_dir + dataset + "-events.txt"
 
         with open(path, "r") as f:
-
             csv_reader = csv.reader(f, delimiter=" ")
 
             for i, row in enumerate(csv_reader):
@@ -127,18 +124,15 @@ for season_name in datasets:
 def parse_angular_resolution():
     """Function to parse angular resolution."""
     for dataset in datasets:
-
         path = data_dir + dataset + "-AngRes.txt"
 
         x = []
         y = []
 
         with open(path, "r") as f:
-
             csv_reader = csv.reader(f, delimiter=" ")
 
             for i, row in enumerate(csv_reader):
-
                 if i > 0:
                     row = [float(x) for x in row if x != ""]
 
@@ -237,7 +231,6 @@ def run_all():
 # If data has not been extracted, then extract from zip file
 
 if not os.path.isdir(data_dir):
-
     with zipfile.ZipFile(zip_file, "r") as zip_ref:
         zip_ref.extractall(extract_dir)
 

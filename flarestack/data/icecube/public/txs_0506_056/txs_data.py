@@ -13,7 +13,6 @@ output_data_dir = output_base_dir + "events/"
 
 
 for path in [output_data_dir]:
-
     try:
         os.makedirs(path)
     except OSError:
@@ -45,13 +44,11 @@ def parse_numpy_dataset():
     """
 
     for dataset in datasets:
-
         data = []
 
         path = data_dir + "events_{0}.txt".format(dataset)
 
         with open(path, "r") as f:
-
             csv_reader = csv.reader(f, delimiter=" ")
 
             for i, row in enumerate(csv_reader):

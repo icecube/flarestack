@@ -29,7 +29,6 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
         logging.info("Testing 'fit_weight' MinimisationHandler class")
 
         mh_name = "fit_weights"

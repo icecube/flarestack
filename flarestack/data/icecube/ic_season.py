@@ -116,18 +116,15 @@ class IceCubeRunList(DetectorOnOffList):
     """
 
     def parse_list(self):
-
         if list(self.on_off_list["run"]) != sorted(list(self.on_off_list["run"])):
             logger.error("Error in ordering GoodRunList!")
             logger.error("Runs are out of order!")
             self.on_off_list = np.sort(self.on_off_list, order="run")
 
         if self.t_dict.get("expect_gaps_in_grl", True):
-
             mask = self.on_off_list["stop"][:-1] == self.on_off_list["start"][1:]
 
             if np.sum(mask) > 0:
-
                 first_run = self.on_off_list["run"][:-1][mask][0]
 
                 logger.warning(
@@ -146,7 +143,6 @@ class IceCubeRunList(DetectorOnOffList):
                 )
 
                 while np.sum(mask) > 0:
-
                     index = list(mask).index(True)
 
                     self.on_off_list[index]["stop"] = self.on_off_list[index + 1][
@@ -170,7 +166,6 @@ class IceCubeRunList(DetectorOnOffList):
             mask = self.on_off_list["stop"][:-1] < self.on_off_list["start"][1:]
 
             if np.sum(~mask) > 0:
-
                 first_run = self.on_off_list["run"][:-1][~mask][0]
 
                 logger.error("The IceCube GoodRunList was not produced correctly.")
@@ -196,7 +191,6 @@ class IceCubeRunList(DetectorOnOffList):
                 logger.error("You have been warned!")
 
                 while np.sum(~mask) > 0:
-
                     index = list(~mask).index(True)
 
                     self.on_off_list[index]["stop"] = self.on_off_list[index + 1][

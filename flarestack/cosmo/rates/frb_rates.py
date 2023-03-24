@@ -30,12 +30,10 @@ def get_local_frb_rate(rate_name=None, with_range=False):
             f"The following rates are available: {local_frb_rates.keys()}"
         )
     else:
-
         local_rate, lower_lim, upper_lim, ref = local_frb_rates[rate_name]
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
     if with_range:
-
         if lower_lim is None:
             raise Exception(
                 f"No one sigma rate range found for rate '{rate_name}'. "
