@@ -50,50 +50,69 @@ def get_diffuse_binning(season):
 
 
 class NTSeason(IceCubeSeason):
-    def get_background_model(self):
+    def get_background_model(self) -> dict:
+        """Loads Monte Carlo dataset from file according to object path set in object properties.
+
+        Returns:
+            dict: Monte Carlo data set.
+        """
         mc = self.load_data(self.mc_path, cut_fields=False)
+        # According to NT specifications (README):
+        #  "conv" gives the weight for conventional atmospheric neutrinos
+        #  flarestack renames it to "weight"
         mc = rename_fields(mc, {"conv": "weight"})
         return mc
 
     def simulate_background(self):
-        if isinstance(self.loaded_background_model, type(None)):
-            self.load_background_model()
+        rng = np.random.default_rng()
 
-        # base = self.get_background_model()
+        if self.loaded_background_model is None:
+            raise RuntimeError(
+                "Monte Carlo background is not loaded. Call `load_background_model` before `simulate_background`."
+            )
 
+        n_mc = len(self.loaded_background_model["weight"])
+
+        # Total number of events in the MC sample, weighted according to background.
         n_exp = np.sum(self.loaded_background_model["weight"])
-        # n_exp = np.sum(base["weight"])
 
-        # Simulates poisson noise around the expectation value n_inj.
-        n_bkg = np.random.poisson(n_exp)
-
-        # Creates a normalised array of OneWeights
+        # Creates a normalised array of atmospheric weights.
         p_select = self.loaded_background_model["weight"] / n_exp
-        # p_select = base['weight'] / n_exp
 
-        # Creates an array with n_signal entries.
-        # Each entry is a random integer between 0 and no. of sources.
-        # The probability for each integer is equal to the OneWeight of
-        # the corresponding source_path.
-        ind = np.random.choice(
-            len(self.loaded_background_model["ow"]), size=n_bkg, p=p_select
-        )
-        # ind = np.random.choice(len(base['ow']), size=n_bkg, p=p_select)
+        # Simulates poisson noise around the expectation value n_exp.
+        n_bkg = rng.poisson(n_exp)
 
-        # Selects the sources corresponding to the random integer array
+        # Choose n_bkg from n_mc events according to background weight.
+        ind = rng.choice(n_mc, size=n_bkg, p=p_select)
         sim_bkg = self.loaded_background_model[ind]
-        # sim_bkg = base[ind]
-        sim_bkg = sim_bkg[list(self.get_background_dtype().names)]
-        return sim_bkg
+
+        time_pdf = self.get_time_pdf()
+
+        # Simulates random times
+        sim_bkg["time"] = time_pdf.simulate_times(source=None, n_s=n_bkg)
+
+        # Check that the time pdf evaluates to 1 for all the simulated times.
+        pdf_sum = np.sum(time_pdf.season_f(sim_bkg["time"]))
+        if pdf_sum < n_bkg:
+            raise RuntimeError(
+                f"The time PDF does not evaluate to 1 for all generated event times.\n \
+                The sum of the PDF values over {n_bkg} events is {pdf_sum}.\n \
+                This means the sampling of background times is not reliable and must be fixed."
+            )
+
+        # Reduce the data to the relevant fields for analysis.
+        analysis_keys = list(self.get_background_dtype().names)
+        return sim_bkg[analysis_keys]
 
 
 class NTSeasonNewStyle(NTSeason):
     def get_background_model(self):
-        # in version 3 of the dataset the weights are given as rates in Hz
+        # in version >=3 of the dataset the weights are given as rates in Hz
         # instead of total events in the associated livetime
+        # we deal with this by overwriting the MC set
+        # possibly not the best course of action
         mc = super(NTSeasonNewStyle, self).get_background_model()
         livetime = self.get_time_pdf().get_livetime()
-        mc["astro"] *= livetime * 86400.0
-        mc["weight"] *= livetime * 86400.0
-        mc["prompt"] *= livetime * 86400.0
+        for weight in ("astro", "weight", "prompt"):
+            mc[weight] *= livetime * 86400.0
         return mc

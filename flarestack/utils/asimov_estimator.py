@@ -143,10 +143,10 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
             dummy_sources,
             dtype=np.dtype(
                 [
-                    ("dec_rad", np.float),
-                    ("base_weight", np.float),
-                    ("distance_mpc", np.float),
-                    ("injection_weight_modifier", np.float),
+                    ("dec_rad", float),
+                    ("base_weight", float),
+                    ("distance_mpc", float),
+                    ("injection_weight_modifier", float),
                     ("source_name", np.str),
                 ]
             ),

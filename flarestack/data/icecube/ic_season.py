@@ -116,6 +116,16 @@ class IceCubeRunList(DetectorOnOffList):
     """
 
     def parse_list(self):
+        """Parses the GoodRunList to build a TimePDF
+
+        Returns:
+            t0, t1: min and max time of the GRL
+            full_livetime: livetime
+            season_f: interpolating function returning 1 or 0 as a function of time
+            mjd_to_livetime: function to convert a mjd to livetime [s]
+            livetime_to_mjd: function to convert a livetime [s] to mjd
+
+        """
         if list(self.on_off_list["run"]) != sorted(list(self.on_off_list["run"])):
             logger.error("Error in ordering GoodRunList!")
             logger.error("Runs are out of order!")
@@ -217,10 +227,14 @@ class IceCubeRunList(DetectorOnOffList):
         step = 1e-12
 
         t_range = [t0 - step]
+
         f = [0.0]
 
+        # MJD timestaps marking start and stop time of each run
         mjd = [0.0]
+        # cumulative livetime at each timestamp [unit to be checked]
         livetime = [0.0]
+        # cumulative sum of run lengths [unit to be checked]
         total_t = 0.0
 
         for i, run in enumerate(self.on_off_list):
@@ -230,6 +244,8 @@ class IceCubeRunList(DetectorOnOffList):
             mjd.append(run["stop"])
             livetime.append(total_t)
 
+            # extends t_range and f with a box function of value 1 between the start and stop of the run
+            # adds zero values at times immediately adjacent to the start and stop of the run
             t_range.extend(
                 [run["start"] - step, run["start"], run["stop"], run["stop"] + step]
             )
@@ -255,11 +271,15 @@ class IceCubeRunList(DetectorOnOffList):
                 f"Runs in GoodRunList are out of order for {self.on_off_list}. Check that!"
             )
 
+        # end of the livetime function domain
         mjd.append(1e5)
+
         livetime.append(total_t)
 
         season_f = interp1d(stitch_t, np.array(stitch_f), kind="linear")
+        # cumulative livetime [[unit to be checked]] as a function of the date [mjd]
         mjd_to_livetime = interp1d(mjd, livetime, kind="linear")
+        # date [mjd] at which a given livetime [unit to be checked] is reached
         livetime_to_mjd = interp1d(livetime, mjd, kind="linear")
         return t0, t1, full_livetime, season_f, mjd_to_livetime, livetime_to_mjd
 
@@ -307,8 +327,7 @@ class IceCubeSeason(SeasonWithMC):
 
     def build_time_pdf_dict(self):
         """Function to build a pdf for the livetime of the season. By
-        default, this is assumed to be uniform, spanning from the first to
-        the last event found in the data.
+        default, this exploits the good run list (GRL)
 
         :return: Time pdf dictionary
         """

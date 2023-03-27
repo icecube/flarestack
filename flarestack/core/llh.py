@@ -891,9 +891,11 @@ class StandardLLH(FixedEnergyLLH):
                 SoB_energy_cache.append([])
 
         kwargs["n_coincident"] = np.sum(~assumed_background_mask)
-        kwargs["SoB_spacetime_cache"] = np.array(SoB_spacetime)
+
+        # SoB_spacetime contains one list per source.
+        # The list contains one value for each associated neutrino.
+        kwargs["SoB_spacetime_cache"] = SoB_spacetime
         kwargs["SoB_energy_cache"] = SoB_energy_cache
-        # self.SoB_energy_cache = SoB_energy_cache
         kwargs["pull_corrector"] = pull_corrector
 
         return kwargs
@@ -918,7 +920,8 @@ class StandardLLH(FixedEnergyLLH):
         # If n_s if negative, then removes the energy term from the likelihood
 
         for i, n_j in enumerate(all_n_j):
-            SoB_spacetime = kwargs["SoB_spacetime_cache"][i]
+            SoB_spacetime: list = kwargs["SoB_spacetime_cache"][i]
+
             # Switches off Energy term for negative n_s, which should in theory
             # be a continuous change that does not alter the likelihood for
             # n_s > 0 (as it is not included for n_s=0).

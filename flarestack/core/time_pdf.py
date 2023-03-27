@@ -159,8 +159,9 @@ class TimePDF(object):
 
         return f
 
-    def inverse_interpolate(self, source):
-        """Calculates the values for the integral of the signal PDF within
+    def inverse_cumulative(self, source):
+        """Calculates the inverse cumulative of the time PDF.
+        First, calculates the values for the integral of the signal PDF within
         the season. Then rescales these values, such that the start of the
         season yields 0, and then end of the season yields 1. Creates a
         function to interpolate between these values. Then, for a number
@@ -172,10 +173,18 @@ class TimePDF(object):
         """
         max_int = self.product_integral(self.sig_t1(source), source)
         min_int = self.product_integral(self.sig_t0(source), source)
+
+        logger.debug("Integral of the signal PDF:")
+        logger.debug(f"F({self.sig_t0(source)}) = {min_int}")
+        logger.debug(f"F({self.sig_t1(source)}) = {max_int}")
+
         fraction = max_int - min_int
 
+        # number of points for the basis of interpolation
+        n_points = int(1e4)
+
         t_range = np.linspace(
-            float(self.sig_t0(source)), float(self.sig_t1(source)), int(1e4)
+            float(self.sig_t0(source)), float(self.sig_t1(source)), n_points
         )
         cumu = (self.product_integral(t_range, source) - min_int) / fraction
 
@@ -196,7 +205,7 @@ class TimePDF(object):
         :param n_s: Number of event times to be simulated
         :return: Array of times in MJD for a given source
         """
-        f = self.inverse_interpolate(source)
+        f = self.inverse_cumulative(source)
 
         sims = f(np.random.uniform(0.0, 1.0, n_s))
 
@@ -646,12 +655,6 @@ class DetectorOnOffList(TimePDF):
             self.livetime_to_mjd,
         ) = self.parse_list()
 
-    def parse_list(self):
-        t0 = min(self.on_off_list["start"])
-        t1 = max(self.on_off_list["stop"])
-        livetime = np.sum(self.on_off_list["length"])
-        return t0, t1, livetime
-
     def f(self, t, source=None):
         return self.season_f(t) / self.livetime
 
@@ -672,6 +675,12 @@ class DetectorOnOffList(TimePDF):
 
     def get_mjd_conversion(self):
         return self.mjd_to_livetime, self.livetime_to_mjd
+
+    def signal_integral(self, t, source=None):
+        return self.mjd_to_livetime(t) / self.get_livetime()
+
+    def inverse_cumulative(self, source=None):
+        return lambda t: self.livetime_to_mjd(t * self.get_livetime())
 
 
 @TimePDF.register_subclass("decay")
