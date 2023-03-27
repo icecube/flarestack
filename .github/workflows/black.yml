@@ -20,4 +20,4 @@ jobs:
           poetry install
       - name: Run Black
         run: |
-          poetry run black --exclude flarestack/analyses --check .
+          poetry run black --check .
