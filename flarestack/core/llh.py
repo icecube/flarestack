@@ -925,7 +925,7 @@ class StandardLLH(FixedEnergyLLH):
 
         for i, n_j in enumerate(all_n_j):
             # Since kwargs["SoB_spacetime_cache"] was built with `dtype=object` we need to use astype(float) here.
-            SoB_spacetime = kwargs["SoB_spacetime_cache"][i].as_type(float)
+            SoB_spacetime = kwargs["SoB_spacetime_cache"][i].astype(float)
             
             # Switches off Energy term for negative n_s, which should in theory
             # be a continuous change that does not alter the likelihood for
