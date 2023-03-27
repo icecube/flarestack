@@ -924,9 +924,9 @@ class StandardLLH(FixedEnergyLLH):
         # If n_s if negative, then removes the energy term from the likelihood
 
         for i, n_j in enumerate(all_n_j):
-            # Since kwargs["SoB_spacetime_cache"] was built with `dtype=object` we need to use astype(float) here.
-            SoB_spacetime = kwargs["SoB_spacetime_cache"][i].astype(float)
-            
+            # kwargs["SoB_spacetime_cache"] is built with dtype=object and contains lists!
+            SoB_spacetime: list = kwargs["SoB_spacetime_cache"][i]
+
             # Switches off Energy term for negative n_s, which should in theory
             # be a continuous change that does not alter the likelihood for
             # n_s > 0 (as it is not included for n_s=0).
@@ -959,7 +959,8 @@ class StandardLLH(FixedEnergyLLH):
             llh_value = -50.0 + all_n_j
 
         else:
-            llh_value = np.sum([np.sum(np.log(y)) for y in x])
+            # Add astype('float') as a consequence of building kwargs["SoB_spacetime_cache"] with dtype=object
+            llh_value = np.sum([np.sum(np.log(y.astype("float"))) for y in x])
 
             llh_value += np.sum(
                 self.assume_background(
