@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 def integrate_over_z(f, zmin=0.0, zmax=8.0):
-
     nsteps = 1e3
 
     zrange, step = np.linspace(zmin, zmax, int(nsteps + 1), retstep=True)
@@ -27,7 +26,6 @@ def integrate_over_z(f, zmin=0.0, zmax=8.0):
 
 
 def cumulative_z(f, zrange):
-
     ints = []
 
     nsteps = 1e3 + 1
@@ -120,7 +118,6 @@ def calculate_transient_cosmology(
     diffuse_fraction=None,
     diffuse_fit="joint_15",
 ):
-
     e_pdf_dict = read_e_pdf_dict(e_pdf_dict)
 
     diffuse_flux, diffuse_gamma = get_diffuse_flux_at_1GeV(diffuse_fit)
@@ -233,7 +230,6 @@ def calculate_transient_cosmology(
         )
 
     for nearby in [0.1, 0.3]:
-
         logger.info(
             f"Fraction of flux from nearby (z<{nearby}) sources: {cumulative_nu_flux(nearby)[-1] / nu_at_horizon:.2g}"
         )

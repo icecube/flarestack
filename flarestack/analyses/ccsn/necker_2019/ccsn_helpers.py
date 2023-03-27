@@ -31,7 +31,6 @@ conservative_redshift_addition = 0.001
 def updated_sn_catalogue_name(
     sn_type, pdf_name="", flagged=False, z_conservative=conservative_redshift_addition
 ):
-
     if pdf_name:
         pdf_name = "_" + pdf_name
 
@@ -58,13 +57,10 @@ def updated_sn_catalogue_name(
 
 
 def raw_sn_catalogue_name(sn_type, person="necker", fs_readable=True):
-
     if person == "necker":
-
         return raw_necker_cat_dir + sn_type + ".csv"
 
     elif person == "stasik":
-
         if "Ib" in sn_type:
             res = stasik_cat_dir + "Ib_BoxPre20.0_New"
         elif sn_type == "IIn":
@@ -82,21 +78,17 @@ def raw_sn_catalogue_name(sn_type, person="necker", fs_readable=True):
         return res
 
     else:
-
         raise ValueError(f"input for person: {person} not understood")
 
 
 def sn_time_pdfs(sn_type, pdf_type="box"):
-
     time_pdfs = []
 
     # to ensure combatipility with stasik stuff where it's IIp and not IIP
     sn_type = sn_type if sn_type != "IIp" else "IIP"
 
     if pdf_type == "box":
-
         for i in sn_times[sn_type][pdf_type]:
-
             pdf_dict = {"time_pdf_name": pdf_type, "pre_window": 0, "post_window": 0}
 
             if i > 0:
@@ -111,9 +103,7 @@ def sn_time_pdfs(sn_type, pdf_type="box"):
             time_pdfs.append(pdf_dict)
 
     elif pdf_type == "decay":
-
         for i in sn_times[sn_type][pdf_type]:
-
             pdf_dict = {
                 "time_pdf_name": pdf_type,
                 "decay_time": i * 364.25,  # convert to days
@@ -139,7 +129,6 @@ def pdf_names(pdf_type, pdf_time):
 
 
 def limit_sens(base):
-
     # base = f'{raw_output_dir}/calculate_sensitivity/{mh_name}/{pdf_type}/'
     sub_base = base.split(os.sep)
 

@@ -76,7 +76,6 @@ class MyPValueSubmitter(DESYSubmitter):
         itr = list(range(ntrials))
 
         if self.n_cpu > 1:
-
             with Pool(self.n_cpu) as p:
                 multi_res = p.map(run_background_pvalue_trials, itr)
                 p.close()
@@ -191,7 +190,6 @@ class MyPValueSubmitter(DESYSubmitter):
 
 
 if __name__ == "__main__":
-
     p_dict = {
         "n_trials": 1000,
     }

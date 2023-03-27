@@ -67,8 +67,7 @@ nr_brightest_sources = [32249]
 all_res = dict()
 
 # Loop over the gammas for the IR-selected AGN sample with 32249 sources
-for (cat_type, method) in complete_cats_north[1:2]:
-
+for cat_type, method in complete_cats_north[1:2]:
     unique_key = cat_type + "_" + method
 
     gamma_dict = dict()

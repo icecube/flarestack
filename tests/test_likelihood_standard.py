@@ -40,13 +40,11 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
         logging.info("Testing 'standard' LLH class")
 
         # Test three declinations
 
         for j, sindec in enumerate(sindecs):
-
             unblind_dict = {
                 "name": "tests/test_llh_standard/",
                 "mh_name": "fixed_weights",

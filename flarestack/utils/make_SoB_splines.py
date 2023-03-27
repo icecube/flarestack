@@ -251,7 +251,6 @@ def create_2d_ratio_spline(
 
 
 def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order):
-
     # Sets bin centers, and order of spline (for x and y)
     sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.0
     log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.0
@@ -273,7 +272,6 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order):
     # Fits a 2D spline function to the log of ratio array
     # If the splines are of order one the RegularGridInterpolator is used to match the SkyLab behavior
     if smoothing_order == 1:
-
         sin_bin_center[0], sin_bin_center[-1] = sin_dec_bins[0], sin_dec_bins[-1]
         # log_e_bins[0], log_e_bins[-1] = log_e_bins[0], log_e_bins[-1]
 
@@ -465,7 +463,6 @@ def make_individual_spline_set(season, SoB_path, **kwargs):
 
         # Generate plots
         for gamma in np.linspace(1.0, 4.0, 7):
-
             plot_path = (
                 base_plot_path
                 + "gamma="
@@ -578,14 +575,14 @@ def load_spline(season, **kwargs):
     try:
         with open(path, "rb") as f:
             res = Pickle.load(f)
-    except (FileNotFoundError) as err:
+    except FileNotFoundError as err:
         logger.info(f"No cached spline found at {path}. Creating this file instead.")
         logger.info(f"Cause: {err}")
         make_individual_spline_set(season, path, **kwargs)
         with open(path, "rb") as f:
             res = Pickle.load(f)
 
-    except (ModuleNotFoundError) as err:
+    except ModuleNotFoundError as err:
         logger.error(
             f"A spline was found but it seems incompatible with this installation."
         )
@@ -603,14 +600,14 @@ def load_bkg_spatial_spline(season):
     try:
         with open(path, "rb") as f:
             res = Pickle.load(f)
-    except (FileNotFoundError) as err:
+    except FileNotFoundError as err:
         logger.info(f"No cached spline found at {path}. Creating this file instead.")
         logger.info(f"Cause: {err}")
         make_background_spline(season)
         with open(path, "rb") as f:
             res = Pickle.load(f)
 
-    except (ModuleNotFoundError) as err:
+    except ModuleNotFoundError as err:
         logger.error(
             f"A spline was found but it seems incompatible with this installation."
         )

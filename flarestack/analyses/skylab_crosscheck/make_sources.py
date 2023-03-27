@@ -39,7 +39,6 @@ def sl_sources(i):
 
 
 if __name__ == "__main__":
-
     input("really continue making new sources??? ")
 
     # make sources with arbitrary declinations

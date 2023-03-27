@@ -8,7 +8,6 @@ logging.getLogger("matplotlib").setLevel("INFO")
 
 
 def plot_dec_sens(dec, sens, fname):
-
     if len(dec) != len(sens):
         logging.debug(sens)
         logging.debug(dec)

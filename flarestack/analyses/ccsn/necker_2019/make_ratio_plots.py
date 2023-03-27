@@ -39,7 +39,6 @@ if not os.path.isdir(raw):
 
 # loop over pdf types
 for pdf_type in ["box", "decay"]:
-
     plot_dir = f"{raw}/{pdf_type}"
     if not os.path.isdir(plot_dir):
         logging.debug(f"making directory {plot_dir}")
@@ -88,7 +87,6 @@ for pdf_type in ["box", "decay"]:
     fig, ax = plt.subplots()
 
     for cat_name in stacked_sens_necker:
-
         # res_stasik = get_figure_limits(cat_name, pdf_type)
         plot_arr = np.array(stacked_sens_necker[cat_name], dtype="<f8")
         stasik_arr = np.array(
@@ -137,7 +135,6 @@ for pdf_type in ["box", "decay"]:
     fig, ax = plt.subplots()
 
     for cat_name in stacked_sens_necker:
-
         res_stasik = get_figure_limits(
             cat_name if not "P" in cat_name else "IIp", pdf_type
         )

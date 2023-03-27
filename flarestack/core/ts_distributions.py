@@ -169,7 +169,6 @@ class Chi2_one_side_free(object):
 
 
 def fit_background_ts(ts_array, ts_type):
-
     mask = ts_array > 0.0
     frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
     threshold_err = 0.0
@@ -203,11 +202,9 @@ def fit_background_ts(ts_array, ts_type):
     )
 
     if ts_type == "flare":
-
         chi2 = Chi2_LeftTruncated(ts_array)
 
         if chi2._res.success:
-
             frac_over = 1.0
 
             df = chi2._f.args[0]
@@ -227,11 +224,9 @@ def fit_background_ts(ts_array, ts_type):
                 scale = 1.0
 
     elif ts_type == "fit_weight":
-
         chi2 = Chi2_one_side_free(ts_array[ts_array > 0.0])
 
         if chi2._res.success:
-
             df = chi2._f.args[0]
             loc = chi2._f.args[1]
             scale = chi2._f.args[2]
@@ -252,7 +247,6 @@ def fit_background_ts(ts_array, ts_type):
                 frac_over = 1.0
 
     elif ts_type in ["standard", "negative_ns"]:
-
         chi2 = Chi2_one_side(ts_array[ts_array > 0.0])
 
         df = chi2._f.args[0]
@@ -267,7 +261,6 @@ def fit_background_ts(ts_array, ts_type):
 
 
 def plot_expanded_negative(ts_array, path):
-
     plt.figure()
     plt.hist(
         [ts_array[ts_array > 0], ts_array[ts_array < 0]],
@@ -292,7 +285,6 @@ def plot_expanded_negative(ts_array, path):
 def plot_background_ts_distribution(
     ts_array, path, ts_type="Standard", ts_val=None, mock_unblind=False
 ):
-
     try:
         os.makedirs(os.path.dirname(path))
     except OSError:
@@ -351,7 +343,6 @@ def plot_background_ts_distribution(
         )
 
     def integral(x):
-
         return frac_under * np.sign(x) + frac_over * (
             scipy.stats.chi2.cdf(x, df, loc, scale)
         )
@@ -367,14 +358,12 @@ def plot_background_ts_distribution(
     plt.axvline(disc_potential, color="r", label=r"5 $\sigma$ Threshold")
 
     if ts_val is not None:
-
         if not isinstance(ts_val, float):
             ts_val = float(ts_val[0])
 
         logger.info(f"Quantifying TS: {ts_val:.2f}")
 
         if ts_val > np.median(ts_array):
-
             # val = (ts_val - frac_under) / (1. - frac_under)
 
             cdf = frac_under + frac_over * scipy.stats.chi2.cdf(ts_val, df, loc, scale)
@@ -432,7 +421,6 @@ def plot_background_ts_distribution(
 
 
 def plot_fit_results(results, path, inj):
-
     # results = np.array(results)
 
     try:
@@ -443,14 +431,12 @@ def plot_fit_results(results, path, inj):
     n_dim = len(list(results.keys()))
 
     try:
-
         fig = plt.figure()
 
         fig.set_size_inches(7, n_dim * 3)
         fig.subplots_adjust(hspace=0.5)
 
         for i, (label, row) in enumerate(results.items()):
-
             weights = np.ones(len(row)) / float(len(row))
 
             plt.subplot(n_dim, 1, i + 1)

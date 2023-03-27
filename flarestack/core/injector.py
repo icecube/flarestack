@@ -23,7 +23,6 @@ def read_injector_dict(inj_dict):
     """
 
     if inj_dict != {}:
-
         maps = [
             ("Injection Time PDF", "injection_sig_time_pdf"),
             ("Injection Energy PDF", "injection_energy_pdf"),
@@ -34,8 +33,7 @@ def read_injector_dict(inj_dict):
             ("inj_sig_time_pdf", "injection_sig_time_pdf"),
         ]
 
-        for (old_key, new_key) in maps:
-
+        for old_key, new_key in maps:
             if old_key in list(inj_dict.keys()):
                 logger.warning(
                     "Deprecated inj_dict key '{0}' was used. Please use '{1}' in future.".format(
@@ -49,7 +47,7 @@ def read_injector_dict(inj_dict):
             ("injection_sig_time_pdf", read_t_pdf_dict),
         ]
 
-        for (key, f) in pairs:
+        for key, f in pairs:
             if key in list(inj_dict.keys()):
                 inj_dict[key] = f(inj_dict[key])
 
@@ -69,7 +67,6 @@ class BaseInjector:
     subclasses = {}
 
     def __init__(self, season, sources, **kwargs):
-
         kwargs = read_injector_dict(kwargs)
         self.inj_kwargs = kwargs
 
@@ -112,7 +109,6 @@ class BaseInjector:
             self.fixed_n = np.nan
 
     def calculate_n_exp(self):
-
         all_n_exp = np.empty(
             (len(self.sources), 1),
             dtype=np.dtype([("source_name", "a30"), ("n_exp", float)]),
@@ -127,7 +123,6 @@ class BaseInjector:
         raise NotImplementedError
 
     def get_n_exp_single(self, source):
-
         if not isinstance(source["source_name"], bytes):
             name = bytes(source["source_name"], encoding="utf8")
         else:
@@ -171,7 +166,6 @@ class BaseInjector:
             simulated_data = bkg_events
 
         if angular_error_modifier is not None:
-
             simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
 
         return simulated_data
@@ -193,7 +187,6 @@ class BaseInjector:
 
     @classmethod
     def create(cls, season, sources, **kwargs):
-
         inj_dict = read_injector_dict(kwargs)
 
         if "injector_name" not in inj_dict.keys():
@@ -354,7 +347,6 @@ class MCInjector(BaseInjector):
 
         # Loop over each source to be simulated
         for i, source in enumerate(self.sources):
-
             # If a number of neutrinos to inject is specified, use that.
             # Otherwise, inject based on the flux scale as normal.
 
@@ -435,7 +427,6 @@ class LowMemoryInjector(MCInjector):
         MCInjector.__init__(self, season, sources, **kwargs)
 
     def calculate_n_exp(self):
-
         cats, paths, m_index, s_index = band_mask_cache_name(
             self.season, self.sources, self.injection_declination_bandwidth
         )
@@ -468,9 +459,7 @@ class LowMemoryInjector(MCInjector):
         return self.n_exp
 
     def make_injection_band_mask(self):
-
         for j, cat in enumerate(self.split_cats):
-
             path = self.injection_band_paths[j]
 
             try:
@@ -508,7 +497,6 @@ class LowMemoryInjector(MCInjector):
         # return sparse.load_npz(path)
 
     def get_band_mask(self, source, min_dec, max_dec):
-
         entry = self.get_n_exp_single(source)
         if len(entry) != 1:
             raise ValueError(
@@ -550,7 +538,6 @@ class EffectiveAreaInjector(BaseInjector):
         self.conversion_cache = dict()
 
     def inject_signal(self, scale):
-
         # Creates empty signal event array
         sig_events = np.empty((0,), dtype=self.season.get_background_dtype())
 
@@ -558,7 +545,6 @@ class EffectiveAreaInjector(BaseInjector):
 
         # Loop over each source to be simulated
         for i, source in enumerate(self.sources):
-
             # If a number of neutrinos to inject is specified, use that.
             # Otherwise, inject based on the flux scale as normal.
 
@@ -624,7 +610,6 @@ class EffectiveAreaInjector(BaseInjector):
         return sig_events
 
     def calculate_single_source(self, source, scale):
-
         # Calculate the effective injection time for simulation. Equal to
         # the overlap between the season and the injection time PDF for
         # the source, scaled if the injection PDF is not uniform in time.
@@ -722,7 +707,6 @@ class TrueUnblindedInjector:
         self.season = season
 
     def create_dataset(self, scale, angular_error_modifier=None):
-
         exp_data = self.season.get_exp_data()
 
         if angular_error_modifier is not None:

@@ -48,7 +48,6 @@ bins = list(zip(energies[:-1], energies[1:]))
 analyses = dict()
 
 for sindec in sindecs:
-
     source_res = dict()
 
     cat_path = ps_catalogue_name(sindec)
@@ -58,7 +57,6 @@ for sindec in sindecs:
     southern = sindec < np.sin(np.radians(-5))
 
     for i, (e_min, e_max) in enumerate(bins):
-
         name = subname + "{0:.2f}".format(e_min) + "/"
 
         injection_energy = dict(llh_energy)
@@ -118,8 +116,7 @@ rd.wait_for_cluster()
 
 plt.figure()
 
-for (sindec, source_res) in analyses.items():
-
+for sindec, source_res in analyses.items():
     x = []
 
     sens = []

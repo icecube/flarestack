@@ -120,7 +120,6 @@ def get_local_tde_rate(rate_name=None, with_range=False):
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
     if with_range:
-
         if lower_lim is None:
             raise Exception(
                 f"No one sigma rate range found for rate '{rate_name}'. "

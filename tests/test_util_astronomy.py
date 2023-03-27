@@ -20,7 +20,6 @@ class TestUtilAstro(unittest.TestCase):
         pass
 
     def test_neutrino_astronomy(self):
-
         logging.info("Testing neutrino_astronomy util function.")
 
         injection_energy_pdf = {"energy_pdf_name": "power_law", "gamma": 2.0}
@@ -33,7 +32,6 @@ class TestUtilAstro(unittest.TestCase):
         logging.info("Reference  values {0}".format(true_res_astro))
 
         for key in ["Energy Flux (GeV cm^{-2} s^{-1})"]:
-
             self.assertAlmostEqual(
                 np.log(res_astro[key]), np.log(true_res_astro[key]), places=2
             )

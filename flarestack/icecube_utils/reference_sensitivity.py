@@ -12,7 +12,6 @@ ref_dir_7yr, ref_10yr = get_published_sens_ref_dir()
 
 
 def reference_sensitivity(sindec=np.array(0.0), gamma=2.0, sample="7yr"):
-
     if sample == "7yr":
         return reference_7year_sensitivity(sindec, gamma)
     elif sample == "10yr":
@@ -24,7 +23,6 @@ def reference_sensitivity(sindec=np.array(0.0), gamma=2.0, sample="7yr"):
 
 
 def reference_discovery_potential(sindec=np.array(0.0), gamma=2.0, sample="7yr"):
-
     if sample == "7yr":
         return reference_7year_discovery_potential(sindec, gamma)
     elif sample == "10yr":

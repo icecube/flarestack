@@ -47,7 +47,6 @@ max_e = 10.0**7
 
 
 def ic_power_law(f, gamma):
-
     p = 1 - gamma
 
     if p == -2.0:
@@ -63,7 +62,6 @@ b_g = 3.7
 
 
 def energy_ratio(e):
-
     k = (max_e ** (s_g - 1) - min_e ** (s_g - 1)) / (
         max_e ** (b_g - 1) - min_e ** (b_g - 1)
     )

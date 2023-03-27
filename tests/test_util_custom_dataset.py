@@ -19,7 +19,6 @@ class TestUtilCustomDataset(unittest.TestCase):
         pass
 
     def test_custom_dataset(self):
-
         logging.info("Testing custom_dataset util function.")
 
         llh_dict = {

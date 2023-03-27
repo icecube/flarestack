@@ -79,8 +79,7 @@ res = [
 
 norms = dict()
 
-for (name, energy, key) in res:
-
+for name, energy, key in res:
     class_dict = dict()
 
     # for i, rate in enumerate([tde_rate, theoretical_tde_rate]):
@@ -172,7 +171,7 @@ linestyles = {"(Observed Rate)": "-", "(Theoretical Rate)": ":"}
 
 for i, (name, res_dict) in enumerate(norms.items()):
     # plt.plot(e_range, z(e_range, norm), label=name)
-    for (rate, norm) in res_dict.items():
+    for rate, norm in res_dict.items():
         plt.errorbar(
             e_range,
             z(e_range, norm).value,

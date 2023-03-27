@@ -107,7 +107,6 @@ cats = [
 ]
 
 for j, cat in enumerate(cats):
-
     name = name_root + cat.replace(" ", "") + "/"
 
     cat_path = catalogue_dir + "TDEs/individual_TDEs/" + cat + "_catalogue.npy"
@@ -125,7 +124,6 @@ for j, cat in enumerate(cats):
             # [murase_flare_inj_kwargs, murase_flare_llh]
         ]
     ):
-
         label = [
             "Time-Integrated (Negative n_s)",
             "Time-Integrated",
@@ -139,7 +137,6 @@ for j, cat in enumerate(cats):
         res = dict()
 
         for gamma in gammas:
-
             full_name = flare_name + str(gamma) + "/"
 
             scale = flux_to_k(
@@ -198,8 +195,7 @@ for j, cat in enumerate(cats):
 
 rd.wait_for_cluster()
 
-for (cat, src_res) in cat_res.items():
-
+for cat, src_res in cat_res.items():
     name = name_root + cat.replace(" ", "") + "/"
 
     sens = [[] for _ in src_res]
@@ -211,8 +207,7 @@ for (cat, src_res) in cat_res.items():
     labels = []
 
     for i, (f_type, res) in enumerate(sorted(src_res.items())):
-
-        for (gamma, rh_dict) in sorted(res.items()):
+        for gamma, rh_dict in sorted(res.items()):
             try:
                 rh = ResultsHandler(rh_dict)
 
@@ -250,7 +245,6 @@ for (cat, src_res) in cat_res.items():
         labels.append(f_type)
 
     for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
-
         plt.figure()
         ax1 = plt.subplot(111)
 
@@ -262,7 +256,6 @@ for (cat, src_res) in cat_res.items():
         print(fracs, fluence, labels, cols, energy)
 
         for l, f in enumerate(fracs):
-
             try:
                 ax1.plot(
                     f, fluence[l], label=labels[l], linestyle=linestyle, color=cols[l]

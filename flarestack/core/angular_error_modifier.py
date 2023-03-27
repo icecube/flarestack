@@ -55,7 +55,6 @@ class BaseFloorClass(object):
 
     @classmethod
     def create(cls, floor_dict):
-
         floor_name = floor_dict["floor_name"]
 
         if floor_name not in cls.subclasses:
@@ -133,7 +132,6 @@ class StaticFloor(BaseStaticFloor):
 
 class BaseQuantileFloor(BaseFloorClass):
     def __init__(self, floor_dict):
-
         try:
             self.floor_quantile = floor_dict["floor_quantile"]
         except KeyError:
@@ -249,7 +247,6 @@ class BaseAngularErrorModifier(object):
         aem_name="no_modifier",
         **kwargs
     ):
-
         pull_dict = dict()
         pull_dict["season"] = season
         pull_dict["e_pdf_dict"] = e_pdf_dict
@@ -283,7 +280,6 @@ class BaseAngularErrorModifier(object):
         return SoB
 
     def estimate_spatial(self, gamma, spatial_cache):
-
         if isinstance(spatial_cache, dict):
             return self.estimate_spatial_dynamic(gamma, spatial_cache)
         else:
@@ -400,7 +396,6 @@ class DynamicMedianPullCorrector(BaseMedianAngularErrorModifier):
         spatial_cache = dict()
 
         for key in sorted(self.pickled_data.keys()):
-
             cut_data = self.pull_correct_dynamic(cut_data, key)
 
             # If gamma is needed to evaluate spatial PDF (say because you
@@ -472,7 +467,6 @@ class MedianPullEParam2D(DynamicMedianPullCorrector):
 
 
 if __name__ == "__main__":
-
     from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
     from flarestack.analyses.angular_error_floor.plot_bias import (
         get_data,

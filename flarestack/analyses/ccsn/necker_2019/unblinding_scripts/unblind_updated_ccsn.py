@@ -20,19 +20,16 @@ llh_energy = {
 res_dict = dict()
 
 for cat in sn_cats:
-
     cat_path = updated_sn_catalogue_name(cat)
     catalogue = np.load(cat_path)
 
     for pdf_type in sn_times[cat]:
-
         llh_times = sn_time_pdfs(cat, pdf_type=pdf_type)
 
         name = f"{name_root}/{pdf_type}/{cat}"
         bkg_ts = f"{bkg_ts_root}/{pdf_type}/{cat}"
 
         for llh_time in llh_times:
-
             time = (
                 llh_time["decay_time"]
                 if "decay" in pdf_type

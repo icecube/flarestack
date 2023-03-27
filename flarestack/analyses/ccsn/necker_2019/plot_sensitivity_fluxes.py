@@ -59,7 +59,6 @@ def get_stacked_sens_dict(pdf_type):
 
 
 def add_population_flux(axis, sn_type, pdf_type, gamma_dict, gamma, time_key, **kwargs):
-
     sens, sens_e, energy = gamma_dict.get(gamma, [np.nan, np.nan, np.nan])
     if np.isnan(sens):
         logging.warning(f"No sensitivity for {sn_type}, {pdf_type}")
@@ -96,7 +95,6 @@ def add_population_flux(axis, sn_type, pdf_type, gamma_dict, gamma, time_key, **
 
 
 def plot_sensitivity_populationflux_per_pdf_and_type(filename, gamma, **kwargs):
-
     fig, axs = plt.subplots(
         nrows=2,
         ncols=3,
@@ -107,7 +105,6 @@ def plot_sensitivity_populationflux_per_pdf_and_type(filename, gamma, **kwargs):
     )
     diffuse_patch = None
     for i, (sn_type, pdf_dict) in enumerate(sn_times.items()):
-
         for j, pdf_type in enumerate(pdf_dict):
             stacked_sens_flux = get_stacked_sens_dict(pdf_type).get(sn_type, dict())
             axs[j][i].grid()
@@ -185,11 +182,9 @@ def plot_sensitivity_populationflux_per_pdf_and_type(filename, gamma, **kwargs):
 
 
 def plot_sensitivity_flux_per_type(filename, gamma):
-
     plot_dict = dict()
 
     for i, (sn_type, pdf_dict) in enumerate(sn_times.items()):
-
         logging.debug(f"sntype is {sn_type}")
         plot_dict[sn_type] = dict()
 
@@ -198,7 +193,6 @@ def plot_sensitivity_flux_per_type(filename, gamma):
             stacked_sens_flux = get_stacked_sens_dict(pdf_type).get(sn_type, dict())
 
             for k, (time_key, time_dict) in enumerate(stacked_sens_flux.items()):
-
                 logging.debug(f"time key {time_key}")
                 t = float(time_key) / 364.25 if "decay" in pdf_type else float(time_key)
                 pdf_name = pdf_names(pdf_type, t)
@@ -226,7 +220,6 @@ def plot_sensitivity_flux_per_type(filename, gamma):
         x = np.arange(len(pdf_dict.keys()))
 
         for pdf_key, res in pdf_dict.items():
-
             logging.debug(pdf_key)
             y = res[0]
             yerr = np.array([(res[1][0], res[1][1])]).T
@@ -261,7 +254,6 @@ def plot_sensitivity_flux_per_type(filename, gamma):
 def add_cumulative_flux_sntype(
     axis, gamma_dict, gamma, sn_type, rate_fct, zrange, **kwargs
 ):
-
     rate_fct = get_ccsn_rate_type_function(sn_type)
     sens, sens_e, energy = gamma_dict.get(gamma, [np.nan, np.nan, np.nan])
     f = list()
@@ -317,21 +309,17 @@ def add_cumulative_rate_sntype(axis, sn_type, zrange, normed=False, **kwargs):
 
 
 def make_rate_plot(directory, gamma):
-
     zrange = np.linspace(0, 2.3, 100)
 
     rate_fig, rate_axs = plt.subplots(3, sharex="all", gridspec_kw={"hspace": 0})
 
     for i, sntype in enumerate(sn_times):
-
         rate_axs[i] = add_rate_sntype(rate_axs[i], sntype, zrange)
         rate_axs[i] = add_cumulative_rate_sntype(rate_axs[i], sntype, zrange)
 
 
 if __name__ == "__main__":
-
     for energy_gamma in [2, 2.5]:
-
         this_plot_dir = f"{plot_out_dir}/{energy_gamma:.1f}"
 
         if not os.path.isdir(this_plot_dir):

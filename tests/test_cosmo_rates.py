@@ -19,7 +19,6 @@ class TestCosmoRates(unittest.TestCase):
         pass
 
     def test_get_rates(self):
-
         logging.info("Testing get_rates util functions.")
 
         for vals in source_maps.values():
@@ -28,7 +27,6 @@ class TestCosmoRates(unittest.TestCase):
                 f(1.0)
 
     def test_tde_rates(self):
-
         for evolution in tde_evolutions.keys():
             for rate in local_tde_rates.keys():
                 f = get_rate("tde", evolution_name=evolution, rate_name=rate)
@@ -47,7 +45,6 @@ class TestCosmoRates(unittest.TestCase):
             self.assertAlmostEqual(f(1.0) / true[i], 1.0, delta=0.05)
 
     def test_sfr_rates(self):
-
         for evolution in sfr_evolutions.keys():
             for rate in local_sfr_rates.keys():
                 f = get_rate("sfr", evolution_name=evolution, rate_name=rate)
@@ -59,9 +56,8 @@ class TestCosmoRates(unittest.TestCase):
         self.assertAlmostEqual(f(1.0) / true, 1.0, delta=0.05)
 
     def test_ccsn_rates(self):
-
         for kcc_name in kcc_rates.keys():
-            for (subclass_fractions_name, (sn_type, _)) in sn_subclass_rates.items():
+            for subclass_fractions_name, (sn_type, _) in sn_subclass_rates.items():
                 for sn_subclass in sn_type.keys():
                     f = get_rate(
                         "ccsn",
@@ -78,7 +74,6 @@ class TestCosmoRates(unittest.TestCase):
         self.assertAlmostEqual(f(1.0) / true, 1.0, delta=0.05)
 
     def test_grb_rates(self):
-
         for evolution in grb_evolutions.keys():
             for rate in local_grb_rates.keys():
                 f = get_rate("grb", evolution_name=evolution, rate_name=rate)
@@ -97,7 +92,6 @@ class TestCosmoRates(unittest.TestCase):
             self.assertAlmostEqual(f(1.0) / true[i], 1.0, delta=0.05)
 
     def test_fbot_rates(self):
-
         for evolution in sfr_evolutions.keys():
             for rate in local_fbot_rates.keys():
                 f = get_rate("fbot", evolution_name=evolution, rate_name=rate)
@@ -109,7 +103,6 @@ class TestCosmoRates(unittest.TestCase):
         self.assertAlmostEqual(f(1.0) / true, 1.0, delta=0.05)
 
     def test_frb_rates(self):
-
         for evolution in sfr_evolutions.keys():
             for rate in local_frb_rates.keys():
                 f = get_rate("frb", evolution_name=evolution, rate_name=rate)

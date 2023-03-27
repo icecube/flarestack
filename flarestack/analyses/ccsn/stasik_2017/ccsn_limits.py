@@ -32,7 +32,7 @@ e_pdf_dict = {"energy_pdf_name": "power_law", "gamma": 2.5}
 energy_PDF = EnergyPDF.create(e_pdf_dict)
 e_integral = energy_PDF.fluence_integral() * u.GeV**2
 
-for (sn, sn_dict) in limits.items():
+for sn, sn_dict in limits.items():
     for llh_type in ["Fixed", "Fit"]:
         area = (ref_dist.to("cm")) ** 2
         energy = (

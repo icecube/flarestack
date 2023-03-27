@@ -52,11 +52,9 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
         logging.info("Testing 'fixed_weight' MinimisationHandler class")
 
         for i, e_pdf_dict in enumerate(energy_pdfs):
-
             llh_dict = {
                 "llh_name": "fixed_energy",
                 "llh_sig_time_pdf": {"time_pdf_name": "steady"},

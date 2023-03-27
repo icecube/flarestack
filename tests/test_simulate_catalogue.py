@@ -32,7 +32,6 @@ class TestSimulateCatalogue(unittest.TestCase):
         pass
 
     def test_sim_catalogue(self):
-
         logging.info("Testing simulate_transient_catalogue util functions.")
 
         key = "strolger_15"
@@ -53,7 +52,6 @@ class TestSimulateCatalogue(unittest.TestCase):
         print(cat)
 
         for i, x in enumerate(cat):
-
             for j, y in enumerate(list(tuple(x))):
                 ref = list(default_cat[i])[j]
                 if y == 0.0:

@@ -75,7 +75,6 @@ closest_src = np.sort(catalogue, order="distance_mpc")[0]
 # Loop over time PDFs
 
 for window in windows:
-
     llh_time = {"time_pdf_name": "box", "pre_window": window, "post_window": 0}
 
     logging.debug(f"time_pdf is {llh_time}")
@@ -96,7 +95,6 @@ for window in windows:
     # Loop over spectral indices
 
     for gamma in gammas:
-
         full_name = name + str(gamma) + "/" + time_key + "/"
 
         length = float(time_key)
@@ -155,13 +153,11 @@ if cluster and np.any(job_ids):
 # plot results
 
 for gamma in gammas:
-
     logging.info("getting results for gamma = {:.2f}".format(gamma))
     this_sens = list()
     this_sens_time = list()
 
     for time_key, time_res in cat_res.items():
-
         logging.info("getting results for t = {:.0f}".format(float(time_key)))
 
         rh_dict = cat_res[time_key][gamma]

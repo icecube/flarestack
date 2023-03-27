@@ -100,7 +100,6 @@ def create_quantile_floor_0d_e(floor_dict):
 
 
 def create_quantile_floor_1d(floor_dict):
-
     mc = get_mc(floor_dict)
     e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
     weights = e_pdf.weight_mc(mc)
@@ -138,7 +137,6 @@ def create_quantile_floor_1d(floor_dict):
 
 
 def create_quantile_floor_1d_e(floor_dict):
-
     mc = get_mc(floor_dict)
     e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
 
@@ -309,7 +307,6 @@ def create_pull_1d(pull_dict):
 
 
 def create_pull_1d_e(floor_dict):
-
     mc = get_mc(floor_dict)
     pulls = get_pulls(mc)
     e_pdf = EnergyPDF.create(floor_dict["e_pdf_dict"])
@@ -468,7 +465,6 @@ def create_pull_2d_e(pull_dict):
     )
 
     for e in e_range:
-
         z_range = np.ones([len(x_range), len(y_range)])
 
         weights = e_pdf.weight_mc(mc, e)

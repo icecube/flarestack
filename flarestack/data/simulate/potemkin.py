@@ -70,7 +70,6 @@ class PotemkinSeason(SimSeason):
         a_eff_path,
         **kwargs,
     ):
-
         self.log_e_bins = log_e_bins
         self.sin_dec_bins = sin_dec_bins
         self.a_eff_path = a_eff_path
@@ -194,13 +193,12 @@ class PotemkinSeason(SimSeason):
 
 potemkin_dataset = SimDataset()
 
-for (name, season) in icecube_ps_3_year.get_seasons().items():
+for name, season in icecube_ps_3_year.get_seasons().items():
 
     def ideal_energy_proxy(e):
         return np.log10(e)
 
     def wrapper_f(bkg_flux_model, energy_proxy_map=None, sim_name=None, **kwargs):
-
         if np.logical_and(energy_proxy_map is None, sim_name is None):
             energy_proxy_map = ideal_energy_proxy
             sim_name = "default"

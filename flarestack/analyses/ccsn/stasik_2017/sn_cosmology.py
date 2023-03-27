@@ -25,7 +25,6 @@ from flarestack.cosmo.rates import (
 global_fit_e_range = e_range
 
 if __name__ == "__main__":
-
     e_pdf_dict_template = {
         "energy_pdf_name": "power_law",
         "e_min_gev": 10**2,

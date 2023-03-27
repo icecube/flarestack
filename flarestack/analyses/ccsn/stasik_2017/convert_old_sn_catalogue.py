@@ -24,7 +24,6 @@ raw_cats = [x for x in os.listdir(raw_cat_dir) if x[0] != "."]
 threshold = 0.7
 
 for sn_cat in raw_cats:
-
     logging.info("Converting {0}".format(sn_cat))
 
     cat = np.load(raw_cat_dir + sn_cat)
@@ -57,7 +56,6 @@ for sn_cat in raw_cats:
     far = cat[j:]
 
     for i, subcat in enumerate([close, far]):
-
         new_cat = np.empty(len(subcat), dtype=cat_dtype)
         new_cat["ra_rad"] = subcat["ra"]
         new_cat["dec_rad"] = subcat["dec"]

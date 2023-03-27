@@ -69,7 +69,6 @@ cluster = True
 job_ids = []
 
 for j, cat in enumerate(individual_tdes[-1:]):
-
     name = name_root + cat.replace(" ", "") + "/"
 
     cat_path = individual_tde_cat(cat)
@@ -86,8 +85,7 @@ for j, cat in enumerate(individual_tdes[-1:]):
 
     # Loop over likelihood methods
 
-    for (llh_dict, mh_name, f_name, label) in configs:
-
+    for llh_dict, mh_name, f_name, label in configs:
         # Set plot labels and subdirectory names
 
         flare_name = name + f_name + "/"
@@ -97,7 +95,6 @@ for j, cat in enumerate(individual_tdes[-1:]):
         # Loop over different lengths for injection
 
         for flare_length in lengths:
-
             full_name = flare_name + str(flare_length) + "/"
 
             # Use a box time PDF of length flare_length to inject signal.
@@ -162,8 +159,7 @@ wait_cluster(job_ids)
 
 # Wait for cluster jobs to finish
 
-for (cat, src_res) in cat_res.items():
-
+for cat, src_res in cat_res.items():
     name = name_root + cat.replace(" ", "") + "/"
 
     sens = [[] for _ in src_res]
@@ -177,11 +173,8 @@ for (cat, src_res) in cat_res.items():
     # Loop over likelihood methods
 
     for i, (f_type, res) in enumerate(sorted(src_res.items())):
-
         if f_type != "Time-Integrated (n_s > 0)":
-
-            for (length, rh_dict) in sorted(res.items()):
-
+            for length, rh_dict in sorted(res.items()):
                 # Calculate the sensitivity based on TS distributions
 
                 rh = ResultsHandler(rh_dict)
@@ -213,7 +206,6 @@ for (cat, src_res) in cat_res.items():
     # Loop over sensitivity/discovery potential
 
     for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
-
         plt.figure()
         ax1 = plt.subplot(111)
 
@@ -223,9 +215,7 @@ for (cat, src_res) in cat_res.items():
         linestyle = ["-", "-"][j]
 
         for i, f in enumerate(fracs):
-
             if len(f) > 0:
-
                 # Plot fluence on left y axis, and source energy on right y axis
 
                 ax1.plot(
@@ -245,7 +235,6 @@ for (cat, src_res) in cat_res.items():
         # Set limits and save
 
         for k, ax in enumerate([ax1, ax2]):
-
             try:
                 y = [fluence, energy][k]
 

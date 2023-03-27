@@ -57,7 +57,6 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
     new_n_bkg = 0.0
 
     for season in seasons.values():
-
         new_llh_dict = dict(llh_dict)
         new_llh_dict["llh_name"] = "fixed_energy"
         new_llh_dict["llh_energy_pdf"] = inj_dict["injection_energy_pdf"]
@@ -155,7 +154,6 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
         inj = season.make_injector(dummy_sources, **inj_dict)
 
         for j, dummy_source in enumerate(dummy_sources):
-
             lower, upper = bounds[j]
 
             n_eff = n_eff_sources[j]
@@ -297,7 +295,6 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
 
 class AsimovEstimator(object):
     def __init__(self, seasons, inj_dict, llh_dict):
-
         self.seasons = seasons
         self.injectors = dict()
         self.llh_dict = llh_dict

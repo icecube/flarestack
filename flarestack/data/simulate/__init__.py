@@ -18,7 +18,6 @@ class SimDataset(Dataset):
         self.init_args = dict()
 
     def add_season(self, season):
-
         if np.logical_and(
             season in self.sim_seasons.keys(), season not in self.seasons.keys()
         ):
@@ -37,7 +36,6 @@ class SimDataset(Dataset):
         self.sim_seasons[name] = sim_season_f
 
     def set_sim_params(self, name, bkg_flux_model, **kwargs):
-
         if name not in self.sim_seasons.keys():
             raise KeyError(
                 "SimSeasonClass {0} not found. The following "
@@ -69,7 +67,6 @@ class SimSeason(SeasonWithoutMC):
         energy_proxy_map,
         **kwargs
     ):
-
         self.event_dtype = event_dtype
 
         self.bkg_flux_model = bkg_flux_model
@@ -98,14 +95,12 @@ class SimSeason(SeasonWithoutMC):
         return self.bkg_flux_model.build_time_pdf_dict()
 
     def check_sim(self, resimulate=False, **kwargs):
-
         if np.logical_and(not resimulate, os.path.isfile(self.exp_path)):
             logging.info("Found existing simulation at {0}".format(self.exp_path))
         else:
             self.simulate()
 
     def dataset_path(self, mjd_start=None, mjd_end=None):
-
         time_pdf = self.build_time_pdf()
 
         try:
@@ -134,12 +129,10 @@ class SimSeason(SeasonWithoutMC):
         return
 
     def get_time_integrated_flux(self):
-
         return k_to_flux(
             self.bkg_flux_model.get_norm()
             * self.get_time_pdf().effective_injection_time()
         )
 
     def make_season(self):
-
         return NotImplementedError

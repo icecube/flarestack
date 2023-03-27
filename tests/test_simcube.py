@@ -43,7 +43,6 @@ class TestSimcube(unittest.TestCase):
     #     )
 
     def test_dataset(self):
-
         print("\n")
         print("\n")
         print("Testing use of simulated datasets")

@@ -75,7 +75,6 @@ for gamma in [3.0]:
             config_mh = []
 
             for sin_dec in sin_decs:
-
                 name = seed_name + "sindec=" + "{0:.2f}".format(sin_dec) + "/"
 
                 llh_dict = {
@@ -116,8 +115,7 @@ for gamma in [3.0]:
 
 rd.wait_for_cluster()
 
-for (gamma, res_dict) in all_res.items():
-
+for gamma, res_dict in all_res.items():
     gamma_name = basename + str(gamma) + "/"
 
     sens_dict = dict()
@@ -125,8 +123,7 @@ for (gamma, res_dict) in all_res.items():
     mean_bias_dict = dict()
     disc_dict = dict()
 
-    for (config, mh_list) in res_dict.items():
-
+    for config, mh_list in res_dict.items():
         sens = []
 
         med_biases = []
@@ -158,7 +155,6 @@ for (gamma, res_dict) in all_res.items():
         mean_bias_dict[config] = mean_biases
 
     for i, plot_dict in enumerate([sens_dict, disc_dict]):
-
         plt.figure()
         ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
 
@@ -171,7 +167,7 @@ for (gamma, res_dict) in all_res.items():
 
         ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
 
-        for (config, vals) in plot_dict.items():
+        for config, vals in plot_dict.items():
             ax1.plot(sin_decs, vals, label=config)
             ax2.plot(sin_decs, vals / plot_dict["Base Case (No floor)"])
 
@@ -197,7 +193,7 @@ for (gamma, res_dict) in all_res.items():
         name = ["Median Bias", "Mean Bias"][i]
 
         plt.figure()
-        for (config, biases) in bias_dict.items():
+        for config, biases in bias_dict.items():
             plt.plot(sin_decs, biases, label=config)
         plt.axhline(1.0, linestyle=":")
         plt.xlabel(r"sin($\delta$)")

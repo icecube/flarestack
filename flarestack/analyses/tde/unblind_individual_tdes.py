@@ -43,7 +43,6 @@ cat_res = dict()
 res = []
 
 for j, cat in enumerate(individual_tdes)[:1]:
-
     name = f"{name_root}/{cat.replace(' ', '')}/"
 
     bkg_ts = f"{bkg_ts_root}/{cat.replace(' ', '')}/flare/"

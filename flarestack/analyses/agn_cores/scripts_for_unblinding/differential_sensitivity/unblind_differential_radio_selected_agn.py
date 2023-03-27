@@ -70,8 +70,7 @@ nr_brightest_sources = [9749]
 
 all_res = dict()
 
-for (cat_type, method) in complete_cats_north[:1]:
-
+for cat_type, method in complete_cats_north[:1]:
     unique_key = cat_type + "_" + method
 
     gamma_dict = dict()

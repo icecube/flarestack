@@ -18,7 +18,6 @@ gamma_vals = np.linspace(0.5, 5.5, 201)
 
 
 def make_acceptance_f(all_data):
-
     for season in all_data.values():
         acc_path = acceptance_path(season)
         make_acceptance_season(season, acc_path)
@@ -32,7 +31,6 @@ def make_acceptance_season(season, acc_path):
     acc = np.ones((len(dec_range), len(gamma_vals)), dtype=float)
 
     for i, dec in enumerate(dec_range):
-
         # Sets half width of band
         dec_width = np.deg2rad(5.0)
 

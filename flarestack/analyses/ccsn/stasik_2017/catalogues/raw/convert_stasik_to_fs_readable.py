@@ -6,7 +6,6 @@ from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
 
 
 def convert_stasik(sn_type):
-
     path_raw = raw_sn_catalogue_name(sn_type, person="stasik", fs_readable=False)
     path_new = raw_sn_catalogue_name(sn_type, person="stasik", fs_readable=True)
 
@@ -17,7 +16,6 @@ def convert_stasik(sn_type):
     dtype_new = []
 
     for element_name in dtype_names_raw:
-
         element_dtype = dtype_fields_raw[element_name][0]
 
         if ("ra" in element_name) or ("dec" in element_name):

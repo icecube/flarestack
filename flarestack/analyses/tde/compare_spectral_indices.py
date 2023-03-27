@@ -61,13 +61,11 @@ cutoff_dict = dict()
 injection_length = 100
 
 for e_min in power_law_start_energy:
-
     raw = "analyses/tde/compare_spectral_indices/" + "Emin=" + str(e_min) + "/"
 
     cat_res = dict()
 
     for cat in tde_catalogues:
-
         name = raw + cat + "/"
 
         cat_path = tde_catalogue_name(cat)
@@ -98,7 +96,6 @@ for e_min in power_law_start_energy:
             res = dict()
 
             for gamma in gammas:
-
                 full_name = flare_name + str(gamma) + "/"
 
                 injection_time = llh_time = {
@@ -163,12 +160,10 @@ for e_min in power_law_start_energy:
 
 # rd.wait_for_cluster()
 
-for (e_min, cat_res) in cutoff_dict.items():
-
+for e_min, cat_res in cutoff_dict.items():
     raw = "analyses/tde/compare_spectral_indices/" + "Emin=" + str(e_min) + "/"
 
     for b, (cat_name, src_res) in enumerate(cat_res.items()):
-
         name = raw + cat_name + "/"
 
         sens_livetime = [[] for _ in src_res]
@@ -180,10 +175,8 @@ for (e_min, cat_res) in cutoff_dict.items():
         labels = []
 
         for i, (f_type, res) in enumerate(sorted(src_res.items())):
-
             if f_type != "Fixed Weights (n_s > 0)":
-
-                for (gamma, rh_dict) in sorted(res.items()):
+                for gamma, rh_dict in sorted(res.items()):
                     try:
                         rh = ResultsHandler(rh_dict)
 
@@ -214,7 +207,6 @@ for (e_min, cat_res) in cutoff_dict.items():
         for j, [fluence, energy] in enumerate(
             [[sens_livetime, sens_e], [disc_pots_livetime, disc_e]]
         ):
-
             plt.figure()
             ax1 = plt.subplot(111)
 
@@ -224,9 +216,7 @@ for (e_min, cat_res) in cutoff_dict.items():
             linestyle = ["-", "-"][j]
 
             for i, f in enumerate(fracs):
-
                 if len(f) > 0:
-
                     ax1.plot(
                         f,
                         fluence[i],

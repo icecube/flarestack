@@ -79,11 +79,9 @@ def ps_catalogue_name(sindec):
 
 
 def make_stacked_source(sindecs):
-
     cat = []
 
     for sindec in sindecs:
-
         ra_rad = random.random() ** 2 * np.pi
 
         cat.append(single_source(sindec, ra_rad=ra_rad))
@@ -102,7 +100,6 @@ def make_stacked_source(sindecs):
 
 
 def ps_stack_catalogue_name(*args):
-
     name = build_ps_stack_cat_name(*args)
 
     if not os.path.isfile(name):

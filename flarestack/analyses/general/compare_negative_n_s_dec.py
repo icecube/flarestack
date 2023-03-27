@@ -56,13 +56,11 @@ length = 100.0
 analyses = dict()
 
 for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
-
     label = ["Zero-bound", "Negative-bound"][i]
 
     src_res = dict()
 
     for sindec in sindecs:
-
         cat_path = ps_catalogue_name(sindec)
 
         decname = name + "sindec=" + "{0:.2f}".format(sindec) + "/"
@@ -125,15 +123,13 @@ all_fracs = []
 
 
 for i, (label, src_res) in enumerate(analyses.items()):
-
     cols = ["b", "orange", "g"]
 
     sens = []
     fracs = []
     disc_pots = []
 
-    for (sindec, rh_dict) in sorted(src_res.items()):
-
+    for sindec, rh_dict in sorted(src_res.items()):
         try:
             #
             rh = ResultsHandler(rh_dict)

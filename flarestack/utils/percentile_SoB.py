@@ -71,7 +71,6 @@ def weighted_quantile(values, quantiles, weight):
 
 
 def calculate_logE_percentile(data, n_slices):
-
     n_high_e = int(0.7 * n_slices)
 
     percentiles = (

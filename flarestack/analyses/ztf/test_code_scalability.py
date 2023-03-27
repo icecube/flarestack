@@ -73,7 +73,6 @@ print("Entries in catalogue", n_catalogue)
 times = []
 
 for n in n_catalogue:
-
     name = name_root + str(n) + "/"
 
     catalogue = np.empty(int(n), dtype=cat_dtype)

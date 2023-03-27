@@ -126,7 +126,6 @@ n_signal_range = np.linspace(0, 10, 6, endpoint=True)
 def make_scramble(
     dataset, season, sources_in_hemisphere, number_of_sources, **inj_kwargs
 ):
-
     # load the 7-yr PS tracks dataset
     logger.debug("loading data")
     data = dataset.get_single_season(season)
@@ -190,7 +189,6 @@ def copy_from_backup(fn):
 def get_scrambles(
     dataset, season, n_signal, sources_in_hemisphere, number_of_sources, **kwargs
 ):
-
     # make filename for each scramble
     directory = (
         f"{data_dir}/{list(dataset.values())[0].sample_name}/"
@@ -245,7 +243,6 @@ def get_scrambles(
         )
 
     else:
-
         if np.any((~exist) & exist_in_backup):
             # get the files from the backup directory to the working directory
             nfiles = len(np.array(fns)[(~exist) & exist_in_backup])
@@ -423,7 +420,6 @@ def define_llh_subclass(likelihood_name):
     new_llh_name = f"{likelihood_name}_with_skylab_splines"
 
     if new_llh_name not in LLH.subclasses:
-
         logger.info(f"registering {new_llh_name}")
 
         @LLH.register_subclass(new_llh_name)
@@ -501,7 +497,6 @@ def get_pdf_values(
 
 
 def pdf_values(scrambled_dataset, sources, llh_dict, season):
-
     llh = LLH.create(scrambled_dataset[season], sources, llh_dict)
     pull_corrector = BaseAngularErrorModifier.create(
         scrambled_dataset[season],
@@ -545,7 +540,6 @@ def pdf_values(scrambled_dataset, sources, llh_dict, season):
 def get_minimizer_dict(
     name, nsources, hemisphere, data, llh_dict=copy.deepcopy(unblind_llh)
 ):
-
     catalogue_path = get_sources(hemisphere, nsources)
 
     minimizer_dictionary = {
@@ -710,12 +704,10 @@ def param_label(param_name):
 
 
 def make_pdf_values_scatter_plots(flarestack_dict, skylab_dict, directory, **kwargs):
-
     filenames = list()
     captions = list()
 
     for i, (kind, flarestack_list) in enumerate(flarestack_dict.items()):
-
         captions.append(f"{kind} PDF")
         filename = f"{directory}/{kind}.pdf"
         filenames.append(filename)
@@ -840,7 +832,6 @@ def make_pdf_values_scatter_plots(flarestack_dict, skylab_dict, directory, **kwa
 def make_pdf_values_plots(
     flarestack_dict, skylab_dict, directory, scramble_ind, **kwargs
 ):
-
     if not skylab_dict:
         logger.warning(f"No data in SkyLab dictionary! Can't make plot.")
         return
@@ -860,7 +851,6 @@ def make_pdf_values_plots(
         filename, geometry_options=geometry_options, page_numbers=False
     )
     with doc.create(pylatex.Section(kwargs.get("title", ""), numbering=False)):
-
         with doc.create(pylatex.Figure(position="h!")):
             logger.debug("adding figure")
             width = 1 / len(scatter_fns) - 0.005
@@ -900,7 +890,6 @@ def make_scramble_line_plot(
     fs_patch = sl_patch = None
 
     for i, (param_name, param_list) in enumerate(parameter_dict.items()):
-
         if "pdf" in param_name:
             continue
 
@@ -953,7 +942,6 @@ def make_combined_scatter_plot(
     outlier_indices = get_outliers(parameter_dict, skylab_parameter_dict, **kwargs)
 
     for i, (param_name, param_list) in enumerate(parameter_dict.items()):
-
         if "pdf" in param_name:
             continue
 
@@ -1027,7 +1015,6 @@ def make_individual_scatter_plots(
     outlier_indices = get_outliers(parameter_dict, skylab_parameter_dict)
 
     for i, (param_name, param_list) in enumerate(parameter_dict.items()):
-
         if "pdf" in param_name:
             continue
 
@@ -1177,7 +1164,6 @@ def make_plots_comparing_smoothings(
     injected_gamma,
     nscrambles=n_scrambles,
 ):
-
     if not os.path.isdir(directory):
         os.makedirs(directory)
 
@@ -1186,7 +1172,6 @@ def make_plots_comparing_smoothings(
     for i, (param_name, fs_smoothing_param_list) in enumerate(
         flaresatck_smoothing_param_dict.items()
     ):
-
         if "pdf" in param_name:
             continue
 
@@ -1214,7 +1199,6 @@ def make_plots_comparing_smoothings(
         for i, (y, dy, x) in enumerate(
             zip(fs_smoothing_param_list, difference, skylab_param_list)
         ):
-
             c = "k"
             if (not isinstance(outlier_indices, type(None))) and (i in outlier_indices):
                 c = "r"
@@ -1278,7 +1262,6 @@ def make_llh_scans_of_outliers(
     use_skylab_splines=False,
     skylab_kernel=None,
 ):
-
     if not indices:
         logger.warning("No indices given! Can't make LLH scans!")
         return
@@ -1299,7 +1282,6 @@ def make_llh_scans_of_outliers(
         )
 
     for i, dat in zip(indices, data_list):
-
         if use_skylab_splines:
             if isinstance(skylab_kernel, type(None)):
                 raise ValueError(f"SkyLab kernel not given!")
@@ -1363,7 +1345,6 @@ def make_summary_pdf(title, filename, diagnostic_plots_directory, llh_scans_dire
         filename, geometry_options=geometry_options, page_numbers=False
     )
     with doc.create(pylatex.Section(title, numbering=False)):
-
         with doc.create(pylatex.Figure(position="h!")) as fig:
             if os.path.isfile(ts_file):
                 fig.add_image(ts_file, width=pylatex.NoEscape(r"0.49\linewidth"))
@@ -1403,7 +1384,6 @@ def make_summary_pdf(title, filename, diagnostic_plots_directory, llh_scans_dire
 
 
 if __name__ == "__main__":
-
     logging.basicConfig()
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     logging.getLogger().setLevel(logging.DEBUG)
@@ -1428,7 +1408,6 @@ if __name__ == "__main__":
     outlier_indices_nsources = dict()
 
     for nsources in [5]:
-
         # plot sources
         for hsphere in hemispheres:
             cat = np.load(get_sources(hsphere, nsources))
@@ -1450,7 +1429,6 @@ if __name__ == "__main__":
             "skylab",
             "flarestack",
         ]:  # , 'skylab_splines_kernel0', 'skylab_splines_kernel1']:
-
             logger.info(f"using {smoothing} smoothing method")
 
             smoothing_str = (
@@ -1495,11 +1473,9 @@ if __name__ == "__main__":
             if (not os.path.isfile(individual_seasons_result_filename)) or (
                 "fits" in args.force_new
             ):
-
                 individual_seasons_res = dict()
 
                 for season in use_dataset.keys():
-
                     # if smoothing == 'skylab_splines':
                     #     logger.info('copying SkyLab splines to Flaresatck Scratch Dir')
                     #     pathh = SoB_spline_path(use_dataset.get_single_season(season))
@@ -1513,7 +1489,6 @@ if __name__ == "__main__":
                     hsphere_dict = dict()
 
                     for hsphere in ["northern", "southern"]:
-
                         catalogue_path = get_sources(hsphere, nsources)
                         catalogue = pd.DataFrame(np.load(catalogue_path))
                         logger.debug(f"\n{catalogue}")
@@ -1521,7 +1496,6 @@ if __name__ == "__main__":
                         ns_dict = dict()
 
                         for ns in [0, 5]:  # n_signal_range:
-
                             data_list = get_scrambled_datasets(
                                 [season],
                                 n_signal=ns,
@@ -1555,7 +1529,6 @@ if __name__ == "__main__":
                             }
 
                             for ii, data in enumerate(data_list):
-
                                 if "splines" in smoothing:
                                     if season == "IC86_1_":
                                         logger.debug("using skylab splines")
@@ -1652,15 +1625,12 @@ if __name__ == "__main__":
             if (not os.path.isfile(multiple_seasons_result_filename)) or (
                 "fits" in args.force_new
             ):
-
                 multiple_seasons_hspere_dict = dict()
                 for hsphere in ["southern", "northern"]:
-
                     catalogue_path = get_sources(hsphere, nsources)
 
                     multiple_seasons_ns_dict = dict()
                     for ns in [0, 5]:
-
                         # use_dataset.keys() will give a list of all seasons in the dataset
                         data_list = get_scrambled_datasets(
                             list(use_dataset.keys()),
@@ -1727,7 +1697,6 @@ if __name__ == "__main__":
             # -----------------------     get skylab results     --------------------------- #
 
             for skylab_kernel in [0, 1]:
-
                 if skylab_kernel not in outlier_indices_dict:
                     outlier_indices_dict[skylab_kernel] = dict()
                 outlier_indices_skylab_kernel = outlier_indices_dict[skylab_kernel]
@@ -1758,7 +1727,6 @@ if __name__ == "__main__":
 
                 # plot results for individual seasons
                 for season, hsphere_dict in individual_seasons_res.items():
-
                     if season not in outlier_indices_skylab_kernel:
                         outlier_indices_skylab_kernel[season] = dict()
                     outlier_indices_season = outlier_indices_skylab_kernel[season]
@@ -1774,7 +1742,6 @@ if __name__ == "__main__":
                     pdir = f"skylab_kernel{skylab_kernel}/{nsources}sources/{season}"
 
                     for hsphere, ns_dict in hsphere_dict.items():
-
                         if hsphere not in outlier_indices_season:
                             outlier_indices_season[hsphere] = dict()
                         outlier_indices_hsphere = outlier_indices_season[hsphere]
@@ -1790,7 +1757,6 @@ if __name__ == "__main__":
                         plot_hsphere_dir = f"{pdir}/{hsphere}hemisphere"
 
                         for ns, params_with_pdf_values in ns_dict.items():
-
                             params = {
                                 k: v
                                 for k, v in params_with_pdf_values.items()

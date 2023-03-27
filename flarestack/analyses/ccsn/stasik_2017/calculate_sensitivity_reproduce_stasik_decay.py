@@ -71,9 +71,7 @@ job_ids = []
 plot_results = "_figureresults"
 
 if __name__ == "__main__":
-
     for cat in ["IIp", "IIn"]:
-
         name = raw + cat + "/"
 
         # cat_path = sn_catalogue_name(cat)
@@ -91,7 +89,6 @@ if __name__ == "__main__":
         # Loop over time PDFs
 
         for llh_time in time_pdfs:
-
             pdf_time = llh_time["decay_time"] / 364.25
             pdf_name = pdf_names(pdf_type, pdf_time)
             cat_path = sn_catalogue_name(cat, pdf_name=pdf_name)
@@ -127,7 +124,6 @@ if __name__ == "__main__":
             # Loop over spectral indices
 
             for gamma in gammas:
-
                 full_name = time_name + str(gamma) + "/"
 
                 length = float(time_key)
@@ -199,11 +195,9 @@ if __name__ == "__main__":
     stacked_sens_flux = {}
 
     for b, (cat_name, cat_res) in enumerate(full_res.items()):
-
         stacked_sens_flux[cat_name] = {}
 
-        for (time_key, time_res) in cat_res.items():
-
+        for time_key, time_res in cat_res.items():
             stacked_sens_flux[cat_name][time_key] = {}
 
             sens_livetime = []
@@ -216,8 +210,7 @@ if __name__ == "__main__":
 
             # Loop over gamma
 
-            for (gamma, rh_dict) in sorted(time_res.items()):
-
+            for gamma, rh_dict in sorted(time_res.items()):
                 logging.debug(
                     f"gamma is {gamma}, cat is {cat_name}, pdf time is {time_key}"
                 )
@@ -268,7 +261,6 @@ if __name__ == "__main__":
             for j, [fluence, energy] in enumerate(
                 [[sens_livetime, sens_e], [disc_pots_livetime, disc_e]]
             ):
-
                 logging.debug("fluence: " + str(fluence))
                 logging.debug("energy: " + str(energy))
 
@@ -338,11 +330,9 @@ if __name__ == "__main__":
     # ========================       make final plots       =============================== #
 
     for gamma in gammas:
-
         flux_fig, flux_ax = plt.subplots()
 
         for cat_name, cat_dict in stacked_sens_flux.items():
-
             x_raw = [float(key) for key in cat_dict.keys()]
             x = np.array(x_raw)[np.argsort(x_raw)] / 364.25
 
@@ -488,7 +478,6 @@ if __name__ == "__main__":
         fig, ax = plt.subplots()
 
         for cat_name in stacked_sens:
-
             res_stasik = get_figure_limits(cat_name, pdf_type)
             plot_arr = np.array(stacked_sens[cat_name], dtype="<f8")
 
