@@ -892,13 +892,9 @@ class StandardLLH(FixedEnergyLLH):
 
         kwargs["n_coincident"] = np.sum(~assumed_background_mask)
 
-        # NOTE
-        # The specification `dtype=object` is required when creating a numpy.ndarray from "ragged nested sequences".
-        # Meaning from "a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes".
-        # This was deprecated in numpy >= 1.24 unless 'dtype=object' is specified (see GitHub issue #174).
-        # In short, it seems here array is not a "true" array but more like a container of non-homogeneous data structures.
-        kwargs["SoB_spacetime_cache"] = np.array(SoB_spacetime, dtype=object)
-
+        # SoB_spacetime contains one list per source.
+        # The list contains one value for each associated neutrino.
+        kwargs["SoB_spacetime_cache"] = SoB_spacetime
         kwargs["SoB_energy_cache"] = SoB_energy_cache
         kwargs["pull_corrector"] = pull_corrector
 
@@ -959,8 +955,7 @@ class StandardLLH(FixedEnergyLLH):
             llh_value = -50.0 + all_n_j
 
         else:
-            # Add astype('float') as a consequence of building kwargs["SoB_spacetime_cache"] with dtype=object
-            llh_value = np.sum([np.sum(np.log(y.astype("float"))) for y in x])
+            llh_value = np.sum([np.sum(np.log(y)) for y in x])
 
             llh_value += np.sum(
                 self.assume_background(
