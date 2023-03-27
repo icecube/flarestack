@@ -148,13 +148,13 @@ class PublicICSeason(SeasonWithoutMC):
 
         data_dtype = np.dtype(
             [
-                ("logE", np.float),
-                ("trueE", np.float),
-                ("sinDec", np.float),
-                ("trueDec", np.float),
-                ("ow", np.float),
-                ("a_eff", np.float),
-                ("sigma", np.float),
+                ("logE", float),
+                ("trueE", float),
+                ("sinDec", float),
+                ("trueDec", float),
+                ("ow", float),
+                ("a_eff", float),
+                ("sigma", float),
             ]
         )
 

@@ -84,7 +84,7 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
     domain_sig = sig_hist > 0.0
 
     # Creates an array of ones as the default ratio
-    ratio = np.ones_like(bkg_hist, dtype=np.float)
+    ratio = np.ones_like(bkg_hist, dtype=float)
     # Bitwise Addition giving an Truth Array
     # Returns True if True in both Sig and Bkg, otherwise False
     mask = domain_bkg & domain_sig
