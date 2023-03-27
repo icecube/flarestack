@@ -69,12 +69,10 @@ res = dict()
 job_ids = list()
 
 for smoothing in ["flarestack", "skylab"]:
-
     smoothing_name = f"{raw}{smoothing}-smoothing/"
     gamma_res = dict()
 
     for gamma in gammas:
-
         gamma_name = f"{smoothing_name}{gamma:.2f}/"
 
         logging.info(f"gamma = {gamma:.2f}")
@@ -115,11 +113,9 @@ for smoothing in ["flarestack", "skylab"]:
         sin_res = dict()
 
         for sindec in same_sindecs:
-
             full_res = dict()
 
             for i, n in enumerate(np.array(nsources)):
-
                 logging.info(f"stacking {n} sources")
                 logging.info(f"cat path is {fs_sources(n, sindec)}")
 
@@ -180,17 +176,13 @@ if cluster and np.any(job_ids):
     wait_for_cluster(job_ids)
 
 for smoothing, gamma_res in res.items():
-
     for gamma, sin_res in gamma_res.items():
-
         for sindec in same_sindecs:
-
             full_res = sin_res[str(sindec)]
 
             sens = [[], [], []]
 
             for n in full_res:
-
                 logging.debug(f"n = {n}, type={type(n)}")
 
                 rh_dict = full_res[n]

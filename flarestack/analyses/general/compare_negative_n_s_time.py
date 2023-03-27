@@ -60,13 +60,11 @@ for sindec in sindecs:
     src_res = dict()
 
     for i, raw_llh_kwargs in enumerate([zero_bound, negative_bound]):
-
         label = ["Zero-bound", "Negative-bound"][i]
 
         time_res = dict()
 
         for offset in offsets:
-
             full_name = decname + label + "_" + str(offset) + "/"
 
             time = {
@@ -128,7 +126,6 @@ for sindec in sindecs:
 rd.wait_for_cluster()
 
 for sindec, src_res in analyses.items():
-
     fig = plt.figure()
     ax1 = plt.subplot2grid((6, 1), (0, 0), colspan=3, rowspan=3)
 
@@ -142,14 +139,12 @@ for sindec, src_res in analyses.items():
     frac_over = []
 
     for i, (label, method_res) in enumerate(src_res.items()):
-
         sens = []
         fracs = []
         disc_pots = []
         ts_median = []
 
         for offset in offsets:
-
             rh_dict = method_res[offset]
 
             try:
@@ -172,7 +167,6 @@ for sindec, src_res in analyses.items():
                 ts_median.append(rh.bkg_median)
 
                 if label == "Zero-bound":
-
                     frac_over.append(rh.frac_over)
 
             except EOFError:

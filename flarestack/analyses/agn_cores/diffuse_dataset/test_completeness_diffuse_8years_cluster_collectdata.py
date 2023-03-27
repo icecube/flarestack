@@ -88,8 +88,7 @@ print(nr_brightest_sources)
 all_res = dict()
 
 running_time = []
-for (cat_type, method) in complete_cats[:1]:
-
+for cat_type, method in complete_cats[:1]:
     unique_key = cat_type + "_" + method
 
     print(unique_key)
@@ -99,7 +98,6 @@ for (cat_type, method) in complete_cats[:1]:
     for gamma_index in gammas:
         res = dict()
         for j, nr_srcs in enumerate(nr_brightest_sources):
-
             # # Time it
             # start_loop = time.time()
 
@@ -198,8 +196,7 @@ print(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 logging.getLogger().setLevel("INFO")
 
 
-for (cat_key, gamma_dict) in all_res.items():
-
+for cat_key, gamma_dict in all_res.items():
     agn_type, xray_cat = cat_key.split("_")
 
     full_cat = load_catalogue(agn_catalogue_name(agn_type, xray_cat))
@@ -208,8 +205,7 @@ for (cat_key, gamma_dict) in all_res.items():
 
     saturate_ratio = 0.26
 
-    for (gamma_index, gamma_res) in iter(gamma_dict.items()):
-
+    for gamma_index, gamma_res in iter(gamma_dict.items()):
         print("gamma: ", gamma_index)
         sens = []
         disc_pot = []
@@ -226,8 +222,7 @@ for (cat_key, gamma_dict) in all_res.items():
 
         base_dir = base_name(cat_key, gamma_index)
 
-        for (nr_srcs, rh_dict) in sorted(gamma_res.items()):
-
+        for nr_srcs, rh_dict in sorted(gamma_res.items()):
             cat = load_catalogue(rh_dict["catalogue"])
 
             print("nr_srcs in loop: ", nr_srcs)
@@ -550,7 +545,6 @@ for (cat_key, gamma_dict) in all_res.items():
 
         labels = ["Sensitivity", "Discovery Potential", "sens", "dp"]
         for i, sens_dp in enumerate([ratio_sens, ratio_disc]):
-
             sens_dp = np.array(sens_dp)
             int_xray_flux_erg = np.array(int_xray_flux_erg)
             n_src = np.array(n_src)

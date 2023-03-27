@@ -47,7 +47,6 @@ def weighted_quantile(values, quantiles, weight):
 
 
 if __name__ == "__main__":
-
     try:
         os.makedirs(basedir)
     except OSError:
@@ -56,7 +55,6 @@ if __name__ == "__main__":
     plt.figure()
 
     for season in data_samples:
-
         mc, x, y = get_data(season)
 
         mask = x > y
@@ -64,7 +62,6 @@ if __name__ == "__main__":
         underestimates = []
 
         for gamma in gammas:
-
             weights = mc["ow"] * mc["trueE"] ** -gamma
             frac = np.sum(weights[mask]) / np.sum(weights)
             underestimates.append(frac)
@@ -84,7 +81,6 @@ if __name__ == "__main__":
     plt.figure()
 
     for season in data_samples:
-
         mc, x, y = get_data(season)
         pulls = x / y
 
@@ -93,7 +89,6 @@ if __name__ == "__main__":
         med_pulls = []
 
         for gamma in gammas:
-
             weights = mc["ow"] * mc["trueE"] ** -gamma
             med_pull = weighted_quantile(pulls, 0.5, weights)
             med_pulls.append(med_pull)
@@ -116,7 +111,6 @@ if __name__ == "__main__":
     centers = 0.5 * (log_e_bins[:-1] + log_e_bins[1:])
 
     for season in data_samples:
-
         gamma = 2.0
 
         mc, x, y = get_data(season)
@@ -156,7 +150,6 @@ if __name__ == "__main__":
     centers = 0.5 * (log_e_bins[:-1] + log_e_bins[1:])
 
     for season in data_samples:
-
         gamma = 2.0
 
         mc, x, y = get_data(season)
@@ -191,12 +184,10 @@ if __name__ == "__main__":
     plt.close()
 
     for gamma in [2.0, 3.0, 3.5]:
-
         plt.figure()
         ax = plt.subplot(111)
 
         for season in data_samples:
-
             sin_dec_bins = season["sinDec bins"]
 
             mc, x, y = get_data(season)
@@ -230,7 +221,6 @@ if __name__ == "__main__":
         ax = plt.subplot(111)
 
         for season in data_samples:
-
             sin_dec_bins = season["sinDec bins"]
 
             mc, x, y = get_data(season)
@@ -267,7 +257,6 @@ if __name__ == "__main__":
         centers = 0.5 * (log_e_bins[:-1] + log_e_bins[1:])
 
         for season in data_samples:
-
             mc, x, y = get_data(season)
             weights = mc["ow"] * mc["trueE"] ** -gamma
 
@@ -302,7 +291,6 @@ if __name__ == "__main__":
         centers = 0.5 * (log_e_bins[:-1] + log_e_bins[1:])
 
         for season in data_samples:
-
             mc, x, y = get_data(season)
             pulls = x / y
             weights = mc["ow"] * mc["trueE"] ** -gamma
@@ -334,7 +322,6 @@ if __name__ == "__main__":
     # print
 
     for season in data_samples:
-
         mc, x, y = get_data(season)
 
         title = season["Data Sample"] + "/" + season["Name"]

@@ -24,7 +24,6 @@ res_dict = dict()
 n_range = list(range(160))
 
 for i in n_range:
-
     # Initialise Injectors/LLHs
 
     # Set up what is "injected" into the fake dataset. This is a simulated source
@@ -121,7 +120,6 @@ for i in n_range:
 
 
 for i, vals in enumerate([sens, disc]):
-
     label = ["Sensitivity", "Discovery Potential"][i]
 
     plt.figure()

@@ -98,12 +98,10 @@ all_disc = []
 
 
 for i, (label, dataset_res) in enumerate(all_res.items()):
-
     sens = []
     disc_pots = []
 
     for rh_dict in dataset_res.values():
-
         rh = ResultsHandler(rh_dict)
         sens.append(rh.sensitivity)
         disc_pots.append(rh.disc_potential)

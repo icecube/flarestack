@@ -85,11 +85,9 @@ job_ids = []
 
 # Loop over SN catalogues
 if __name__ == "__main__":
-
     sindec = dict()
 
     for cat in ["IIn"]:  # sn_cats:
-
         name = f"{raw}/{cat}"
         cat_path = updated_sn_catalogue_name(cat)
         catalogue = np.load(cat_path)
@@ -141,7 +139,6 @@ if __name__ == "__main__":
         cat_res = dict()
 
         for gamma in gammas:
-
             injection_energy["gamma"] = gamma
 
             inj_dict = {
@@ -229,11 +226,9 @@ if __name__ == "__main__":
     # calculating sensitivities
 
     for cat_name, cat_res in full_res.items():
-
         stacked_sens_flux[cat_name] = dict()
 
         for gamma, rh_dict in cat_res.items():
-
             rh = ResultsHandler(rh_dict)
 
             stacked_sens_flux[cat_name][gamma] = {
@@ -246,9 +241,7 @@ if __name__ == "__main__":
     figaxs = {}
 
     for cat_name, cat_dict in stacked_sens_flux.items():
-
         for gamma, sens_dict in cat_dict.items():
-
             fs_label = ""
             sl_label = ""
             ref_label = ""
@@ -332,7 +325,6 @@ if __name__ == "__main__":
     # saving plots
 
     for gamma, figax in figaxs.items():
-
         figax[1][0].legend()
         figax[1][0].set_ylabel(r"flux [GeV$^{-1}$ s$^{-1}$ cm$^{-2}$]")
         figax[1][0].set_title("Sensitivity flux \n" f"$\gamma$ = {gamma:.2f}")

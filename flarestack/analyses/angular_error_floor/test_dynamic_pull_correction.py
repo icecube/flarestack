@@ -141,7 +141,6 @@ for gamma in [2.0, 3.5]:
             y = np.degrees(bin_mc["sigma"]) * 1.177
 
             if np.sum(e_mask) > 0:
-
                 [floor, floor2, ceiling] = weighted_quantile(
                     x, [0.1, 0.25, 0.9], weights[e_mask]
                 )
@@ -321,7 +320,6 @@ for gamma in [2.0, 3.5]:
     # plt.close()
 
     for l, Z in enumerate([Z_floor, Z_floor2]):
-
         # Z = np.log(Z)
 
         plt.figure()
@@ -354,7 +352,6 @@ for gamma in [2.0, 3.5]:
             Z_quantile,
         ]
     ):
-
         Z = np.log(Z)
         max_col = 1.0
 

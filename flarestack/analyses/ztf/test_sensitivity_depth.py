@@ -92,7 +92,6 @@ res_dict = dict()
 
 
 for sn in sn_types:
-
     sn_dict = dict()
 
     base_name = name_root + sn + "/"
@@ -106,14 +105,12 @@ for sn in sn_types:
 
     cats_to_test = list(all_cat_names.items())
 
-    for (sky, cat_names) in cats_to_test:
-
+    for sky, cat_names in cats_to_test:
         sky_dict = dict()
 
         sky_name = base_name + sky + "/"
 
         for i, cat_name in enumerate(cat_names[:7]):
-
             n_cat = float(len(np.load(cat_name)))
 
             name = sky_name + os.path.basename(cat_name)[:-4] + "/"
@@ -148,11 +145,9 @@ wait_for_cluster()
 
 # dem = AsimovEstimator(ps_7_year.get_seasons("IC86_1"), inj_kwargs)
 
-for (sn, sn_dict) in res_dict.items():
-
+for sn, sn_dict in res_dict.items():
     savedir_sn = plot_output_dir(name_root) + sn + "/"
-    for (sky, sky_dict) in sn_dict.items():
-
+    for sky, sky_dict in sn_dict.items():
         if sky == "Northern":
             # if True:
 
@@ -170,7 +165,7 @@ for (sn, sn_dict) in res_dict.items():
 
             dist = []
 
-            for (n_cat, rh_dict) in sorted(sky_dict.items()):
+            for n_cat, rh_dict in sorted(sky_dict.items()):
                 inj_time = post_window * 60 * 60 * 24
 
                 key = "Energy Flux (GeV cm^{-2} s^{-1})"
@@ -230,7 +225,6 @@ for (sn, sn_dict) in res_dict.items():
             ]
 
             for j, (vals, vals_e) in enumerate(pairs):
-
                 label = ["guess_disc", "sensitivity", "disc", "disc_25"][j]
 
                 plt.figure()

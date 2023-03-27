@@ -43,7 +43,6 @@ cat_res = dict()
 res = []
 
 for j, cat in enumerate(tde_catalogues):
-
     name = name_root + cat.replace(" ", "") + "/"
 
     logging.info(f"{name}")
