@@ -920,7 +920,6 @@ class StandardLLH(FixedEnergyLLH):
         # If n_s if negative, then removes the energy term from the likelihood
 
         for i, n_j in enumerate(all_n_j):
-            # kwargs["SoB_spacetime_cache"] is built with dtype=object and contains lists!
             SoB_spacetime: list = kwargs["SoB_spacetime_cache"][i]
 
             # Switches off Energy term for negative n_s, which should in theory
