@@ -223,16 +223,6 @@ def make_plot(gamma, plot_ref_sens=False):
         )
 
         if plot_ref_sens:
-
-            x, y = get_raw_ref_sens(float(sindec))
-            nan_m = ~np.isnan(x) & ~np.isnan(y)
-            ax.plot(x[nan_m], y[nan_m],
-                       color=sindec_color[float(sindec)],
-                       alpha=0.5,
-                       label=f"ref raw $\sin(\delta)=${float(sindec):.2f}",
-                       marker=""
-                       )
-
             f = get_ref_sens(float(sindec))
             ax.step(
                 sorted_energies,
