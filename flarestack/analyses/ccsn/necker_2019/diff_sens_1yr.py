@@ -12,7 +12,7 @@ from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.data.icecube import ps_v004_p00
 from flarestack.cluster.submitter import Submitter
 from flarestack.core.results import ResultsHandler, OverfluctuationError
-from flarestack.shared import cache_dir, flux_to_k, scale_shortener
+from flarestack.shared import cache_dir, flux_to_k, scale_shortener, plot_output_dir
 
 
 logger = logging.getLogger("flarestack.analyses.ccsn.necker_2019.diff_sens_1yr")
@@ -241,9 +241,11 @@ def make_plot(gamma, plot_ref_sens=False):
     ax.set_ylabel(r"$\frac{E^2 \mathrm{d}N}{\mathrm{d}A \, \mathrm{d}E \, \mathrm{d}t}$ [GeV cm$^{-2}$ s$^{-1}$]")
     fig.tight_layout()
 
-    
+    fn = os.path.join(plot_output_dir(raw_output_dir), "ic86_2_diff_ps_sens_separate_bkg", f"gamma{gamma:.2f}.pdf")
+    logger.info(f"saving under {fn}")
+    fig.savefig(fn)
 
-    plt.show()
+    plt.close()
 
 
 def make_ref_plot():
@@ -271,7 +273,11 @@ def make_ref_plot():
     ax.set_ylabel(r"$\frac{E^2 \mathrm{d}N}{\mathrm{d}A \, \mathrm{d}E \, \mathrm{d}t}$ [GeV cm$^{-2}$ s$^{-1}$]")
     fig.tight_layout()
 
-    plt.show()
+    fn = os.path.join(plot_output_dir(raw_output_dir), "ic86_2_diff_ps_sens_separate_bkg", "gamma2.00_ref_sens.pdf")
+    logger.info(f"saving under {fn}")
+    fig.savefig(fn)
+
+    plt.close()
 
 
 if __name__ == '__main__':
