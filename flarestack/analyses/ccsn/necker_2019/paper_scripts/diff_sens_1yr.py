@@ -250,7 +250,7 @@ def make_plot(gamma, plot_ref_sens=False):
 
 def make_ref_plot():
 
-    fig, ax = plt.subplots(figsize=(3.5 * 1.61803, 3.5))
+    fig, ax = plt.subplots(figsize=(2.7 * 1.61803, 2.7))
 
     for sindec in [-0.5, 0, 0.5]:
         energies = np.logspace(2, 7, 11) if sindec >= 0 else np.logspace(4, 7, 7)
