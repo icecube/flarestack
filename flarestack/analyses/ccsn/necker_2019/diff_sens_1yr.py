@@ -19,7 +19,8 @@ logger = logging.getLogger("flarestack.analyses.ccsn.necker_2019.diff_sens_1yr")
 
 
 def get_raw_ref_sens(sindec):
-    fn = '~/Downloads/Unknown-3'
+    d = os.path.dirname(os.path.abspath(__file__))
+    fn = os.path.join(d, "diff_sens_1yr_ref.csv")
     logger.debug(f"loading {fn}")
     ref_sens = pd.read_csv(fn, header=[0, 1])
     col_mask = [float(ii[0].split("sindec")[1]) == sindec if "sindec" in ii[0] else False for ii in ref_sens.columns]
