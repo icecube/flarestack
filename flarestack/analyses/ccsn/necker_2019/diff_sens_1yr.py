@@ -17,6 +17,18 @@ from flarestack.shared import cache_dir, flux_to_k, scale_shortener
 
 logger = logging.getLogger("flarestack.analyses.ccsn.necker_2019.diff_sens_1yr")
 
+sindec_color = {
+    0.5: "C0",
+    0: "C1",
+    -0.5: "C2"
+}
+
+sindec_ls = {
+    0.5: "-",
+    0: "--",
+    -0.5: ":"
+}
+
 
 def get_raw_ref_sens(sindec):
     d = os.path.dirname(os.path.abspath(__file__))
@@ -192,18 +204,6 @@ def get_results(gamma):
 def make_plot(gamma, plot_ref_sens=False):
     result = get_results(gamma)
 
-    sindec_color = {
-        0.5: "C0",
-        0: "C1",
-        -0.5: "C2"
-    }
-
-    sindec_ls = {
-        0.5: "-",
-        0: "--",
-        -0.5: ":"
-    }
-
     fig, ax = plt.subplots(figsize=(3.5 * 1.61803, 3.5))
 
     for sindec, energy_dict in result.items():
@@ -241,6 +241,36 @@ def make_plot(gamma, plot_ref_sens=False):
     ax.set_ylabel(r"$\frac{E^2 \mathrm{d}N}{\mathrm{d}A \, \mathrm{d}E \, \mathrm{d}t}$ [GeV cm$^{-2}$ s$^{-1}$]")
     fig.tight_layout()
 
+    
+
+    plt.show()
+
+
+def make_ref_plot():
+
+    fig, ax = plt.subplots(figsize=(3.5 * 1.61803, 3.5))
+
+    for sindec in [-0.5, 0, 0.5]:
+        energies = np.logspace(2, 7, 11) if sindec >= 0 else np.logspace(4, 7, 7)
+        sorted_energies = np.array(list(energies) + [energies[-1]])
+
+        f = get_ref_sens(float(sindec))
+        ax.step(
+            sorted_energies,
+            f(list((sorted_energies[:-1] + sorted_energies[1:]) / 2) + [sorted_energies[-1]]),
+            color=sindec_color[float(sindec)],
+            ls=sindec_ls[float(sindec)],
+            label=f"$\sin(\delta)=${float(sindec):.2f}",
+            where="post"
+        )
+
+    ax.legend()
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    ax.set_xlabel(r"$E_\nu$ [GeV]")
+    ax.set_ylabel(r"$\frac{E^2 \mathrm{d}N}{\mathrm{d}A \, \mathrm{d}E \, \mathrm{d}t}$ [GeV cm$^{-2}$ s$^{-1}$]")
+    fig.tight_layout()
+
     plt.show()
 
 
@@ -248,3 +278,4 @@ if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger("flarestack").setLevel("DEBUG")
     make_plot(2.0, plot_ref_sens=True)
+    make_ref_plot()
