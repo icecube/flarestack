@@ -778,24 +778,19 @@ docs = ["Sphinx"]
 
 [[package]]
 name = "healpy"
-version = "1.16.3"
+version = "1.16.4"
 description = "Healpix tools package for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "healpy-1.16.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:1f92761c6c1b63a5acf5492e42cad7c078f6605e1d3b4a3a43a4db68043a12e4"},
-    {file = "healpy-1.16.3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a43a79bceceec563850d0b2773d5e30f7e5c5f37199d47da577b7c26ee17600d"},
-    {file = "healpy-1.16.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:63959265c1afc5ae7e85fa393a9161c258f6d989dda280d96fe622d46ebcc511"},
-    {file = "healpy-1.16.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:185af6172fbb79694fa869f6dbb904123a261f7e0dc4e4dc4dbf319088f75cca"},
-    {file = "healpy-1.16.3-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:00463338492a39b3599a6fdd6eeea99213855a582c31e2c4ed20b37bea718f37"},
-    {file = "healpy-1.16.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c240a94392cfede7ebd09d0ce1adab868730a852794195821be2d301dc1dde02"},
-    {file = "healpy-1.16.3-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:e43a9172b7bf07a420e338b84aeb7a8498f26549d907f0302d126091b202cf57"},
-    {file = "healpy-1.16.3-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ca746e88c2269d7f1e74e54d2d28b786515ed53306ae38ab758c98bbfd4fa9fb"},
-    {file = "healpy-1.16.3-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:490389210df1615cdddd2eda4022e61f9dce1f1553f3a0441fb43b82e1afc0df"},
-    {file = "healpy-1.16.3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:341ce3373ddcb3ebdad2d39c3e43f6d38ab8542b1b1c077dd0ad889b419fd57b"},
-    {file = "healpy-1.16.3-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:69a3fbd95883e15f36be512ee8420d189e24578fb49f4ccab1f8c6d1f5b71256"},
-    {file = "healpy-1.16.3-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:27896d59d92bdb980987ea45912a7a95c09a0b8f5773a9112a56c7d5f9b4d389"},
-    {file = "healpy-1.16.3.tar.gz", hash = "sha256:9fb7ad9c895fa399f814fcf69cafe13027edf8ab92f8d7ccb36e5c4c44f3d147"},
+    {file = "healpy-1.16.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8687eeb6b5e5aa48ff8daab4838c6054230c23ce975f738200168e26e9169840"},
+    {file = "healpy-1.16.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0151b0af04c373925fe5eb1901e9cbcaed9dd8967315bc638273e81314d72ff0"},
+    {file = "healpy-1.16.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:71df33adb95b8fdc48bbe9d4703eecf806e4dad2450da5eb8815233d79bc6364"},
+    {file = "healpy-1.16.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a54b685ffdb42df7a0ccc1dcab49a14d86cb3463682007ec6e1d2b4b330ec2e4"},
+    {file = "healpy-1.16.4-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b6cc2878668f42bb5058fd3af3be688671449dd2da7a99289f5f6c17373f4c29"},
+    {file = "healpy-1.16.4-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3c4054398dfcc40a4b6553b39198c34180688db298d1b38fe23d977f325d88d6"},
+    {file = "healpy-1.16.4-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f8d6e08143366c9f7e4ef34d19a5f28da66a5aaa05bd8cc74cf1b8573a151e6d"},
+    {file = "healpy-1.16.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5cf1d7194472d1da4c0d90b0a4cd5800a1be4c75d6c3329ff2aec7aa6c97ae6c"},
 ]
 
 [package.dependencies]
@@ -803,6 +798,9 @@ astropy = "*"
 matplotlib = "*"
 numpy = ">=1.13"
 scipy = "*"
+
+[package.extras]
+test = ["pytest", "pytest-cython", "pytest-doctestplus", "requests"]
 
 [[package]]
 name = "idna"
