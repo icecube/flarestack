@@ -778,19 +778,24 @@ docs = ["Sphinx"]
 
 [[package]]
 name = "healpy"
-version = "1.16.4"
+version = "1.16.5"
 description = "Healpix tools package for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "healpy-1.16.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8687eeb6b5e5aa48ff8daab4838c6054230c23ce975f738200168e26e9169840"},
-    {file = "healpy-1.16.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0151b0af04c373925fe5eb1901e9cbcaed9dd8967315bc638273e81314d72ff0"},
-    {file = "healpy-1.16.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:71df33adb95b8fdc48bbe9d4703eecf806e4dad2450da5eb8815233d79bc6364"},
-    {file = "healpy-1.16.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a54b685ffdb42df7a0ccc1dcab49a14d86cb3463682007ec6e1d2b4b330ec2e4"},
-    {file = "healpy-1.16.4-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b6cc2878668f42bb5058fd3af3be688671449dd2da7a99289f5f6c17373f4c29"},
-    {file = "healpy-1.16.4-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3c4054398dfcc40a4b6553b39198c34180688db298d1b38fe23d977f325d88d6"},
-    {file = "healpy-1.16.4-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f8d6e08143366c9f7e4ef34d19a5f28da66a5aaa05bd8cc74cf1b8573a151e6d"},
-    {file = "healpy-1.16.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5cf1d7194472d1da4c0d90b0a4cd5800a1be4c75d6c3329ff2aec7aa6c97ae6c"},
+    {file = "healpy-1.16.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a6bd59a2d1fd6ec24a7ddf409b027b31a7b6dedbbb82866142249983a3056ca4"},
+    {file = "healpy-1.16.5-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f87784a3912fd6253c9aa8118ed0d55c224564e1b94875a1a213feed0395aa1e"},
+    {file = "healpy-1.16.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:666bf645caf813f53393d60ef388e5daf19d9b0d81bd8a133793b7f61d1c61dd"},
+    {file = "healpy-1.16.5-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ec39b58daf8303f7df125fb4fa690b70a6edf88e5644990d940edf656e9e984a"},
+    {file = "healpy-1.16.5-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:40b0363b781b8c471b2fe40fa54f8b82810b8a80d19c1e86f2e4114c0118ee55"},
+    {file = "healpy-1.16.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ba99a0c262ae389db2bc9a78b107e1d33944608ca492767f636a94144156f464"},
+    {file = "healpy-1.16.5-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:2d72f2468d9ffee1d78db0bffb6a75b09cfd5064c05c4b17a08fe579a1bbd81d"},
+    {file = "healpy-1.16.5-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e7611cbb5d085a1d579d773c7922ac72a67e22686fe5167417ae9c9807b85ed6"},
+    {file = "healpy-1.16.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e9fc6a94aaeee154630e09b9857890d8eed7e839f740c67c94095d42c8253a51"},
+    {file = "healpy-1.16.5-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:f988b3505e950e0d63b59d1e0b344e5c0e905f28848309ef3ff51cf5672841d0"},
+    {file = "healpy-1.16.5-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:dca8842bec5c35d793edc8aa3757a57ed32c55c9e175340125fd68cfa4d67086"},
+    {file = "healpy-1.16.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b7b70298346f09382fae55b8b44d338e214239e634f8b3afbf23842f8967e475"},
+    {file = "healpy-1.16.5.tar.gz", hash = "sha256:9f99cd5ed2d8791dbfcefe1552a73e550ec85b87637127938756280008d0ed29"},
 ]
 
 [package.dependencies]
