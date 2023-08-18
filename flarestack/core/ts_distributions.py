@@ -1,13 +1,14 @@
+import logging
+import matplotlib.pyplot as plt
 import numpy as np
 import os
-import matplotlib.pyplot as plt
+from pathlib import Path
 import scipy.optimize, scipy.stats
 from scipy.stats import norm
-import logging
+
 
 logger = logging.getLogger(__name__)
 
-raw_five_sigma = norm.cdf(5)
 n_bins = 100
 
 
@@ -168,35 +169,34 @@ class Chi2_one_side_free(object):
         self.scale = res.x[2]
 
 
-def fit_background_ts(ts_array, ts_type):
+def fit_background_ts(ts_array: np.array, ts_type):
+    """
+    Fit the background TS distribution
+    """
     mask = ts_array > 0.0
-    frac_over = float(len(ts_array[mask])) / (float(len(ts_array)))
+
+    frac_positive = float(len(ts_array[mask])) / (float(len(ts_array)))
+
     threshold_err = 0.0
 
-    res = []
-    labs = []
-    cols = []
+    ts_data, labels, colors = [], [], []
 
     if np.sum(mask) > 0.0:
-        res.append(ts_array[mask])
-        labs.append("TS > 0")
-        cols.append("black")
+        ts_data.append(ts_array[mask])
+        labels.append("TS > 0")
+        colors.append("black")
     if np.sum(~mask) > 0.0:
-        res.append(ts_array[~mask])
-        labs.append("TS <= 0")
-        cols.append("grey")
-
-    # if len(res) > 1:
-    #     res = np.array(res, dtype=object)
-    #     res.shape = (2, 1)
+        ts_data.append(ts_array[~mask])
+        labels.append("TS <= 0")
+        colors.append("grey")
 
     plt.hist(
-        res,
+        ts_data,
         bins=n_bins,
         lw=2,
         histtype="step",
-        color=cols,
-        label=labs,
+        color=colors,
+        label=labels,
         density=True,
         stacked=True,
     )
@@ -205,7 +205,7 @@ def fit_background_ts(ts_array, ts_type):
         chi2 = Chi2_LeftTruncated(ts_array)
 
         if chi2._res.success:
-            frac_over = 1.0
+            frac_positive = 1.0
 
             df = chi2._f.args[0]
             loc = chi2._f.args[1]
@@ -244,7 +244,7 @@ def fit_background_ts(ts_array, ts_type):
                 scale = 1.0
 
             else:
-                frac_over = 1.0
+                frac_positive = 1.0
 
     elif ts_type in ["standard", "negative_ns"]:
         chi2 = Chi2_one_side(ts_array[ts_array > 0.0])
@@ -255,9 +255,9 @@ def fit_background_ts(ts_array, ts_type):
         threshold_err = float(chi2.sigma)
 
     else:
-        raise Exception("ts_type " + str(ts_type) + " not recognised!")
+        raise Exception(f"ts_type {ts_type} not recognised!")
 
-    return df, loc, scale, frac_over, threshold_err
+    return df, loc, scale, frac_positive, threshold_err
 
 
 def plot_expanded_negative(ts_array, path):
@@ -276,74 +276,83 @@ def plot_expanded_negative(ts_array, path):
     med = np.median(ts_array)
 
     plt.yscale("log")
-    plt.xlabel(r"Test Statistic ($\lambda$)")
+    plt.xlabel(r"Test statistic ($\lambda$)")
     plt.legend(loc="upper right")
     plt.savefig(path[:-4] + "_expanded.pdf")
     plt.close()
 
 
 def plot_background_ts_distribution(
-    ts_array, path, ts_type="Standard", ts_val=None, mock_unblind=False
+    ts_array: list,
+    path: Path,
+    ts_type: str = "standard",
+    significance_threshold: float = 5.0,
+    ts_val=None,
+    mock_unblind: bool = False,
 ):
-    try:
-        os.makedirs(os.path.dirname(path))
-    except OSError:
-        pass
+    path.mkdir(exist_ok=True)
 
     ts_array = np.array(ts_array)
 
-    if np.sum(np.isnan(ts_array)) > 0:
-        logger.warning(
-            "TS distribution has", np.sum(np.isnan(ts_array)), "nan entries."
-        )
+    # check for NaNs and filter them out
+
+    nan_count = np.sum(np.isnan(ts_array))
+
+    if nan_count > 0:
+        logger.warning(f"TS distribution has {nan_count} nan entries.")
 
     ts_array = ts_array[~np.isnan(ts_array)]
 
+    # find max ts
     max_ts = np.max(ts_array)
 
     if np.median(ts_array) < 0.0:
+        # plot separately the positive and negative values of TS
         plot_expanded_negative(ts_array, path)
 
     if max_ts == 0:
         logger.warning(
-            f"Maximum of TS is {max_ts=}, unable to calculate discovery threshold (too few trials?)"
+            f"Maximum of TS is zero, unable to calculate the TS threshold for the required significance (too few trials?)"
         )
         return np.NaN
 
-    fig = plt.figure()
+    df, loc, scale, frac_positive, t_err = fit_background_ts(ts_array, ts_type)
 
+    frac_nonpositive = 1.0 - frac_positive
+
+    # cumulative fraction of trials required to reach the desired significance
+    cdf_threshold = norm.cdf(significance_threshold)
+    # determine corresponding threshold for the CDF of
+    positive_cdf_threshold = (cdf_threshold - frac_nonpositive) / frac_positive
+
+    disc_potential = scipy.stats.chi2.ppf(positive_cdf_threshold, df, loc, scale)
+
+    # plotting
+    fig = plt.figure()
     ax = plt.subplot(1, 1, 1)
 
-    df, loc, scale, frac_over, t_err = fit_background_ts(ts_array, ts_type)
-
-    frac_under = 1 - frac_over
-
-    five_sigma = (raw_five_sigma - frac_under) / (1.0 - frac_under)
-
-    plt.axhline(frac_over * (1 - five_sigma), color="r", linestyle="--")
-
-    disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
+    plt.axhline(frac_positive * (1 - positive_cdf_threshold), color="r", linestyle="--")
 
     x_range = np.linspace(0.0, max(max_ts, disc_potential), 100)
 
     plt.plot(
         x_range,
-        frac_over * scipy.stats.chi2.pdf(x_range, df, loc, scale),
+        frac_positive * scipy.stats.chi2.pdf(x_range, df, loc, scale),
         color="blue",
-        label=r"$\chi^{2}$ Distribution",
+        label=r"$\chi^{2}$ distribution",
     )
 
     if t_err is not None:
         plt.fill_between(
             x_range,
-            frac_over * scipy.stats.chi2.pdf(x_range, df + t_err, loc, scale),
-            frac_over * scipy.stats.chi2.pdf(x_range, df - t_err, loc, scale),
+            frac_positive * scipy.stats.chi2.pdf(x_range, df + t_err, loc, scale),
+            frac_positive * scipy.stats.chi2.pdf(x_range, df - t_err, loc, scale),
             alpha=0.1,
             color="blue",
         )
 
     def integral(x):
-        return frac_under * np.sign(x) + frac_over * (
+        return frac_nonpositive * np.sign(x) + frac_positive * (
             scipy.stats.chi2.cdf(x, df, loc, scale)
         )
 
@@ -355,7 +364,9 @@ def plot_background_ts_distribution(
         label=r"1 - $\int f(x)$ (p-value)",
     )
 
-    plt.axvline(disc_potential, color="r", label=r"5 $\sigma$ Threshold")
+    plt.axvline(
+        disc_potential, color="r", label=rf"{significance_threshold} $\sigma$ threshold"
+    )
 
     if ts_val is not None:
         if not isinstance(ts_val, float):
@@ -366,7 +377,9 @@ def plot_background_ts_distribution(
         if ts_val > np.median(ts_array):
             # val = (ts_val - frac_under) / (1. - frac_under)
 
-            cdf = frac_under + frac_over * scipy.stats.chi2.cdf(ts_val, df, loc, scale)
+            cdf = frac_nonpositive + frac_positive * scipy.stats.chi2.cdf(
+                ts_val, df, loc, scale
+            )
 
             sig = norm.ppf(cdf)
 
@@ -375,7 +388,7 @@ def plot_background_ts_distribution(
             sig = 0.0
 
         logger.info(f"Pre-trial P-value is {1-cdf:.2E}")
-        logger.info(f"Significance is {sig:.2f} Sigma")
+        logger.info(f"Significance is {sig:.2f} sigma")
 
         plt.axvline(
             ts_val,
@@ -388,7 +401,7 @@ def plot_background_ts_distribution(
 
     else:
         plt.annotate(
-            "{:.1f}".format(100 * frac_under)
+            "{:.1f}".format(100 * frac_nonpositive)
             + "% of data in delta. \n"
             + r"$\chi^{2}$ Distribution:"
             + "\n   * d.o.f.="
@@ -408,7 +421,7 @@ def plot_background_ts_distribution(
     )
 
     plt.yscale("log")
-    plt.xlabel(r"Test Statistic ($\lambda$)")
+    plt.xlabel(r"Test statistic ($\lambda$)")
     plt.legend(loc="upper right")
 
     if mock_unblind:
