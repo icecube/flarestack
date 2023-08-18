@@ -282,8 +282,23 @@ def plot_expanded_negative(ts_array, path):
     plt.close()
 
 
+def filter_nan(values: list) -> np.array:
+    arr = np.array(values)
+
+    nan_count = np.sum(np.isnan(arr))
+
+    if nan_count > 0:
+        logger.warning(f"TS distribution has {nan_count} NaN entries.")
+
+    return arr[~np.isnan(arr)]
+
+
+def calc_ts_threshold(ts_values: list, significance: float, ts_type: str = "standard"):
+    ts_arr = filter_nan(ts_values)
+
+
 def plot_background_ts_distribution(
-    ts_array: list,
+    ts_values: list,
     path: Path,
     ts_type: str = "standard",
     significance_threshold: float = 5.0,
@@ -292,23 +307,13 @@ def plot_background_ts_distribution(
 ):
     path.mkdir(exist_ok=True)
 
-    ts_array = np.array(ts_array)
-
-    # check for NaNs and filter them out
-
-    nan_count = np.sum(np.isnan(ts_array))
-
-    if nan_count > 0:
-        logger.warning(f"TS distribution has {nan_count} nan entries.")
-
-    ts_array = ts_array[~np.isnan(ts_array)]
-
     # find max ts
-    max_ts = np.max(ts_array)
+    ts_arr = filter_nan(ts_values)
+    max_ts = np.max(ts_arr)
 
-    if np.median(ts_array) < 0.0:
+    if np.median(ts_arr) < 0.0:
         # plot separately the positive and negative values of TS
-        plot_expanded_negative(ts_array, path)
+        plot_expanded_negative(ts_arr, path)
 
     if max_ts == 0:
         logger.warning(
@@ -316,7 +321,7 @@ def plot_background_ts_distribution(
         )
         return np.NaN
 
-    df, loc, scale, frac_positive, t_err = fit_background_ts(ts_array, ts_type)
+    df, loc, scale, frac_positive, t_err = fit_background_ts(ts_arr, ts_type)
 
     frac_nonpositive = 1.0 - frac_positive
 
@@ -374,7 +379,7 @@ def plot_background_ts_distribution(
 
         logger.info(f"Quantifying TS: {ts_val:.2f}")
 
-        if ts_val > np.median(ts_array):
+        if ts_val > np.median(ts_arr):
             # val = (ts_val - frac_under) / (1. - frac_under)
 
             cdf = frac_nonpositive + frac_positive * scipy.stats.chi2.cdf(
@@ -416,7 +421,7 @@ def plot_background_ts_distribution(
         )
 
     yrange = min(
-        1.0 / (float(len(ts_array)) * n_bins),
+        1.0 / (float(len(ts_arr)) * n_bins),
         scipy.stats.chi2.pdf(disc_potential, df, loc, scale),
     )
 
