@@ -44,7 +44,7 @@ class OverfluctuationError(Exception):
 class Result(BaseModel):
     background_median: Optional[float] = None
     reference_ts: Optional[float] = None
-    reference_ts_overfluctuation_fraction = Optional[float] = None
+    reference_ts_overfluctuation_fraction: Optional[float] = None
 
     sensitivity_value: Optional[float] = None
     sensitivity_error: Optional[Tuple[float]] = None
