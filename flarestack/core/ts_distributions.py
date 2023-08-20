@@ -458,7 +458,7 @@ def plot_background_ts_distribution(
         if ts_val > np.median(ts_arr):
             # val = (ts_val - frac_under) / (1. - frac_under)
 
-            cdf = bg_fit.frac_nonpositive + bg_fitfrac_positive * scipy.stats.chi2.cdf(
+            cdf = bg_fit.frac_nonpositive + bg_fit.frac_positive * scipy.stats.chi2.cdf(
                 ts_val, bg_fit.df, bg_fit.loc, bg_fit.scale
             )
 
