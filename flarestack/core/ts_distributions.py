@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from pathlib import Path
+from pydantic import BaseModel
 import scipy.optimize, scipy.stats
 from scipy.stats import norm
+from typing import Optional
 
 
 logger = logging.getLogger(__name__)
@@ -169,7 +171,19 @@ class Chi2_one_side_free(object):
         self.scale = res.x[2]
 
 
-def fit_background_ts(ts_array: np.array, ts_type):
+class BackgroundFit(BaseModel):
+    df: float  # degrees of freedom
+    loc: float  # mean
+    scale: float  # variance
+    frac_positive: float  # fraction of positive TS values
+    t_err: float  # threshold error (?)
+
+    @property
+    def frac_nonpositive():
+        return 1 - self.frac_positive
+
+
+def fit_background_ts(ts_array: np.array, ts_type: str) -> BackgroundFit:
     """
     Fit the background TS distribution
     """
@@ -178,28 +192,6 @@ def fit_background_ts(ts_array: np.array, ts_type):
     frac_positive = float(len(ts_array[mask])) / (float(len(ts_array)))
 
     threshold_err = 0.0
-
-    ts_data, labels, colors = [], [], []
-
-    if np.sum(mask) > 0.0:
-        ts_data.append(ts_array[mask])
-        labels.append("TS > 0")
-        colors.append("black")
-    if np.sum(~mask) > 0.0:
-        ts_data.append(ts_array[~mask])
-        labels.append("TS <= 0")
-        colors.append("grey")
-
-    plt.hist(
-        ts_data,
-        bins=n_bins,
-        lw=2,
-        histtype="step",
-        color=colors,
-        label=labels,
-        density=True,
-        stacked=True,
-    )
 
     if ts_type == "flare":
         chi2 = Chi2_LeftTruncated(ts_array)
@@ -257,7 +249,13 @@ def fit_background_ts(ts_array: np.array, ts_type):
     else:
         raise Exception(f"ts_type {ts_type} not recognised!")
 
-    return df, loc, scale, frac_positive, threshold_err
+    return BackgroundFit(
+        df=df,
+        loc=loc,
+        scale=scale,
+        frac_positive=frac_positive,
+        threshold_err=threshold_err,
+    )
 
 
 def plot_expanded_negative(ts_array, path):
@@ -268,7 +266,7 @@ def plot_expanded_negative(ts_array, path):
         lw=2,
         histtype="step",
         color=["black", "grey"],
-        label=["TS > 0", "TS <= 0"],
+        label=["TS > 0", "TS < 0"],
         density=True,
         stacked=True,
     )
@@ -293,18 +291,73 @@ def filter_nan(values: list) -> np.array:
     return arr[~np.isnan(arr)]
 
 
-def calc_ts_threshold(ts_values: list, significance: float, ts_type: str = "standard"):
+def fit_background(ts_values: list, ts_type: str = "standard") -> BackgroundFit:
+    """Wrapper around fit_background_ts
+
+    Args:
+        ts_values (list): list of TS values from background trials
+        ts_type (str, optional): Type of test statistic. Defaults to "standard".
+
+    Returns:
+        BackgroundFit: result of the background fit.
+    """
     ts_arr = filter_nan(ts_values)
+    max_ts = np.max(ts_arr)
+
+    if max_ts == 0:
+        logger.warning(
+            f"Maximum of TS is zero, will be unable to calculate any TS threshold (too few trials?)"
+        )
+        return np.NaN
+
+    return fit_background_ts(ts_arr, ts_type)
+
+
+class DiscoverySpec(BaseModel):
+    """For a given background TS distribution, this object holds a significance value, the corresponding CDF threshold for the distribution of positve TS values and the interpolated TS value threshold."""
+
+    significance: float
+    positive_cdf_threshold: float
+    ts_threshold: float
+
+    # @property
+    # def cdf_threshold(self):
+    #     return norm.cdf(self.significance)
+    #
+    # @property
+    # def positive_cdf_threshold(self, bg_fit: BackgroundFit):
+    #      return (self.cdf_threshold - bg_fit.frac_nonpositive) / bg_fit.frac_positive
+    #
+    # @property
+    # def ts_threshold(self, bg_fit: BackgroundFit):
+    #     return scipy.stats.chi2.ppf(self.positive_cdf_threshold, bg_fit.df, bg_fit.loc, bg_fit.scale)
+
+
+def calc_ts_threshold(bg_fit: BackgroundFit, significance: float) -> DiscoverySpec:
+    # cumulative fraction of trials required to reach the desired significance
+    cdf_threshold = norm.cdf(significance)
+    # determine corresponding threshold for the CDF of
+    positive_cdf_threshold = (
+        cdf_threshold - bg_fit.frac_nonpositive
+    ) / bg_fit.frac_positive
+    ts_threshold = scipy.stats.chi2.ppf(
+        positive_cdf_threshold, bg_fit.df, bg_fit.loc, bg_fit.scale
+    )
+    return DiscoverySpec(
+        significance=significance,
+        positive_cdf_threshold=positive_cdf_threshold,
+        ts_threshold=ts_threshold,
+    )
 
 
 def plot_background_ts_distribution(
     ts_values: list,
+    bg_fit: BackgroundFit,
+    significances: list[DiscoverySpec],
     path: Path,
-    ts_type: str = "standard",
-    significance_threshold: float = 5.0,
-    ts_val=None,
+    ts_val: Optional[float] = None,
     mock_unblind: bool = False,
-):
+) -> None:
     path.mkdir(exist_ok=True)
 
     # find max ts
@@ -315,50 +368,77 @@ def plot_background_ts_distribution(
         # plot separately the positive and negative values of TS
         plot_expanded_negative(ts_arr, path)
 
-    if max_ts == 0:
-        logger.warning(
-            f"Maximum of TS is zero, unable to calculate the TS threshold for the required significance (too few trials?)"
-        )
-        return np.NaN
-
-    df, loc, scale, frac_positive, t_err = fit_background_ts(ts_arr, ts_type)
-
-    frac_nonpositive = 1.0 - frac_positive
-
-    # cumulative fraction of trials required to reach the desired significance
-    cdf_threshold = norm.cdf(significance_threshold)
-    # determine corresponding threshold for the CDF of
-    positive_cdf_threshold = (cdf_threshold - frac_nonpositive) / frac_positive
-
-    disc_potential = scipy.stats.chi2.ppf(positive_cdf_threshold, df, loc, scale)
-
-    # plotting
     fig = plt.figure()
+
     ax = plt.subplot(1, 1, 1)
 
-    plt.axhline(frac_positive * (1 - positive_cdf_threshold), color="r", linestyle="--")
+    # histogram was previously done in fit_background_ts()
+    ts_data, labels, colors = [], [], []
 
-    x_range = np.linspace(0.0, max(max_ts, disc_potential), 100)
+    mask = ts_arr > 0.0
+    if np.sum(mask) > 0.0:
+        ts_data.append(ts_arr[mask])
+        labels.append("TS > 0")
+        colors.append("black")
+    if np.sum(~mask) > 0.0:
+        ts_data.append(ts_arr[~mask])
+        labels.append("TS <= 0")
+        colors.append("grey")
+    plt.hist(
+        ts_data,
+        bins=n_bins,
+        lw=2,
+        histtype="step",
+        color=colors,
+        label=labels,
+        density=True,
+        stacked=True,
+    )
+
+    for significance in significances:
+        plt.axhline(
+            bg_fit.frac_positive * (1 - significance.positive_cdf_threshold),
+            color="r",
+            linestyle="--",
+        )
+        plt.axvline(
+            significance.ts_threshold,
+            color="r",
+            label=rf"{significance.significance} $\sigma$ threshold",
+        )
+
+    # determine range of x-axis (TS)
+    max_ts_threshold = max(
+        [significance.ts_threshold for significance in significances]
+    )
+    x_range = np.linspace(0.0, max(max_ts, max_ts_threshold), 100)
 
     plt.plot(
         x_range,
-        frac_positive * scipy.stats.chi2.pdf(x_range, df, loc, scale),
+        bg_fit.frac_positive
+        * scipy.stats.chi2.pdf(x_range, bg_fit.df, bg_fit.loc, bg_fit.scale),
         color="blue",
         label=r"$\chi^{2}$ distribution",
     )
 
-    if t_err is not None:
+    if bg_fit.t_err is not None:
         plt.fill_between(
             x_range,
-            frac_positive * scipy.stats.chi2.pdf(x_range, df + t_err, loc, scale),
-            frac_positive * scipy.stats.chi2.pdf(x_range, df - t_err, loc, scale),
+            bg_fit.frac_positive
+            * scipy.stats.chi2.pdf(
+                x_range, bg_fit.df + bg_fit.t_err, bg_fit.loc, bg_fit.scale
+            ),
+            bg_fit.frac_positive
+            * scipy.stats.chi2.pdf(
+                x_range, bg_fit.df - bg_fit.t_err, bg_fit.loc, bg_fit.scale
+            ),
             alpha=0.1,
             color="blue",
         )
 
     def integral(x):
-        return frac_nonpositive * np.sign(x) + frac_positive * (
-            scipy.stats.chi2.cdf(x, df, loc, scale)
+        return bg_fit.frac_nonpositive * np.sign(x) + bg_fit.frac_positive * (
+            scipy.stats.chi2.cdf(x, bg_fit.df, bg_fit.loc, bg_fit.scale)
         )
 
     plt.plot(
@@ -367,10 +447,6 @@ def plot_background_ts_distribution(
         color="green",
         linestyle="--",
         label=r"1 - $\int f(x)$ (p-value)",
-    )
-
-    plt.axvline(
-        disc_potential, color="r", label=rf"{significance_threshold} $\sigma$ threshold"
     )
 
     if ts_val is not None:
@@ -382,8 +458,8 @@ def plot_background_ts_distribution(
         if ts_val > np.median(ts_arr):
             # val = (ts_val - frac_under) / (1. - frac_under)
 
-            cdf = frac_nonpositive + frac_positive * scipy.stats.chi2.cdf(
-                ts_val, df, loc, scale
+            cdf = bg_fit.frac_nonpositive + bg_fitfrac_positive * scipy.stats.chi2.cdf(
+                ts_val, bg_fit.df, bg_fit.loc, bg_fit.scale
             )
 
             sig = norm.ppf(cdf)
@@ -406,24 +482,25 @@ def plot_background_ts_distribution(
 
     else:
         plt.annotate(
-            "{:.1f}".format(100 * frac_nonpositive)
+            "{:.1f}".format(100 * bg_fit.frac_nonpositive)
             + "% of data in delta. \n"
             + r"$\chi^{2}$ Distribution:"
             + "\n   * d.o.f.="
-            + "{:.2f} \pm {:.2f}".format(df, t_err)
+            + "{:.2f} \pm {:.2f}".format(bg_fit.df, bg_fit.t_err)
             + ",\n  * loc="
-            + "{:.2f}".format(loc)
+            + "{:.2f}".format(bg_fit.loc)
             + " \n * scale="
-            + "{:.2f}".format(scale),
+            + "{:.2f}".format(bg_fit.scale),
             xy=(0.1, 0.2),
             xycoords="axes fraction",
             fontsize=8,
         )
 
-    yrange = min(
-        1.0 / (float(len(ts_arr)) * n_bins),
-        scipy.stats.chi2.pdf(disc_potential, df, loc, scale),
-    )
+    # yrange was defined but not used, keep it commented for now
+    # yrange = min(
+    #     1.0 / (float(len(ts_arr)) * n_bins),
+    #     scipy.stats.chi2.pdf(disc_potential, bg_fit.df, bg_fit.loc, bg_fit.scale),
+    # )
 
     plt.yscale("log")
     plt.xlabel(r"Test statistic ($\lambda$)")
@@ -434,8 +511,6 @@ def plot_background_ts_distribution(
 
     plt.savefig(path)
     plt.close()
-
-    return disc_potential
 
 
 def plot_fit_results(results, path, inj):

@@ -83,7 +83,7 @@ class ResultsHandler(object):
 
         self.plot_dir = Path(plot_output_dir(self.name))
 
-        self.ts_distribution_dir = self.plot_dir / TS_DISTRIBUTION_SUBDIR
+        self.ts_distribution_dir = self.plot_dir / self.TS_DISTRIBUTION_SUBDIR
 
         self.merged_dir = os.path.join(self.pickle_output_dir, "merged")
 
@@ -729,9 +729,11 @@ class ResultsHandler(object):
 
         bkg_ts = np.array(bkg_trials["TS"])
 
+        # significance values to be considered for the discovery potential
         SIGNIFICANCE_VALUES: Final[tuple[float]] = (3.0, 5.0)
 
-        ts_thresholds = {}
+        # each significance value will have a corresponding test statistic threshold
+        ts_thresholds: dict = {}
 
         for significance in SIGNIFICANCE_VALUES:
             ts_thresholds[significance] = calc_ts_threshold(
