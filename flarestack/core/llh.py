@@ -80,7 +80,7 @@ def read_llh_dict(llh_dict):
 class LLH(object):
     """Base class LLH."""
 
-    subclasses = {}
+    subclasses: dict[str, object] = {}
 
     def __init__(self, season, sources, llh_dict):
         self.season = season
