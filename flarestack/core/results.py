@@ -583,7 +583,7 @@ class ResultsHandler(object):
     #     print "Upper limit is", "{0:.3g}".format(ul)
     #     return ul, extrapolated
 
-    def find_overfluctuations(self, ts_val, savepath=None):
+    def find_overfluctuations(self, ts_val: float, savepath=None) -> tuple:
         """Uses the values of injection trials to fit an 1-exponential decay
         function to the fraction of overfluctuations above `ts_val` as a function
         of the injected flux (or n_s).
@@ -598,14 +598,9 @@ class ResultsHandler(object):
         either case, a plot of the overfluctuations as a function of the
         injected signal is produced.
         """
+        x = self.scales_float
 
-        x = sorted(self.results.keys())
-        x_acc = []
-        y = []
-
-        x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
-
-        yerr = []
+        x_acc, y, yerr = [], [], []
 
         self.result.reference_ts = ts_val
 
@@ -620,8 +615,8 @@ class ResultsHandler(object):
             )
 
             if scale == scale_shortener(0.0):
-                # Note: this value depends on the chosen ts_val!
-                self.result.reference_ts_overfluctuation_fraction = frac_over
+                # Note: this value depends on the chosen ts_val in case of an unblinding.
+                self.result.reference_ts_overfluctuation_fraction = frac
 
             if len(ts_array) > 1:
                 y.append(frac)
