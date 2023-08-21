@@ -29,10 +29,15 @@ def get_ts_fit_type(mh_dict):
     return ts_fit_type
 
 
+class Chi2Generic:
+    """Abstract class to be used as base class for custom chi2 functions."""
+
+    _res: scipy.optimize.OptimizeResult
+    _f: scipy.stats._continuous_distns.chi2_gen
+
+
 # Taken via Alex Stasik from Thomas Kintscher
-
-
-class Chi2_LeftTruncated(object):
+class Chi2_LeftTruncated(Chi2Generic):
     """A class similar to the ones from scipy.stats
     allowing to fit left-truncated chi^2 distributions.
     """
@@ -116,7 +121,7 @@ class Chi2_LeftTruncated(object):
         )
 
 
-class Chi2_one_side(object):
+class Chi2_one_side(Chi2Generic):
     def __init__(self, data):
         p_start = [2.0, -1.0, 1.0]
         p_start = [1.3]
@@ -140,7 +145,7 @@ class Chi2_one_side(object):
         self.sigma = sigma
 
 
-class Chi2_one_side_free(object):
+class Chi2_one_side_free(Chi2Generic):
     def __init__(self, data):
         # p_start = [4., -1., 1.]
         p_start = [2.0, -1.0, 1.0]
@@ -179,11 +184,11 @@ class BackgroundFit(BaseModel):
     t_err: float  # threshold error (?)
 
     @property
-    def frac_nonpositive():
+    def frac_nonpositive(self):
         return 1 - self.frac_positive
 
 
-def fit_background_ts(ts_array: np.array, ts_type: str) -> BackgroundFit:
+def fit_background_ts(ts_array: np.ndarray, ts_type: str) -> BackgroundFit:
     """
     Fit the background TS distribution
     """
@@ -194,7 +199,7 @@ def fit_background_ts(ts_array: np.array, ts_type: str) -> BackgroundFit:
     threshold_err = 0.0
 
     if ts_type == "flare":
-        chi2 = Chi2_LeftTruncated(ts_array)
+        chi2: Chi2Generic = Chi2_LeftTruncated(ts_array)
 
         if chi2._res.success:
             frac_positive = 1.0
@@ -250,11 +255,7 @@ def fit_background_ts(ts_array: np.array, ts_type: str) -> BackgroundFit:
         raise Exception(f"ts_type {ts_type} not recognised!")
 
     return BackgroundFit(
-        df=df,
-        loc=loc,
-        scale=scale,
-        frac_positive=frac_positive,
-        threshold_err=threshold_err,
+        df=df, loc=loc, scale=scale, frac_positive=frac_positive, t_err=threshold_err
     )
 
 
@@ -280,7 +281,7 @@ def plot_expanded_negative(ts_array, path):
     plt.close()
 
 
-def filter_nan(values: list) -> np.array:
+def filter_nan(values: list) -> np.ndarray:
     arr = np.array(values)
 
     nan_count = np.sum(np.isnan(arr))
@@ -291,7 +292,9 @@ def filter_nan(values: list) -> np.array:
     return arr[~np.isnan(arr)]
 
 
-def fit_background(ts_values: list, ts_type: str = "standard") -> BackgroundFit:
+def fit_background(
+    ts_values: list, ts_type: str = "standard"
+) -> Optional[BackgroundFit]:
     """Wrapper around fit_background_ts
 
     Args:
@@ -308,7 +311,7 @@ def fit_background(ts_values: list, ts_type: str = "standard") -> BackgroundFit:
         logger.warning(
             f"Maximum of TS is zero, will be unable to calculate any TS threshold (too few trials?)"
         )
-        return np.NaN
+        return None
 
     return fit_background_ts(ts_arr, ts_type)
 
