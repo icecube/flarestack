@@ -15,7 +15,7 @@ def custom_data_loader(path):
     dataset = data_loader(path, floor=False)
     percentile = np.ones_like(dataset["ra"]) * np.nan
     dataset = append_fields(
-        dataset, "percentile", percentile, usemask=False, dtypes=[np.float]
+        dataset, "percentile", percentile, usemask=False, dtypes=[float]
     )
 
     return dataset
@@ -71,7 +71,6 @@ def weighted_quantile(values, quantiles, weight):
 
 
 def calculate_logE_percentile(data, n_slices):
-
     n_high_e = int(0.7 * n_slices)
 
     percentiles = (

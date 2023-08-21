@@ -110,9 +110,7 @@ def load_catalogue(sn_type, pdf_name, include_flagged=False, z_add=0):
     objects_names_inds = []
 
     for i, element in enumerate(catalogue[:, name_ind_in_columns]):
-
         if type(element) is (list or np.array):
-
             if len(element) > 1:
                 raise ValueError(f"more than one name for object")
             else:
@@ -128,7 +126,6 @@ def load_catalogue(sn_type, pdf_name, include_flagged=False, z_add=0):
 
     # for empty rows, get the values from other catalogues (except weights!)
     for i, row in enumerate(catalogue):
-
         this_discovery = row[columns == "discovery"][0]
 
         if np.isnan(this_discovery):
@@ -170,9 +167,7 @@ def load_catalogue(sn_type, pdf_name, include_flagged=False, z_add=0):
 
     # convert strings with commas to floats
     for i, format in enumerate(dt["formats"]):
-
         if ("f" in format) and (type(catalogue[0, i]) is str):
-
             logging.debug(f"converting {columns_out[i]}: {catalogue[:,i]} to floats")
             catalogue[:, i] = [float(st.replace(",", ".")) for st in catalogue[:, i]]
 
@@ -202,7 +197,6 @@ def load_catalogue(sn_type, pdf_name, include_flagged=False, z_add=0):
 
 
 def keymap(keys, raw_catalogue):
-
     indices = [
         np.where(np.array(raw_catalogue.columns) == key)[0][0]
         if len(np.where(np.array(raw_catalogue.columns) == key)) <= 1
@@ -224,7 +218,6 @@ class InconsistencyError(Exception):
 # ======================== #
 
 if __name__ == "__main__":
-
     logging.info("building catalogues")
 
     for z_add in [0, conservative_redshift_addition]:
@@ -245,7 +238,6 @@ if __name__ == "__main__":
                     logging.info(f"pdf type: {pdf_type}")
 
                     for pdf_time in sn_times[sn_type][pdf_type]:
-
                         # get catalogues for individual PDFs
                         pdf_name = pdf_names(pdf_type, pdf_time)
                         logging.info(f"pdf time: {pdf_time}")
@@ -281,7 +273,6 @@ if __name__ == "__main__":
                         ]
 
                         for old in catalogue_red:
-
                             element_in_combined_catalogue = combined_catalogue[
                                 combined_catalogue["source_name"] == old["source_name"]
                             ][0]
@@ -297,7 +288,6 @@ if __name__ == "__main__":
                                     element_in_combined_catalogue[special_field]
                                 )
                             ):
-
                                 logging.debug(
                                     f"old: type of flag is {type(old['flag'])}"
                                 )

@@ -59,7 +59,6 @@ class SignalSpatialPDF:
 
     @classmethod
     def create(cls, s_pdf_dict):
-
         try:
             s_pdf_name = s_pdf_dict["spatial_pdf_name"]
         except KeyError:
@@ -222,7 +221,6 @@ class BackgroundSpatialPDF:
 
     @classmethod
     def create(cls, s_pdf_dict, season):
-
         try:
             s_pdf_name = s_pdf_dict["bkg_spatial_pdf"]
         except KeyError:
@@ -296,7 +294,6 @@ class ZenithSpline(BackgroundSpatialPDF):
 
     @staticmethod
     def create_background_function(season):
-
         # Checks if background spatial spline has been created
 
         if not os.path.isfile(bkg_spline_path(season)):

@@ -37,10 +37,8 @@ def autolabel(rects, axis):
 
 
 def plot_difference_tot(filename):
-
     N = {}
     for flagged in [True, False]:
-
         N["flagged" if flagged else "unflagged"] = []
         Nnew = []
 
@@ -84,7 +82,6 @@ def plot_difference_tot(filename):
 
 
 def plot_difference_individual(sn_types, filename):
-
     fig, axs = plt.subplots(len(sn_types))
 
     for i, sn_type in enumerate(sn_types):

@@ -84,11 +84,9 @@ job_ids = []
 
 # Loop over SN catalogues
 if __name__ == "__main__":
-
     res = dict()
 
     for hsphere in ["northern", "southern"]:
-
         hsphere_name = f"{raw}/{hsphere}"
 
         # this_sindecs, this_ras = np.array(sindecs[hsphere])[:5], np.array(ras[hsphere])[:5]
@@ -108,7 +106,6 @@ if __name__ == "__main__":
         gamma_res = dict()
 
         for gamma in gammas:
-
             injection_energy["gamma"] = gamma
 
             inj_dict = {
@@ -191,7 +188,6 @@ if __name__ == "__main__":
     for hsphere, gamma_res in res.items():
         stacked_sens_flux[hsphere] = dict()
         for gamma, rh_dict in gamma_res.items():
-
             rh = ResultsHandler(rh_dict)
 
             stacked_sens_flux[hsphere][gamma] = {
@@ -205,13 +201,11 @@ if __name__ == "__main__":
     )
     gamma_color = {2.0: "blue"}
     for hsphere, gamma_res in stacked_sens_flux.items():
-
         fig, (ax, ax2) = plt.subplots(
             2, gridspec_kw={"height_ratios": [3, 1]}, sharex="all"
         )
 
         for gamma, sens_dict in gamma_res.items():
-
             yerr = np.atleast_2d(sens_dict["sens_e"]).T
             logger.debug(f"error shape is {np.shape(yerr)}")
             ax.errorbar(
@@ -224,7 +218,6 @@ if __name__ == "__main__":
             )
 
             for kernel in [1]:
-
                 if sl_res:
                     this_sl_res = sl_res[kernel][hsphere][gamma]
                     ax.errorbar(

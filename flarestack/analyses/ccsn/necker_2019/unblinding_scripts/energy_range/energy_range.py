@@ -60,14 +60,12 @@ energy_ranges = {
 }
 
 if __name__ == "__main__":
-
     pdf_full_res = dict()
 
     # set up empty list for cluster job IDs
     job_ids = []
 
     for pdf_type in ["decay", "box"]:
-
         # base name
         raw = f"{base_raw}/{pdf_type}/"
 
@@ -77,7 +75,6 @@ if __name__ == "__main__":
         # loop over SN catalogues
         use_cats = sn_cats if pdf_type == "box" else ["IIn", "IIP"]
         for cat in use_cats:
-
             name = raw + cat + "/"
 
             # set up empty results dictionary for this catalogue
@@ -88,7 +85,6 @@ if __name__ == "__main__":
 
             # Loop over time PDFs
             for llh_time in time_pdfs[:1]:
-
                 # set up an empty results array for this time pdf
                 time_res = dict()
 
@@ -131,7 +127,6 @@ if __name__ == "__main__":
 
                 # Loop over spectral indices
                 for gamma in gammas:
-
                     # if (gamma == 2.) and (pdf_type == 'decay'):
                     #     gamma_str = '2'
                     # else:
@@ -188,10 +183,8 @@ if __name__ == "__main__":
 
                     ebound_res = dict()
                     for ebound_key, ebound_range in energy_ranges[gamma].items():
-
                         erange_res = dict()
                         for ebound in ebound_range:
-
                             # set up an injection dictionary and set the desired spectral index
                             injection_energy = dict(llh_energy)
                             injection_energy["gamma"] = gamma
@@ -269,7 +262,6 @@ if __name__ == "__main__":
                         ebound_key_sens = dict()
 
                         for ebound, mh_dict in erange_res.items():
-
                             wrong_name = (
                                 raw_output_dir
                                 + f"{base_raw}/{pdf_type}/{cat}/{time_key}/{gamma}/{ebound_key}/{ebound:.4f}/"

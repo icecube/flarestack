@@ -54,9 +54,7 @@ datasets = [
 # ax1.plot(sindecs, refs, label=r"7-year Point Source analysis", color="k")
 
 for i, (label, dataset) in enumerate(datasets):
-
     for sindec in sindecs:
-
         cat_path = ps_catalogue_name(sindec)
 
         mh_dict = {

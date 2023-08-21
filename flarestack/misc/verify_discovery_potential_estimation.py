@@ -70,7 +70,6 @@ loop_datasets = [
 ]
 
 for i, datasets in enumerate(loop_datasets):
-
     plt.figure()
     ax1 = plt.subplot2grid((4, 1), (0, 0), colspan=3, rowspan=3)
     ax2 = plt.subplot2grid((4, 1), (3, 0), colspan=3, rowspan=1, sharex=ax1)
@@ -79,7 +78,6 @@ for i, datasets in enumerate(loop_datasets):
     ax1.plot(sindecs, refs, label=r"7-year Point Source analysis", color="k")
 
     for j, (sample_name, dataset, fullsky) in enumerate(datasets):
-
         disc_pots = []
 
         if fullsky:

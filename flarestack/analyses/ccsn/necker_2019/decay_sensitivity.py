@@ -70,10 +70,8 @@ job_ids = []
 plot_results = "_figureresults"
 
 if __name__ == "__main__":
-
     # loop over IIP and IIn SN catalogues
     for cat in ["IIP", "IIn"]:
-
         name = raw + cat + "/"
 
         cat_res = dict()
@@ -83,7 +81,6 @@ if __name__ == "__main__":
 
         # Loop over time PDFs
         for llh_time in time_pdfs:
-
             # set up an empty results array for this time pdf
             time_res = dict()
 
@@ -117,7 +114,6 @@ if __name__ == "__main__":
 
             # Loop over spectral indices
             for gamma in gammas:
-
                 full_name = time_name + str(gamma) + "/"
 
                 length = float(time_key)
@@ -204,12 +200,10 @@ if __name__ == "__main__":
 
     # loop over the SN catalogues for getting the results
     for b, (cat_name, cat_res) in enumerate(full_res.items()):
-
         stacked_sens_flux[cat_name] = {}
 
         # loop over the analysed times
-        for (time_key, time_res) in cat_res.items():
-
+        for time_key, time_res in cat_res.items():
             stacked_sens_flux[cat_name][time_key] = {}
 
             # set up emtpy result lists
@@ -222,8 +216,7 @@ if __name__ == "__main__":
             labels = []
 
             # Loop over gamma
-            for (gamma, rh_dict) in sorted(time_res.items()):
-
+            for gamma, rh_dict in sorted(time_res.items()):
                 logging.debug(
                     f"gamma is {gamma}, cat is {cat_name}, pdf time is {time_key}"
                 )
@@ -267,7 +260,6 @@ if __name__ == "__main__":
             for j, [fluence, energy] in enumerate(
                 [[sens_livetime, sens_e], [disc_pots_livetime, disc_e]]
             ):
-
                 logging.debug("fluence: " + str(fluence))
                 logging.debug("energy: " + str(energy))
 
@@ -338,13 +330,11 @@ if __name__ == "__main__":
 
     # loop over gammas to make a plots for each spectral indice
     for gamma in gammas:
-
         # -------------    plot sensitivity against box length   ------------------- #
         flux_fig, flux_ax = plt.subplots()
 
         # loop over SN catalogues and plot the sensitivities against the decay length
         for cat_name, cat_dict in stacked_sens_flux.items():
-
             x_raw = [float(key) for key in cat_dict.keys()]
             x = np.array(x_raw)[np.argsort(x_raw)] / 364.25
 

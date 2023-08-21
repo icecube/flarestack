@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 cats = ["jetted", "gold", "obscured", "silver"]
 
 for j, cat in enumerate(cats):
-
     cat_path = catalogue_dir + "TDEs/TDE_" + cat + "_catalogue.npy"
     catalogue = np.load(cat_path)
 

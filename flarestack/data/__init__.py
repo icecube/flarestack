@@ -221,9 +221,7 @@ class Season:
         data["ra"] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
         np.random.shuffle(data["time"])
-        return np.array(data[list(self.get_background_dtype().names)].copy())[
-            :,
-        ]
+        return np.array(data[list(self.get_background_dtype().names)].copy())[:,]
 
     def simulate_background(self):
         data = self.pseudo_background()

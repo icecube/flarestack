@@ -50,7 +50,6 @@ sindecs = np.linspace(0.5, -0.5, 3)
 offsets = np.linspace(-90.0, 90, 7)
 
 for sindec in sindecs:
-
     source_res = dict()
 
     cat_path = ps_catalogue_name(sindec)
@@ -62,7 +61,6 @@ for sindec in sindecs:
     src_res = dict()
 
     for offset in offsets:
-
         full_name = name + str(offset) + "/"
 
         scale = flux_to_k(reference_sensitivity(sindec) * 20) * (
@@ -129,13 +127,12 @@ ax = plt.subplot(111)
 cols = ["r", "g", "b", "orange"]
 
 for i, (sindec_key, src_res) in enumerate(cat_res.items()):
-
     name = name_root + sindec_key + "/"
 
     sens = []
     offsets = []
 
-    for (t, rh_dict) in sorted(src_res.items()):
+    for t, rh_dict in sorted(src_res.items()):
         rh = ResultsHandler(rh_dict)
         sens.append(rh.sensitivity)
         offsets.append(t)

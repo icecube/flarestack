@@ -21,7 +21,6 @@ def grb_evolution_lien_14(z, z1=3.6, n1=2.07, n2=-0.7):
     res = np.ones_like(z)
 
     if np.sum(mask) > 0.0:
-
         res[mask] = (1.0 + z[mask]) ** n1
 
     if np.sum(~mask) > 0.0:
@@ -90,7 +89,6 @@ def get_grb_evolution(evolution_name=None, with_range=False, **kwargs):
         return evolution(z, **kwargs) / evolution(0.0, **kwargs)
 
     if with_range:
-
         if lower_ev is None:
             raise Exception(
                 f"No one sigma evolution range found for evolution '{evolution_name}'. "
@@ -139,7 +137,6 @@ def get_local_grb_rate(rate_name=None, with_range=False):
         logging.info(f"Loaded rate '{rate_name}' ({ref})")
 
     if with_range:
-
         if lower_lim is None:
             raise Exception(
                 f"No one sigma rate range found for rate '{rate_name}'. "

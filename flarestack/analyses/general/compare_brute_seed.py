@@ -62,7 +62,6 @@ for i, llh_kwargs in enumerate([zero_bound, negative_bound]):
     src_res = dict()
 
     for sindec in sindecs:
-
         cat_path = ps_catalogue_name(sindec)
 
         decname = name + "sindec=" + "{0:.2f}".format(sindec) + "/"
@@ -127,14 +126,13 @@ plt.title("Sensitivity for " + str(int(max_window)) + " day window")
 all_sens = []
 
 for i, (label, src_res) in enumerate(analyses.items()):
-
     cols = ["b", "orange", "g"]
 
     sens = []
     fracs = []
     disc_pots = []
 
-    for (sindec, rh_dict) in sorted(src_res.items()):
+    for sindec, rh_dict in sorted(src_res.items()):
         #
         rh = ResultsHandler(rh_dict)
         sens.append(rh.sensitivity)

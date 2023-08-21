@@ -27,7 +27,6 @@ class TestUtilCosmo(unittest.TestCase):
         pass
 
     def test_get_diffuse_flux(self):
-
         logging.info("Testing get_diffuse_flux util functions.")
 
         all_fits = [x for x in contours.keys()] + ["joint", "northern_tracks"]
@@ -64,7 +63,6 @@ class TestUtilCosmo(unittest.TestCase):
             logging.info("Reference  values {0}".format(default_flux_100TeV[i]))
 
     def test_neutrino_cosmology(self):
-
         fit = "joint_15"
         bestfit = get_diffuse_flux_at_100TeV(fit)
 
@@ -87,7 +85,6 @@ class TestUtilCosmo(unittest.TestCase):
         self.assertAlmostEqual(res.value / true_cosmology.value, 1.0, delta=0.1)
 
     def test_plotting(self):
-
         for label in contours.keys():
             plot_diffuse_flux(label)
 

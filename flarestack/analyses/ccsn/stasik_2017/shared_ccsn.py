@@ -29,7 +29,6 @@ def raw_sn_catalogue_name(sn_type):
 
 
 def pdf_names(pdf_type, pdf_time):
-
     logging.debug(f"getting pdf name for type {pdf_type} {pdf_time}")
 
     if pdf_time < 0:
@@ -45,7 +44,6 @@ def pdf_names(pdf_type, pdf_time):
 
 
 def sn_catalogue_name(sn_type, nearby=True, raw=False, pdf_name=""):
-
     pdf_name = None if pdf_name == "" else pdf_name
     if sn_type == "IIp":
         sn_type = "IIP"
@@ -67,7 +65,6 @@ def sn_catalogue_name(sn_type, nearby=True, raw=False, pdf_name=""):
         return ccsn_cat_dir + sn_name
 
     else:
-
         sn_name = sn_type
         if pdf_name:
             sn_name += "_" + pdf_name
@@ -89,7 +86,6 @@ def sn_catalogue_name(sn_type, nearby=True, raw=False, pdf_name=""):
 
 
 def show_cat(*args, **kwargs):
-
     file = sn_catalogue_name(*args, **kwargs)
     tab = Table(np.load(file))
     print(tab)
@@ -97,7 +93,6 @@ def show_cat(*args, **kwargs):
 
 
 def sn_time_pdfs(sn_type):
-
     time_pdfs = []
 
     for i in sn_times:
@@ -110,7 +105,6 @@ def sn_time_pdfs(sn_type):
 
 
 def limit_sens(mh_name, pdf_type):
-
     base = f"analyses/ccsn/stasik2017/calculate_sensitivity/{mh_name}/{pdf_type}/"
     sub_base = base.split(os.sep)
 
@@ -127,7 +121,6 @@ def limit_sens(mh_name, pdf_type):
 
 
 def ccsn_limits(sn_type):
-
     base = "analyses/ccsn/stasik_2017/calculate_sensitivity/"
     path = base + sn_type + "/real_unblind/"
 

@@ -79,8 +79,7 @@ bins = list(zip(energies[:-1], energies[1:]))
 
 all_res = dict()
 
-for (cat_type, method) in complete_cats_north[-1:]:
-
+for cat_type, method in complete_cats_north[-1:]:
     unique_key = cat_type + "_" + method
 
     print(unique_key)
@@ -90,7 +89,6 @@ for (cat_type, method) in complete_cats_north[-1:]:
     for gamma_index in gammas:
         res = dict()
         for j, nr_srcs in enumerate(nr_brightest_sources):
-
             cat_path = agn_subset_catalogue(cat_type, method, nr_srcs)
             print("Loading catalogue", cat_path, " with ", nr_srcs, "sources")
             catalogue = load_catalogue(cat_path)
@@ -104,7 +102,6 @@ for (cat_type, method) in complete_cats_north[-1:]:
             scale_factor_per_decade = [0.2, 0.5, 1, 0.57, 0.29]
 
             for i, (e_min, e_max) in enumerate(bins[:]):
-
                 full_name_en = full_name + "Emin={0:.2f}".format(e_min) + "/"
                 print("Full name for ", nr_srcs, " sources is", full_name_en)
 
@@ -166,8 +163,7 @@ for (cat_type, method) in complete_cats_north[-1:]:
 
 logging.getLogger().setLevel("INFO")
 
-for (cat_key, gamma_dict) in all_res.items():
-
+for cat_key, gamma_dict in all_res.items():
     print(cat_key, cat_key.split("_"))
     agn_type = cat_key.split("_")[0]
 
@@ -180,8 +176,7 @@ for (cat_key, gamma_dict) in all_res.items():
     saturate_ratio = 0.26
 
     # Loop on gamma
-    for (gamma_index, gamma_res) in iter(gamma_dict.items()):
-
+    for gamma_index, gamma_res in iter(gamma_dict.items()):
         sens = []
         sens_err_low = []
         sens_err_upp = []
@@ -208,16 +203,14 @@ for (cat_key, gamma_dict) in all_res.items():
         base_dir = base_name(cat_key, gamma_index)
 
         # Loop on number of sources of the AGN sample
-        for (nr_srcs, rh_dict_srcs) in sorted(gamma_res.items()):
-
+        for nr_srcs, rh_dict_srcs in sorted(gamma_res.items()):
             print("In if loop on nr_srcs and rh_dict")
             print(nr_srcs)
             print(rh_dict_srcs)
             print("nr_srcs in loop: ", nr_srcs)
 
             # loop on emin and emax
-            for (e_min, rh_dict) in sorted(rh_dict_srcs.items()):
-
+            for e_min, rh_dict in sorted(rh_dict_srcs.items()):
                 cat = load_catalogue(rh_dict["catalogue"])
 
                 print("e_min in loop: ", e_min)

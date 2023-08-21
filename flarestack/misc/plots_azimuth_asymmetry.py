@@ -84,7 +84,7 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
     domain_sig = sig_hist > 0.0
 
     # Creates an array of ones as the default ratio
-    ratio = np.ones_like(bkg_hist, dtype=np.float)
+    ratio = np.ones_like(bkg_hist, dtype=float)
     # Bitwise Addition giving an Truth Array
     # Returns True if True in both Sig and Bkg, otherwise False
     mask = domain_bkg & domain_sig
@@ -111,7 +111,6 @@ def create_2d_ratio_spline(exp, mc, sin_dec_bins, gamma):
 
 
 def azimuth_proxy(data, season_dict):
-
     t = data[season_dict["MJD Time Key"]]
 
     sidereal_day = 364.0 / 365.0
@@ -131,7 +130,6 @@ def azimuth_proxy(data, season_dict):
         az[az < 0] += 2 * np.pi
 
     if "azimuth" in data.dtype.names:
-
         plt.figure()
         plt.hist(az - data["azimuth"], bins=180)
 
@@ -156,9 +154,7 @@ def azimuth_proxy(data, season_dict):
 
 
 def plot_ratio(seasons):
-
     for season_dict in seasons:
-
         exp = data_loader(season_dict["exp_path"])
         mc = data_loader(season_dict["mc_path"])
 
@@ -183,8 +179,7 @@ def plot_ratio(seasons):
 
         root = plots_dir + "azimuth/" + season_dict["Data Sample"] + "/"
 
-        for (name, sin_dec, az) in data:
-
+        for name, sin_dec, az in data:
             save_dir = root + name + "/"
 
             try:
@@ -193,7 +188,6 @@ def plot_ratio(seasons):
                 pass
 
             if name in ["exp", "exp_cut"]:
-
                 hist_2d = create_2d_hist(
                     sin_dec, az, sin_dec_bins, weights=np.ones_like(sin_dec)
                 ).T
@@ -210,7 +204,6 @@ def plot_ratio(seasons):
                 print("Memory usage max: %s (Gb)" % mem_use)
 
                 if name == "mc":
-
                     hist_2d = create_2d_hist(
                         sin_dec,
                         az,

@@ -94,7 +94,6 @@ src_res = dict()
 lengths = np.logspace(-2, 0, 5) * max_window
 
 for i, llh_kwargs in enumerate([no_flare_negative, flare]):
-
     label = ["Time-Integrated", "Time-Clustering"][i]
     mh_name = ["fixed_weights", "flare"][i]
 
@@ -103,7 +102,6 @@ for i, llh_kwargs in enumerate([no_flare_negative, flare]):
     res = dict()
 
     for flare_length in lengths:
-
         full_name = flare_name + str(flare_length) + "/"
 
         injection_time = {
@@ -162,8 +160,7 @@ disc_e = [[] for _ in src_res]
 labels = []
 
 for i, (f_type, res) in enumerate(sorted(src_res.items())):
-    for (length, rh_dict) in sorted(res.items()):
-
+    for length, rh_dict in sorted(res.items()):
         rh = ResultsHandler(rh_dict)
 
         inj_time = length * (60 * 60 * 24)
@@ -184,7 +181,6 @@ for i, (f_type, res) in enumerate(sorted(src_res.items())):
     # plt.plot(fracs, disc_pots, linestyle="--", color=cols[i])
 
 for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
-
     plt.figure()
     ax1 = plt.subplot(111)
 
@@ -194,7 +190,6 @@ for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
     linestyle = ["-", "-"][j]
 
     for i, f in enumerate(fracs):
-
         print(fluence[i], labels[i])
 
         ax1.plot(f, fluence[i], label=labels[i], linestyle=linestyle, color=cols[i])

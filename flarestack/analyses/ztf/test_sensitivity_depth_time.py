@@ -110,7 +110,6 @@ for sn in sn_types:
     cats_to_test = list(all_cat_names.items())
 
     for j, _ in enumerate(seasons[:3]):
-
         raw_mh_dict = dict(root_mh_dict)
         raw_mh_dict["datasets"] = gfu_8_year.get_seasons(*seasons[: j + 1])
 
@@ -118,14 +117,12 @@ for sn in sn_types:
 
         base_name = "{0}{1}/".format(core_name, j + 1)
 
-        for (sky, cat_names) in cats_to_test:
-
+        for sky, cat_names in cats_to_test:
             sky_dict = dict()
 
             sky_name = base_name + sky + "/"
 
             for i, cat_name in enumerate(cat_names[1:5]):
-
                 n_cat = float(len(np.load(cat_name)))
 
                 name = sky_name + os.path.basename(cat_name)[:-4] + "/"
@@ -162,22 +159,18 @@ wait_for_cluster()
 
 all_res = dict()
 
-for (sn, sn_dict) in res_dict.items():
-
+for sn, sn_dict in res_dict.items():
     savedir_sn = plot_output_dir(name_root) + sn + "/"
 
     sn_res = dict()
 
-    for (years, season_dict) in sn_dict.items():
-
+    for years, season_dict in sn_dict.items():
         season_res = dict()
 
         season_savedir = savedir_sn + str(years) + "/"
 
-        for (sky, sky_dict) in season_dict.items():
-
+        for sky, sky_dict in season_dict.items():
             if sky == "Northern":
-
                 sky_res = dict()
                 # if True:
 
@@ -195,8 +188,7 @@ for (sn, sn_dict) in res_dict.items():
 
                 dist = []
 
-                for (n_cat, rh_dict) in sorted(sky_dict.items()):
-
+                for n_cat, rh_dict in sorted(sky_dict.items()):
                     inj_time = post_window * 60 * 60 * 24
 
                     key = "Energy Flux (GeV cm^{-2} s^{-1})"
@@ -231,7 +223,6 @@ for (sn, sn_dict) in res_dict.items():
                     cat = load_catalogue(rh_dict["catalogue"])
 
                     try:
-
                         guess = k_to_flux(rh_dict["scale"] / 1.5)
 
                     except KeyError:
@@ -260,7 +251,6 @@ for (sn, sn_dict) in res_dict.items():
                 ]
 
                 for j, (vals, vals_e) in enumerate(pairs):
-
                     label = ["guess_disc", "sensitivity", "disc", "disc_25"][j]
 
                     plt.figure()
@@ -280,7 +270,6 @@ for (sn, sn_dict) in res_dict.items():
                     mask = vals_e[base_mask] > 0.0
 
                     try:
-
                         dists = np.array(np.log(dist))[base_mask][mask]
                         log_e = np.log(vals_e[base_mask][mask])
 
@@ -339,7 +328,6 @@ for (sn, sn_dict) in res_dict.items():
                     plt.close()
 
                 try:
-
                     ratio = np.array(disc_e) / np.array(guess_disc_e)
 
                     plt.figure()
@@ -361,12 +349,11 @@ for (sn, sn_dict) in res_dict.items():
 benchmark_z = [0.05, 0.1]
 dists = [cosmo.luminosity_distance(x).value for x in benchmark_z]
 
-for (sn, sn_res) in all_res.items():
-
+for sn, sn_res in all_res.items():
     discs = [[] for _ in dists]
     yrs = []
 
-    for (years, season_res) in sorted(sn_res.items()):
+    for years, season_res in sorted(sn_res.items()):
         print("Years", years)
 
         z = season_res["Northern"]["guess_disc"]

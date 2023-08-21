@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 class Submitter(object):
-
     submitter_dict = dict()
 
     def __init__(
@@ -150,7 +149,6 @@ class Submitter(object):
 
         # repeat the guessing until success:
         while not self.successful_guess_by_quick_injections:
-
             quick_injections_mh_dict = dict(self.mh_dict)
             quick_injections_mh_dict["name"] = self._quick_injections_name
             quick_injections_mh_dict["background_ntrials_factor"] = 1
@@ -224,7 +222,6 @@ class Submitter(object):
         """
 
         if self.do_sensitivity_scale_estimation:
-
             if "asimov" in self.do_sensitivity_scale_estimation:
                 self.do_asimov_scale_estimation()
 
@@ -297,7 +294,6 @@ class LocalSubmitter(Submitter):
 
 
 class HTCondorSubmitter(Submitter):
-
     home_dir = os.environ["HOME"]
     username = os.path.basename(home_dir)
     status_cmd = "condor_q"
@@ -498,7 +494,6 @@ class HTCondorSubmitter(Submitter):
         return done, running, waiting, total, held
 
     def wait_for_job(self):
-
         if self.job_id:
             logger.info("waiting for job with ID " + str(self.job_id))
             time.sleep(5)

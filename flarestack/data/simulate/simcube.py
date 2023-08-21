@@ -32,7 +32,6 @@ class IceCubeBackgroundFluxModel:
 
     @staticmethod
     def path_through_earth(sindec):
-
         ic_angle = np.arccos(sindec)
 
         dec = np.arccos(sindec)
@@ -51,7 +50,6 @@ class IceCubeBackgroundFluxModel:
         return full_dist
 
     def muon_bundle_extent(self, sindec):
-
         length = self.path_through_earth(sindec)
 
         # This is the fudgiest factor known to man
@@ -61,7 +59,6 @@ class IceCubeBackgroundFluxModel:
         return np.exp(-length / muon_decay_length)
 
     def flux_model_f(self, e, sindec):
-
         muon_contrib = self.muon_bundle.f(e) * self.muon_bundle_extent(sindec)
 
         return self.atmo.f(e) + muon_contrib
@@ -93,7 +90,6 @@ class SimCubeSeason(SimSeason):
         log_e_bins,
         **kwargs
     ):
-
         self.log_e_bins = log_e_bins
         self.sin_dec_bins = sin_dec_bins
 
@@ -196,7 +192,7 @@ class SimCubeSeason(SimSeason):
 
 simcube_dataset = SimDataset()
 
-for (name, season) in icecube_ps_3_year.get_seasons().items():
+for name, season in icecube_ps_3_year.get_seasons().items():
 
     def ideal_energy_proxy(e):
         return np.log10(e)
@@ -208,7 +204,6 @@ for (name, season) in icecube_ps_3_year.get_seasons().items():
         sim_name=None,
         **kwargs
     ):
-
         if np.logical_and(energy_proxy_map is None, sim_name is None):
             energy_proxy_map = ideal_energy_proxy
             sim_name = "default"

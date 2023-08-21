@@ -274,7 +274,6 @@ def get_base_sob_plot_dir(season):
 
 
 def smoothing_precision_string(smoothing_order="flarestack", gamma_precision="skylab"):
-
     if isinstance(smoothing_order, str):
         if smoothing_order in default_smoothing_order.keys():
             smoothing_order = default_smoothing_order[smoothing_order]
@@ -384,9 +383,7 @@ def analysis_pickle_path(mh_dict=None, name=None):
     dict_name = "dict.pkl"
 
     if mh_dict is not None:
-
         try:
-
             if np.logical_and(name is not None, name != mh_dict["name"]):
                 raise Exception(
                     f"Both name and mh_dict arguments provided. "

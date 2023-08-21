@@ -78,7 +78,6 @@ def run_background_pvalue_trials(seed=None, ntrials=1):
     pdf_full_res = dict()
 
     for pdf_type in ["box", "decay"]:
-
         # base name
         raw = f"{base_raw}/{pdf_type}/"
 
@@ -88,7 +87,6 @@ def run_background_pvalue_trials(seed=None, ntrials=1):
         # loop over SN catalogues
         use_cats = sn_cats if pdf_type == "box" else ["IIn", "IIP"]
         for cat in use_cats:
-
             name = raw + cat + "/"
 
             # set up empty results dictionary for this catalogue
@@ -99,7 +97,6 @@ def run_background_pvalue_trials(seed=None, ntrials=1):
 
             # Loop over time PDFs
             for llh_time in time_pdfs:
-
                 # set up an empty results array for this time pdf
                 time_res = dict()
 
@@ -116,7 +113,6 @@ def run_background_pvalue_trials(seed=None, ntrials=1):
 
                 # Loop over spectral indices
                 for gamma in gammas:
-
                     # load the background trials
                     if (pdf_type == "decay") and (gamma == 2.0):
                         gamma_str = "2"
@@ -170,7 +166,6 @@ def run_background_pvalue_trials(seed=None, ntrials=1):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--ntrials", type=int, default=1)
     cfg = parser.parse_args()

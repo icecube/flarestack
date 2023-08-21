@@ -72,7 +72,6 @@ max_window = 100
 lengths = np.logspace(-2, 0, 5) * max_window
 
 for cat in tde_catalogues:
-
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
     cat_path = tde_catalogue_name(cat)
@@ -98,7 +97,6 @@ for cat in tde_catalogues:
         res = dict()
 
         for flare_length in lengths:
-
             full_name = flare_name + str(flare_length) + "/"
 
             # Use a box time PDF of length flare_length to inject signal.
@@ -155,8 +153,7 @@ for cat in tde_catalogues:
 
 # rd.wait_for_cluster()
 
-for (cat, src_res) in cat_res.items():
-
+for cat, src_res in cat_res.items():
     name = "analyses/tde/compare_fitting_weights/" + cat + "/"
 
     sens = [[] for _ in src_res]
@@ -176,8 +173,7 @@ for (cat, src_res) in cat_res.items():
     )
 
     for i, (f_type, res) in enumerate(sorted(src_res.items())):
-
-        for (length, rh_dict) in sorted(res.items()):
+        for length, rh_dict in sorted(res.items()):
             try:
                 rh = ResultsHandler(rh_dict)
 
@@ -207,7 +203,6 @@ for (cat, src_res) in cat_res.items():
         labels.append(f_type)
 
     for j, [fluence, energy] in enumerate([[sens, sens_e], [disc_pots, disc_e]]):
-
         plt.figure()
         ax1 = plt.subplot(111)
 
@@ -216,7 +211,6 @@ for (cat, src_res) in cat_res.items():
         cols = ["#F79646", "#00A6EB", "g", "r"]
 
         for i, f in enumerate(fracs):
-
             if len(f) > 0:
                 # Plot fluence on left y axis, and source energy on right y axis
 
@@ -235,7 +229,6 @@ for (cat, src_res) in cat_res.items():
         # Set limits and save
 
         for k, ax in enumerate([ax1, ax2]):
-
             try:
                 y = [fluence, energy][k]
 

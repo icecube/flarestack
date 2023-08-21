@@ -119,7 +119,6 @@ mh_tm = MinimisationHandler.create(mh_dict_tm)
 n_trials = 100
 
 for i in range(n_trials):
-
     seed = random.randint(0, 999999)
     mh_pl.set_random_seed(seed)
     res_pl = mh_pl.run_trial(scale=1.0)

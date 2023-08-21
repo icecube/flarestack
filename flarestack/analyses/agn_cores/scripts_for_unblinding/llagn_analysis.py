@@ -66,18 +66,15 @@ nr_brightest_sources = [1, 3, 10, 31, 100, 316, 1000, 3162, 10000, 15887]
 
 all_res = dict()
 
-for (cat_type, method) in complete_cats_north[-1:]:
-
+for cat_type, method in complete_cats_north[-1:]:
     unique_key = cat_type + "_" + method
 
     res = dict()
 
     for j, nr_srcs in enumerate(nr_brightest_sources):
-
         gamma_dict = dict()
 
         for gamma_index in gammas:
-
             cat_path = agn_subset_catalogue(cat_type, method, nr_srcs)
             catalogue = load_catalogue(cat_path)
             cat = np.load(cat_path)
@@ -146,8 +143,7 @@ wait_for_cluster()
 logging.getLogger().setLevel("INFO")
 
 # Create plots and save data in file data.out
-for (cat_key, res_dict) in all_res.items():
-
+for cat_key, res_dict in all_res.items():
     agn_type = cat_key.split("_")[0]
 
     xray_cat = cat_key.split(str(agn_type) + "_")[-1]
@@ -159,8 +155,7 @@ for (cat_key, res_dict) in all_res.items():
     # neutrino flux (using joint paper) divided by AGN flux calculated with luminosity function
     saturate_ratio = 0.39982017
 
-    for (nr_srcs, res) in iter(res_dict.items()):
-
+    for nr_srcs, res in iter(res_dict.items()):
         print("Nr of sources is ", nr_srcs)
 
         sens = []
@@ -182,8 +177,7 @@ for (cat_key, res_dict) in all_res.items():
 
         base_dir = base_name(cat_key, nr_srcs)
 
-        for (gamma_index, rh_dict) in sorted(res.items()):
-
+        for gamma_index, rh_dict in sorted(res.items()):
             cat = load_catalogue(rh_dict["catalogue"])
 
             print("gamma: ", gamma_index)
@@ -465,7 +459,6 @@ for (cat_key, res_dict) in all_res.items():
 
         labels = ["Sensitivity", "Discovery Potential", "sens", "dp"]
         for i, sens_dp in enumerate([ratio_sens, ratio_disc]):
-
             sens_dp = np.array(sens_dp)
             int_xray_flux_erg = np.array(int_xray_flux_erg)
             n_src = np.array(n_src)

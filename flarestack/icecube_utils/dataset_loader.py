@@ -23,7 +23,6 @@ def data_loader(data_path, floor=True, cut_fields=True):
         dataset = np.load(data_path, allow_pickle=True)
 
     if "sinDec" not in dataset.dtype.names:
-
         new_dtype = np.dtype([("sinDec", float)])
 
         sinDec = np.array(np.sin(dataset["dec"]), dtype=new_dtype)
@@ -35,14 +34,12 @@ def data_loader(data_path, floor=True, cut_fields=True):
     # Check if 'run' or 'Run'
 
     if "run" not in dataset.dtype.names:
-
         if "Run" in dataset.dtype.names:
             dataset = rename_fields(dataset, {"Run": "run"})
 
     # Check if 'sigma' or 'angErr' is Used
 
     if "sigma" not in dataset.dtype.names:
-
         if "angErr" in dataset.dtype.names:
             dataset = rename_fields(dataset, {"angErr": "sigma"})
         else:
@@ -61,7 +58,6 @@ def data_loader(data_path, floor=True, cut_fields=True):
         dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
 
     if cut_fields:
-
         allowed_fields = [
             "time",
             "ra",
@@ -84,7 +80,6 @@ def data_loader(data_path, floor=True, cut_fields=True):
 
 
 def grl_loader(season):
-
     if isinstance(season.grl_path, list):
         grl = np.sort(
             np.array(np.concatenate([np.load(x) for x in season.grl_path])), order="run"
@@ -108,7 +103,6 @@ def grl_loader(season):
         )
 
     if "length" not in grl.dtype.names:
-
         if "livetime" in grl.dtype.names:
             grl = rename_fields(grl, {"livetime": "length"})
         else:
@@ -144,7 +138,6 @@ def grl_loader(season):
 
 
 def verify_grl_with_data(seasons):
-
     logger.info(
         "Verifying that, for each dataset, all events are in runs that \n"
         "are on the GRL, and not outside the period marked as good in the "
@@ -175,7 +168,6 @@ def verify_grl_with_data(seasons):
                 affected_runs.append(run["run"])
 
         if n_overflow > 0.0:
-
             fraction = float(n_overflow) / float(len(exp_data))
 
             raise Exception(

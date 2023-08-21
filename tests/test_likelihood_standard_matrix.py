@@ -34,7 +34,6 @@ class TestTimeIntegrated(unittest.TestCase):
         pass
 
     def test_declination_sensitivity(self):
-
         logging.info("Testing 'standard_matrix' LLH class")
 
         # Test stacking

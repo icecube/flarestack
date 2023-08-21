@@ -69,7 +69,6 @@ def make_limit_plot(name):
     )
 
     if os.path.isfile(path):
-
         with open(path, "r") as f:
             data = Pickle.load(f)
 

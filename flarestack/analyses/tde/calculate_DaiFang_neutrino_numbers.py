@@ -75,7 +75,6 @@ time_pdf = {"Name": "Box", "Pre-Window": 0, "Post-Window": injection_window}
 res_dict = dict()
 #
 for source in sources:
-
     # Second table assumes CR energy is 10 times the radiated energy
 
     custom_cr_energy = radiated_energy[source["Name"]] * 10
@@ -85,7 +84,6 @@ for source in sources:
     print(source["Name"])
 
     for cr_energy in [base_cr_energy, custom_cr_energy]:
-
         print(cr_energy)
 
         time = injection_window * 60 * 60 * 24
@@ -124,6 +122,5 @@ print("\n")
 
 print("N_base \t N_scale \t Source")
 
-for (source, n_inj) in res_dict.items():
-
+for source, n_inj in res_dict.items():
     print(n_inj[0], "\t", n_inj[1], "\t", source)

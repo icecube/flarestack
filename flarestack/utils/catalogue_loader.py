@@ -14,7 +14,6 @@ def calculate_source_weight(sources) -> float:
 
 
 def load_catalogue(path):
-
     sources = np.load(path)
 
     # Maintain backwards-compatibility
@@ -30,14 +29,11 @@ def load_catalogue(path):
         ("End Time (MJD)", "end_time_mjd"),
     ]
 
-    for (old_key, new_key) in maps:
-
+    for old_key, new_key in maps:
         if old_key in sources.dtype.names:
-
             sources = rename_fields(sources, {old_key: new_key})
 
     if "base_weight" not in sources.dtype.names:
-
         base_weight = np.ones(len(sources))
 
         sources = append_fields(
@@ -63,7 +59,6 @@ def load_catalogue(path):
     # Check that all sources have a unique name
 
     if len(set(sources["source_name"])) < len(sources["source_name"]):
-
         raise Exception(
             "Some sources in catalogue do not have unique "
             "names. Please assign unique names to each source."
