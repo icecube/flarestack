@@ -45,6 +45,7 @@ In the DESY mirror, the structure is a bit different:
 """
 mirror_7yr_dirname = "mirror-7year-PS-sens"  # expected identical at all mirrors
 
+# NOTE: the following block is somehow convoluted and the logic should be restructured.
 if flarestack_dataset_dir is not None:
     logger.info(f"Loading datasets from {flarestack_dataset_dir} (local)")
 
