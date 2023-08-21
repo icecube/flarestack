@@ -23,6 +23,8 @@ from flarestack.shared import (
     flux_to_k,
 )
 from flarestack.core.ts_distributions import (
+    DiscoverySpec,
+    fit_background,
     calc_ts_threshold,
     plot_background_ts_distribution,
     plot_fit_results,
@@ -95,7 +97,7 @@ class ResultsHandler(object):
             This makes impossible to properly interpolate the sensitivity or discovery potential value. \n \
             Possible causes of this behaviour are:\n \
             - all the `scale` steps are too high in value;\n \
-            - the `injection_weight_modifier` values of the catalogue are improperly set, check the actual number of injected neutrinos."
+            - the `injection_weight_modifier` values of the catalogue are improperly set: check the actual number of injected neutrinos."
 
         # Checks if the code should search for flares. By default, this is
         # not done.
@@ -728,92 +730,92 @@ class ResultsHandler(object):
         bkg_trials: dict = self.get_background_trials()
 
         bkg_ts = np.array(bkg_trials["TS"])
+        bg_fit = fit_background(bkg_ts, self.ts_type)
 
         # significance values to be considered for the discovery potential
         SIGNIFICANCE_VALUES: Final[tuple[float]] = (3.0, 5.0)
 
         # each significance value will have a corresponding test statistic threshold
-        ts_thresholds: dict = {}
+        significance_specs: list[DiscoverySpec] = list()
 
         for significance in SIGNIFICANCE_VALUES:
-            ts_thresholds[significance] = calc_ts_threshold(
-                bkg_ts, significance_value=significance, ts_type=self.ts_type
+            significance_specs.append(
+                calc_ts_threshold(bg_fit, significance_value=significance)
             )
 
-        plot_background_ts_distribution(bkg_ts, ts_plot_filename, ts_type=self.ts_type)
-
-        self.result.discovery_potential_5sigma_threshold = ts_threshold_5sigma
-
-        if np.isnan(ts_threshold_5sigma):
-            logger.warning(
-                f"Invalid discovery threshold {ts_threshold_5sigma=} will be ignored. Using TS = 25.0 only."
+        # Add a significance specification for TS = 25 from Wilks' theorem.
+        significance_specs.append(
+            DiscoverySpec(
+                significance=5.0,
+                positive_cdf_threshold=np.NaN,
+                ts_threshold=25.0,
+                wilks=True,
             )
+        )
 
-        # store fraction of overfluctuations above TS threshold as a function of injection values
-        overfluctuation_fraction_5sigma, overfluctuation_fraction_25 = [], []
+        # we should check if any of the calculated significance specs is NaN or None
+        # if np.isnan(ts_threshold_5sigma):
+        #    logger.warning(
+        #        f"Invalid discovery threshold {ts_threshold_5sigma=} will be ignored. Using TS = 25.0 only."
+        #    )
 
-        for scale in self.scales:
+        plot_background_ts_distribution(
+            bkg_ts,
+            bg_fit,
+            significances=significance_specs.values(),
+            path=ts_plot_filename,
+        )
+
+        # we should now define a dictionary, for every value of TS threshold we will store the overfluctuation fraction as a function of the injection scale.
+        overfluctuation_fraction = dict[str, np.ndarray]
+
+        n_scales = len(self.scales)
+
+        for spec in significance_specs:
+            overfluctuation_fraction[spec.name] = np.zeros(shape=n_scales)
+
+        for i_s, scale in enumerate(self.scales):
             ts_array = np.array(self.results[scale]["TS"])
 
-            if not np.isnan(ts_threshold_5sigma):
-                # calculate fraction of trials above threshold
-                frac = float(len(ts_array[ts_array > ts_threshold_5sigma])) / (
-                    float(len(ts_array))
-                )
+            for spec in significance_specs:
+                if not np.isnan(spec.ts_threshold):
+                    # we should check this before and assume here that all significance specs are good
+                    frac = float(len(ts_array[ts_array > spec.ts_threshold])) / (
+                        float(len(ts_array))
+                    )
 
-                logger.info(
-                    f"Fraction of overfluctuations is {frac:.2f} above {ts_threshold_5sigma:.2f} (N_trials={len(ts_array)}) (scale={scale})"
-                )
+                    logger.info(
+                        f"Fraction of overfluctuations is {frac:.2f} above {spec.ts_threshold:.2f} (N_trials={len(ts_array)}) (scale={scale})"
+                    )
 
-                overfluctuation_fraction_5sigma.append(frac)
+                overfluctuation_fraction[spec.name][i_s] = frac
 
-            frac_25 = float(len(ts_array[ts_array > 25.0])) / (float(len(ts_array)))
-
-            logger.info(
-                "Fraction of overfluctuations is {0:.2f} above 25 (N_trials={1}) (Scale={2})".format(
-                    frac_25, len(ts_array), scale
-                )
-            )
-
-            overfluctuation_fraction_25.append(frac_25)
-
-            # if frac != 0.0:
-            #    logger.info(f"Making plot for {scale=}, {frac=}")
+            # There used to be a safeguard against frac == 0 here.
             self.make_plots(scale)
-            # else:
-            #    logger.warning(
-            #        f"Fraction of overfluctuations is {frac=}, skipping plot for {scale=}"
-            #    )
-
-        x = np.array(self.scales_float)
-
-        x_flux = k_to_flux(x)
 
         # 50% of trials must be above ts threshold
-        significance = 0.5
 
         """
-        Calculate the discovery potential based on the 5-sigma threshold of the TS distribution only if the distribution is non-degenerate. Otherwise, use only the TS=25 threshold.
+        Loop on the discovery potential specifications and calculate the corresponding flux by interpolation.
         """
+        discovery_trial_fraction: float = 0.5
 
-        y_list = [overfluctuation_fraction_25]
-        out_list = ["disc_potential_25"]
+        x = np.array(self.scales_float)
+        x_flux = k_to_flux(x)
 
-        if not np.isnan(ts_threshold_5sigma):
-            y_list.append(overfluctuation_fraction_5sigma)
-            out_list.append("disc_potential")
+        def f(x, a, b, c):
+            value = scipy.stats.gamma.cdf(x, a=a, loc=b, scale=c)
+            return value
 
-        for i, y_val in enumerate(y_list):
-            # define a gamma function to represent the overfluctuation fraction vs injection scale value trend
-            def f(x, a, b, c):
-                value = scipy.stats.gamma.cdf(x, a=a, loc=b, scale=c)
-                return value
+        for key in overfluctuation_fraction:
+            # define a gamma function to fit the overfluctuation fraction vs injection scale
+            y_vals = overfluctuation_fraction[key]
 
             best_f = None
 
             try:
                 res = scipy.optimize.curve_fit(
-                    f, x, y_val, p0=[6, -0.1 * max(x), 0.1 * max(x)]
+                    f, x, y_vals, p0=[6, -0.1 * max(x), 0.1 * max(x)]
                 )
 
                 best_a = res[0][0]
@@ -823,10 +825,13 @@ class ResultsHandler(object):
                 def best_f(x):
                     return f(x, best_a, best_b, best_c)
 
-                sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
+                sol = scipy.stats.gamma.ppf(
+                    discovery_trial_fraction, best_a, best_b, best_c
+                )
 
                 # "disc_potential" and "disc_potential_25" attributes are set here
                 # use of `setattr` makes the code a bit obscure and could be improved
+                # TODO: properly propagate to result!
                 setattr(self, out_list[i], k_to_flux(sol))
 
             except RuntimeError as e:
@@ -840,7 +845,7 @@ class ResultsHandler(object):
 
             fig = plt.figure()
             ax1 = fig.add_subplot(111)
-            ax1.scatter(x_flux, y_val, color="black")
+            ax1.scatter(x_flux, y_vals, color="black")
 
             if best_f is not None:
                 ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")

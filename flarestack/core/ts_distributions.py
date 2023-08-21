@@ -311,6 +311,7 @@ def fit_background(
         logger.warning(
             f"Maximum of TS is zero, will be unable to calculate any TS threshold (too few trials?)"
         )
+        # maybe a BackgroundFit with invalid values would be
         return None
 
     return fit_background_ts(ts_arr, ts_type)
@@ -322,6 +323,16 @@ class DiscoverySpec(BaseModel):
     significance: float
     positive_cdf_threshold: float
     ts_threshold: float
+    # true if ts_threshold comes from Wilks' theorem
+    # i.e. 5 sigma => TS = 25
+    wilks: Optional[bool] = False
+
+    @property
+    def name(self):
+        if self.wilks:
+            return f"{self.significance} sigma (Wilks)"
+        else:
+            return f"{self.significance}"
 
     # @property
     # def cdf_threshold(self):
