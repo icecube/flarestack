@@ -1394,13 +1394,17 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
     return FlareLLH(season, sources, llh_dict)
 
 
+# NOTE: `mypy` allowed to find some deprecations in the following __main__ block that were never noticed before, because the block is not part of any testing routine. It should be checked whether equivalent code is covered by an unit test, before removing the (now commented) block altogether.
+"""
 if __name__ == "__main__":
+
+
     from flarestack.shared import fs_scratch_dir
     from scipy.interpolate import InterpolatedUnivariateSpline
 
     g = EnergyPDF.create({"energy_pdf_name": "PowerLaw", "gamma": 2.2})
 
-    e_range = np.logspace(0, 7, 1e3)
+    e_range = np.logspace(start=0, stop=7, num=1000)
 
     f = InterpolatedUnivariateSpline(e_range, np.log(g.f(e_range)))
 
@@ -1440,3 +1444,4 @@ if __name__ == "__main__":
 
     for i in np.linspace(0.0, 10.0, 21):
         print(i, f([i], weights))
+"""
