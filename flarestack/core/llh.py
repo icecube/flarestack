@@ -1394,8 +1394,9 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
     return FlareLLH(season, sources, llh_dict)
 
 
-# NOTE: `mypy` allowed to find some deprecations in the following __main__ block that were never noticed before, because the block is not part of any testing routine. It should be checked whether equivalent code is covered by an unit test, before removing the (now commented) block altogether.
 """
+# NOTE: `mypy` allowed to find some deprecations in the following __main__ block that were never noticed before, because the block is not part of any testing routine. It should be checked whether equivalent code is covered by an unit test, before removing the (now commented) block altogether.
+
 if __name__ == "__main__":
 
 
