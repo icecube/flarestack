@@ -736,14 +736,12 @@ class ResultsHandler(object):
         SIGNIFICANCE_VALUES: Final[tuple[float]] = (3.0, 5.0)
 
         # each significance value will have a corresponding test statistic threshold
-        significance_specs: list[DiscoverySpec] = list()
+        significance_specs: list[DiscoverySpec] = [
+            calc_ts_threshold(bg_fit, significance_value=significance)
+            for significance in SIGNIFICANCE_VALUES
+        ]
 
-        for significance in SIGNIFICANCE_VALUES:
-            significance_specs.append(
-                calc_ts_threshold(bg_fit, significance_value=significance)
-            )
-
-        # Add a significance specification for TS = 25 from Wilks' theorem.
+        # add a significance specification for TS = 25 from Wilks' theorem.
         significance_specs.append(
             DiscoverySpec(
                 significance=5.0,
@@ -754,12 +752,12 @@ class ResultsHandler(object):
         )
 
         # we should check if any of the calculated significance specs is NaN or None
-        # if np.isnan(ts_threshold_5sigma):
+        # if np.isnan([...]):
         #    logger.warning(
         #        f"Invalid discovery threshold {ts_threshold_5sigma=} will be ignored. Using TS = 25.0 only."
         #    )
 
-        plot_background_ts_distribution(
+        plot_ts_distribution(
             bkg_ts,
             bg_fit,
             significances=significance_specs.values(),
@@ -890,7 +888,7 @@ class ResultsHandler(object):
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = os.path.join(self.plot_dir, "ts_distributions/" + str(scale) + ".pdf")
 
-        plot_background_ts_distribution(ts_array, ts_path, ts_type=self.ts_type)
+        plot_ts_distribution(ts_array, ts_path, ts_type=self.ts_type)
 
         param_path = os.path.join(self.plot_dir, "params/" + str(scale) + ".pdf")
 
@@ -1067,7 +1065,7 @@ class ResultsHandler(object):
     #         ts_path = self.plot_dir + source + "/ts_distributions/" + str(
     #             scale) + ".pdf"
     #
-    #         plot_background_ts_distribution(ts_array, ts_path,
+    #         plot_ts_distribution(ts_array, ts_path,
     #                                         ts_type=self.ts_type)
     #
     #         param_path = self.plot_dir + source + "/params/" + str(scale) + \

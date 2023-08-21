@@ -364,7 +364,7 @@ def calc_ts_threshold(bg_fit: BackgroundFit, significance: float) -> DiscoverySp
     )
 
 
-def plot_background_ts_distribution(
+def plot_ts_distribution(
     ts_values: list,
     bg_fit: BackgroundFit,
     significances: list[DiscoverySpec],
