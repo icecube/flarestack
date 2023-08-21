@@ -40,7 +40,9 @@ def generate_dynamic_mh_class(mh_dict):
 
 class MultiProcessor:
     queue = None
-    results = dict()
+
+    # this is not used within the class, maybe it can be safely dropped
+    # results = dict()
 
     def __init__(self, n_cpu, **kwargs):
         self.queue = JoinableQueue()
