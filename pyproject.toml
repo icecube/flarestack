@@ -47,6 +47,10 @@ myst-parser = "^0.18.0"
 nbsphinx = ">=0.8.9,<0.10.0"
 myst-nb = ">=0.16,<0.18"
 
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.5.1"
+
 [build-system]
 requires = ["poetry-core>=1.2.0"]
 build-backend = "poetry.core.masonry.api"
