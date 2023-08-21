@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 
 
 class Submitter(object):
-    submitter_dict = dict()
+    # in other modules, such attribute is called 'subclass'
+    # is this functionally different?
+    submitter_dict: dict[str, object] = dict()
 
     def __init__(
         self,
@@ -302,7 +304,7 @@ class HTCondorSubmitter(Submitter):
 
     # Log path
     log_path = Path(log_dir)
-    override_log_path = None
+    override_log_path: Optional[Path] = None
 
     def __init__(self, *args, **kwargs):
         """
