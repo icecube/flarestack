@@ -26,7 +26,7 @@ from flarestack.core.ts_distributions import (
     DiscoverySpec,
     fit_background,
     calc_ts_threshold,
-    plot_background_ts_distribution,
+    plot_ts_distribution,
     plot_fit_results,
     get_ts_fit_type,
 )
