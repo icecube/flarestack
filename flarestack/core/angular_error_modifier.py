@@ -216,7 +216,7 @@ class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
 
 
 class BaseAngularErrorModifier(object):
-    subclasses = {}
+    subclasses: dict[str, object] = {}
 
     def __init__(self, pull_dict):
         self.season = pull_dict["season"]
@@ -339,7 +339,7 @@ class BaseMedianAngularErrorModifier(BaseAngularErrorModifier):
         if not os.path.isfile(self.pull_name):
             self.create_pickle()
         else:
-            logger.debug("Loading from".format(self.pull_name))
+            logger.debug(f"Loading from {self.pull_name}")
 
         with open(self.pull_name, "r") as f:
             self.pickled_data = Pickle.load(f)
@@ -470,6 +470,9 @@ class MedianPullEParam2D(DynamicMedianPullCorrector):
         return lambda data: func(data["logE"], data["sinDec"])
 
 
+"""
+# NOTE: `mypy` allowed to find some deprecations in the following __main__ block that were never noticed before, because the block is not part of any testing routine. It should be checked whether equivalent code is covered by an unit test, before removing the (now commented) block altogether.
+
 if __name__ == "__main__":
     from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
     from flarestack.analyses.angular_error_floor.plot_bias import (
@@ -534,3 +537,4 @@ if __name__ == "__main__":
 # for gamma in np.linspace(1.0, 4.0, 4):
 #     print data_loader(IC86_1_dict["exp_path"])["logE"][:8]
 #     print np.degrees(x.f(data_loader(IC86_1_dict["exp_path"])[:8], [gamma]))
+"""
