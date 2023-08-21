@@ -293,7 +293,7 @@ def filter_nan(values: list) -> np.ndarray:
 
 
 def fit_background(
-    ts_values: list, ts_type: str = "standard"
+    ts_values: np.ndarray, ts_type: str = "standard"
 ) -> Optional[BackgroundFit]:
     """Wrapper around fit_background_ts
 
@@ -328,11 +328,11 @@ class DiscoverySpec(BaseModel):
     wilks: Optional[bool] = False
 
     @property
-    def name(self):
+    def name(self) -> str:
         if self.wilks:
             return f"{self.significance} sigma (Wilks)"
         else:
-            return f"{self.significance}"
+            return f"{self.significance} sigma"
 
     # @property
     # def cdf_threshold(self):
@@ -365,7 +365,7 @@ def calc_ts_threshold(bg_fit: BackgroundFit, significance: float) -> DiscoverySp
 
 
 def plot_ts_distribution(
-    ts_values: list,
+    ts_values: np.ndarray,
     bg_fit: BackgroundFit,
     significances: list[DiscoverySpec],
     path: Path,

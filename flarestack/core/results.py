@@ -217,12 +217,12 @@ class ResultsHandler(object):
             out += "Result is invalid. Check the log messages."
         return out
 
-    def get_background_trials(self):
+    def get_background_trials(self) -> dict:
         try:
             return self.results[scale_shortener(0.0)]
         except KeyError:
             logger.error("No key equal to '0'")
-            return
+            return {}
 
     @property
     def scales_float(self):
@@ -719,7 +719,7 @@ class ResultsHandler(object):
 
         return fit, fit_err, extrapolated
 
-    def find_disc_potential(self):
+    def find_disc_potential(self) -> None:
         ts_plot_filename: Path = self.ts_distribution_dir / "0.pdf"
 
         bkg_trials: dict = self.get_background_trials()
@@ -727,16 +727,19 @@ class ResultsHandler(object):
         bkg_ts = np.array(bkg_trials["TS"])
         bg_fit = fit_background(bkg_ts, self.ts_type)
 
-        # significance values to be considered for the discovery potential
-        SIGNIFICANCE_VALUES: Final[tuple[float]] = (3.0, 5.0)
+        if bg_fit is None:
+            # fit_background has detected that the maximum of the TS is zero, so there is not much to do.
+            return
 
-        # each significance value will have a corresponding test statistic threshold
+        # discovery potential is assessed for:
+        # - a given list of significance values (3 sigma, 5 sigma), for which the TS threshold is calculated;
+        # - a nominal 5 sigma significance corresponding to a TS threshold of 25 (from Wilks' theorem)
+        # each of these scenarios is encoded in a DiscoverySpec object
+        SIGNIFICANCE_VALUES: Final[tuple[float, ...]] = (3.0, 5.0)
         significance_specs: list[DiscoverySpec] = [
-            calc_ts_threshold(bg_fit, significance_value=significance)
+            calc_ts_threshold(bg_fit, significance=significance)
             for significance in SIGNIFICANCE_VALUES
         ]
-
-        # add a significance specification for TS = 25 from Wilks' theorem.
         significance_specs.append(
             DiscoverySpec(
                 significance=5.0,
@@ -746,21 +749,20 @@ class ResultsHandler(object):
             )
         )
 
-        # we should check if any of the calculated significance specs is NaN or None
-        # if np.isnan([...]):
-        #    logger.warning(
-        #        f"Invalid discovery threshold {ts_threshold_5sigma=} will be ignored. Using TS = 25.0 only."
-        #    )
+        # TODO: here we should check whether any DiscoverySpec has an invalid value of ts threshold?
 
+        # the plot of the background TS distribution will show thresholds according to the significances
         plot_ts_distribution(
             bkg_ts,
             bg_fit,
-            significances=significance_specs.values(),
+            significances=significance_specs,
             path=ts_plot_filename,
         )
 
-        # we should now define a dictionary, for every value of TS threshold we will store the overfluctuation fraction as a function of the injection scale.
+        # dictonary where for for every DiscoverySpec we will store the overfluctuation fraction as a function of the injection scale
         overfluctuation_fraction = dict[str, np.ndarray]
+        # dictionary where we will store the discovery potential flux
+        discovery_potential_flux = dict[str, float]
 
         n_scales = len(self.scales)
 
@@ -772,7 +774,7 @@ class ResultsHandler(object):
 
             for spec in significance_specs:
                 if not np.isnan(spec.ts_threshold):
-                    # we should check this before and assume here that all significance specs are good
+                    # TODO: just assume all specs are good and avoid (re)checking isnan
                     frac = float(len(ts_array[ts_array > spec.ts_threshold])) / (
                         float(len(ts_array))
                     )
@@ -784,9 +786,8 @@ class ResultsHandler(object):
                 overfluctuation_fraction[spec.name][i_s] = frac
 
             # There used to be a safeguard against frac == 0 here.
+            # Also this is independent from the overfluctuation fraction. Can it be decoupled?
             self.make_plots(scale)
-
-        # 50% of trials must be above ts threshold
 
         """
         Loop on the discovery potential specifications and calculate the corresponding flux by interpolation.
@@ -802,7 +803,7 @@ class ResultsHandler(object):
 
         for key in overfluctuation_fraction:
             # define a gamma function to fit the overfluctuation fraction vs injection scale
-            y_vals = overfluctuation_fraction[key]
+            y_vals: np.ndarray = overfluctuation_fraction[key]
 
             best_f = None
 
@@ -822,15 +823,12 @@ class ResultsHandler(object):
                     discovery_trial_fraction, best_a, best_b, best_c
                 )
 
-                # "disc_potential" and "disc_potential_25" attributes are set here
-                # use of `setattr` makes the code a bit obscure and could be improved
-                # TODO: properly propagate to result!
-                setattr(self, out_list[i], k_to_flux(sol))
+                discovery_potential_flux[key] = k_to_flux(sol)
 
             except RuntimeError as e:
                 logger.warning(f"RuntimeError for discovery potential!: {e}")
 
-            # Now we plot something.
+            # Now we plot stuff.
             xrange = np.linspace(0.0, 1.1 * max(x), 1000)
 
             # Need to define a sensible output naming scheme.
@@ -862,22 +860,27 @@ class ResultsHandler(object):
             fig.savefig(savepath)
             plt.close()
 
+        # we store the output in the result attribute
+        # having these hardcoded keys is a bit ugly
+        self.result.discovery_potential_3sigma_value = discovery_potential_flux[
+            "3 sigma"
+        ]
+        self.result.discovery_potential_5sigma_value = discovery_potential_flux[
+            "5 sigma"
+        ]
+        self.result.discovery_potential_TS25_value = discovery_potential_flux[
+            "5 sigma (Wilks)"
+        ]
+
         if self.result.discovery_potential_5sigma_value > max(x_flux):
             self.extrapolated_disc = True
 
-        msg = ""
-
-        if self.extrapolated_disc:
-            msg = "EXTRAPOLATED "
+        msg = "EXTRAPOLATED " if self.extrapolated_disc else ""
 
         logger.info(
-            "{0}Discovery potential is {1:.3g}".format(
-                msg, self.result.discovery_potential_5sigma_value
-            )
+            f"{msg}Discovery potential is {self.result.discovery_potential_5sigma_value:.3g}"
         )
-        logger.info(
-            "Discovery potential (TS = 25) is {0:.3g}".format(self.disc_potential_25)
-        )
+        logger.info(f"Discovery potential (Wilks, TS = 25) is {disc_potential_25:.3g}")
 
     def noflare_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
