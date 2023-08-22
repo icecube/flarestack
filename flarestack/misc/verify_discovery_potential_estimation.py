@@ -84,7 +84,7 @@ for i, datasets in enumerate(loop_datasets):
             mask = np.ones_like(sindecs, dtype=bool)
 
         else:
-            mask = [sindecs > -0.05]
+            mask = sindecs > -0.05  # mypy: changed from [sindecs > -0.05]
 
         color = ["r", "blue", "green", "y"][j]
 
