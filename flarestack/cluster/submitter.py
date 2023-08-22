@@ -1,6 +1,15 @@
+import copy
 import json
-import os, subprocess, time, logging, shutil, copy, sys
+import logging
 import numpy as np
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import time
+from typing import Optional
+
 from flarestack.shared import (
     fs_dir,
     log_dir,
@@ -14,8 +23,6 @@ from flarestack.shared import (
 from flarestack.core.multiprocess_wrapper import run_multiprocess
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
-
-from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
