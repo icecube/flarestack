@@ -900,7 +900,7 @@ class StandardLLH(FixedEnergyLLH):
 
         return kwargs
 
-    def calculate_test_statistic(self, params, weights, **kwargs):
+    def calculate_test_statistic(self, params, weights, **kwargs) -> float:
         """Calculates the test statistic, given the parameters. Uses numexpr
         for faster calculations.
 
@@ -920,18 +920,18 @@ class StandardLLH(FixedEnergyLLH):
         # If n_s if negative, then removes the energy term from the likelihood
 
         for i, n_j in enumerate(all_n_j):
-            SoB_spacetime: list = kwargs["SoB_spacetime_cache"][i]
+            SoB_spacetime_data: list = kwargs["SoB_spacetime_cache"][i]
 
             # Switches off Energy term for negative n_s, which should in theory
             # be a continuous change that does not alter the likelihood for
             # n_s > 0 (as it is not included for n_s=0).
 
-            if len(SoB_spacetime) == 0:
+            if len(SoB_spacetime_data) == 0:
                 x.append(np.array([1.0]))
 
             else:
                 SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
-                    gamma, SoB_spacetime
+                    gamma, SoB_spacetime_data
                 )
 
                 if n_j < 0:
