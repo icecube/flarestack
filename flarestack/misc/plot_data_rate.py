@@ -1,3 +1,10 @@
+# type: ignore
+
+# exclude this file from `mypy` checking since the attribute "diffuse_8year" can no longer be imported
+# this also implies that this file is currently untested, otherwise such a test would fail
+# if in the future its functionality is restored, remove the `type: ignore` comment
+
+
 import os
 import matplotlib.pyplot as plt
 from flarestack.data.icecube.northern_tracks.nt_v002_p05 import diffuse_8year
