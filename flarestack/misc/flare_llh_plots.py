@@ -108,6 +108,7 @@ for i, t in enumerate(np.random.uniform(0, 1.0, n_sig)):
     s_t_list.append((t + float(i)) * 25)
 
 s_t = np.array(s_t_list)
+del st_list
 
 bkg_t = np.random.uniform(0, 1.0, n_bkg) * 100
 
