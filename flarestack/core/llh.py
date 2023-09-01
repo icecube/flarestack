@@ -80,7 +80,7 @@ def read_llh_dict(llh_dict):
 class LLH(object):
     """Base class LLH."""
 
-    subclasses = {}
+    subclasses: dict[str, object] = {}
 
     def __init__(self, season, sources, llh_dict):
         self.season = season
@@ -900,7 +900,7 @@ class StandardLLH(FixedEnergyLLH):
 
         return kwargs
 
-    def calculate_test_statistic(self, params, weights, **kwargs):
+    def calculate_test_statistic(self, params, weights, **kwargs) -> float:
         """Calculates the test statistic, given the parameters. Uses numexpr
         for faster calculations.
 
@@ -920,18 +920,18 @@ class StandardLLH(FixedEnergyLLH):
         # If n_s if negative, then removes the energy term from the likelihood
 
         for i, n_j in enumerate(all_n_j):
-            SoB_spacetime: list = kwargs["SoB_spacetime_cache"][i]
+            SoB_spacetime_data: list = kwargs["SoB_spacetime_cache"][i]
 
             # Switches off Energy term for negative n_s, which should in theory
             # be a continuous change that does not alter the likelihood for
             # n_s > 0 (as it is not included for n_s=0).
 
-            if len(SoB_spacetime) == 0:
+            if len(SoB_spacetime_data) == 0:
                 x.append(np.array([1.0]))
 
             else:
                 SoB_spacetime = kwargs["pull_corrector"].estimate_spatial(
-                    gamma, SoB_spacetime
+                    gamma, SoB_spacetime_data
                 )
 
                 if n_j < 0:
@@ -1392,51 +1392,3 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             return coincident_data[mask]
 
     return FlareLLH(season, sources, llh_dict)
-
-
-if __name__ == "__main__":
-    from flarestack.shared import fs_scratch_dir
-    from scipy.interpolate import InterpolatedUnivariateSpline
-
-    g = EnergyPDF.create({"energy_pdf_name": "PowerLaw", "gamma": 2.2})
-
-    e_range = np.logspace(0, 7, 1e3)
-
-    f = InterpolatedUnivariateSpline(e_range, np.log(g.f(e_range)))
-
-    path = fs_scratch_dir + "tester_spline.npy"
-
-    print(path)
-
-    with open(path, "wb") as h:
-        pickle.dump(f, h)
-
-    e_pdf = {
-        "energy_pdf_name": "Spline",
-        "spline_path": path,
-    }
-
-    from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-    from flarestack.utils.prepare_catalogue import ps_catalogue_name
-    from flarestack.core.injector import Injector
-
-    llh_dict = {
-        "llh_name": "FixedEnergy",
-        "llh_time_pdf": {"time_pdf_name": "Steady"},
-        "llh_energy_pdf": {"energy_pdf_name": "PowerLaw", "gamma": 2.2}
-        # "LLH Energy PDF": e_pdf_dict
-    }
-    source = np.load(ps_catalogue_name(0.0))
-
-    llh = LLH.create(IC86_1_dict, source, llh_dict)
-
-    # inj = MockUnblindedInjector(IC86_1_dict, source)
-    inj = Injector(IC86_1_dict, source)
-
-    data = inj.create_dataset(0.0)
-    f = llh.create_llh_function(data)
-
-    weights = np.array([1.0])
-
-    for i in np.linspace(0.0, 10.0, 21):
-        print(i, f([i], weights))
