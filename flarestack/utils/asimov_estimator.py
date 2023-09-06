@@ -147,7 +147,7 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
                     ("base_weight", float),
                     ("distance_mpc", float),
                     ("injection_weight_modifier", float),
-                    ("source_name", np.str),
+                    ("source_name", str),
                 ]
             ),
         )
