@@ -345,7 +345,11 @@ class HTCondorSubmitter(Submitter):
         self.cluster_files_directory = os.path.join(
             cluster_dir, self.mh_dict["name"] if self.mh_dict else ""
         )
-        self.submit_file = os.path.join(self.cluster_files_directory, "job.submit")
+        if self.override_log_path is not None:
+            submit_file_path = self.override_log_path
+        else:
+            submit_file_path = self.cluster_files_directory
+        self.submit_file = os.path.join(submit_file_path, "job.submit")
         self.executable_file = os.path.join(self.cluster_files_directory, "job.sh")
 
         # Check whether automatic submission is desired and possible
