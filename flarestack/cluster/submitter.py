@@ -23,6 +23,7 @@ from flarestack.shared import (
 from flarestack.core.multiprocess_wrapper import run_multiprocess
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
+from flarestack.core.make_band_masks_wrapper import make_band_mask
 
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,11 @@ class Submitter(object):
         if self.remove_old_results:
             self._clean_injection_values_and_pickled_results(self.mh_dict["name"])
         if self.use_cluster:
-            self.submit_cluster(mh_dict)
+            if mh_dict["mh_name"] == "large_catalogue":
+                make_band_mask(mh_dict=copy.deepcopy(mh_dict))
+                self.submit_cluster(mh_dict)
+            else:
+                self.submit_cluster(mh_dict)
         else:
             self.submit_local(mh_dict)
 
