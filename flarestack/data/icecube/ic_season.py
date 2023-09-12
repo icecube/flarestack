@@ -36,13 +36,13 @@ ref_10yr_filename = (
 
 """
 When mirroring the data locally, the expected structure is the following:
-In the DESY mirror:
+- 7yr: ${FLARESTACK_DATASET_DIR}/mirror-7year-PS-sens
+- 10yr: ${FLARESTACK_DATASET_DIR}/TenYr_E2andE3_sensitivity_and_discpot.npy
+
+In the DESY mirror, the structure is a bit different:
 - 7yr: ${FLARESTACK_DATASET_DIR}/ref_sensitivity/mirror-7year-PS-sens
 - 10yr: ${FLARESTACK_DATASET_DIR}/ref_sensitivity/TenYr_E2andE3_sensitivity_and_discpot.npy
 """
-
-DESY_data_path = Path("/lustre/fs22/group/icecube/data_mirror")
-DESY_sens_path = DESY_data_path / "ref_sensitivity"
 mirror_7yr_dirname = "mirror-7year-PS-sens"  # expected identical at all mirrors
 
 # NOTE: the following block is somehow convoluted and the logic should be restructured.
@@ -51,25 +51,26 @@ if flarestack_dataset_dir is not None:
 
     icecube_dataset_dir = Path(flarestack_dataset_dir)
 
-    if host_server == "DESY":
-        ref_dir_7yr = icecube_dataset_dir / "ref_sensitivity" / mirror_7yr_dirname
-        ref_10yr = icecube_dataset_dir / "ref_sensitivity" / ref_10yr_filename
-
-    elif host_server == "WIPAC":
-        ref_dir_7yr = WIPAC_7yr_dir
-        ref_10yr = WIPAC_10yr_dir / ref_10yr_filename
-
-    if not ref_dir_7yr.is_dir():
-        logger.warning(f"No 7yr sensitivity directory found at {ref_dir_7yr}")
+    ref_7yr_path: Path = icecube_dataset_dir / mirror_7yr_dirname
+    if ref_7yr_path.is_dir():
+        ref_dir_7yr: Optional[Path] = ref_7yr_path
+    else:
+        logger.warning(f"No 7yr sensitivity directory found at {ref_7yr_path}")
         ref_dir_7yr = None
 
-    if not ref_10yr.is_file():
-        logger.warning(f"No 10yr sensitivity found at {ref_10yr}")
+    ref_10yr_path: Path = icecube_dataset_dir / ref_10yr_filename
+    if ref_10yr_path.is_file():
+        ref_10yr: Optional[Path] = ref_10yr_path
+    else:
+        logger.warning(f"No 10yr sensitivity found at {ref_10yr_path}")
         ref_10yr = None
 else:
     logger.info(
         "Local dataset directory not found. Assuming we are running on an supported datacenter (WIPAC, DESY), I will try to fetch the data from central storage."
     )
+
+DESY_data_path = Path("/lustre/fs22/group/icecube/data_mirror")
+DESY_sens_path = DESY_data_path / "ref_sensitivity"
 
 # Only load from central storage if $FLARESTACK_DATASET_DIR is not set.
 if flarestack_dataset_dir is None:
