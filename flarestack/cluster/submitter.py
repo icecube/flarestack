@@ -23,7 +23,7 @@ from flarestack.shared import (
 from flarestack.core.multiprocess_wrapper import run_multiprocess
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
-from flarestack.core.make_band_masks_wrapper import make_band_mask
+from flarestack.utils.make_band_masks_wrapper import make_band_mask
 
 
 logger = logging.getLogger(__name__)
