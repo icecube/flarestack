@@ -97,9 +97,8 @@ class Submitter(object):
         if self.use_cluster:
             if mh_dict["mh_name"] == "large_catalogue":
                 make_band_mask(mh_dict=copy.deepcopy(mh_dict))
-                self.submit_cluster(mh_dict)
-            else:
-                self.submit_cluster(mh_dict)
+
+            self.submit_cluster(mh_dict)
         else:
             self.submit_local(mh_dict)
 
