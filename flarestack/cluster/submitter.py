@@ -23,6 +23,7 @@ from flarestack.shared import (
 from flarestack.core.multiprocess_wrapper import run_multiprocess
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
+from flarestack.utils.make_band_masks_wrapper import make_band_mask
 
 
 logger = logging.getLogger(__name__)
@@ -94,6 +95,9 @@ class Submitter(object):
         if self.remove_old_results:
             self._clean_injection_values_and_pickled_results(self.mh_dict["name"])
         if self.use_cluster:
+            if mh_dict["mh_name"] == "large_catalogue":
+                make_band_mask(mh_dict=copy.deepcopy(mh_dict))
+
             self.submit_cluster(mh_dict)
         else:
             self.submit_local(mh_dict)
@@ -349,7 +353,11 @@ class HTCondorSubmitter(Submitter):
         self.cluster_files_directory = os.path.join(
             cluster_dir, self.mh_dict["name"] if self.mh_dict else ""
         )
-        self.submit_file = os.path.join(self.cluster_files_directory, "job.submit")
+        if self.override_log_path is not None:
+            submit_file_path = self.override_log_path
+        else:
+            submit_file_path = self.cluster_files_directory
+        self.submit_file = os.path.join(submit_file_path, "job.submit")
         self.executable_file = os.path.join(self.cluster_files_directory, "job.sh")
 
         # Check whether automatic submission is desired and possible

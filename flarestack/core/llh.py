@@ -66,6 +66,11 @@ def read_llh_dict(llh_dict):
             llh_dict[key] = {}
 
     if "llh_spatial_pdf" not in llh_dict.keys():
+        logger.warning(
+            "No 'llh_spatial_pdf' was specified."
+            "The default 'circular_gaussian' will be assumed for the signal pdf,"
+            "and 'zenith spline' for the background pdf"
+        )
         llh_dict["llh_spatial_pdf"] = {}
 
     if "llh_bkg_time_pdf" not in llh_dict.keys():
