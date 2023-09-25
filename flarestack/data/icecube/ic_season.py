@@ -65,7 +65,7 @@ if flarestack_dataset_dir is not None:
         logger.warning(f"No 10yr sensitivity found at {ref_10yr_path}")
         ref_10yr = None
 else:
-    logger.info(
+    logger.debug(
         "Local dataset directory not found. Assuming we are running on an supported datacenter (WIPAC, DESY), I will try to fetch the data from central storage."
     )
 
