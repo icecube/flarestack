@@ -105,10 +105,10 @@ all_dirs = [
 
 for dirname in all_dirs:
     if not os.path.isdir(dirname):
-        logger.info("Making Directory: {0}".format(dirname))
+        logger.debug("Making Directory: {0}".format(dirname))
         os.makedirs(dirname)
     else:
-        logger.info("Found Directory: {0}".format(dirname))
+        logger.debug("Found Directory: {0}".format(dirname))
 
 # ==============================================================================
 # Check host and specify path to dataset storage

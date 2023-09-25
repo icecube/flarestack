@@ -97,9 +97,10 @@ def grl_loader(season):
             logger.error(grl[~grl["good_i3"]])
             raise Exception("Runs marked as 'bad' are found in Good Run List")
     except ValueError:
-        logger.warning(
-            "No field called 'good_i3' found in GoodRunList. "
-            "Cannot check if all runs in GoodRunList are actually good."
+        # It seems now good_i3 field is deprecated?
+        logger.debug(
+            "No field called 'good_i3' found in GoodRunList."
+            "Assuming that all runs in GoodRunList are actually good."
         )
 
     if "length" not in grl.dtype.names:

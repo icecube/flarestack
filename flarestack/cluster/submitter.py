@@ -211,11 +211,15 @@ class Submitter(object):
         """
         directories = [name_pickle_output_dir(name), inj_dir_name(name)]
         for d in directories:
-            if os.path.isdir(d):
-                logger.debug(f"removing {d}")
-                shutil.rmtree(d)
+            dpath = Path(d)
+            if dpath.exists():
+                if dpath.is_dir():
+                    logger.info(f"removing {d}")
+                    shutil.rmtree(d)
+                else:
+                    logger.warning(f"Can not remove {d}! It is not a directory!")
             else:
-                logger.warning(f"Can not remove {d}! It is not a directory!")
+                logger.debug(f"Directory {d} does not exist (yet).")
 
     def do_asimov_scale_estimation(self):
         """estimate the injection scale using Asimov estimation"""

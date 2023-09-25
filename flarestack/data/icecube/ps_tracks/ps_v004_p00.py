@@ -30,7 +30,8 @@ ps_v004_p00 = IceCubeDataset()
 
 sample_name = "ps_tracks_v004_p00"
 
-logger.warning(
+# This dataset should be removed right away.
+logger.debug(
     f"{sample_name}: This dataset is known to have errors in the good run list (GRL). Consider updating to PSTracks v4.1 or v4.2"
 )
 
