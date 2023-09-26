@@ -80,14 +80,18 @@ fig = plt.figure()
 
 # Plot histogram.
 n, bins, patches = plt.hist(np.log(all_e) - 2.0, 10, color="green")
+
 bin_centers = 0.5 * (bins[:-1] + bins[1:])
 
 # scale values to interval [0,1]
 col = bin_centers - min(bin_centers)
 col /= max(col)
 
-for c, p in zip(col, patches):
-    plt.setp(p, "facecolor", cmap(c))
+if isinstance(patches, list):
+    # make mypy happy by ensuring `zip` runs over iterables
+    # because plt.hist may return a single object rather than a list
+    for c, p in zip(col, patches):
+        plt.setp(p, "facecolor", cmap(c))
 
 plt.yscale("log")
 plt.xlabel("Log(Reco Energy / GeV)")
