@@ -1,0 +1,24 @@
+name: Lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # Replace '3.x' with your desired Python version
+      - name: Install dependencies
+        run: pip install mypy  # You may need additional dependencies here
+      - name: Run mypy
+        run: mypy  # Replace 'your_code_directory' with your actual code directory
