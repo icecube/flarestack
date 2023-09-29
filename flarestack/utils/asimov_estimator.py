@@ -8,7 +8,11 @@ import numpy as np
 from flarestack.core.llh import LLH
 from flarestack.core.astro import angular_distance
 from flarestack.shared import k_to_flux
-from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
+from flarestack.utils.catalogue_loader import (
+    load_catalogue,
+    distance_scaled_weight,
+    distance_scaled_weight_sum,
+)
 from scipy.stats import norm
 import logging
 
@@ -37,7 +41,7 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
 
     # def weight_ts(ts, n_s)
 
-    weight_scale = calculate_source_weight(sources)
+    weight_norm = distance_scaled_weight_sum(sources)
 
     livetime = 0.0
 
@@ -89,14 +93,16 @@ def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale
         sig_times = np.array(
             [llh.sig_time_pdf.effective_injection_time(x) for x in sources]
         )
-        source_weights = np.array([calculate_source_weight(x) for x in sources])
-        mean_time = np.sum(sig_times * source_weights) / weight_scale
+
+        source_weights = distance_scaled_weight(sources)
+
+        mean_time = np.sum(sig_times * source_weights) / weight_norm
 
         # print(source_weights)
 
         fluences = (
             np.array([x * sig_times[i] for i, x in enumerate(source_weights)])
-            / weight_scale
+            / weight_norm
         )
         # print(sources.dtype.names)
         # print(sources["dec_rad"], np.sin(sources["dec_rad"]))
