@@ -6,11 +6,11 @@ def distance_scaled_weight(sources: np.ndarray) -> np.ndarray:
     return sources["base_weight"] * sources["distance_mpc"] ** -2
 
 
-def distance_scaled_weight_sum(cls, sources: np.ndarray) -> float:
+def distance_scaled_weight_sum(sources: np.ndarray) -> float:
     return np.sum(distance_scaled_weight(sources))
 
 
-def load_catalogue(path):
+def load_catalogue(path) -> np.ndarray:
     sources = np.load(path)
 
     # Maintain backwards-compatibility
