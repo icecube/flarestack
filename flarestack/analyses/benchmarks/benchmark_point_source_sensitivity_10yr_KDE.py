@@ -25,7 +25,9 @@ injection_time = {
 }
 
 injection_spatial = {
-    "spatial_pdf_name": "circular_gaussian",
+    "spatial_pdf_name": "northern_tracks_kde",
+    "spatial_pdf_index": None, # if 'None', use 3D spline with fixed gamma
+    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/2.02/sig_E_psi_photospline.fits"
 }
 
 inj_kwargs = {
@@ -48,9 +50,9 @@ llh_kwargs = {
     "negative_ns_bool": True,
 }
 
-name = "analyses/benchmarks/ps_sens_10yr"
+name = "analyses/benchmarks/ps_sens_10yr_KDE"
 
-#sindecs = np.linspace(0.90, 0.00, 10)
+# sindecs = np.linspace(0.90, -0.90, 3)
 sindecs = np.linspace(0.90, -0.90, 19)
 # sindecs = np.linspace(0.5, -0.5, 3)
 #
@@ -63,7 +65,7 @@ job_ids = []
 for sindec in sindecs:
     cat_path = ps_catalogue_name(sindec)
 
-    subname = name + "/sindec=" + "{0:.2f}".format(sindec) + "/"
+    subname = name + "/KDEsindec=" + "{0:.2f}".format(sindec) + "/"
 
     scale = (flux_to_k(reference_sensitivity(sindec)) * 3)[0]
 
@@ -170,7 +172,7 @@ plt.subplots_adjust(hspace=0.001)
 
 ax1.legend(loc="upper right", fancybox=True, framealpha=1.0)
 
-savefile = plot_output_dir(name) + "/PS10yr.pdf"
+savefile = plot_output_dir(name) + "/PS10yrKDE.pdf"
 
 logging.info(f"Saving to {savefile}")
 

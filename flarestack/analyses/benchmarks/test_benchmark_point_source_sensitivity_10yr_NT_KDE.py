@@ -1,6 +1,6 @@
 import numpy as np
 from flarestack import ResultsHandler, MinimisationHandler
-from flarestack.data.icecube import ps_v003_p02
+from flarestack.data.icecube import nt_v005_p01
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.icecube_utils.reference_sensitivity import (
@@ -10,8 +10,9 @@ from flarestack.icecube_utils.reference_sensitivity import (
 import matplotlib.pyplot as plt
 from flarestack import analyse, wait_cluster
 import logging
+import sys
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Initialise Injectors/LLHs
 
@@ -25,7 +26,9 @@ injection_time = {
 }
 
 injection_spatial = {
-    "spatial_pdf_name": "circular_gaussian",
+    "spatial_pdf_name": "northern_tracks_kde",
+    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/2.02/sig_E_psi_photospline.fits",
+#    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/sig_E_psi_photospline_v006_4D.fits",
 }
 
 inj_kwargs = {
@@ -48,15 +51,15 @@ llh_kwargs = {
     "negative_ns_bool": True,
 }
 
-name = "analyses/benchmarks/ps_sens_10yr"
+name = "analyses/benchmarks/test_ps_sens_10yr_NT_KDE"
 
-#sindecs = np.linspace(0.90, 0.00, 10)
-sindecs = np.linspace(0.90, -0.90, 19)
+# sindecs = np.linspace(0.90, -0.90, 3)
+sindecs = np.linspace(0.90, -0.10, 11)
 # sindecs = np.linspace(0.5, -0.5, 3)
 #
 analyses = []
 
-cluster = True
+cluster = False
 
 job_ids = []
 
@@ -70,28 +73,29 @@ for sindec in sindecs:
     mh_dict = {
         "name": subname,
         "mh_name": "fixed_weights",
-        "dataset": ps_v003_p02,
+        "dataset": nt_v005_p01,
         "catalogue": cat_path,
         "inj_dict": inj_kwargs,
         "llh_dict": llh_kwargs,
         "scale": scale,
-        "n_trials": 1000,
-        "trials_per_task": 50,
+        "n_trials": 10,
         "n_steps": 15,
     }
-
-#    job_id = analyse(
-#        mh_dict,
-#        cluster=cluster,
-#        n_cpu=1 if cluster else 16,
-#        h_cpu="23:59:59",
-#        ram_per_core="8.0G",
-#    )
-#    job_ids.append(job_id)
+    if len(sys.argv)>1 and sys.argv[1]=="--run-jobs":
+        job_id = analyse(
+            mh_dict,
+            cluster=cluster,
+            n_cpu=1 if cluster else 16,
+            h_cpu="23:59:59",
+            ram_per_core="8.0G",
+            remove_old_logs=False,
+            trials_per_task=1,
+        )
+        job_ids.append(job_id)
 
     analyses.append(mh_dict)
 
-#wait_cluster(job_ids)
+if len(sys.argv)>1 and sys.argv[1]=="--run-jobs": wait_cluster(job_ids)
 
 sens = []
 sens_err = []
@@ -170,7 +174,7 @@ plt.subplots_adjust(hspace=0.001)
 
 ax1.legend(loc="upper right", fancybox=True, framealpha=1.0)
 
-savefile = plot_output_dir(name) + "/PS10yr.pdf"
+savefile = plot_output_dir(name) + "/test_PS10yrKDE.pdf"
 
 logging.info(f"Saving to {savefile}")
 

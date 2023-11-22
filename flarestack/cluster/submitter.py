@@ -396,11 +396,29 @@ class HTCondorSubmitter(Submitter):
     def format_jobfile(extension: str):
         return f"job-$(cluster)-$(process).{extension}"
 
+    def select_logdir(self,log_dir,create_new=False):
+        subdir_index=0
+        last_subdir=None
+        while(subdir_index<99999):
+            subdir_path=Path(log_dir,f"{subdir_index:05}")
+#            print(subdir_index,str(subdir_path))
+            if subdir_path.is_dir(): 
+                last_subdir=subdir_path
+                subdir_index+=1
+            else: 
+                if create_new:
+                    subdir_path.mkdir(exist_ok=True)
+                    return str(subdir_path)
+                else: 
+                    return str(last_subdir)
+        raise RuntimeError("Maximum of allowed log subdirs reached. This should never happen. Delete old log files?")
+    
     def get_logfile_path(self, extension: str):
         if self.override_log_path is not None:
             log_path = self.override_log_path
         else:
-            log_path = Path(log_dir)
+            log_path = self.select_logdir(log_dir,create_new=True)
+            logger.debug(f"Created {log_path} for storing log files.")        
         logfile_path = Path(log_path) / self.format_jobfile(extension)
         return str(logfile_path)
 
@@ -410,7 +428,9 @@ class HTCondorSubmitter(Submitter):
         Args:
             extension (str): file extension
         """
-        outfile_path = Path(log_dir) / self.format_jobfile(extension)
+        outfile_dir = self.select_logdir(log_dir)
+        logger.debug(f"Using {outfile_dir} for storing condor output files.")        
+        outfile_path = Path(outfile_dir) / self.format_jobfile(extension)
         return str(outfile_path)
 
     def make_submit_file(self, n_tasks):
@@ -466,8 +486,9 @@ class HTCondorSubmitter(Submitter):
 
         if not self.manual_submit:
             cmd = [self.submit_cmd, self.submit_file]
-            logger.debug(f"command is {cmd}")
-            msg = subprocess.check_output(cmd).decode()
+            logger.info(f"command is {cmd}")
+            logger.debug("Submission cmd sequence used: cd %s; %s %s; cd -"%(os.path.dirname(cmd[1]),cmd[0],os.path.basename(cmd[1])))
+            msg = subprocess.check_output("cd %s; %s %s; cd -"%(os.path.dirname(cmd[1]),cmd[0],os.path.basename(cmd[1])),stderr=subprocess.STDOUT,shell=True).decode()
             logger.info(msg)
 
             self.job_id = str(msg).split("cluster ")[-1].split(".")[0]
@@ -550,10 +571,18 @@ class HTCondorSubmitter(Submitter):
         """Removes all files from log_dir.
         Note that logs may exist outside of log_dir in case of a subclass overriding log_path.
         """
-        for f in os.listdir(log_dir):
-            ff = f"{log_dir}/{f}"
-            logger.debug(f"removing {ff}")
-            os.remove(ff)
+        assert(log_dir.find("flarestack__data")>0) # one extra check before we start recursively deleting files that log_dir doesn't point to maybe '/' :-(
+ 
+        logger.info("Removing old log files before submitting jobs.")
+        for rootdir,dirs,files in os.walk(log_dir,topdown=False):
+            for f in files: os.remove(os.path.join(rootdir,f))
+            for d in dirs: os.rmdir(os.path.join(rootdir,d))
+            
+# old code for a log dir without subdirectories
+#        for f in os.listdir(log_dir):
+#            ff = f"{log_dir}/{f}"
+#            logger.debug(f"removing {ff}")
+#            os.remove(ff)
 
 
 @Submitter.register_submitter_class("WIPAC")
