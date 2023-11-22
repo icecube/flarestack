@@ -27,14 +27,14 @@ injection_time = {
 
 injection_spatial = {
     "spatial_pdf_name": "northern_tracks_kde",
-    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/2.02/sig_E_psi_photospline.fits",
-#    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/sig_E_psi_photospline_v006_4D.fits",
+    #    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/2.02/sig_E_psi_photospline.fits",
+    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/sig_E_psi_photospline_v006_4D.fits",
 }
 
 inj_kwargs = {
     "injection_energy_pdf": injection_energy,
     "injection_sig_time_pdf": injection_time,
-    "injection_spatial_pdf": injection_spatial
+    "injection_spatial_pdf": injection_spatial,
 }
 
 
@@ -43,7 +43,7 @@ llh_spatial = injection_spatial
 llh_energy = injection_energy
 
 llh_kwargs = {
-    "llh_name": "standard",
+    "llh_name": "standard_kde_enabled",
     "llh_energy_pdf": llh_energy,
     "llh_spatial_pdf": llh_spatial,
     "llh_sig_time_pdf": llh_time,
@@ -81,11 +81,11 @@ for sindec in sindecs:
         "n_trials": 10,
         "n_steps": 15,
     }
-    if len(sys.argv)>1 and sys.argv[1]=="--run-jobs":
+    if len(sys.argv) > 1 and sys.argv[1] == "--run-jobs":
         job_id = analyse(
             mh_dict,
             cluster=cluster,
-            n_cpu=1 if cluster else 16,
+            n_cpu=1 if cluster else 4,
             h_cpu="23:59:59",
             ram_per_core="8.0G",
             remove_old_logs=False,
@@ -95,7 +95,8 @@ for sindec in sindecs:
 
     analyses.append(mh_dict)
 
-if len(sys.argv)>1 and sys.argv[1]=="--run-jobs": wait_cluster(job_ids)
+if len(sys.argv) > 1 and sys.argv[1] == "--run-jobs":
+    wait_cluster(job_ids)
 
 sens = []
 sens_err = []

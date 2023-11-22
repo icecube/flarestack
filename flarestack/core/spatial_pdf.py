@@ -12,6 +12,7 @@ from photospline import SplineTable
 
 logger = logging.getLogger(__name__)
 
+
 class SpatialPDF:
     """General SpatialPDF holder class. Has separate signal and background
     spatial PDF objects.
@@ -198,55 +199,70 @@ class CircularGaussian(SignalSpatialPDF):
         )
 
         return space_term
-        
+
 
 @SignalSpatialPDF.register_subclass("northern_tracks_kde")
 class NorthernTracksKDE(SignalSpatialPDF):
-    """Spatial PDF class for use with the KDE-smoothed MC PDFs introduced for the 10-yr NT analysis. 
+    """Spatial PDF class for use with the KDE-smoothed MC PDFs introduced for the 10-yr NT analysis.
     Current limitation: In the NT analysis, this PDF depends on the spectral index gamma . Here
-    a fixed gamma is used (either by setting 'spatial_pdf_data' to the location of the 
+    a fixed gamma is used (either by setting 'spatial_pdf_data' to the location of the
     4D-photospline-tables of the PDF and 'spatial_pdf_index' to the preferred gamma value, or
     (more efficiently) setting 'spatial_pdf_data' directly to the corresponding 3D-spline table.
     """
-     
+
     KDEspline = None
     SplineIs4D = False
 
     def __init__(self, spatial_pdf_dict):
         super().__init__(spatial_pdf_dict)
-        assert("spatial_pdf_data" in spatial_pdf_dict.keys() and os.path.exists(spatial_pdf_dict["spatial_pdf_data"]))
+        assert "spatial_pdf_data" in spatial_pdf_dict.keys() and os.path.exists(
+            spatial_pdf_dict["spatial_pdf_data"]
+        )
         KDEfile = spatial_pdf_dict["spatial_pdf_data"]
-        
-        NorthernTracksKDE.KDEspline = SplineTable(KDEfile)
-        if (NorthernTracksKDE.KDEspline.ndim == 3): NorthernTracksKDE.SplineIs4D=  False
-        elif (NorthernTracksKDE.KDEspline.ndim == 4): NorthernTracksKDE.SplineIs4D = True
-        else: raise RuntimeError(f"{KDEfile} does not seem to be a valid photospline table for the PSF")
-        
-        logger.info("Using KDE spatial PDF from file {0}.".format(KDEfile))
-        
 
-    def _inverse_cdf(sigma,logE,gamma,npoints=100):
-        psi_range=np.linspace(0.001,0.5,npoints)
+        NorthernTracksKDE.KDEspline = SplineTable(KDEfile)
+        if NorthernTracksKDE.KDEspline.ndim == 3:
+            NorthernTracksKDE.SplineIs4D = False
+        elif NorthernTracksKDE.KDEspline.ndim == 4:
+            NorthernTracksKDE.SplineIs4D = True
+        else:
+            raise RuntimeError(
+                f"{KDEfile} does not seem to be a valid photospline table for the PSF"
+            )
+
+        logger.info("Using KDE spatial PDF from file {0}.".format(KDEfile))
+
+    def _inverse_cdf(sigma, logE, gamma, npoints=100):
+        psi_range = np.linspace(0.001, 0.5, npoints)
         d_psi = psi_range[1] - psi_range[0]
         if NorthernTracksKDE.SplineIs4D:
-            psi_pdf =  d_psi/(log(10)*psi_range)*self.KDEspline.evaluate_simple([log10(sigma),logE,log10(psi_range),NorthernTracksKDE.gamma])
+            psi_pdf = (
+                d_psi
+                / (log(10) * psi_range)
+                * self.KDEspline.evaluate_simple(
+                    [log10(sigma), logE, log10(psi_range), NorthernTracksKDE.gamma]
+                )
+            )
         else:
-            psi_pdf =  d_psi/(log(10)*psi_range)*self.KDEspline.evaluate_simple([log10(sigma),logE,log10(psi_range)])
-        psi_cdf = np.insert(psi_pdf.cumsum(),0,0)
-        psi_range = np.insert(psi_range,0,0)
+            psi_pdf = (
+                d_psi
+                / (log(10) * psi_range)
+                * self.KDEspline.evaluate_simple([log10(sigma), logE, log10(psi_range)])
+            )
+        psi_cdf = np.insert(psi_pdf.cumsum(), 0, 0)
+        psi_range = np.insert(psi_range, 0, 0)
         psi_cdf /= psi_cdf[-1]
-        psi_cdf_unique,unique_indices = np.unique(psi_cdf,return_index=True)
-        psi_range_unique =psi_range[unique_indices]
-        return interp1d(psi_cdf_unique,psi_range_unique,'cubic')
-    
-    
+        psi_cdf_unique, unique_indices = np.unique(psi_cdf, return_index=True)
+        psi_range_unique = psi_range[unique_indices]
+        return interp1d(psi_cdf_unique, psi_range_unique, "cubic")
+
     def simulate_distribution(self, source, data, gamma=2.0):
         nevents = len(data)
-        phi = np.random.rand(nevents)*2. * np.pi
+        phi = np.random.rand(nevents) * 2.0 * np.pi
         distance = np.random.rand(nevents)
         for _i in range(nevents):
-             event_icdf = self._inverse_cdf(data["sigma"][_i],data["logE"][_i], gamma)
-             distance = event_icdf(distance)
+            event_icdf = self._inverse_cdf(data["sigma"][_i], data["logE"][_i], gamma)
+            distance = event_icdf(distance)
 
         data["ra"] = np.pi + distance * np.cos(phi)
         data["dec"] = distance * np.sin(phi)
@@ -264,25 +280,38 @@ class NorthernTracksKDE(SignalSpatialPDF):
     @staticmethod
     def signal_spatial(source, cut_data, gamma=2.0):
         """Calculates the angular distance between the source and the
-        coincident dataset. This class provides an interface for the KDE-smoothed MC PDF introduced for the 10yr NT analysis. 
+        coincident dataset. This class provides an interface for the KDE-smoothed MC PDF introduced for the 10yr NT analysis.
         Returns the value of the PDF at the given distances between the source and the events.
 
         :param source: Single Source
         :param cut_data: Subset of Dataset with coincident events
         :return: Array of Spatial PDF values
         """
+
+        # logger.debug(f"signal_spatial called with gamma={gamma}.")
+
         distance = angular_distance(
             cut_data["ra"], cut_data["dec"], source["ra_rad"], source["dec_rad"]
         )
 
         if NorthernTracksKDE.SplineIs4D:
-           space_term = NorthernTracksKDE.KDEspline.evaluate_simple([np.log10(cut_data["sigma"]),cut_data["logE"],np.log10(distance),gamma])
+            space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
+                [
+                    np.log10(cut_data["sigma"]),
+                    cut_data["logE"],
+                    np.log10(distance),
+                    gamma,
+                ]
+            )
         else:
-           space_term = NorthernTracksKDE.KDEspline.evaluate_simple([np.log10(cut_data["sigma"]),cut_data["logE"],np.log10(distance)])
- 
-        space_term /= 2*np.pi*np.log(10)*(distance**2)
+            space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
+                [np.log10(cut_data["sigma"]), cut_data["logE"], np.log10(distance)]
+            )
+
+        space_term /= 2 * np.pi * np.log(10) * (distance**2)
 
         return space_term
+
 
 # ==============================================================================
 # Background Spatial PDFs
