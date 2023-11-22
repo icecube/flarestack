@@ -40,9 +40,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
           environment-file: conda_env.yml
           activate-environment: flarestack
+
+      # Display the python version and conda info
+      - name: Display Python version and Conda info
         run: |
-          conda list
-          conda info -a
+            python --version
+            conda --version
+            conda config --show-sources
+            conda config --show
+            conda list
+            conda info -a
 
      # Setting up dependencies
       - name: Install dependencies
