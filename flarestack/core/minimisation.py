@@ -1240,7 +1240,7 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
     but much less burdensome for memory.
     """
 
-    compatible_llh = ["standard_matrix","std_matrix_kde_enabled"]
+    compatible_llh = ["standard_matrix", "std_matrix_kde_enabled"]
     compatible_negative_n_s = False
     compatible_injectors = ["low_memory_injector"]
 
@@ -1271,7 +1271,7 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
 
 @MinimisationHandler.register_subclass("fit_weights")
 class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
-    compatible_llh = ["spatial", "fixed_energy", "standard","standard_kde_enabled"]
+    compatible_llh = ["spatial", "fixed_energy", "standard", "standard_kde_enabled"]
     compatible_negative_n_s = False
 
     def __init__(self, mh_dict):
