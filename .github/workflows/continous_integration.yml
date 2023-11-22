@@ -33,11 +33,16 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      # Set up the python versions
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      # Set up the python versions and install conda dependencies
+      - name: Install conda dependencies
+        uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
+          environment-file: conda_env.yml
+          activate-environment: flarestack
+        run: |
+          conda list
+          conda info -a
 
      # Setting up dependencies
       - name: Install dependencies
