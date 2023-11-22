@@ -45,6 +45,7 @@ jobs:
       # Display the python version and conda info
       - name: Display Python version and Conda info
         run: |
+            conda activate flarestack
             python --version
             conda --version
             conda config --show-sources
