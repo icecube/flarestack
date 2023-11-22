@@ -22,7 +22,11 @@ from matplotlib.colors import Normalize, ListedColormap
 import matplotlib as mpl
 from flarestack.core.time_pdf import TimePDF, Box, Steady
 from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
-from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
+from flarestack.utils.catalogue_loader import (
+    load_catalogue,
+    distance_scaled_weight,
+    distance_scaled_weight_sum,
+)
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
 
 logger = logging.getLogger(__name__)
@@ -619,26 +623,20 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     def make_season_weight(self, params, season):
         src = self.sources
 
-        weight_scale = calculate_source_weight(src)
-
-        # dist_weight = src["distance_mpc"] ** -2
-        # base_weight = src["base_weight"]
+        weight_norm = distance_scaled_weight_sum(src)
 
         llh = self.get_likelihood(season.season_name)
-        acc = []
 
-        time_weights = []
-        source_weights = []
+        acc, time_weights = [], []
 
         for source in src:
             time_weights.append(llh.sig_time_pdf.effective_injection_time(source))
             acc.append(llh.acceptance(source, params))
-            source_weights.append(calculate_source_weight(source) / weight_scale)
 
         time_weights = np.array(time_weights)
-        source_weights = np.array(source_weights)
-
         acc = np.array(acc).T[0]
+
+        source_weights = distance_scaled_weight(src) / weight_norm
 
         w = acc * time_weights
         w *= source_weights
