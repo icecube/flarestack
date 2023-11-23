@@ -1,32 +1,60 @@
-from flarestack.data.icecube.ic_season import IceCubeDataset, get_dataset_dir
+from flarestack.data.icecube.ic_season import IceCubeDataset, icecube_dataset_dir
 from flarestack.data.icecube.northern_tracks import (
     NTSeasonNewStyle,
     get_diffuse_binning,
 )
 
-icecube_dataset_dir = get_dataset_dir()
-
-nt_data_dir = icecube_dataset_dir + "northern_tracks/version-005-p00/"
-
-nt_v005_p00 = IceCubeDataset()
+nt_data_dir = icecube_dataset_dir / "northern_tracks/version-005-p00"
 
 sample_name = "northern_tracks_v005_p00"
+
+dataset_name = "icecube." + sample_name
+
+nt_v005_p00 = IceCubeDataset(name=dataset_name)
+
+IC86_start_year = 2011
+IC86_stop_year = 2019
+IC86_timerange = range(IC86_start_year, IC86_stop_year + 1)
+
+seasons = [f"IC86_{yr}" for yr in IC86_timerange]
+
+# ==================================
+# Add individual years as subseasons
+# ==================================
 
 
 def generate_diffuse_season(name):
     season = NTSeasonNewStyle(
         season_name=name,
         sample_name=sample_name,
-        exp_path=nt_data_dir + f"{name}_exp.npy",
-        mc_path=nt_data_dir + "IC86_pass2_MC.npy",
-        grl_path=nt_data_dir + f"GRL/{name}_exp.npy",
+        exp_path=nt_data_dir / f"{name}_exp.npy",
+        mc_path=nt_data_dir / "IC86_pass2_MC.npy",
+        grl_path=nt_data_dir / f"GRL/{name}_exp.npy",
         sin_dec_bins=get_diffuse_binning(name)[0],
         log_e_bins=get_diffuse_binning(name)[1],
     )
-    nt_v005_p00.add_season(season)
+    return season
 
-
-seasons = [f"IC86_201{i}" for i in [1, 2, 3, 4, 5, 6, 7, 8, 9]]
 
 for season in seasons:
-    generate_diffuse_season(season)
+    subseason = generate_diffuse_season(season)
+    nt_v005_p00.add_subseason(subseason)
+
+
+# ==================================
+# Add combo season
+# ==================================
+
+name = "IC86_1-9"
+
+combo_season = NTSeasonNewStyle(
+    season_name=name,
+    sample_name=sample_name,
+    exp_path=[nt_data_dir / f"IC86_{yr}_exp.npy" for yr in IC86_timerange],
+    mc_path=nt_data_dir / "IC86_pass2_MC.npy",
+    grl_path=[nt_data_dir / f"GRL/IC86_{yr}_exp.npy" for yr in IC86_timerange],
+    sin_dec_bins=get_diffuse_binning(name)[0],
+    log_e_bins=get_diffuse_binning(name)[1],
+)
+
+nt_v005_p00.add_season(combo_season)
