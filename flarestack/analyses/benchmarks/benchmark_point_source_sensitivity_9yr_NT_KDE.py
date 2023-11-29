@@ -1,6 +1,6 @@
 import numpy as np
 from flarestack import ResultsHandler, MinimisationHandler
-from flarestack.data.icecube import nt_v005_p01
+from flarestack.data.icecube import nt_v005_p00
 from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.icecube_utils.reference_sensitivity import (
@@ -50,7 +50,7 @@ llh_kwargs = {
     "negative_ns_bool": True,
 }
 
-name = "analyses/benchmarks/ps_sens_10yr_NT_KDE"
+name = "analyses/benchmarks/ps_sens_9yr_NT_KDE"
 
 # sindecs = np.linspace(0.90, -0.90, 3)
 sindecs = np.linspace(0.90, -0.10, 11)
@@ -72,7 +72,7 @@ for sindec in sindecs:
     mh_dict = {
         "name": subname,
         "mh_name": "fixed_weights",
-        "dataset": nt_v005_p01,
+        "dataset": nt_v005_p00,
         "catalogue": cat_path,
         "inj_dict": inj_kwargs,
         "llh_dict": llh_kwargs,
@@ -113,7 +113,7 @@ print(sens)
 print(disc_pots)
 print(sens_err)
 
-with open(plot_output_dir(name) + "/PS10yrKDE.pkl", "wb") as pf:
+with open(plot_output_dir(name) + "/PS9yrKDE.pkl", "wb") as pf:
     pickle.dump(
         {
             "sin_dec": sindecs,
@@ -191,7 +191,7 @@ plt.subplots_adjust(hspace=0.001)
 
 ax1.legend(loc="upper right", fancybox=True, framealpha=1.0)
 
-savefile = plot_output_dir(name) + "/PS10yrKDE.pdf"
+savefile = plot_output_dir(name) + "/PS9yrKDE.pdf"
 
 logging.info(f"Saving to {savefile}")
 

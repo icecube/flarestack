@@ -27,7 +27,7 @@ injection_time = {
 
 injection_spatial = {
     "spatial_pdf_name": "northern_tracks_kde",
-    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/2.02/sig_E_psi_photospline.fits",
+    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/sig_E_psi_photospline_v006_4D.fits",
 }
 
 inj_kwargs = {
@@ -42,7 +42,7 @@ llh_spatial = injection_spatial
 llh_energy = injection_energy
 
 llh_kwargs = {
-    "llh_name": "standard",
+    "llh_name": "standard_kde_enabled",
     "llh_energy_pdf": llh_energy,
     "llh_spatial_pdf": llh_spatial,
     "llh_sig_time_pdf": llh_time,
@@ -50,10 +50,10 @@ llh_kwargs = {
     "negative_ns_bool": True,
 }
 
-name = "analyses/benchmarks/ps_sens_10yr_NT_KDE"
+name = "analyses/benchmarks/ps_sens_10yr_NT_KDE+gamma_v2"
 
 # sindecs = np.linspace(0.90, -0.90, 3)
-sindecs = np.linspace(0.90, -0.10, 11)
+sindecs = np.linspace(0.95, -0.05, 11)
 # sindecs = np.linspace(0.5, -0.5, 3)
 #
 analyses = []
@@ -67,7 +67,7 @@ for sindec in sindecs:
 
     subname = name + "/sindec=" + "{0:.2f}".format(sindec) + "/"
 
-    scale = (flux_to_k(reference_sensitivity(sindec)) * 3)[0]
+    scale = (flux_to_k(reference_sensitivity(sindec)) * 2)[0]
 
     mh_dict = {
         "name": subname,
@@ -77,7 +77,7 @@ for sindec in sindecs:
         "inj_dict": inj_kwargs,
         "llh_dict": llh_kwargs,
         "scale": scale,
-        "n_trials": 1000,
+        "n_trials": 2000,
         "n_steps": 15,
     }
 
@@ -109,11 +109,7 @@ for rh_dict in analyses:
     sens_err.append(rh.sensitivity_err)
     disc_pots.append(rh.disc_potential)
 
-print(sens)
-print(disc_pots)
-print(sens_err)
-
-with open(plot_output_dir(name) + "/PS10yrKDE.pkl", "wb") as pf:
+with open(plot_output_dir(name) + "/PS10yrKDE+gamma.pkl", "wb") as pf:
     pickle.dump(
         {
             "sin_dec": sindecs,
@@ -191,7 +187,7 @@ plt.subplots_adjust(hspace=0.001)
 
 ax1.legend(loc="upper right", fancybox=True, framealpha=1.0)
 
-savefile = plot_output_dir(name) + "/PS10yrKDE.pdf"
+savefile = plot_output_dir(name) + "/PS10yrKDE+gamma.pdf"
 
 logging.info(f"Saving to {savefile}")
 

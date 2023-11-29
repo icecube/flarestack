@@ -26,14 +26,14 @@ injection_time = {
 
 injection_spatial = {
     "spatial_pdf_name": "northern_tracks_kde",
-    "spatial_pdf_index": None, # if 'None', use 3D spline with fixed gamma
-    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/2.02/sig_E_psi_photospline.fits"
+    "spatial_pdf_index": None,  # if 'None', use 3D spline with fixed gamma
+    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/2.02/sig_E_psi_photospline.fits",
 }
 
 inj_kwargs = {
     "injection_energy_pdf": injection_energy,
     "injection_sig_time_pdf": injection_time,
-    "injection_spatial_pdf": injection_spatial
+    "injection_spatial_pdf": injection_spatial,
 }
 
 
@@ -82,18 +82,18 @@ for sindec in sindecs:
         "n_steps": 15,
     }
 
-#    job_id = analyse(
-#        mh_dict,
-#        cluster=cluster,
-#        n_cpu=1 if cluster else 16,
-#        h_cpu="23:59:59",
-#        ram_per_core="8.0G",
-#    )
-#    job_ids.append(job_id)
+    #    job_id = analyse(
+    #        mh_dict,
+    #        cluster=cluster,
+    #        n_cpu=1 if cluster else 16,
+    #        h_cpu="23:59:59",
+    #        ram_per_core="8.0G",
+    #    )
+    #    job_ids.append(job_id)
 
     analyses.append(mh_dict)
 
-#wait_cluster(job_ids)
+# wait_cluster(job_ids)
 
 sens = []
 sens_err = []

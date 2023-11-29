@@ -31,7 +31,7 @@ injection_spatial = {
 inj_kwargs = {
     "injection_energy_pdf": injection_energy,
     "injection_sig_time_pdf": injection_time,
-    "injection_spatial_pdf": injection_spatial
+    "injection_spatial_pdf": injection_spatial,
 }
 
 
@@ -50,7 +50,7 @@ llh_kwargs = {
 
 name = "analyses/benchmarks/ps_sens_10yr"
 
-#sindecs = np.linspace(0.90, 0.00, 10)
+# sindecs = np.linspace(0.90, 0.00, 10)
 sindecs = np.linspace(0.90, -0.90, 19)
 # sindecs = np.linspace(0.5, -0.5, 3)
 #
@@ -80,18 +80,18 @@ for sindec in sindecs:
         "n_steps": 15,
     }
 
-#    job_id = analyse(
-#        mh_dict,
-#        cluster=cluster,
-#        n_cpu=1 if cluster else 16,
-#        h_cpu="23:59:59",
-#        ram_per_core="8.0G",
-#    )
-#    job_ids.append(job_id)
+    #    job_id = analyse(
+    #        mh_dict,
+    #        cluster=cluster,
+    #        n_cpu=1 if cluster else 16,
+    #        h_cpu="23:59:59",
+    #        ram_per_core="8.0G",
+    #    )
+    #    job_ids.append(job_id)
 
     analyses.append(mh_dict)
 
-#wait_cluster(job_ids)
+# wait_cluster(job_ids)
 
 sens = []
 sens_err = []

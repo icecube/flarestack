@@ -27,7 +27,7 @@ injection_time = {
 
 injection_spatial = {
     "spatial_pdf_name": "northern_tracks_kde",
-    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/2.02/sig_E_psi_photospline.fits",
+    "spatial_pdf_data": "/lustre/fs22/group/icecube/data_mirror/northern_tracks/version-005-p01/KDE_PDFs_v007/IC86_pass2/sig_E_psi_photospline_v006_4D.fits",
 }
 
 inj_kwargs = {
@@ -42,7 +42,7 @@ llh_spatial = injection_spatial
 llh_energy = injection_energy
 
 llh_kwargs = {
-    "llh_name": "standard",
+    "llh_name": "standard_kde_enabled",
     "llh_energy_pdf": llh_energy,
     "llh_spatial_pdf": llh_spatial,
     "llh_sig_time_pdf": llh_time,
@@ -50,7 +50,7 @@ llh_kwargs = {
     "negative_ns_bool": True,
 }
 
-name = "analyses/benchmarks/ps_sens_10yr_NT_KDE"
+name = "analyses/benchmarks/ps_sens_10yr_NT_KDE+gamma"
 
 # sindecs = np.linspace(0.90, -0.90, 3)
 sindecs = np.linspace(0.90, -0.10, 11)
@@ -108,10 +108,6 @@ for rh_dict in analyses:
     sens.append(rh.sensitivity)
     sens_err.append(rh.sensitivity_err)
     disc_pots.append(rh.disc_potential)
-
-print(sens)
-print(disc_pots)
-print(sens_err)
 
 with open(plot_output_dir(name) + "/PS10yrKDE.pkl", "wb") as pf:
     pickle.dump(
@@ -191,7 +187,7 @@ plt.subplots_adjust(hspace=0.001)
 
 ax1.legend(loc="upper right", fancybox=True, framealpha=1.0)
 
-savefile = plot_output_dir(name) + "/PS10yrKDE.pdf"
+savefile = plot_output_dir(name) + "/PS10yrKDE+gamma.pdf"
 
 logging.info(f"Saving to {savefile}")
 
