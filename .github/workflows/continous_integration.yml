@@ -33,14 +33,29 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      # Set up the python versions
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      # Set up the python versions and install conda dependencies
+      - name: Install conda dependencies
+        uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
+          environment-file: conda_env.yml
+          activate-environment: flarestack
+          auto-activate-base: false
+
+      # Display the python version and conda info
+      - name: Display Python version and Conda info
+        shell: bash -el {0}
+        run: |
+            python --version
+            conda --version
+            conda config --show-sources
+            conda config --show
+            conda list
+            conda info -a
 
      # Setting up dependencies
       - name: Install dependencies
+        shell: bash -el {0}
         run: |
           python -m pip install --upgrade pip
           python -m pip install poetry
@@ -48,12 +63,14 @@ jobs:
 
       # Runs a set of commands using the runners shell
       - name: Test the code
+        shell: bash -el {0}
         run: |
           poetry run coverage run --concurrency=multiprocessing -m unittest discover tests/
           poetry run coverage combine
 
       - name: Run Coveralls
         if: ${{ success() }}
+        shell: bash -el {0}
         run: |
           poetry run coveralls --service=github
         env:
@@ -63,10 +80,12 @@ jobs:
         run: echo "Tag is ${{ github.ref }}, Deploy is ${{ startsWith(github.ref, 'refs/tags/') && matrix.python-version == 3.9}}"
 
       - name: Build a binary wheel and a source tarball
+        shell: bash -el {0}
         run: python -m poetry build
 
       - name: Publish distribution 📦 to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') && success() && matrix.python-version == 3.9}}
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
+        shell: bash -el {0}
         run: poetry publish

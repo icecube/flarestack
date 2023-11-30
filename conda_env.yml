@@ -1,0 +1,6 @@
+name: flarestack
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - photospline=2.1.0

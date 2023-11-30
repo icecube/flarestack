@@ -1063,6 +1063,101 @@ class StandardLLH(FixedEnergyLLH):
         return res_dict
 
 
+@LLH.register_subclass("standard_kde_enabled")
+class StandardKDEEnabledLLH(StandardLLH):
+    def create_kwargs(self, data, pull_corrector, weight_f=None):
+        kwargs = dict()
+
+        kwargs["n_all"] = float(len(data))
+        SoB_spacetime = []
+        SoB_energy_cache = []
+
+        assumed_background_mask = np.ones(len(data), dtype=bool)
+
+        for i, source in enumerate(self.sources):
+            s_mask = self.select_spatially_coincident_data(data, [source])
+
+            coincident_data = data[s_mask].copy()
+
+            if len(coincident_data) > 0:
+                # Only bother accepting neutrinos where the spatial
+                # likelihood is greater than 1e-21. This prevents 0s
+                # appearing in dynamic pull corrections, but also speeds
+                # things up (those neutrinos won't contribute anything to the
+                # likelihood!)
+
+                sig = self.signal_pdf(source, coincident_data)
+                nonzero_mask = sig > spatial_mask_threshold
+
+                s_mask[s_mask] *= nonzero_mask
+
+                assumed_background_mask *= ~s_mask
+                coincident_data = data[s_mask]
+
+                if len(coincident_data) > 0:
+                    # SoB_pdf = lambda x: self.signal_pdf(
+                    #    source, x
+                    # ) / self.background_pdf(source, x)
+                    SoB_pdf = lambda dataset, gamma: self.signal_pdf(
+                        source, dataset, gamma
+                    ) / self.background_pdf(source, dataset)
+
+                    spatial_cache = pull_corrector.create_spatial_cache(
+                        coincident_data, SoB_pdf
+                    )
+
+                    SoB_spacetime.append(spatial_cache)
+
+                    energy_cache = self.create_SoB_energy_cache(coincident_data)
+
+                    SoB_energy_cache.append(energy_cache)
+
+                else:
+                    SoB_spacetime.append([])
+                    SoB_energy_cache.append([])
+
+            else:
+                SoB_spacetime.append([])
+                SoB_energy_cache.append([])
+
+        kwargs["n_coincident"] = np.sum(~assumed_background_mask)
+
+        # SoB_spacetime contains one list per source.
+        # The list contains one value for each associated neutrino.
+        kwargs["SoB_spacetime_cache"] = SoB_spacetime
+        kwargs["SoB_energy_cache"] = SoB_energy_cache
+        kwargs["pull_corrector"] = pull_corrector
+
+        return kwargs
+
+    # ==========================================================================
+    # Signal PDF
+    # ==========================================================================
+
+    def signal_pdf(self, source, cut_data, gamma=2.0):
+        """Calculates the value of the signal spatial PDF for a given source
+        for each event in the coincident data subsample. If there is a Time PDF
+        given, also calculates the value of the signal Time PDF for each event.
+        Returns either the signal spatial PDF values, or the product of the
+        signal spatial and time PDFs.
+
+        :param source: Source to be considered
+        :param cut_data: Subset of Dataset with coincident events
+        :return: Array of Signal Spacetime PDF values
+        """
+        space_term = self.spatial_pdf.signal_spatial(source, cut_data, gamma)
+
+        if hasattr(self, "sig_time_pdf"):
+            time_term = self.sig_time_pdf.f(cut_data["time"], source)
+
+            sig_pdf = space_term * time_term
+
+        else:
+            sig_pdf = space_term
+
+        return sig_pdf
+
+
 @LLH.register_subclass("standard_overlapping")
 class StandardOverlappingLLH(StandardLLH):
     def create_kwargs(self, data, pull_corrector, weight_f=None):
@@ -1251,6 +1346,125 @@ class StandardMatrixLLH(StandardOverlappingLLH):
         kwargs["pull_corrector"] = pull_corrector
 
         return kwargs
+
+
+@LLH.register_subclass("std_matrix_kde_enabled")
+class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
+    """Similar to StandardMatrixLLH, but passing gamma to the spatial_pdf,
+    so the gamma-dependent KDE-implementation of the PSF can be used
+    """
+
+    def create_kwargs(self, data, pull_corrector, weight_f=None):
+        if weight_f is None:
+            raise Exception(
+                "Weight function not passed, but is required for "
+                "standard_overlapping LLH functions."
+            )
+
+        coincidence_matrix = sparse.lil_matrix(
+            (len(self.sources), len(data)), dtype=bool
+        )
+
+        kwargs = dict()
+
+        kwargs["n_all"] = float(len(data))
+
+        sources = self.sources
+
+        for i, source in enumerate(sources):
+            s_mask = self.select_spatially_coincident_data(data, [source])
+
+            coincident_data = data[s_mask]
+
+            if len(coincident_data) > 0:
+                # Only bother accepting neutrinos where the spacial
+                # likelihood is greater than 1e-21. This prevents 0s
+                # appearing in dynamic pull corrections, but also speeds
+                # things up (those neutrinos won't contribute anything to the
+                # likelihood!)
+
+                sig = self.signal_pdf(source, coincident_data)
+                nonzero_mask = sig > spatial_mask_threshold
+                s_mask[s_mask] *= nonzero_mask
+
+                coincidence_matrix[i] = s_mask
+
+        # Using Sparse matrixes
+        coincident_nu_mask = np.sum(coincidence_matrix, axis=0) > 0
+        coincident_nu_mask = np.array(coincident_nu_mask).ravel()
+        coincident_source_mask = np.sum(coincidence_matrix, axis=1) > 0
+        coincident_source_mask = np.array(coincident_source_mask).ravel()
+
+        coincidence_matrix = (
+            coincidence_matrix[coincident_source_mask].T[coincident_nu_mask].T
+        )
+        coincidence_matrix.tocsr()
+
+        coincident_data = data[coincident_nu_mask]
+        coincident_sources = sources[coincident_source_mask]
+
+        season_weight = lambda x: weight_f([1.0, x], self.season)[
+            coincident_source_mask
+        ]
+
+        SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
+
+        def joint_SoB(dataset, gamma):
+            weight = np.array(season_weight(gamma))
+            weight /= np.sum(weight)
+
+            # create an empty lil_matrix (good for matrix creation) with shape
+            # of coincidence_matrix and type float
+            SoB_matrix_sparse = sparse.lil_matrix(coincidence_matrix.shape, dtype=float)
+
+            for i, src in enumerate(coincident_sources):
+                mask = (coincidence_matrix.getrow(i)).toarray()[0]
+                SoB_matrix_sparse[i, mask] = (
+                    weight[i]
+                    * self.signal_pdf(src, dataset[mask], gamma)
+                    / self.background_pdf(src, dataset[mask])
+                )
+
+            SoB_sum = SoB_matrix_sparse.sum(axis=0)
+            return_value = np.array(SoB_sum).ravel()
+
+            return return_value
+
+        SoB_spacetime = pull_corrector.create_spatial_cache(coincident_data, joint_SoB)
+
+        kwargs["n_coincident"] = np.sum(coincident_nu_mask)
+        kwargs["SoB_spacetime_cache"] = SoB_spacetime
+        kwargs["SoB_energy_cache"] = SoB_energy_cache
+        kwargs["pull_corrector"] = pull_corrector
+
+        return kwargs
+
+    # ==========================================================================
+    # Signal PDF
+    # ==========================================================================
+
+    def signal_pdf(self, source, cut_data, gamma=2.0):
+        """Calculates the value of the signal spatial PDF for a given source
+        for each event in the coincident data subsample. If there is a Time PDF
+        given, also calculates the value of the signal Time PDF for each event.
+        Returns either the signal spatial PDF values, or the product of the
+        signal spatial and time PDFs.
+
+        :param source: Source to be considered
+        :param cut_data: Subset of Dataset with coincident events
+        :return: Array of Signal Spacetime PDF values
+        """
+        space_term = self.spatial_pdf.signal_spatial(source, cut_data, gamma)
+
+        if hasattr(self, "sig_time_pdf"):
+            time_term = self.sig_time_pdf.f(cut_data["time"], source)
+
+            sig_pdf = space_term * time_term
+
+        else:
+            sig_pdf = space_term
+
+        return sig_pdf
 
 
 def generate_dynamic_flare_class(season, sources, llh_dict):

@@ -60,6 +60,18 @@ yourself, and still enable you to import flarestack.
 If you do want to contribute to _flarestack_, you can check out some guidelines [here](https://github.com/icecube/flarestack/blob/master/CONTRIBUTING.md).
 
 
+### Using KDE PDFs
+If you want to use the KDE spatial PDFs you need to install `photospline` using `conda`.
+`flarestack` ships with a `conda_env.yml` file that pins the correct `photospline` version. 
+Find your `flarestack` directory (either in your `site-packages` directory if you followed Option A or in your `git` clone if you followed Option B) and execute:
+
+```shell
+conda env create -f conda_env.yml
+```
+
+Alternatively, You can try and install the latest `photospline` version with as described [here](https://anaconda.org/conda-forge/photospline).
+
+
 ### Right, anyway, I've now downloaded *flarestack*. Can I use it right away?
  
 You can get started with *flarestack* immediately using public IceCube datasets provided as part of the code. You can simply run scripts such as those under `/flarestack/analyses/`, and do your science!
