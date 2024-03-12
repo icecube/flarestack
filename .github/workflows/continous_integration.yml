@@ -69,8 +69,9 @@ jobs:
           poetry run coverage combine
 
       - name: quick coverage report
+        shell: bash -el {0}
         run: |
-          ls -l
+          ls -la
           poetry run coverage report --data-file .coverage
 
       - name: Run Coveralls
