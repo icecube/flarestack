@@ -68,10 +68,16 @@ jobs:
           poetry run coverage run --concurrency=multiprocessing -m unittest discover tests/
           poetry run coverage combine
 
+      - name: quick coverage report
+        run: |
+          ls -l
+          poetry run coverage report --data-file .coverage
+
       - name: Run Coveralls
         if: ${{ success() }}
         uses: coverallsapp/github-action@v2
         with:
+          file: .coverage
           flag-name: python${{ join(matrix.*, '-') }}
           parallel: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
