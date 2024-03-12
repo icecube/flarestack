@@ -70,11 +70,11 @@ jobs:
 
       - name: Run Coveralls
         if: ${{ success() }}
-        shell: bash -el {0}
-        run: |
-          poetry run coveralls --service=github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: xcoverallsapp/github-action@v2
+        with:
+          flag-name: run-${{ join(matrix.*, '-') }}
+          parallel: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Echo tag name
         run: echo "Tag is ${{ github.ref }}, Deploy is ${{ startsWith(github.ref, 'refs/tags/') && matrix.python-version == 3.9}}"
