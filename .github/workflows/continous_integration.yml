@@ -72,7 +72,7 @@ jobs:
         if: ${{ success() }}
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: run-${{ join(matrix.*, '-') }}
+          flag-name: python${{ join(matrix.*, '-') }}
           parallel: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -89,3 +89,15 @@ jobs:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
         shell: bash -el {0}
         run: poetry publish
+
+  finish:
+    needs: test
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true
+          carryforward: "python3.9,python3.10,python3.11"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
