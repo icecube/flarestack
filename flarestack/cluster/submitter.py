@@ -464,6 +464,9 @@ class HTCondorSubmitter(Submitter):
     def submit_cluster(self, mh_dict):
         """Submits the job to the cluster"""
 
+        # copy the dictionary in order to avoid overriding the original
+        mh_dict = copy.deepcopy(mh_dict)
+
         if self.remove_old_logs:
             self.clear_log_dir()
 
