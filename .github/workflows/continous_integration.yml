@@ -67,6 +67,7 @@ jobs:
         run: |
           poetry run coverage run --concurrency=multiprocessing -m unittest discover tests/
           poetry run coverage combine
+          poetry run coverage xml
 
       - name: quick coverage report
         shell: bash -el {0}
@@ -78,10 +79,11 @@ jobs:
         if: ${{ success() }}
         uses: coverallsapp/github-action@v2
         with:
-          file: .coverage
+          file: coverage.xml
           flag-name: python${{ join(matrix.*, '-') }}
           parallel: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          format: cobertura
 
       - name: Echo tag name
         run: echo "Tag is ${{ github.ref }}, Deploy is ${{ startsWith(github.ref, 'refs/tags/') && matrix.python-version == 3.9}}"
