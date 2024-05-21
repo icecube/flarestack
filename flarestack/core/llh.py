@@ -702,7 +702,6 @@ class FixedEnergyLLH(LLH):
         return 2.0 * np.sum(llh_value)
 
 
-@LLH.register_subclass("standard")
 class StandardLLH(FixedEnergyLLH):
     fit_energy = True
 
