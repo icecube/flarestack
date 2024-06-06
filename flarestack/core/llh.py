@@ -702,7 +702,6 @@ class FixedEnergyLLH(LLH):
         return 2.0 * np.sum(llh_value)
 
 
-@LLH.register_subclass("standard")
 class StandardLLH(FixedEnergyLLH):
     fit_energy = True
 
@@ -1063,7 +1062,6 @@ class StandardLLH(FixedEnergyLLH):
         return res_dict
 
 
-@LLH.register_subclass("standard_kde_enabled")
 class StandardKDEEnabledLLH(StandardLLH):
     def create_kwargs(self, data, pull_corrector, weight_f=None):
         kwargs = dict()
