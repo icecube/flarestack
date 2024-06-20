@@ -238,16 +238,23 @@ class NorthernTracksKDE(SignalSpatialPDF):
         if NorthernTracksKDE.SplineIs4D:
             psi_pdf = (
                 d_psi
-                / (log(10) * psi_range)
+                / (np.log(10) * psi_range)
                 * self.KDEspline.evaluate_simple(
-                    [log10(sigma), logE, log10(psi_range), NorthernTracksKDE.gamma]
+                    [
+                        np.log10(sigma),
+                        logE,
+                        np.log10(psi_range),
+                        NorthernTracksKDE.gamma,
+                    ]
                 )
             )
         else:
             psi_pdf = (
                 d_psi
-                / (log(10) * psi_range)
-                * self.KDEspline.evaluate_simple([log10(sigma), logE, log10(psi_range)])
+                / (np.log(10) * psi_range)
+                * self.KDEspline.evaluate_simple(
+                    [np.log10(sigma), logE, np.log10(psi_range)]
+                )
             )
         psi_cdf = np.insert(psi_pdf.cumsum(), 0, 0)
         psi_range = np.insert(psi_range, 0, 0)
@@ -288,7 +295,7 @@ class NorthernTracksKDE(SignalSpatialPDF):
         :return: Array of Spatial PDF values
         """
 
-        # logger.debug(f"signal_spatial called with gamma={gamma}.")
+        # logger.info(f"signal_spatial called with gamma={gamma}.")
 
         distance = angular_distance(
             cut_data["ra"], cut_data["dec"], source["ra_rad"], source["dec_rad"]
@@ -308,7 +315,7 @@ class NorthernTracksKDE(SignalSpatialPDF):
                 [np.log10(cut_data["sigma"]), cut_data["logE"], np.log10(distance)]
             )
 
-        space_term /= 2 * np.pi * np.log(10) * (distance**2)
+        space_term /= 2 * np.pi * np.log(10) * distance * np.sin(distance)
 
         return space_term
 
