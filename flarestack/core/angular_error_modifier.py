@@ -341,7 +341,7 @@ class BaseMedianAngularErrorModifier(BaseAngularErrorModifier):
         else:
             logger.debug(f"Loading from {self.pull_name}")
 
-        with open(self.pull_name, "r") as f:
+        with open(self.pull_name, "rb") as f:
             self.pickled_data = Pickle.load(f)
 
     def pull_correct(self, f, data):
@@ -375,7 +375,7 @@ class StaticMedianPullCorrector(BaseMedianAngularErrorModifier):
 
 class DynamicMedianPullCorrector(BaseMedianAngularErrorModifier):
     def __init__(self, pull_dict):
-        BaseAngularErrorModifier.__init__(self, pull_dict)
+        BaseMedianAngularErrorModifier.__init__(self, pull_dict)
 
     def estimate_spatial(self, gamma, spatial_cache):
         return self.estimate_spatial_dynamic(gamma, spatial_cache)
@@ -406,7 +406,7 @@ class DynamicMedianPullCorrector(BaseMedianAngularErrorModifier):
             # have overlapping PDFs and you need to know the weights,
             # then you pass the key. Otherwise just evaluate as normal.
 
-            if len(inspect.getargspec(SoB_pdf)[0]) == 2:
+            if len(inspect.getfullargspec(SoB_pdf)[0]) == 2:
                 SoB = SoB_pdf(cut_data, key)
             else:
                 SoB = SoB_pdf(cut_data)
