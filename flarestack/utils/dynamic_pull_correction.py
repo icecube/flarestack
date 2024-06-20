@@ -10,7 +10,7 @@ from flarestack.utils.make_SoB_splines import get_gamma_support_points
 
 
 def get_mc(floor_dict):
-    return data_loader(floor_dict["season"]["mc_path"])
+    return data_loader(floor_dict["season"].mc_path)
 
 
 def get_pulls(mc):
