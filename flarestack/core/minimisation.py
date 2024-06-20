@@ -316,7 +316,7 @@ class MinimisationHandler(object):
     def add_angular_error_modifier(self, season):
         return BaseAngularErrorModifier.create(
             season,
-            self.llh_dict["llh_energy_pdf"],
+            self.inj_dict["injection_energy_pdf"],
             self.floor_name,
             self.pull_name,
             gamma_precision=self.llh_dict.get("gamma_precision", "flarestack"),
@@ -1213,7 +1213,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     @staticmethod
     def return_parameter_info(mh_dict):
-        params = [[1.0], [(0, 1000.0)], ["n_s"]]
+        params = [[1.0], [(0, 5000.0)], ["n_s"]]
 
         params = [
             params[i] + x for i, x in enumerate(LLH.get_parameters(mh_dict["llh_dict"]))
