@@ -283,7 +283,7 @@ def plot_expanded_negative(ts_array, path):
 
 
 def plot_background_ts_distribution(
-    ts_array, path, ts_type="Standard", ts_val=None, mock_unblind=False
+    ts_array, path, ts_type="standard", ts_val=None, mock_unblind=False
 ):
     try:
         os.makedirs(os.path.dirname(path))
