@@ -146,6 +146,14 @@ def run_multiprocess(n_cpu, mh_dict):
         del r
 
 
+def run_single_process(mh_dict):
+    logger.debug("Running single process.")
+    mh = MinimisationHandler.create(mh_dict)
+    scale_range, n_trials = mh.trial_params(mh_dict)
+    for scale in scale_range:
+        mh.run(n_trials=n_trials, scale=scale)
+
+
 if __name__ == "__main__":
     import os
 
@@ -167,4 +175,7 @@ if __name__ == "__main__":
     with open(cfg.file, "rb") as f:
         mh_dict = pickle.load(f)
 
-    run_multiprocess(n_cpu=cfg.n_cpu, mh_dict=mh_dict)
+    if cfg.n_cpu == 1:
+        run_single_process(mh_dict)
+    else:
+        run_multiprocess(n_cpu=cfg.n_cpu, mh_dict=mh_dict)
