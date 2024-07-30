@@ -126,7 +126,7 @@ col = cmap(all_sob / max(all_sob))
 
 time_path = illustration_dir + "time.pdf"
 
-f, (ax1, ax2) = plt.subplots(2, sharex=True)
+f, (ax1, ax2) = plt.subplots(2, sharex=True)  # type: ignore
 ax1.bar(all_t, height=all_sob, width=3, color=col)
 ax1.axhline(1.0, linestyle="--", color="k")
 ax1.set_xlabel("Time (days)")
