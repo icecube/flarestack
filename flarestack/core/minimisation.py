@@ -359,8 +359,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     compatible_llh = [
         "spatial",
         "fixed_energy",
-        "standard",
-        "standard_kde_enabled",
         "standard_overlapping",
         "standard_matrix",
         "std_matrix_kde_enabled",
@@ -1271,7 +1269,7 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
 
 @MinimisationHandler.register_subclass("fit_weights")
 class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
-    compatible_llh = ["spatial", "fixed_energy", "standard", "standard_kde_enabled"]
+    compatible_llh = ["spatial", "fixed_energy", "standard_matrix", "std_matrix_kde_enabled"]
     compatible_negative_n_s = False
 
     def __init__(self, mh_dict):
@@ -1487,7 +1485,7 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
 
 @MinimisationHandler.register_subclass("flare")
 class FlareMinimisationHandler(FixedWeightMinimisationHandler):
-    compatible_llh = ["spatial", "fixed_energy", "standard"]
+    compatible_llh = ["spatial", "fixed_energy", "standard_matrix"]
     compatible_negative_n_s = False
 
     def __init__(self, mh_dict):
