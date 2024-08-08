@@ -1359,6 +1359,15 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
     and then weighting it for all gamma-grid points.
     """
 
+    def __init__(self, season, sources, llh_dict):
+        super().__init__(season, sources, llh_dict)
+
+        if llh_dict["llh_spatial_pdf"]["spatial_pdf_name"] != "northern_tracks_kde":
+            raise ValueError(
+                "Specified LLH ({}) is only compatible with NorthernTracksKDE, ".format(self.llh_dict["llh_name"]) +
+                "please change 'the spatial_pdf_name' accordingly"
+            )
+
     def create_kwargs(self, data, pull_corrector, weight_f=None):
         if weight_f is None:
             raise Exception(
