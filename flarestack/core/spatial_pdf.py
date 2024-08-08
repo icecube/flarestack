@@ -2,6 +2,7 @@ import numpy as np
 import healpy as hp
 import os
 import logging
+from typing import Optional
 from scipy.stats import norm
 from scipy.interpolate import interp1d
 from numpy.lib.recfunctions import append_fields
@@ -208,9 +209,17 @@ class NorthernTracksKDE(SignalSpatialPDF):
     a fixed gamma is used (either by setting 'spatial_pdf_data' to the location of the
     4D-photospline-tables of the PDF and 'spatial_pdf_index' to the preferred gamma value, or
     (more efficiently) setting 'spatial_pdf_data' directly to the corresponding 3D-spline table.
+
+    In the 4D case, if 'spatial_pdf_index' is provided then the spline is evaluated at the user-defined
+    gamma, otherwise it will be evaluated at all the gamma support points when creating the spatial cache.
+    Note, the latter takes SIGNIFICANTLY more time so it should be used either for testing,
+    or for very few sources O(100).
+
+    In the 3D case, there is no gamma-dependence for the spline evaluation by default.
     """
 
     KDEspline = None
+    KDE_eval_gamma = None
     SplineIs4D = False
 
     def __init__(self, spatial_pdf_dict):
@@ -225,6 +234,12 @@ class NorthernTracksKDE(SignalSpatialPDF):
             NorthernTracksKDE.SplineIs4D = False
         elif NorthernTracksKDE.KDEspline.ndim == 4:
             NorthernTracksKDE.SplineIs4D = True
+            if "spatial_pdf_index" in spatial_pdf_dict.keys():
+                assert isinstance(spatial_pdf_dict["spatial_pdf_index"], float), "'spatial_pdf_index' is not float"
+                NorthernTracksKDE.KDE_eval_gamma = spatial_pdf_dict["spatial_pdf_index"] 
+                logger.debug(f"Fixing the gamma for 4D KDE spline evaluation to {NorthernTracksKDE.KDE_eval_gamma}") 
+            else:
+                logger.warning("The 4D KDE spline will be evaluated each time for 144 gamma points, better be sure about this!")
         else:
             raise RuntimeError(
                 f"{KDEfile} does not seem to be a valid photospline table for the PSF"
@@ -236,18 +251,27 @@ class NorthernTracksKDE(SignalSpatialPDF):
         psi_range = np.linspace(0.001, 0.5, npoints)
         d_psi = psi_range[1] - psi_range[0]
         if NorthernTracksKDE.SplineIs4D:
-            psi_pdf = (
-                d_psi
-                / (log(10) * psi_range)
-                * self.KDEspline.evaluate_simple(
-                    [log10(sigma), logE, log10(psi_range), NorthernTracksKDE.gamma]
+            if NorthernTracksKDE.KDE_eval_gamma is not None:
+                psi_pdf = (
+                    d_psi
+                    / (np.log(10) * psi_range)
+                    * NorthernTracksKDE.KDEspline.evaluate_simple(
+                        [np.log10(sigma), logE, np.log10(psi_range), NorthernTracksKDE.KDE_eval_gamma]
+                    )
                 )
-            )
+            else:
+                psi_pdf = (
+                    d_psi
+                    / (np.log(10) * psi_range)
+                    * NorthernTracksKDE.KDEspline.evaluate_simple(
+                        [np.log10(sigma), logE, np.log10(psi_range), gamma]
+                    )
+                )
         else:
             psi_pdf = (
                 d_psi
-                / (log(10) * psi_range)
-                * self.KDEspline.evaluate_simple([log10(sigma), logE, log10(psi_range)])
+                / (np.log(10) * psi_range)
+                * NorthernTracksKDE.KDEspline.evaluate_simple([np.log10(sigma), logE, np.log10(psi_range)])
             )
         psi_cdf = np.insert(psi_pdf.cumsum(), 0, 0)
         psi_range = np.insert(psi_range, 0, 0)
@@ -278,13 +302,15 @@ class NorthernTracksKDE(SignalSpatialPDF):
         return data.copy()
 
     @staticmethod
-    def signal_spatial(source, cut_data, gamma=2.0):
-        """Calculates the angular distance between the source and the
-        coincident dataset. This class provides an interface for the KDE-smoothed MC PDF introduced for the 10yr NT analysis.
+    def signal_spatial(source, cut_data, gamma: Optional[float]):
+        """Calculates the angular distance between the source and the coincident dataset.
+        This class provides an interface for the KDE-smoothed MC PDF introduced for the 10yr NT analysis.
         Returns the value of the PDF at the given distances between the source and the events.
 
         :param source: Single Source
         :param cut_data: Subset of Dataset with coincident events
+        :param gamma (float | None): gamma = None if 3D KDE or 4D KDE with a specified gamma for spline evaluation, 
+                                else gamma-dependent pdf
         :return: Array of Spatial PDF values
         """
 
@@ -295,15 +321,30 @@ class NorthernTracksKDE(SignalSpatialPDF):
         )
 
         if NorthernTracksKDE.SplineIs4D:
-            space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
-                [
-                    np.log10(cut_data["sigma"]),
-                    cut_data["logE"],
-                    np.log10(distance),
-                    gamma,
-                ]
-            )
+            if NorthernTracksKDE.KDE_eval_gamma is not None:
+                assert gamma is None, "Provided gamma for 4D KDE spline evaluation, set gamma to None"
+                space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
+                    [
+                        np.log10(cut_data["sigma"]),
+                        cut_data["logE"],
+                        np.log10(distance),
+                        NorthernTracksKDE.KDE_eval_gamma,
+                    ]
+                )
+            else:
+                assert gamma is not None, "Chose 4D KDE and haven't provided gamma, you need gamma-dependence for evaluating spline"
+                space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
+                    [
+                        np.log10(cut_data["sigma"]),
+                        cut_data["logE"],
+                        np.log10(distance),
+                        gamma,
+                    ]
+                )
         else:
+            assert gamma is None, "Using 3D KDE splines no need for gamma, set it to None"
+            # paranoia
+            assert NorthernTracksKDE.KDE_eval_gamma is None, "Using 3D KDE splines no need to specify gamma"
             space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
                 [np.log10(cut_data["sigma"]), cut_data["logE"], np.log10(distance)]
             )
