@@ -235,11 +235,17 @@ class NorthernTracksKDE(SignalSpatialPDF):
         elif NorthernTracksKDE.KDEspline.ndim == 4:
             NorthernTracksKDE.SplineIs4D = True
             if "spatial_pdf_index" in spatial_pdf_dict.keys():
-                assert isinstance(spatial_pdf_dict["spatial_pdf_index"], float), "'spatial_pdf_index' is not float"
-                NorthernTracksKDE.KDE_eval_gamma = spatial_pdf_dict["spatial_pdf_index"] 
-                logger.debug(f"Fixing the gamma for 4D KDE spline evaluation to {NorthernTracksKDE.KDE_eval_gamma}") 
+                assert isinstance(
+                    spatial_pdf_dict["spatial_pdf_index"], float
+                ), "'spatial_pdf_index' is not float"
+                NorthernTracksKDE.KDE_eval_gamma = spatial_pdf_dict["spatial_pdf_index"]
+                logger.debug(
+                    f"Fixing the gamma for 4D KDE spline evaluation to {NorthernTracksKDE.KDE_eval_gamma}"
+                )
             else:
-                logger.warning("The 4D KDE spline will be evaluated each time for 144 gamma points, better be sure about this!")
+                logger.warning(
+                    "The 4D KDE spline will be evaluated each time for 144 gamma points, better be sure about this!"
+                )
         else:
             raise RuntimeError(
                 f"{KDEfile} does not seem to be a valid photospline table for the PSF"
@@ -256,7 +262,12 @@ class NorthernTracksKDE(SignalSpatialPDF):
                     d_psi
                     / (np.log(10) * psi_range)
                     * NorthernTracksKDE.KDEspline.evaluate_simple(
-                        [np.log10(sigma), logE, np.log10(psi_range), NorthernTracksKDE.KDE_eval_gamma]
+                        [
+                            np.log10(sigma),
+                            logE,
+                            np.log10(psi_range),
+                            NorthernTracksKDE.KDE_eval_gamma,
+                        ]
                     )
                 )
             else:
@@ -271,7 +282,9 @@ class NorthernTracksKDE(SignalSpatialPDF):
             psi_pdf = (
                 d_psi
                 / (np.log(10) * psi_range)
-                * NorthernTracksKDE.KDEspline.evaluate_simple([np.log10(sigma), logE, np.log10(psi_range)])
+                * NorthernTracksKDE.KDEspline.evaluate_simple(
+                    [np.log10(sigma), logE, np.log10(psi_range)]
+                )
             )
         psi_cdf = np.insert(psi_pdf.cumsum(), 0, 0)
         psi_range = np.insert(psi_range, 0, 0)
@@ -309,7 +322,7 @@ class NorthernTracksKDE(SignalSpatialPDF):
 
         :param source: Single Source
         :param cut_data: Subset of Dataset with coincident events
-        :param gamma (float | None): gamma = None if 3D KDE or 4D KDE with a specified gamma for spline evaluation, 
+        :param gamma (float | None): gamma = None if 3D KDE or 4D KDE with a specified gamma for spline evaluation,
                                 else gamma-dependent pdf
         :return: Array of Spatial PDF values
         """
@@ -322,7 +335,9 @@ class NorthernTracksKDE(SignalSpatialPDF):
 
         if NorthernTracksKDE.SplineIs4D:
             if NorthernTracksKDE.KDE_eval_gamma is not None:
-                assert gamma is None, "Provided gamma for 4D KDE spline evaluation, set gamma to None"
+                assert (
+                    gamma is None
+                ), "Provided gamma for 4D KDE spline evaluation, set gamma to None"
                 space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
                     [
                         np.log10(cut_data["sigma"]),
@@ -332,7 +347,9 @@ class NorthernTracksKDE(SignalSpatialPDF):
                     ]
                 )
             else:
-                assert gamma is not None, "Chose 4D KDE and haven't provided gamma, you need gamma-dependence for evaluating spline"
+                assert (
+                    gamma is not None
+                ), "Chose 4D KDE and haven't provided gamma, you need gamma-dependence for evaluating spline"
                 space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
                     [
                         np.log10(cut_data["sigma"]),
@@ -342,9 +359,13 @@ class NorthernTracksKDE(SignalSpatialPDF):
                     ]
                 )
         else:
-            assert gamma is None, "Using 3D KDE splines no need for gamma, set it to None"
+            assert (
+                gamma is None
+            ), "Using 3D KDE splines no need for gamma, set it to None"
             # paranoia
-            assert NorthernTracksKDE.KDE_eval_gamma is None, "Using 3D KDE splines no need to specify gamma"
+            assert (
+                NorthernTracksKDE.KDE_eval_gamma is None
+            ), "Using 3D KDE splines no need to specify gamma"
             space_term = NorthernTracksKDE.KDEspline.evaluate_simple(
                 [np.log10(cut_data["sigma"]), cut_data["logE"], np.log10(distance)]
             )
