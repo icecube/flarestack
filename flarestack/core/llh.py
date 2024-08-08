@@ -1364,8 +1364,10 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
 
         if llh_dict["llh_spatial_pdf"]["spatial_pdf_name"] != "northern_tracks_kde":
             raise ValueError(
-                "Specified LLH ({}) is only compatible with NorthernTracksKDE, ".format(self.llh_dict["llh_name"]) +
-                "please change 'the spatial_pdf_name' accordingly"
+                "Specified LLH ({}) is only compatible with NorthernTracksKDE, ".format(
+                    self.llh_dict["llh_name"]
+                )
+                + "please change 'the spatial_pdf_name' accordingly"
             )
 
     def create_kwargs(self, data, pull_corrector, weight_f=None):
@@ -1401,13 +1403,19 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 # the spatial pdf is calculated (ie the KDE spline is evaluated) for gamma = 2
                 # If we want to be correct this should be in a loop for the get_gamma_support_points
                 # but that would add an extra dimension in the matrix so better not
-                if (self.spatial_pdf.signal.SplineIs4D and self.spatial_pdf.signal.KDE_eval_gamma is not None) or not self.spatial_pdf.signal.SplineIs4D:
+                if (
+                    self.spatial_pdf.signal.SplineIs4D
+                    and self.spatial_pdf.signal.KDE_eval_gamma is not None
+                ) or not self.spatial_pdf.signal.SplineIs4D:
 
                     sig = self.signal_pdf(source, coincident_data)  # gamma = None
 
-                elif self.spatial_pdf.signal.SplineIs4D and self.spatial_pdf.signal.KDE_eval_gamma is None:
+                elif (
+                    self.spatial_pdf.signal.SplineIs4D
+                    and self.spatial_pdf.signal.KDE_eval_gamma is None
+                ):
 
-                    sig = self.signal_pdf(source, coincident_data, gamma=2.)
+                    sig = self.signal_pdf(source, coincident_data, gamma=2.0)
 
                 nonzero_mask = sig > spatial_mask_threshold
                 s_mask[s_mask] *= nonzero_mask
@@ -1436,17 +1444,23 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
 
         # create sparse matrix with non-weighted SoB
         # relevant when signal pdf is gamma-independent so that spline evaluation is done once
-        if (self.spatial_pdf.signal.SplineIs4D and self.spatial_pdf.signal.KDE_eval_gamma is not None) or not self.spatial_pdf.signal.SplineIs4D:
-            logger.debug("Creating gamma-independent SoB matrix for all srcs when 3D KDE or 4D w/ 'spatial_pdf_index'")
+        if (
+            self.spatial_pdf.signal.SplineIs4D
+            and self.spatial_pdf.signal.KDE_eval_gamma is not None
+        ) or not self.spatial_pdf.signal.SplineIs4D:
+            logger.debug(
+                "Creating gamma-independent SoB matrix for all srcs when 3D KDE or 4D w/ 'spatial_pdf_index'"
+            )
 
             SoB_only_matrix = sparse.lil_matrix(coincidence_matrix.shape, dtype=float)
 
             for i, src in enumerate(coincident_sources):
                 mask = (coincidence_matrix.getrow(i)).toarray()[0]
-                SoB_only_matrix[i, mask] = (
-                    self.signal_pdf(src, coincident_data[mask])   # gamma = None
-                    / self.background_pdf(src, coincident_data[mask])
-                    )
+                SoB_only_matrix[i, mask] = self.signal_pdf(
+                    src, coincident_data[mask]
+                ) / self.background_pdf(  # gamma = None
+                    src, coincident_data[mask]
+                )
 
         def joint_SoB(dataset, gamma):
             weight = np.array(season_weight(gamma))
@@ -1459,10 +1473,18 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
             for i, src in enumerate(coincident_sources):
                 mask = (coincidence_matrix.getrow(i)).toarray()[0]
 
-                if (self.spatial_pdf.signal.SplineIs4D and self.spatial_pdf.signal.KDE_eval_gamma is not None) or not self.spatial_pdf.signal.SplineIs4D:
-                    SoB_matrix_sparse[i, mask] = SoB_only_matrix[i, :].multiply(weight[i])
+                if (
+                    self.spatial_pdf.signal.SplineIs4D
+                    and self.spatial_pdf.signal.KDE_eval_gamma is not None
+                ) or not self.spatial_pdf.signal.SplineIs4D:
+                    SoB_matrix_sparse[i, mask] = SoB_only_matrix[i, :].multiply(
+                        weight[i]
+                    )
 
-                elif self.spatial_pdf.signal.SplineIs4D and self.spatial_pdf.signal.KDE_eval_gamma is None:
+                elif (
+                    self.spatial_pdf.signal.SplineIs4D
+                    and self.spatial_pdf.signal.KDE_eval_gamma is None
+                ):
                     SoB_matrix_sparse[i, mask] = (
                         weight[i]
                         * self.signal_pdf(src, dataset[mask], gamma)
