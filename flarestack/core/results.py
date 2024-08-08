@@ -40,7 +40,10 @@ class ResultsHandler(object):
 
         self.name = rh_dict["name"]
         self.mh_name = rh_dict["mh_name"]
-        self.scale = rh_dict["scale"]
+        if "fixed_scale" in list(rh_dict.keys()):
+            self.scale = rh_dict["fixed_scale"]
+        else:
+            self.scale = rh_dict["scale"]
 
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(self.name)
