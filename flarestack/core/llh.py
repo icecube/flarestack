@@ -1407,14 +1407,12 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                     self.spatial_pdf.signal.SplineIs4D
                     and self.spatial_pdf.signal.KDE_eval_gamma is not None
                 ) or not self.spatial_pdf.signal.SplineIs4D:
-
                     sig = self.signal_pdf(source, coincident_data)  # gamma = None
 
                 elif (
                     self.spatial_pdf.signal.SplineIs4D
                     and self.spatial_pdf.signal.KDE_eval_gamma is None
                 ):
-
                     sig = self.signal_pdf(source, coincident_data, gamma=2.0)
 
                 nonzero_mask = sig > spatial_mask_threshold
