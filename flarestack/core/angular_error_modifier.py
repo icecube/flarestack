@@ -406,7 +406,7 @@ class DynamicMedianPullCorrector(BaseMedianAngularErrorModifier):
             # have overlapping PDFs and you need to know the weights,
             # then you pass the key. Otherwise just evaluate as normal.
 
-            if len(inspect.getargspec(SoB_pdf)[0]) == 2:
+            if len(inspect.getfullargspec(SoB_pdf)[0]) == 2:
                 SoB = SoB_pdf(cut_data, key)
             else:
                 SoB = SoB_pdf(cut_data)
