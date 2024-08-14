@@ -375,7 +375,7 @@ class StaticMedianPullCorrector(BaseMedianAngularErrorModifier):
 
 class DynamicMedianPullCorrector(BaseMedianAngularErrorModifier):
     def __init__(self, pull_dict):
-        BaseAngularErrorModifier.__init__(self, pull_dict)
+        BaseMedianAngularErrorModifier.__init__(self, pull_dict)
 
     def estimate_spatial(self, gamma, spatial_cache):
         return self.estimate_spatial_dynamic(gamma, spatial_cache)
