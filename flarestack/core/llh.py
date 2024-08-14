@@ -1475,7 +1475,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                     self.spatial_pdf.signal.SplineIs4D
                     and self.spatial_pdf.signal.KDE_eval_gamma is not None
                 ) or not self.spatial_pdf.signal.SplineIs4D:
-                    SoB_matrix_sparse[i, mask] = SoB_only_matrix[i, :].multiply(
+                    SoB_matrix_sparse[i, mask] = SoB_only_matrix[i, mask].multiply(
                         weight[i]
                     )
 
