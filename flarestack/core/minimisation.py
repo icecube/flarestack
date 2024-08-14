@@ -316,7 +316,7 @@ class MinimisationHandler(object):
     def add_angular_error_modifier(self, season):
         return BaseAngularErrorModifier.create(
             season,
-            self.llh_dict["llh_energy_pdf"],
+            self.inj_dict["injection_energy_pdf"],
             self.floor_name,
             self.pull_name,
             gamma_precision=self.llh_dict.get("gamma_precision", "flarestack"),
