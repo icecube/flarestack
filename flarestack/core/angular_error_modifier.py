@@ -341,7 +341,7 @@ class BaseMedianAngularErrorModifier(BaseAngularErrorModifier):
         else:
             logger.debug(f"Loading from {self.pull_name}")
 
-        with open(self.pull_name, "r") as f:
+        with open(self.pull_name, "rb") as f:
             self.pickled_data = Pickle.load(f)
 
     def pull_correct(self, f, data):
