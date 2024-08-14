@@ -218,7 +218,7 @@ class NorthernTracksKDE(SignalSpatialPDF):
     In the 3D case, there is no gamma-dependence for the spline evaluation by default.
     """
 
-    KDEspline = None
+    KDEspline = SplineTable
     KDE_eval_gamma = None
     SplineIs4D = False
 
@@ -253,7 +253,7 @@ class NorthernTracksKDE(SignalSpatialPDF):
 
         logger.info("Using KDE spatial PDF from file {0}.".format(KDEfile))
 
-    def _inverse_cdf(sigma, logE, gamma, npoints=100):
+    def _inverse_cdf(self, sigma, logE, gamma, npoints=100):
         psi_range = np.linspace(0.001, 0.5, npoints)
         d_psi = psi_range[1] - psi_range[0]
         if NorthernTracksKDE.SplineIs4D:
@@ -315,7 +315,7 @@ class NorthernTracksKDE(SignalSpatialPDF):
         return data.copy()
 
     @staticmethod
-    def signal_spatial(source, cut_data, gamma: Optional[float]):
+    def signal_spatial(source, cut_data, gamma: Optional[float]):  # type: ignore[override]
         """Calculates the angular distance between the source and the coincident dataset.
         This class provides an interface for the KDE-smoothed MC PDF introduced for the 10yr NT analysis.
         Returns the value of the PDF at the given distances between the source and the events.
