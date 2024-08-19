@@ -190,6 +190,17 @@ class MinimisationHandler(object):
 
         try:
             self.pull_name = self.llh_dict["pull_name"]
+
+            if (
+                self.llh_dict["llh_name"]
+                in ["standard_kde_enabled", "std_matrix_kde_enabled"]
+                and self.pull_name != "no_pull"
+            ):
+                raise ValueError(
+                    "You are using a KDE-based llh but chose to have pull correction."
+                    "KDEs already account for that, please remove it from the llh_dict."
+                )
+
         except KeyError:
             self.pull_name = "no_pull"
 
