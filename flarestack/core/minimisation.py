@@ -314,9 +314,24 @@ class MinimisationHandler(object):
         return self._injectors[season_name]
 
     def add_angular_error_modifier(self, season):
+        dynamic_floors = ["quantile_floor_0d_e", "quantile_floor_1d_e"]
+        dynamic_pulls = ["median_0d_e", "median_1d_e", "median_2d_e"]
+
+        if self.floor_name in dynamic_floors and self.pull_name in dynamic_pulls:
+            aem_epdf_dict = self.llh_dict["llh_energy_pdf"]
+
+        # if static then both floor & pull need gamma in the e_pdf_dict for weighting MC
+        # choose e_pdf from llh & gamma from inj dict
+        # TODO: When unblinding there is no inj dict passed in unblind dict,
+        # so either accommodate for static cases or exclude them altogether
+        else:
+            llh_epdf = self.llh_dict["llh_energy_pdf"]["energy_pdf_name"]
+            gamma = self.inj_dict["injection_energy_pdf"]["gamma"]
+            aem_epdf_dict = {"energy_pdf_name": llh_epdf, "gamma": gamma}
+
         return BaseAngularErrorModifier.create(
             season,
-            self.inj_dict["injection_energy_pdf"],
+            aem_epdf_dict,
             self.floor_name,
             self.pull_name,
             gamma_precision=self.llh_dict.get("gamma_precision", "flarestack"),
@@ -1421,9 +1436,9 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         for i, p in enumerate(params):
             fig, ax, ur = self.scan_likelihood_1d(
                 p,
-                bound=None
-                if p not in bounds
-                else bounds[p],  # if bound for parameter are explicitly given use those
+                bound=(
+                    None if p not in bounds else bounds[p]
+                ),  # if bound for parameter are explicitly given use those
                 adjust_bound=p not in bounds,  # and do not adjust in the 1d scan
                 res_dict=res_dict,
                 ax=axs[i][i],
