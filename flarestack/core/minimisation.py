@@ -328,21 +328,20 @@ class MinimisationHandler(object):
         dynamic_floors = ["quantile_floor_0d_e", "quantile_floor_1d_e"]
         dynamic_pulls = ["median_0d_e", "median_1d_e", "median_2d_e"]
 
-        if self.floor_name in dynamic_floors and self.pull_name in dynamic_pulls:
-            aem_epdf_dict = self.llh_dict["llh_energy_pdf"]
-
         # if static then both floor & pull need gamma in the e_pdf_dict for weighting MC
-        # choose e_pdf from llh & gamma from inj dict
-        # TODO: When unblinding there is no inj dict passed in unblind dict,
-        # so either accommodate for static cases or exclude them altogether
-        else:
-            llh_epdf = self.llh_dict["llh_energy_pdf"]["energy_pdf_name"]
-            gamma = self.inj_dict["injection_energy_pdf"]["gamma"]
-            aem_epdf_dict = {"energy_pdf_name": llh_epdf, "gamma": gamma}
+        if ("gamma" not in self.llh_dict["llh_energy_pdf"].keys()) and (
+            self.floor_name not in dynamic_floors
+            and self.pull_name not in dynamic_pulls
+        ):
+            raise KeyError(
+                f"You chose static floor {self.floor_name} and/or static pull correction {self.pull_name} "
+                "without fixing the gamma. Please provide the gamma in the llh_energy_pdf dictionary, "
+                "or choose dynamic floor/pull if you want to fit the gamma."
+            )
 
         return BaseAngularErrorModifier.create(
             season,
-            aem_epdf_dict,
+            self.llh_dict["llh_energy_pdf"],
             self.floor_name,
             self.pull_name,
             gamma_precision=self.llh_dict.get("gamma_precision", "flarestack"),
