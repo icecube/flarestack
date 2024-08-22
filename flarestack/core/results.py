@@ -795,7 +795,7 @@ class ResultsHandler(object):
 
             xrange = np.linspace(0.0, 1.1 * max(x), 1000)
 
-            savepath = os.path.join(self.plot_dir, "disc" + ["", "_25"][i] + ".pdf")
+            savepath = os.path.join(self.plot_dir, "disc" + ["_25", ""][i] + ".pdf")
 
             fig = plt.figure()
             ax1 = fig.add_subplot(111)

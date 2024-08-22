@@ -190,6 +190,17 @@ class MinimisationHandler(object):
 
         try:
             self.pull_name = self.llh_dict["pull_name"]
+
+            if (
+                self.llh_dict["llh_name"]
+                in ["standard_kde_enabled", "std_matrix_kde_enabled"]
+                and self.pull_name != "no_pull"
+            ):
+                raise ValueError(
+                    "You are using a KDE-based llh but chose to have pull correction."
+                    "KDEs already account for that, please remove it from the llh_dict."
+                )
+
         except KeyError:
             self.pull_name = "no_pull"
 
@@ -314,6 +325,20 @@ class MinimisationHandler(object):
         return self._injectors[season_name]
 
     def add_angular_error_modifier(self, season):
+        static_floors = ["quantile_floor_0d"]
+        static_pulls = ["median_1d", "median_2d"]
+
+        # if static then both floor & pull need gamma in the e_pdf_dict for weighting MC
+        if ("gamma" not in self.llh_dict["llh_energy_pdf"].keys()) and (
+            self.floor_name in static_floors and self.pull_name in static_pulls
+        ):
+            raise KeyError(
+                "You chose static floor and/or static pull correction without fixing the gamma. "
+                "Please provide the gamma in the llh_energy_pdf dictionary "
+                f"if choosing from {static_floors} and/or {static_pulls}, "
+                "or choose dynamic floor/pull where gamma is fitted."
+            )
+
         return BaseAngularErrorModifier.create(
             season,
             self.llh_dict["llh_energy_pdf"],
@@ -1421,9 +1446,9 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         for i, p in enumerate(params):
             fig, ax, ur = self.scan_likelihood_1d(
                 p,
-                bound=None
-                if p not in bounds
-                else bounds[p],  # if bound for parameter are explicitly given use those
+                bound=(
+                    None if p not in bounds else bounds[p]
+                ),  # if bound for parameter are explicitly given use those
                 adjust_bound=p not in bounds,  # and do not adjust in the 1d scan
                 res_dict=res_dict,
                 ax=axs[i][i],
