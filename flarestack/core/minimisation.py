@@ -325,18 +325,18 @@ class MinimisationHandler(object):
         return self._injectors[season_name]
 
     def add_angular_error_modifier(self, season):
-        dynamic_floors = ["quantile_floor_0d_e", "quantile_floor_1d_e"]
-        dynamic_pulls = ["median_0d_e", "median_1d_e", "median_2d_e"]
+        static_floors = ["quantile_floor_0d"]
+        static_pulls = ["median_1d", "median_2d"]
 
         # if static then both floor & pull need gamma in the e_pdf_dict for weighting MC
         if ("gamma" not in self.llh_dict["llh_energy_pdf"].keys()) and (
-            self.floor_name not in dynamic_floors
-            and self.pull_name not in dynamic_pulls
+            self.floor_name in static_floors and self.pull_name in static_pulls
         ):
             raise KeyError(
-                f"You chose static floor {self.floor_name} and/or static pull correction {self.pull_name} "
-                "without fixing the gamma. Please provide the gamma in the llh_energy_pdf dictionary, "
-                "or choose dynamic floor/pull if you want to fit the gamma."
+                "You chose static floor and/or static pull correction without fixing the gamma. "
+                "Please provide the gamma in the llh_energy_pdf dictionary "
+                f"if choosing from {static_floors} and/or {static_pulls}, "
+                "or choose dynamic floor/pull where gamma is fitted."
             )
 
         return BaseAngularErrorModifier.create(
