@@ -1466,20 +1466,22 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 weight = np.array(season_weight(gamma))
                 weight /= np.sum(weight)
 
-                return np.asarray(
-                    SoB_only_matrix.multiply(weight).sum(axis=0)
-                )[0]
+                return np.asarray(SoB_only_matrix.multiply(weight).sum(axis=0))[0]
+
         elif (
             self.spatial_pdf.signal.SplineIs4D
             and self.spatial_pdf.signal.KDE_eval_gamma is None
         ):
+
             def joint_SoB(dataset, gamma):
                 weight = np.array(season_weight(gamma))
                 weight /= np.sum(weight)
 
                 # create an empty lil_matrix (good for matrix creation) with shape
                 # of coincidence_matrix and type float
-                SoB_matrix_sparse = sparse.lil_matrix(coincidence_matrix.shape, dtype=float)
+                SoB_matrix_sparse = sparse.lil_matrix(
+                    coincidence_matrix.shape, dtype=float
+                )
 
                 for i, src in enumerate(coincident_sources):
                     mask = (coincidence_matrix.getrow(i)).toarray()[0]
