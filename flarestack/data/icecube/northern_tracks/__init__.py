@@ -64,7 +64,7 @@ class NTSeason(IceCubeSeason):
         return mc
 
     def simulate_background(self):
-        rng = np.random.default_rng()
+        rng = np.random
 
         if self.loaded_background_model is None:
             raise RuntimeError(
