@@ -4,6 +4,7 @@ import numpy as np
 import random
 import zipfile
 import zlib
+from astropy.table import Table
 from flarestack.shared import band_mask_cache_name
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
@@ -228,7 +229,7 @@ class MCInjector(BaseInjector):
 
     def __init__(self, season, sources, **kwargs):
         kwargs = read_injector_dict(kwargs)
-        self._mc = season.get_mc()
+        self._mc = self.get_mc(season)
         BaseInjector.__init__(self, season, sources, **kwargs)
 
         self.injection_declination_bandwidth = self.inj_kwargs.pop(
@@ -242,6 +243,9 @@ class MCInjector(BaseInjector):
         except KeyError:
             logger.warning("No Injection Arguments. Are you unblinding?")
             pass
+
+    def get_mc(self, season):
+        return season.get_mc()
 
     def select_mc_band(self, source):
         """For a given source, selects MC events within a declination band of
@@ -520,6 +524,34 @@ class LowMemoryInjector(MCInjector):
         # band_mask = self.load_band_mask(mask_index[0])
 
         return self.band_mask_cache.getrow(entry["source_index"][0]).toarray()[0]
+
+
+@MCInjector.register_subclass("table_injector")
+class TableInjector(MCInjector):
+    """
+    For even larger numbers of sources O(~1000), accessing every element of the
+    MC array in select_band_mask() once for every source in calculate_n_exp()
+    becomes a bottleneck. Store event fields in columns, ordered by declination,
+    making single-field accesses vastly cheaper and band masks practically free.
+    For 1000 sources, calculate_n_exp() is ~60x faster than MCInjector.
+    """
+
+    def get_mc(self, season):
+        mc: np.ndarray = season.get_mc()
+        # Sort rows by trueDec, and store as columns in a Table
+        table = Table(mc[np.argsort(mc["trueDec"].copy())])
+        # Prevent in-place modifications
+        for k in table.columns:
+            table[k].setflags(write=False)
+        return table
+
+    def get_band_mask(self, source, min_dec, max_dec):
+        return slice(*np.searchsorted(self._mc["trueDec"], [min_dec, max_dec]))
+
+    def select_mc_band(self, source):
+        table, omega, band_mask = super().select_mc_band(source)
+        # allow individual columns to be replaced
+        return table.copy(copy_data=False), omega, band_mask
 
 
 @MCInjector.register_subclass("effective_area_injector")
