@@ -128,7 +128,7 @@ class BaseInjector:
         else:
             name = source["source_name"]
 
-        return np.copy(self.n_exp[self.n_exp["source_name"] == name])
+        return self.n_exp[self.n_exp["source_name"] == name]
 
     def get_expectation(self, source, scale):
         return float(self.get_n_exp_single(source)["n_exp"]) * scale
@@ -260,7 +260,7 @@ class MCInjector(BaseInjector):
 
         band_mask = self.get_band_mask(source, min_dec, max_dec)
 
-        return np.copy(self._mc[band_mask]), omega, band_mask
+        return self._mc[band_mask], omega, band_mask
 
     def get_band_mask(self, source, min_dec, max_dec):
         # Checks if the mask has already been evaluated for the source
