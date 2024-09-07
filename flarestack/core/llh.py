@@ -1371,7 +1371,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 + "please change 'the spatial_pdf_name' accordingly"
             )
 
-    def get_dec_ra_masks(self, data, source) -> "tuple[slice, np.ndarray]":
+    def get_spatially_coincident_indices(self, data, source) -> np.ndarray:
         """
         Get spatially coincident data for a single source, taking advantage of
         the fact that data are sorted in dec
@@ -1383,7 +1383,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         max_dec = min(np.pi / 2.0, source["dec_rad"] + width)
 
         # Accepts events lying within a 5 degree band of the source
-        dec_mask = slice(*np.searchsorted(data["dec"], [min_dec, max_dec]))
+        dec_range = slice(*np.searchsorted(data["dec"], [min_dec, max_dec]))
 
         # Sets the minimum value of cos(dec)
         cos_factor = np.amin(np.cos([min_dec, max_dec]))
@@ -1396,11 +1396,9 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         # Accounts for wrapping effects at ra=0, calculates the distance
         # of each event to the source.
         ra_dist = np.fabs(
-            (data["ra"][dec_mask] - source["ra_rad"] + np.pi) % (2.0 * np.pi) - np.pi
+            (data["ra"][dec_range] - source["ra_rad"] + np.pi) % (2.0 * np.pi) - np.pi
         )
-        ra_mask = ra_dist < dPhi / 2.0
-
-        return dec_mask, ra_mask
+        return np.nonzero(ra_dist < dPhi / 2.0)[0] + dec_range.start
 
     def create_kwargs(self, data, pull_corrector, weight_f=None):
         if weight_f is None:
@@ -1409,11 +1407,9 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 "standard_overlapping LLH functions."
             )
 
-        data = Table(data[np.argsort(data["dec"])])
+        data = Table(data[np.argsort(data[["dec", "ra"]])])
 
-        coincidence_matrix = sparse.lil_matrix(
-            (len(self.sources), len(data)), dtype=bool
-        )
+        coincidence_matrix_rows = []
 
         kwargs = dict()
 
@@ -1422,8 +1418,8 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         sources = self.sources
 
         for i, source in enumerate(sources):
-            dec_mask, ra_mask = self.get_dec_ra_masks(data, source)
-            coincident_data = data[dec_mask][ra_mask]
+            idx = self.get_spatially_coincident_indices(data, source)
+            coincident_data = data[idx]
 
             if len(coincident_data) > 0:
                 # Only bother accepting neutrinos where the spacial
@@ -1448,12 +1444,21 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 ):
                     sig = self.signal_pdf(source, coincident_data, gamma=2.0)
 
-                nonzero_mask = sig > spatial_mask_threshold
-                ra_mask[ra_mask] *= nonzero_mask
+                nonzero_idx = np.nonzero(sig > spatial_mask_threshold)[0]
+                column_indices = idx[nonzero_idx]
 
-                coincidence_matrix[i, dec_mask.start : dec_mask.stop] = ra_mask
+                coincidence_matrix_rows.append(
+                    sparse.csr_matrix(
+                        (
+                            np.ones(column_indices.shape, dtype=bool),
+                            column_indices,
+                            [0, len(column_indices)],
+                        ),
+                        shape=(1, len(data)),
+                    )
+                )
 
-        coincidence_matrix = coincidence_matrix.tocsr()
+        coincidence_matrix = sparse.vstack(coincidence_matrix_rows)
 
         # Using Sparse matrixes
         coincident_nu_mask = np.sum(coincidence_matrix, axis=0) > 0
