@@ -13,6 +13,11 @@ from flarestack.utils.catalogue_loader import calculate_source_weight
 from scipy import sparse, interpolate
 from flarestack.shared import k_to_flux
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from flarestack.data import SeasonWithMC
+
 logger = logging.getLogger(__name__)
 
 
@@ -244,7 +249,7 @@ class MCInjector(BaseInjector):
             logger.warning("No Injection Arguments. Are you unblinding?")
             pass
 
-    def get_mc(self, season):
+    def get_mc(self, season: "SeasonWithMC") -> Table:
         return season.get_mc()
 
     def select_mc_band(self, source):
@@ -536,14 +541,12 @@ class TableInjector(MCInjector):
     For 1000 sources, calculate_n_exp() is ~60x faster than MCInjector.
     """
 
-    def get_mc(self, season):
-        mc: np.ndarray = season.get_mc()
-        # Sort rows by trueDec, and store as columns in a Table
-        table = Table(mc[np.argsort(mc["trueDec"].copy())])
-        # Prevent in-place modifications
-        for k in table.columns:
-            table[k].setflags(write=False)
-        return table
+    def get_mc(self, season: "SeasonWithMC") -> Table:
+        mc = season.get_mc().copy(copy_data=False)
+        mc.sort("trueDec")
+        for col in mc.columns.values():
+            col.setflags(write=False)
+        return mc
 
     def get_band_mask(self, source, min_dec, max_dec):
         return slice(*np.searchsorted(self._mc["trueDec"], [min_dec, max_dec]))

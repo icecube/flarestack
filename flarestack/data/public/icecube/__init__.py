@@ -4,6 +4,7 @@ import pickle
 import csv
 import scipy.interpolate
 import logging
+from astropy.table import Table
 from flarestack.data import SeasonWithoutMC, Season
 from flarestack.icecube_utils.dataset_loader import data_loader
 import matplotlib.pyplot as plt
@@ -38,7 +39,7 @@ class PublicICSeason(SeasonWithoutMC):
         self.log_e_bins = log_e_bins
         self.a_eff_path = a_eff_path
 
-    def load_data(self, path, **kwargs):
+    def load_data(self, path, **kwargs) -> Table:
         return data_loader(path, **kwargs)
 
     def load_angular_resolution(self):

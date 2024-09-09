@@ -1,12 +1,13 @@
 import numpy as np
 import logging
+from astropy.table import Table
 from numpy.lib.recfunctions import append_fields, rename_fields
 from flarestack.shared import min_angular_err
 
 logger = logging.getLogger(__name__)
 
 
-def data_loader(data_path, floor=True, cut_fields=True):
+def data_loader(data_path, floor=True, cut_fields=True) -> Table:
     """Helper function to load data for a given season/set of season.
     Adds sinDec field if this is not available, and combines multiple years
     of data is appropriate (different sets of data from the same icecube
@@ -22,43 +23,41 @@ def data_loader(data_path, floor=True, cut_fields=True):
     else:
         dataset = np.load(data_path, allow_pickle=True)
 
-    if "sinDec" not in dataset.dtype.names:
-        new_dtype = np.dtype([("sinDec", float)])
+    # Copy fields of the structured array into individual columns. This takes one
+    # pass over the array for each column, which thrashes the cache quite a lot
+    # (taking ~5x longer than just reading the array from disk), but vastly
+    # improves cache use down the line.
+    dataset = Table(dataset)
 
-        sinDec = np.array(np.sin(dataset["dec"]), dtype=new_dtype)
-
-        dataset = append_fields(
-            dataset, "sinDec", sinDec, usemask=False, dtypes=[float]
-        )
+    if "sinDec" not in dataset.columns:
+        dataset.add_column(np.sin(dataset["dec"]), name="sinDec")
 
     # Check if 'run' or 'Run'
 
-    if "run" not in dataset.dtype.names:
-        if "Run" in dataset.dtype.names:
-            dataset = rename_fields(dataset, {"Run": "run"})
+    if "run" not in dataset.columns:
+        if "Run" in dataset.columns:
+            dataset.rename_column("Run", "run")
 
     # Check if 'sigma' or 'angErr' is Used
 
-    if "sigma" not in dataset.dtype.names:
-        if "angErr" in dataset.dtype.names:
-            dataset = rename_fields(dataset, {"angErr": "sigma"})
+    if "sigma" not in dataset.columns:
+        if "angErr" in dataset.columns:
+            dataset.rename_column("angErr", "sigma")
         else:
             raise Exception(
                 "No recognised Angular Error field found in "
                 "dataset. (Searched for 'sigma' and 'angErr')"
             )
 
-    if "raw_sigma" not in dataset.dtype.names:
-        dataset = append_fields(
-            dataset, "raw_sigma", dataset["sigma"], usemask=False, dtypes=[float]
-        )
+    if "raw_sigma" not in dataset.columns:
+        dataset.add_column(dataset["sigma"], name="raw_sigma")
 
     # Apply a minimum angular error "floor"
     if floor:
         dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
 
     if cut_fields:
-        allowed_fields = [
+        allowed_fields = {
             "time",
             "ra",
             "dec",
@@ -70,11 +69,15 @@ def data_loader(data_path, floor=True, cut_fields=True):
             "ow",
             "sinDec",
             "raw_sigma",
-        ]
+        }
 
-        mask = [x for x in dataset.dtype.names if x in allowed_fields]
+        mask = [x for x in dataset.columns if x in allowed_fields]
 
         dataset = dataset[mask]
+
+    # prevent accidental in-place updates
+    for col in dataset.columns.values():
+        col.setflags(write=False)
 
     return dataset
 

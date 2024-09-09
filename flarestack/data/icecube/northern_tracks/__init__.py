@@ -1,4 +1,5 @@
 import numpy as np
+from astropy.table import Table
 from flarestack.data.icecube.ic_season import IceCubeSeason
 from numpy.lib.recfunctions import rename_fields
 
@@ -50,7 +51,7 @@ def get_diffuse_binning(season):
 
 
 class NTSeason(IceCubeSeason):
-    def get_background_model(self) -> dict:
+    def get_background_model(self) -> Table:
         """Loads Monte Carlo dataset from file according to object path set in object properties.
 
         Returns:
@@ -60,7 +61,7 @@ class NTSeason(IceCubeSeason):
         # According to NT specifications (README):
         #  "conv" gives the weight for conventional atmospheric neutrinos
         #  flarestack renames it to "weight"
-        mc = rename_fields(mc, {"conv": "weight"})
+        mc.rename_column("conv", "weight")
         return mc
 
     def simulate_background(self):
@@ -114,5 +115,5 @@ class NTSeasonNewStyle(NTSeason):
         mc = super(NTSeasonNewStyle, self).get_background_model()
         livetime = self.get_time_pdf().get_livetime()
         for weight in ("astro", "weight", "prompt"):
-            mc[weight] *= livetime * 86400.0
+            mc[weight] = mc[weight] * livetime * 86400.0
         return mc

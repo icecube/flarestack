@@ -2,10 +2,10 @@ import numpy as np
 import healpy as hp
 import os
 import logging
+from astropy.table import Table
 from typing import Optional
 from scipy.stats import norm
 from scipy.interpolate import interp1d
-from numpy.lib.recfunctions import append_fields
 from flarestack.core.astro import angular_distance
 from flarestack.shared import bkg_spline_path
 from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
@@ -43,8 +43,7 @@ class SignalSpatialPDF:
     def __init__(self, spatial_pdf_dict):
         pass
 
-    @staticmethod
-    def simulate_distribution(source, data):
+    def simulate_distribution(self, source, data: Table) -> Table:
         return data
 
     @staticmethod
@@ -126,7 +125,7 @@ class SignalSpatialPDF:
         ra = phi + np.pi
         return np.atleast_1d(ra), np.atleast_1d(dec)
 
-    def rotate_to_position(self, ev, ra, dec):
+    def rotate_to_position(self, ev: Table, ra: float, dec: float) -> Table:
         """Modifies the events by reassigning the Right Ascension and
         Declination of the events. Rotates the events, so that they are
         distributed as if they originated from the source. Removes the
@@ -156,27 +155,23 @@ class SignalSpatialPDF:
         ev["sinDec"] = np.sin(rot_dec)
 
         # Deletes the Monte Carlo information from sampled events
-        non_mc = [
-            name for name in names if name not in ["trueRa", "trueDec", "trueE", "ow"]
-        ]
-        ev = ev[non_mc].copy()
+        ev.remove_columns(["trueRa", "trueDec", "trueE", "ow"])
 
         return ev
 
 
 @SignalSpatialPDF.register_subclass("circular_gaussian")
 class CircularGaussian(SignalSpatialPDF):
-    def simulate_distribution(self, source, data):
+    def simulate_distribution(self, source, data: Table) -> Table:
         data["ra"] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
         data["dec"] = norm.rvs(size=len(data)) * data["sigma"]
         data["sinDec"] = np.sin(data["dec"])
-        data = append_fields(
-            data,
-            ["trueRa", "trueDec"],
+        data.add_columns(
             [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])],
-        ).copy()
+            ["trueRa", "trueDec"],
+        )
 
-        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"]).copy()
+        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"])
 
         return data.copy()
 
@@ -304,13 +299,12 @@ class NorthernTracksKDE(SignalSpatialPDF):
         data["ra"] = np.pi + distance * np.cos(phi)
         data["dec"] = distance * np.sin(phi)
         data["sinDec"] = np.sin(data["dec"])
-        data = append_fields(
-            data,
-            ["trueRa", "trueDec"],
+        data.add_columns(
             [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])],
-        ).copy()
+            ["trueRa", "trueDec"],
+        )
 
-        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"]).copy()
+        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"])
 
         return data.copy()
 

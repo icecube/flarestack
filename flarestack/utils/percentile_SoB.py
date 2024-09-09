@@ -13,17 +13,13 @@ import matplotlib.pyplot as plt
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.shared import dataset_plot_dir
 from flarestack.icecube_utils.dataset_loader import data_loader
-from numpy.lib.recfunctions import append_fields
 
 season = IC86_1_dict
 
 
 def custom_data_loader(path):
     dataset = data_loader(path, floor=False)
-    percentile = np.ones_like(dataset["ra"]) * np.nan
-    dataset = append_fields(
-        dataset, "percentile", percentile, usemask=False, dtypes=[float]
-    )
+    dataset.add_column(np.ones_like(dataset["ra"]) * np.nan, "percentile")
 
     return dataset
 

@@ -12,6 +12,7 @@ from scipy.interpolate import interp1d
 import logging
 from pathlib import Path
 from typing import Optional
+from astropy.table import Table
 
 
 logger = logging.getLogger(__name__)
@@ -327,7 +328,7 @@ class IceCubeSeason(SeasonWithMC):
     def get_grl(self):
         return grl_loader(self)
 
-    def load_data(self, path, **kwargs):
+    def load_data(self, path, **kwargs) -> Table:
         return data_loader(path, **kwargs)
 
     def build_time_pdf_dict(self):
