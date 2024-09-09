@@ -1407,21 +1407,24 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 "standard_overlapping LLH functions."
             )
 
+        # Keep data in an astropy Table (column-wise) to improve cache
+        # performance. Sort to allow get_spatially_coincident_indices to find
+        # declination bands by binary search.
         data = Table(data[np.argsort(data[["dec", "ra"]])])
 
-        coincidence_matrix_rows = []
+        SoB_rows = [None] * len(self.sources)
 
         kwargs = dict()
 
         kwargs["n_all"] = float(len(data))
 
-        sources = self.sources
-
-        for i, source in enumerate(sources):
+        # Treat sources in declination order to keep caches hot
+        order = np.argsort(self.sources[["dec_rad", "ra_rad"]])
+        for i in order:
+            source = self.sources[i]
             idx = self.get_spatially_coincident_indices(data, source)
-            coincident_data = data[idx]
 
-            if len(coincident_data) > 0:
+            if len(idx) > 0:
                 # Only bother accepting neutrinos where the spacial
                 # likelihood is greater than 1e-21. This prevents 0s
                 # appearing in dynamic pull corrections, but also speeds
@@ -1432,6 +1435,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 # the spatial pdf is calculated (ie the KDE spline is evaluated) for gamma = 2
                 # If we want to be correct this should be in a loop for the get_gamma_support_points
                 # but that would add an extra dimension in the matrix so better not
+                coincident_data = data[idx]
                 if (
                     self.spatial_pdf.signal.SplineIs4D
                     and self.spatial_pdf.signal.KDE_eval_gamma is not None
@@ -1444,34 +1448,35 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 ):
                     sig = self.signal_pdf(source, coincident_data, gamma=2.0)
 
-                nonzero_idx = np.nonzero(sig > spatial_mask_threshold)[0]
+                nonzero_idx = np.nonzero(sig > spatial_mask_threshold)
                 column_indices = idx[nonzero_idx]
 
-                coincidence_matrix_rows.append(
-                    sparse.csr_matrix(
-                        (
-                            np.ones(column_indices.shape, dtype=bool),
-                            column_indices,
-                            [0, len(column_indices)],
-                        ),
-                        shape=(1, len(data)),
-                    )
+                # build a single-row CSR matrix in canonical format
+                SoB_rows[i] = sparse.csr_matrix(
+                    (
+                        sig[nonzero_idx]
+                        / self.background_pdf(source, coincident_data[nonzero_idx]),
+                        column_indices,
+                        [0, len(column_indices)],
+                    ),
+                    shape=(1, len(data)),
                 )
+            else:
+                SoB_rows[i] = sparse.csr_matrix((1, len(data)), dtype=float)
 
-        coincidence_matrix = sparse.vstack(coincidence_matrix_rows)
+        SoB_only_matrix = sparse.vstack(SoB_rows, format="csr")
 
-        # Using Sparse matrixes
-        coincident_nu_mask = np.sum(coincidence_matrix, axis=0) > 0
-        coincident_nu_mask = np.array(coincident_nu_mask).ravel()
-        coincident_source_mask = np.sum(coincidence_matrix, axis=1) > 0
-        coincident_source_mask = np.array(coincident_source_mask).ravel()
+        coincident_nu_mask = np.asarray(np.sum(SoB_only_matrix, axis=0) != 0).ravel()
+        coincident_source_mask = np.asarray(
+            np.sum(SoB_only_matrix, axis=1) != 0
+        ).ravel()
 
-        coincidence_matrix = (
-            coincidence_matrix[coincident_source_mask].T[coincident_nu_mask].T
+        SoB_only_matrix = (
+            SoB_only_matrix[coincident_source_mask].T[coincident_nu_mask].T
         )
 
         coincident_data = data[coincident_nu_mask]
-        coincident_sources = sources[coincident_source_mask]
+        coincident_sources = self.sources[coincident_source_mask]
 
         season_weight = lambda x: weight_f([1.0, x], self.season)[
             coincident_source_mask
@@ -1489,18 +1494,6 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 "Creating gamma-independent SoB matrix for all srcs when 3D KDE or 4D w/ 'spatial_pdf_index'"
             )
 
-            SoB_only_matrix = sparse.lil_matrix(coincidence_matrix.shape, dtype=float)
-
-            for i, src in enumerate(coincident_sources):
-                mask = (coincidence_matrix.getrow(i)).toarray()[0]
-                SoB_only_matrix[i, mask] = self.signal_pdf(
-                    src, coincident_data[mask]
-                ) / self.background_pdf(  # gamma = None
-                    src, coincident_data[mask]
-                )
-
-            SoB_only_matrix = SoB_only_matrix.tocsr()
-
             def joint_SoB(dataset, gamma):
                 weight = np.array(season_weight(gamma))
                 weight /= np.sum(weight)
@@ -1516,19 +1509,25 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 weight = np.array(season_weight(gamma))
                 weight /= np.sum(weight)
 
-                # create an empty lil_matrix (good for matrix creation) with shape
-                # of coincidence_matrix and type float
-                SoB_matrix_sparse = sparse.lil_matrix(
-                    coincidence_matrix.shape, dtype=float
-                )
-
+                # Build CSR matrix containing source_weight * S / B, with the
+                # same sparsity structure as SoB_only_matrix, taking advantage
+                # of the fact that the column indices are indices into `dataset`
+                data = np.empty_like(SoB_only_matrix.data)
                 for i, src in enumerate(coincident_sources):
-                    mask = (coincidence_matrix.getrow(i)).toarray()[0]
-                    SoB_matrix_sparse[i, mask] = (
-                        weight[i]
-                        * self.signal_pdf(src, dataset[mask], gamma)
-                        / self.background_pdf(src, dataset[mask])
+                    row = slice(
+                        SoB_only_matrix.indptr[i], SoB_only_matrix.indptr[i + 1]
                     )
+                    masked_dataset = dataset[SoB_only_matrix.indices[row]]
+                    data[row] = (
+                        weight[i]
+                        * self.signal_pdf(src, masked_dataset, gamma)
+                        / self.background_pdf(src, masked_dataset)
+                    )
+
+                SoB_matrix_sparse = sparse.csr_matrix(
+                    (data, SoB_only_matrix.indices, SoB_only_matrix.indptr),
+                    shape=SoB_only_matrix,
+                )
 
                 SoB_sum = SoB_matrix_sparse.sum(axis=0)
                 return_value = np.array(SoB_sum).ravel()
