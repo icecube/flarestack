@@ -1460,39 +1460,41 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                     src, coincident_data[mask]
                 )
 
-        def joint_SoB(dataset, gamma):
-            weight = np.array(season_weight(gamma))
-            weight /= np.sum(weight)
+            SoB_only_matrix = SoB_only_matrix.tocsr()
 
-            # create an empty lil_matrix (good for matrix creation) with shape
-            # of coincidence_matrix and type float
-            SoB_matrix_sparse = sparse.lil_matrix(coincidence_matrix.shape, dtype=float)
+            def joint_SoB(dataset, gamma):
+                weight = np.array(season_weight(gamma))
+                weight /= np.sum(weight)
 
-            for i, src in enumerate(coincident_sources):
-                mask = (coincidence_matrix.getrow(i)).toarray()[0]
+                return np.asarray(SoB_only_matrix.multiply(weight).sum(axis=0))[0]
 
-                if (
-                    self.spatial_pdf.signal.SplineIs4D
-                    and self.spatial_pdf.signal.KDE_eval_gamma is not None
-                ) or not self.spatial_pdf.signal.SplineIs4D:
-                    SoB_matrix_sparse[i, mask] = SoB_only_matrix[i, mask].multiply(
-                        weight[i]
-                    )
+        elif (
+            self.spatial_pdf.signal.SplineIs4D
+            and self.spatial_pdf.signal.KDE_eval_gamma is None
+        ):
 
-                elif (
-                    self.spatial_pdf.signal.SplineIs4D
-                    and self.spatial_pdf.signal.KDE_eval_gamma is None
-                ):
+            def joint_SoB(dataset, gamma):
+                weight = np.array(season_weight(gamma))
+                weight /= np.sum(weight)
+
+                # create an empty lil_matrix (good for matrix creation) with shape
+                # of coincidence_matrix and type float
+                SoB_matrix_sparse = sparse.lil_matrix(
+                    coincidence_matrix.shape, dtype=float
+                )
+
+                for i, src in enumerate(coincident_sources):
+                    mask = (coincidence_matrix.getrow(i)).toarray()[0]
                     SoB_matrix_sparse[i, mask] = (
                         weight[i]
                         * self.signal_pdf(src, dataset[mask], gamma)
                         / self.background_pdf(src, dataset[mask])
                     )
 
-            SoB_sum = SoB_matrix_sparse.sum(axis=0)
-            return_value = np.array(SoB_sum).ravel()
+                SoB_sum = SoB_matrix_sparse.sum(axis=0)
+                return_value = np.array(SoB_sum).ravel()
 
-            return return_value
+                return return_value
 
         SoB_spacetime = pull_corrector.create_spatial_cache(coincident_data, joint_SoB)
 
