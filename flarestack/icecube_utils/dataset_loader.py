@@ -1,10 +1,43 @@
 import numpy as np
 import logging
-from astropy.table import Table
-from numpy.lib.recfunctions import append_fields, rename_fields
+from astropy.table import Table, vstack
+from numpy.lib.recfunctions import rename_fields
 from flarestack.shared import min_angular_err
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+ALLOWED_FIELDS = {
+    "time",
+    "ra",
+    "dec",
+    "sigma",
+    "angErr",
+    "logE",
+    "trueE",
+    "trueRa",
+    "trueDec",
+    "ow",
+    "sinDec",
+    "raw_sigma",
+}
+
+
+def _load_data_table(path_or_str, cut_fields=True) -> Table:
+    path = Path(path_or_str)
+    if path.with_suffix(".npz").exists():
+        data = np.load(path.with_suffix(".npz"))
+        fields = data.keys()
+        copy = False
+    else:
+        data = np.load(path, allow_pickle=True)
+        fields = data.dtype.names
+        # Copy fields into individual columns to improve memory locality
+        copy = True
+    if cut_fields:
+        return Table({k: data[k] for k in fields if k in ALLOWED_FIELDS}, copy=copy)
+    else:
+        return Table(data, copy=copy)
 
 
 def data_loader(data_path, floor=True, cut_fields=True) -> Table:
@@ -19,15 +52,9 @@ def data_loader(data_path, floor=True, cut_fields=True) -> Table:
     """
 
     if isinstance(data_path, list):
-        dataset = np.concatenate(tuple([np.load(x) for x in data_path]))
+        dataset = vstack(tuple(_load_data_table(x, cut_fields) for x in data_path))
     else:
-        dataset = np.load(data_path, allow_pickle=True)
-
-    # Copy fields of the structured array into individual columns. This takes one
-    # pass over the array for each column, which thrashes the cache quite a lot
-    # (taking ~5x longer than just reading the array from disk), but vastly
-    # improves cache use down the line.
-    dataset = Table(dataset)
+        dataset = _load_data_table(data_path, cut_fields)
 
     if "sinDec" not in dataset.columns:
         dataset.add_column(np.sin(dataset["dec"]), name="sinDec")
@@ -55,25 +82,6 @@ def data_loader(data_path, floor=True, cut_fields=True) -> Table:
     # Apply a minimum angular error "floor"
     if floor:
         dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
-
-    if cut_fields:
-        allowed_fields = {
-            "time",
-            "ra",
-            "dec",
-            "sigma",
-            "logE",
-            "trueE",
-            "trueRa",
-            "trueDec",
-            "ow",
-            "sinDec",
-            "raw_sigma",
-        }
-
-        mask = [x for x in dataset.columns if x in allowed_fields]
-
-        dataset = dataset[mask]
 
     # prevent accidental in-place updates
     for col in dataset.columns.values():
