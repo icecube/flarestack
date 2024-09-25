@@ -1267,7 +1267,7 @@ class LargeCatalogueMinimisationHandler(FixedWeightMinimisationHandler):
 
     compatible_llh = ["standard_matrix", "std_matrix_kde_enabled"]
     compatible_negative_n_s = False
-    compatible_injectors = ["low_memory_injector"]
+    compatible_injectors = ["low_memory_injector", "table_injector"]
 
     def __init__(self, mh_dict):
         FixedWeightMinimisationHandler.__init__(self, mh_dict)
