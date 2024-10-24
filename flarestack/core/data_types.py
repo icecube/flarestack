@@ -2,8 +2,6 @@
 This module provides the basic data types used by the other modules of flarestack.
 """
 
-import numpy as np
-
 """ Catalogue data type """
 catalogue_dtype = [
     ("ra_rad", float),

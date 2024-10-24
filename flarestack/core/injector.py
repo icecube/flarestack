@@ -9,7 +9,10 @@ from flarestack.shared import band_mask_cache_name
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.core.spatial_pdf import SpatialPDF
-from flarestack.utils.catalogue_loader import calculate_source_weight
+from flarestack.utils.catalogue_loader import (
+    distance_scaled_weight,
+    distance_scaled_weight_sum,
+)
 from scipy import sparse, interpolate
 from flarestack.shared import k_to_flux
 
@@ -79,7 +82,9 @@ class BaseInjector:
         self.sources = sources
 
         if len(sources) > 0:
-            self.weight_scale = calculate_source_weight(self.sources)
+            self.weight_norm = distance_scaled_weight_sum(sources)
+        else:
+            raise RuntimeError("Catalogue is empty!")
 
         try:
             self.sig_time_pdf = TimePDF.create(
@@ -322,7 +327,7 @@ class MCInjector(BaseInjector):
         # standard candles with flux proportional to 1/d^2 multiplied by the
         # sources weight
 
-        weight = calculate_source_weight(source) / self.weight_scale
+        weight = distance_scaled_weight(source) / self.weight_norm
 
         # Calculate the fluence, using the effective injection time.
         fluence = inj_flux * eff_inj_time * weight
@@ -641,7 +646,7 @@ class EffectiveAreaInjector(BaseInjector):
 
         return sig_events
 
-    def calculate_single_source(self, source, scale):
+    def calculate_single_source(self, source: np.ndarray, scale: float) -> float:
         # Calculate the effective injection time for simulation. Equal to
         # the overlap between the season and the injection time PDF for
         # the source, scaled if the injection PDF is not uniform in time.
@@ -654,7 +659,7 @@ class EffectiveAreaInjector(BaseInjector):
         # standard candles with flux proportional to 1/d^2 multiplied by the
         # sources weight
 
-        weight = calculate_source_weight(source) / self.weight_scale
+        weight = distance_scaled_weight(source) / self.weight_norm
 
         # Calculate the fluence, using the effective injection time.
         fluence = inj_flux * eff_inj_time * weight
