@@ -61,7 +61,7 @@ This will install all packages as documented in the `poetry.lock` file.
 If you want to also build the documentation locally, you should install the respective dependencies:
 
 ```shell
-poetry install --with docs dev
+poetry install --with dev
 ```
 
 You can still use `pip` if you want to:
