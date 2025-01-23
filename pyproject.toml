@@ -27,7 +27,6 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.9, <4.0"
 astropy = ">=5.1,<7.0"
-black = ">=23,<25"
 coveralls = ">=3.3.1,<5.0.0"
 healpy = "^1.16.1"
 jupyter = "^1.0.0"
@@ -35,10 +34,7 @@ matplotlib = "^3.5.2"
 numexpr = "^2.8.3"
 numpy = "^1.23.1"
 scipy = "^1.9.0"
-sphinx = "^5.1.1"
 urllib3 = "2.3.0"
-
-[tool.poetry.dev-dependencies]
 
 [tool.poetry.group.docs]
 optional = true
@@ -50,8 +46,8 @@ myst-parser = "^0.18.0"
 nbsphinx = ">=0.8.9,<0.10.0"
 myst-nb = ">=0.16,<0.18"
 
-
 [tool.poetry.group.dev.dependencies]
+black = "^23.12"
 mypy = "^1.5.1"
 
 [build-system]

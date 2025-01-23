@@ -1,14 +1,17 @@
-import numpy as np
-import healpy as hp
-import os
 import logging
+import os
 from typing import Optional
-from scipy.stats import norm
-from scipy.interpolate import interp1d
+
+import healpy as hp
+import numpy as np
 from numpy.lib.recfunctions import append_fields
+from scipy.interpolate import interp1d
+from scipy.stats import norm
+
 from flarestack.core.astro import angular_distance
 from flarestack.shared import bkg_spline_path
 from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
+
 try:
     from photospline import SplineTable
 except ImportError:
@@ -234,7 +237,9 @@ class NorthernTracksKDE(SignalSpatialPDF):
 
         if SplineTable is None:
             logger.error("Photospline is not installed, cannot use KDE spatial PDF")
-            raise ImportError("Photospline is not installed, cannot use KDE spatial PDF")
+            raise ImportError(
+                "Photospline is not installed, cannot use KDE spatial PDF"
+            )
 
         NorthernTracksKDE.KDEspline = SplineTable(KDEfile)
         if NorthernTracksKDE.KDEspline.ndim == 3:
