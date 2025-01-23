@@ -16,6 +16,6 @@ jobs:
       - name: Install poetry
         run: pip install poetry # You may need additional dependencies here
       - name: Install flarestack
-        run: poetry install
+        run: poetry install --with dev
       - name: Run mypy
         run: poetry run mypy  # Replace 'your_code_directory' with your actual code directory
