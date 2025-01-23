@@ -18,4 +18,4 @@ jobs:
           poetry install --with dev
       - name: Reformat the code with black
         run: |
-          black . --check
+          poetry run black . --check
