@@ -9,7 +9,10 @@ from numpy.lib.recfunctions import append_fields
 from flarestack.core.astro import angular_distance
 from flarestack.shared import bkg_spline_path
 from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
-from photospline import SplineTable
+try:
+    from photospline import SplineTable
+except ImportError:
+    SplineTable = None
 
 logger = logging.getLogger(__name__)
 
@@ -228,6 +231,10 @@ class NorthernTracksKDE(SignalSpatialPDF):
             spatial_pdf_dict["spatial_pdf_data"]
         )
         KDEfile = spatial_pdf_dict["spatial_pdf_data"]
+
+        if SplineTable is None:
+            logger.error("Photospline is not installed, cannot use KDE spatial PDF")
+            raise ImportError("Photospline is not installed, cannot use KDE spatial PDF")
 
         NorthernTracksKDE.KDEspline = SplineTable(KDEfile)
         if NorthernTracksKDE.KDEspline.ndim == 3:
