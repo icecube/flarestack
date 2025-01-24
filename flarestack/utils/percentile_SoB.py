@@ -242,7 +242,7 @@ for gamma in [2.0]:
 
     order = 1
 
-    spline = scipy.interpolate.interp2d(x, y, np.log(ratio))
+    spline = scipy.interpolate.bisplrep(x, y, np.log(ratio))
 
     for x_val in [2.0, 3.0, 7.0]:
         print(x_val, spline(0.0, x_val), spline(0.5, x_val))

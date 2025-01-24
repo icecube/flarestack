@@ -771,7 +771,7 @@ class StandardLLH(FixedEnergyLLH):
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)
 
-        # acc_spline = scipy.interpolate.interp2d(
+        # acc_spline = scipy.interpolate.bisplrep(
         #     dec_bins, gamma_bins, np.array(acc).T, kind='linear')
         #
         # def acc_f(source, params):
@@ -807,7 +807,7 @@ class StandardLLH(FixedEnergyLLH):
     #     dec_bins = acc_dict["dec"]
     #     gamma_bins = acc_dict["gamma"]
     #     values = acc_dict["acceptance"]
-    #     f = scipy.interpolate.interp2d(
+    #     f = scipy.interpolate.bisplrep(
     #         dec_bins, gamma_bins, values.T, kind='linear')
     #     return f
 
@@ -824,7 +824,7 @@ class StandardLLH(FixedEnergyLLH):
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)
 
-        f = scipy.interpolate.interp2d(dec_bins, gamma_bins, acc.T, kind="linear")
+        f = scipy.interpolate.bisplrep(dec_bins, gamma_bins, acc.T, kind="linear")
         return f
 
     def new_acceptance(self, source, params=None):

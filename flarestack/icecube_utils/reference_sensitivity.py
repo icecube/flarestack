@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import logging
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d, bisplrep
 from flarestack.data.icecube.ic_season import get_published_sens_ref_dir
 
 
@@ -61,7 +61,7 @@ def reference_7year_sensitivity(sindec=np.array(0.0), gamma=2.0):
 
     sens = np.vstack((sens[0], sens))
     sens = np.vstack((sens, sens[-1]))
-    sens_ref = interp2d(np.array(sindecs), np.array(gammas), np.log(sens.T))
+    sens_ref = bisplrep(np.array(sindecs), np.array(gammas), np.log(sens.T))
 
     if np.array(sindec).ndim > 0:
         return np.array([np.exp(sens_ref(x, gamma))[0] for x in sindec])
@@ -97,7 +97,7 @@ def reference_7year_discovery_potential(sindec=0.0, gamma=2.0):
 
     disc = np.vstack((disc[0], disc))
     disc = np.vstack((disc, disc[-1]))
-    disc_ref = interp2d(np.array(sindecs), np.array(gammas), np.log(disc.T))
+    disc_ref = bisplrep(np.array(sindecs), np.array(gammas), np.log(disc.T))
 
     if np.array(sindec).ndim > 0:
         return np.array([np.exp(disc_ref(x, gamma))[0] for x in sindec])
@@ -129,7 +129,7 @@ def reference_10year_sensitivity(sindec=np.array(0.0), gamma=2.0):
     scaling = np.array([10 ** (3 * (i)) for i in range(2)])
     sens *= scaling
 
-    sens_ref = interp2d(np.array(sindecs), np.array(gammas), np.log(sens.T))
+    sens_ref = bisplrep(np.array(sindecs), np.array(gammas), np.log(sens.T))
 
     if np.array(sindec).ndim > 0:
         return np.array([np.exp(sens_ref(x, gamma))[0] for x in sindec])
@@ -161,7 +161,7 @@ def reference_10year_discovery_potential(sindec=np.array(0.0), gamma=2.0):
     scaling = np.array([10 ** (3 * i) for i in range(2)])
     sens *= scaling
 
-    sens_ref = interp2d(np.array(sindecs), np.array(gammas), np.log(sens.T))
+    sens_ref = bisplrep(np.array(sindecs), np.array(gammas), np.log(sens.T))
 
     if np.array(sindec).ndim > 0:
         return np.array([np.exp(sens_ref(x, gamma))[0] for x in sindec])
