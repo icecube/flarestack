@@ -102,5 +102,5 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           parallel-finished: true
-          carryforward: "python3.10,python3.11,python3.12"
+          carryforward: "python3.9,python3.10,python3.11,python3.12"
           github-token: ${{ secrets.GITHUB_TOKEN }}
