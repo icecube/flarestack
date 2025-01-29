@@ -6,13 +6,19 @@ on:
   merge_group:
 
 jobs:
-  isort:
+  black:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.11"
-    - name: isort
-      uses: isort/isort-action@v1.0.0
+      - uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+      - name: Check code with isort
+        run: |
+          poetry run isort . -c

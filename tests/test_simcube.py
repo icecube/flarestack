@@ -1,10 +1,13 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+
 import unittest
+
 import numpy as np
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
+
 from flarestack import create_unblinder
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 sindecs = np.linspace(0.9, 0.0, 4)
 

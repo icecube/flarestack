@@ -2,12 +2,12 @@
 
 import logging
 import unittest
-from flarestack.shared import flux_to_k
-from flarestack.data.public import icecube_ps_3_year
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.cluster.submitter import Submitter, LocalSubmitter
-from flarestack.core.results import ResultsHandler
 
+from flarestack.cluster.submitter import LocalSubmitter, Submitter
+from flarestack.core.results import ResultsHandler
+from flarestack.data.public import icecube_ps_3_year
+from flarestack.shared import flux_to_k
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 logger = logging.getLogger(__name__)
 

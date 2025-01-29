@@ -1,16 +1,19 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+
 import logging
-import unittest
 import pickle
+import unittest
+
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
-from flarestack.data.public import icecube_ps_3_year
-from flarestack.core.unblinding import create_unblinder
+
 from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
+from flarestack.core.unblinding import create_unblinder
+from flarestack.data.public import icecube_ps_3_year
 from flarestack.shared import energy_spline_dir
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 logger = logging.getLogger()
 logger.setLevel("ERROR")
