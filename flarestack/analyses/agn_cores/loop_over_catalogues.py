@@ -3,17 +3,20 @@ injected spectral index. Rather than the traditional flux at 1 GeV,
 Sensitivities are given as the total integrated fluence across all sources,
 and as the corresponding standard-candle-luminosity.
 """
+
+import math
 from builtins import str
+
+import matplotlib.pyplot as plt
 import numpy as np
+
+from flarestack.analyses.tde.shared_TDE import tde_catalogue_name, tde_catalogues
+from flarestack.cluster import run_desy_cluster as rd
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.shared import plot_output_dir, flux_to_k, make_analysis_pickle
-from flarestack.utils.reference_sensitivity import reference_sensitivity
-from flarestack.analyses.tde.shared_TDE import tde_catalogues, tde_catalogue_name
-from flarestack.cluster import run_desy_cluster as rd
-import math
-import matplotlib.pyplot as plt
+from flarestack.shared import flux_to_k, make_analysis_pickle, plot_output_dir
 from flarestack.utils.custom_dataset import custom_dataset
+from flarestack.utils.reference_sensitivity import reference_sensitivity
 
 analyses = dict()
 

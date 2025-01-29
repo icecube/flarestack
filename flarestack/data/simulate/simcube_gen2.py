@@ -1,11 +1,12 @@
-from flarestack.data.public import icecube_ps_3_year
-from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.data.simulate import SimSeason, SimDataset
-import numpy as np
-import random
 import os
+import random
+
+import numpy as np
 from scipy.interpolate import interp1d
-from flarestack.data.simulate import raw_sim_data_dir
+
+from flarestack.core.energy_pdf import EnergyPDF
+from flarestack.data.public import icecube_ps_3_year
+from flarestack.data.simulate import SimDataset, SimSeason, raw_sim_data_dir
 
 gen2_eff_a_path = raw_sim_data_dir + "gen2_inice_effective_area.npz"
 

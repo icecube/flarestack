@@ -1,14 +1,15 @@
 from __future__ import print_function
+
+from flarestack.analyses.txs_0506_056.make_txs_catalogue import (
+    txs_cat_path,
+    txs_catalogue,
+)
+from flarestack.cluster import analyse, wait_cluster
+from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_v003_p02
 from flarestack.shared import make_analysis_pickle
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.cluster import analyse, wait_cluster
-from flarestack.analyses.txs_0506_056.make_txs_catalogue import (
-    txs_catalogue,
-    txs_cat_path,
-)
 
 # Initialise Injectors/LLHs
 

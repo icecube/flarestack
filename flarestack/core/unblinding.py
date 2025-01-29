@@ -1,28 +1,30 @@
 import logging
-import sys
 import os
+import pickle
+import sys
+
+import matplotlib.pyplot as plt
 import numpy as np
+
+from flarestack.core.injector import MockUnblindedInjector, TrueUnblindedInjector
 from flarestack.core.minimisation import (
+    FlareMinimisationHandler,
     MinimisationHandler,
     read_mh_dict,
-    FlareMinimisationHandler,
 )
-from flarestack.core.injector import MockUnblindedInjector, TrueUnblindedInjector
-from flarestack.core.results import ResultsHandler, OverfluctuationError
+from flarestack.core.results import OverfluctuationError, ResultsHandler
 from flarestack.core.time_pdf import TimePDF
+from flarestack.core.ts_distributions import (
+    get_ts_fit_type,
+    plot_background_ts_distribution,
+)
 from flarestack.shared import (
-    name_pickle_output_dir,
-    plot_output_dir,
     analysis_pickle_path,
     limit_output_path,
+    name_pickle_output_dir,
+    plot_output_dir,
     unblinding_output_path,
 )
-import pickle
-from flarestack.core.ts_distributions import (
-    plot_background_ts_distribution,
-    get_ts_fit_type,
-)
-import matplotlib.pyplot as plt
 from flarestack.utils.catalogue_loader import load_catalogue
 
 logger = logging.getLogger(__name__)

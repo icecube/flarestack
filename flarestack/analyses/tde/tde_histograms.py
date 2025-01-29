@@ -1,7 +1,9 @@
 from __future__ import print_function
-import numpy as np
-from flarestack.shared import catalogue_dir, plot_output_dir
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+from flarestack.shared import catalogue_dir, plot_output_dir
 
 cats = ["jetted", "gold", "obscured", "silver"]
 

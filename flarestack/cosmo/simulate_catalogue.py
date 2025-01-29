@@ -1,16 +1,18 @@
+import logging
+import os
+
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import Distance
-import os
-import logging
-from flarestack.shared import catalogue_dir
+from scipy.interpolate import interp1d
+
 from flarestack.core.data_types import catalogue_dtype
 from flarestack.cosmo.neutrino_cosmology import (
+    cumulative_z,
     define_cosmology_functions,
     integrate_over_z,
-    cumulative_z,
 )
-from scipy.interpolate import interp1d
+from flarestack.shared import catalogue_dir
 
 logger = logging.getLogger(__name__)
 

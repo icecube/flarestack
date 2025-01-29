@@ -5,11 +5,14 @@ the code. Modification of variable n can produces a catalogue with an
 arbitrary number of sources.
 
 """
-import numpy as np
-import os
+
 import logging
+import os
 import random
 import zlib
+
+import numpy as np
+
 from flarestack.shared import catalogue_dir
 
 """ 

@@ -1,46 +1,45 @@
 """Script to compare the sensitivity and discovery potential for the IR-selected AGN sample (32249 sources)
 as a function of injected spectral index for energy decades between 100 GeV and 10 PeV.
 """
-from __future__ import print_function
-from __future__ import division
+
+from __future__ import division, print_function
+
+import logging
+import math
+import os
+import resource
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
+import psutil  # to get memory usage info
+from matplotlib.ticker import ScalarFormatter
+
+from flarestack.analyses.agn_cores.shared_agncores import (
+    agn_catalogue_name,
+    agn_subset_catalogue,
+    agn_subset_catalogue_north,
+    complete_cats_north,
+)
+from flarestack.cluster import analyse, wait_for_cluster
+from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube import diffuse_8_year
 
 # # from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 # from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
 # from flarestack.data.icecube.northern_tracks.nt_v002_p05 import diffuse_8year
 # from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import (
-    plot_output_dir,
     flux_to_k,
-    make_analysis_pickle,
     k_to_flux,
+    make_analysis_pickle,
+    plot_output_dir,
 )
-
-from flarestack.data.icecube import diffuse_8_year
 from flarestack.utils.catalogue_loader import load_catalogue
-from flarestack.analyses.agn_cores.shared_agncores import (
-    agn_subset_catalogue,
-    complete_cats_north,
-    complete_cats_north,
-    agn_catalogue_name,
-    agn_subset_catalogue_north,
-)
-from flarestack.core.minimisation import MinimisationHandler
-
-from flarestack.cluster import analyse, wait_for_cluster
-import math
-import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
 
 # plt.style.use('~/scratch/phdthesis.mpltstyle')
 
-import time
-
-import logging
-
-import os
-import psutil, resource  # to get memory usage info
 
 analyses = dict()
 

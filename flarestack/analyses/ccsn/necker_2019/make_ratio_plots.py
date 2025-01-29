@@ -1,23 +1,22 @@
+import logging
+import os
+import pickle
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from flarestack.analyses.ccsn import get_sn_color
+from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import limit_sens as necker_sens
+from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import raw_output_dir
+from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import (
+    get_figure_limits,
+    limits,
+    p_vals,
+)
 from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import (
     limit_sens as stasik_sens_flarestack,
 )
-from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import (
-    limits,
-    get_figure_limits,
-    p_vals,
-)
-from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
-    limit_sens as necker_sens,
-    raw_output_dir,
-)
-from flarestack.analyses.ccsn import get_sn_color
 from flarestack.shared import plot_output_dir
-import pickle
-import matplotlib.pyplot as plt
-import numpy as np
-import logging
-import os
-
 
 # define output directory
 ratios_plot_dir = plot_output_dir(f"{raw_output_dir}/ratios")

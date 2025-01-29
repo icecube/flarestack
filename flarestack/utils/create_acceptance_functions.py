@@ -1,9 +1,11 @@
-import numpy as np
+import logging
 import os
 import pickle
-import logging
-from flarestack.shared import acceptance_path, get_base_sob_plot_dir
+
+import numpy as np
+
 from flarestack.core.energy_pdf import PowerLaw
+from flarestack.shared import acceptance_path, get_base_sob_plot_dir
 from flarestack.utils.make_SoB_splines import make_plot
 
 logger = logging.getLogger(__name__)

@@ -1,29 +1,31 @@
 import logging
-import numexpr
 import os
+import pickle
+from typing import Optional
+
+import numexpr
 import numpy as np
 import scipy.interpolate
-from scipy import sparse
 from astropy.table import Table
-from typing import Optional
-import pickle
-from flarestack.shared import (
-    acceptance_path,
-    llh_energy_hash_pickles,
-    SoB_spline_path,
-    default_gamma_precision,
-    default_smoothing_order,
-)
-from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
-from flarestack.utils.make_SoB_splines import load_spline
+from scipy import sparse
+
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import SpatialPDF
+from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
+from flarestack.shared import (
+    SoB_spline_path,
+    acceptance_path,
+    default_gamma_precision,
+    default_smoothing_order,
+    llh_energy_hash_pickles,
+)
 from flarestack.utils.create_acceptance_functions import (
     dec_range,
     make_acceptance_season,
 )
 from flarestack.utils.make_SoB_splines import (
     create_2d_ratio_hist,
+    load_spline,
     make_2d_spline_from_hist,
     make_individual_spline_set,
 )

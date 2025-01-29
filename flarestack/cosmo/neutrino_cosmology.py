@@ -1,14 +1,16 @@
 import logging
-from astropy import units as u
+import os
+
 import astropy
-from astropy.cosmology import Planck15 as cosmo
-from astropy.coordinates import Distance
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-from flarestack.shared import plots_dir
+from astropy import units as u
+from astropy.coordinates import Distance
+from astropy.cosmology import Planck15 as cosmo
+
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.cosmo.icecube_diffuse_flux import get_diffuse_flux_at_1GeV
+from flarestack.shared import plots_dir
 
 logger = logging.getLogger(__name__)
 

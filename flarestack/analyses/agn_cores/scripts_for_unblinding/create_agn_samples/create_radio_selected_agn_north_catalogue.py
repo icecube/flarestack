@@ -5,18 +5,21 @@ The catalogue is given by the positional cross-match between 2RXS and AllWISE,
 and XMMSL2 and AllWISE. From the two subsamples 3LAC blazars have been removed.
 Also double X-Ray sources have been removed.
 """
-from flarestack.analyses.agn_cores.shared_agncores import (
-    raw_cat_dir,
-    agn_catalogue_name,
-    agn_cores_output_dir,
-)
-from shared_agncores import create_random_src, plot_catalogue
-from flarestack.utils.prepare_catalogue import cat_dtype
+
+import os
+
 import astropy.io.fits as pyfits
-from astropy.table import Table
 import numpy as np
 import pandas as pd
-import os
+from astropy.table import Table
+from shared_agncores import create_random_src, plot_catalogue
+
+from flarestack.analyses.agn_cores.shared_agncores import (
+    agn_catalogue_name,
+    agn_cores_output_dir,
+    raw_cat_dir,
+)
+from flarestack.utils.prepare_catalogue import cat_dtype
 
 
 def select_nrandom_sources(cat, n_random=100):

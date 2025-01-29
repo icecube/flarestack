@@ -1,9 +1,11 @@
-import numpy as np
-import os
-import matplotlib.pyplot as plt
-import scipy.optimize, scipy.stats
-from scipy.stats import norm
 import logging
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.optimize
+import scipy.stats
+from scipy.stats import norm
 
 logger = logging.getLogger(__name__)
 

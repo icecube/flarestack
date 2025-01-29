@@ -4,13 +4,16 @@ single trial, and is good to within ~30-50%). Use with some caution to
 quickly guess appropriate flux scales, or understand trends, without full
 calculations.
 """
-import numpy as np
-from flarestack.core.llh import LLH
-from flarestack.core.astro import angular_distance
-from flarestack.shared import k_to_flux
-from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
-from scipy.stats import norm
+
 import logging
+
+import numpy as np
+from scipy.stats import norm
+
+from flarestack.core.astro import angular_distance
+from flarestack.core.llh import LLH
+from flarestack.shared import k_to_flux
+from flarestack.utils.catalogue_loader import calculate_source_weight, load_catalogue
 
 
 def estimate_discovery_potential(seasons, inj_dict, sources, llh_dict, raw_scale=1.0):

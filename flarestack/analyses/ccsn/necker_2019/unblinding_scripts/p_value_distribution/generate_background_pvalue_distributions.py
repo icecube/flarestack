@@ -1,16 +1,20 @@
-import logging, os, pickle, subprocess, time
+import logging
+import os
+import pickle
+import subprocess
+import time
 from multiprocessing import Pool
+
 from tqdm import tqdm
 
-from flarestack.cluster.submitter import DESYSubmitter
-from flarestack.shared import cluster_dir, log_dir, fs_scratch_dir
 from flarestack.analyses.ccsn.necker_2019.unblinding_scripts.p_value_distribution.generate_background_pvalue_distribution_single import (
-    single_filename,
-    run_background_pvalue_trials,
-    p_value_filename,
     p_value_directory,
+    p_value_filename,
+    run_background_pvalue_trials,
+    single_filename,
 )
-
+from flarestack.cluster.submitter import DESYSubmitter
+from flarestack.shared import cluster_dir, fs_scratch_dir, log_dir
 
 logging.getLogger().setLevel("DEBUG")
 logging.debug("logging level is DEBUG")
@@ -24,7 +28,6 @@ logger = logging.getLogger("main")
 
 
 class MyPValueSubmitter(DESYSubmitter):
-
     """
     This is a bit hacky. We will subclass the Submitter class and put a different submission script in,
     that no longer runs the MultiProcessor on the cluster but our run_background_pvalue_trials() function.

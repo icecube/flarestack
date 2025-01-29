@@ -1,19 +1,21 @@
-import os
-import numpy as np
-import pickle
 import csv
-import scipy.interpolate
 import logging
-from flarestack.data import SeasonWithoutMC, Season
-from flarestack.icecube_utils.dataset_loader import data_loader
+import os
+import pickle
+
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 import matplotlib.ticker as ticker
+import numpy as np
+import scipy.interpolate
+from matplotlib.colors import LogNorm
+
+from flarestack.data import Season, SeasonWithoutMC
+from flarestack.icecube_utils.dataset_loader import data_loader
 from flarestack.shared import (
     eff_a_plot_dir,
     energy_proxy_path,
-    med_ang_res_path,
     energy_proxy_plot_path,
+    med_ang_res_path,
 )
 
 logger = logging.getLogger(__name__)

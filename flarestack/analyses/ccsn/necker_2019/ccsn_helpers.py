@@ -1,10 +1,11 @@
-import os
 import logging
-from astropy import units as u
-from flarestack.shared import limits_dir, limit_output_path
-from flarestack.cosmo.neutrino_cosmology import define_cosmology_functions
-from flarestack.core.energy_pdf import EnergyPDF
+import os
 
+from astropy import units as u
+
+from flarestack.core.energy_pdf import EnergyPDF
+from flarestack.cosmo.neutrino_cosmology import define_cosmology_functions
+from flarestack.shared import limit_output_path, limits_dir
 
 raw_output_dir = "analyses/ccsn/necker_2019"
 

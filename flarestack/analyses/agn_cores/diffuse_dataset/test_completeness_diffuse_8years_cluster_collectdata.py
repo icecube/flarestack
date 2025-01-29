@@ -3,47 +3,45 @@ injected spectral index. Rather than the traditional flux at 1 GeV,
 Sensitivities are given as the total integrated fluence across all sources,
 and as the corresponding standard-candle-luminosity.
 """
-from __future__ import print_function
-from __future__ import division
+
+from __future__ import division, print_function
+
+import logging
+import math
+import os
+import resource
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
+import psutil  # to get memory usage info
+from matplotlib.ticker import ScalarFormatter
+
+from flarestack.analyses.agn_cores.shared_agncores import (
+    agn_catalogue_name,
+    agn_subset_catalogue,
+    agn_subset_catalogue_north,
+    complete_cats,
+)
+from flarestack.cluster import analyse, wait_for_cluster
+from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube import diffuse_8_year
 
 # # from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
 # from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
 # from flarestack.data.icecube.northern_tracks.nt_v002_p05 import diffuse_8year
 # from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
 from flarestack.shared import (
-    plot_output_dir,
     flux_to_k,
-    make_analysis_pickle,
     k_to_flux,
+    make_analysis_pickle,
+    plot_output_dir,
 )
-
-from flarestack.data.icecube import diffuse_8_year
 from flarestack.utils.catalogue_loader import load_catalogue
-from flarestack.analyses.agn_cores.shared_agncores import (
-    agn_subset_catalogue,
-    complete_cats,
-    agn_catalogue_name,
-    agn_subset_catalogue_north,
-)
-from flarestack.core.minimisation import MinimisationHandler
-
-from flarestack.cluster import analyse, wait_for_cluster
-import math
-import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
-
-import matplotlib.pyplot as plt
 
 # plt.style.use('~/scratch/phdthesis.mpltstyle')
 
-import time
-
-import logging
-
-import os
-import psutil, resource  # to get memory usage info
 
 analyses = dict()
 
@@ -691,9 +689,8 @@ for cat_key, gamma_dict in all_res.items():
             frame2.set_ylabel("Stacked\nsources")
             frame2.set_yticks([10, 1000, 10000])
 
-            from matplotlib.ticker import AutoMinorLocator
-            from matplotlib.ticker import StrMethodFormatter
             from matplotlib import ticker
+            from matplotlib.ticker import AutoMinorLocator, StrMethodFormatter
 
             minorLocator = AutoMinorLocator()
             # frame2.xaxis.set_minor_locator(minorLocator)
@@ -819,9 +816,8 @@ for cat_key, gamma_dict in all_res.items():
         frame2.set_yticks([10, 1000, 10000])
         frame2.set_ylabel("Stacked\nsources")
 
-        from matplotlib.ticker import AutoMinorLocator
-        from matplotlib.ticker import StrMethodFormatter
         from matplotlib import ticker
+        from matplotlib.ticker import AutoMinorLocator, StrMethodFormatter
 
         minorLocator = AutoMinorLocator()
         # frame2.xaxis.set_minor_locator(minorLocator)

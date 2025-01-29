@@ -1,14 +1,16 @@
+import os
+import resource
+
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numexpr
 import numpy as np
 import scipy.interpolate
-import os
-import numexpr
-import resource
-import matplotlib.pyplot as plt
+
+from flarestack.core.energy_pdf import PowerLaw
 from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_v002_p01
 from flarestack.icecube_utils.dataset_loader import data_loader
-from flarestack.core.energy_pdf import PowerLaw
 from flarestack.shared import plots_dir
-import matplotlib.cm as cm
 
 # season_dict = gfu_v002_p01[0]
 

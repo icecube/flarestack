@@ -1,14 +1,16 @@
-from builtins import str
-import numpy as np
 import os
 import pickle as Pickle
+from builtins import str
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from flarestack.analyses.txs_0506_056.make_txs_catalogue import txs_cat_path
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-import matplotlib.pyplot as plt
+from flarestack.shared import analysis_dir, flux_to_k, plot_output_dir
 from flarestack.utils.custom_dataset import custom_dataset
-from flarestack.analyses.txs_0506_056.make_txs_catalogue import txs_cat_path
 
 catalogue = np.load(txs_cat_path)
 

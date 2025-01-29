@@ -1,16 +1,17 @@
-import pandas as pd
-import numpy as np
 import logging
-from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
-    raw_sn_catalogue_name,
-    updated_sn_catalogue_name,
-    sn_times,
-    pdf_names,
-    conservative_redshift_addition,
-)
-from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import sn_catalogue_name
 import math
 
+import numpy as np
+import pandas as pd
+
+from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
+    conservative_redshift_addition,
+    pdf_names,
+    raw_sn_catalogue_name,
+    sn_times,
+    updated_sn_catalogue_name,
+)
+from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import sn_catalogue_name
 
 logging.getLogger().setLevel("INFO")
 
@@ -198,9 +199,11 @@ def load_catalogue(sn_type, pdf_name, include_flagged=False, z_add=0):
 
 def keymap(keys, raw_catalogue):
     indices = [
-        np.where(np.array(raw_catalogue.columns) == key)[0][0]
-        if len(np.where(np.array(raw_catalogue.columns) == key)) <= 1
-        else np.where(np.array(raw_catalogue.columns) == key)
+        (
+            np.where(np.array(raw_catalogue.columns) == key)[0][0]
+            if len(np.where(np.array(raw_catalogue.columns) == key)) <= 1
+            else np.where(np.array(raw_catalogue.columns) == key)
+        )
         for key in keys
     ]
 

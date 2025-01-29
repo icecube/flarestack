@@ -1,24 +1,25 @@
-import numpy as np
 import argparse
-from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube import ps_v002_p01, diffuse_8_year
-from flarestack.shared import plot_output_dir, flux_to_k, catalogue_dir
-from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import analyse
-from flarestack.cluster.run_desy_cluster import wait_for_cluster
-from flarestack.analyses.skylab_crosscheck.skylab_crosscheck_with_same_scramble import (
-    make_sources,
-)
+import logging
+import math
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 from flarestack.analyses.skylab_crosscheck.data import (
     get_skylab_crosscheck_stacking_same_sources_res,
 )
-import math
-import matplotlib.pyplot as plt
+from flarestack.analyses.skylab_crosscheck.skylab_crosscheck_with_same_scramble import (
+    make_sources,
+)
+from flarestack.cluster import analyse
+from flarestack.cluster.run_desy_cluster import wait_for_cluster
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube import diffuse_8_year, ps_v002_p01
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
+from flarestack.shared import catalogue_dir, flux_to_k, plot_output_dir
 from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.utils.prepare_catalogue import custom_sources
-import os
-import logging
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-a", "--analyse", type=bool, default=False, nargs="?", const=True)
@@ -114,9 +115,11 @@ if __name__ == "__main__":
             }
 
             llh_dict = {
-                "llh_name": "standard"
-                if not mh_name == "large_catalogue"
-                else "standard_matrix",
+                "llh_name": (
+                    "standard"
+                    if not mh_name == "large_catalogue"
+                    else "standard_matrix"
+                ),
                 "llh_energy_pdf": llh_energy,
                 "llh_sig_time_pdf": llh_time,
                 "llh_bkg_time_pdf": {"time_pdf_name": "steady"},

@@ -1,10 +1,13 @@
 from __future__ import print_function
-import matplotlib.pyplot as plt
+
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
-from flarestack.utils.simulate_catalogue import simulate_transients
+
 from flarestack.analyses.ccsn import get_sn_type_rate
 from flarestack.shared import plot_output_dir
+from flarestack.utils.simulate_catalogue import simulate_transients
 
 sn_types = ["IIn"]
 

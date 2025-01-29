@@ -1,12 +1,12 @@
-import pickle
+import argparse
 import logging
+import pickle
+import random
 import time
 from logging.handlers import QueueHandler, QueueListener
-import argparse
+from multiprocessing import JoinableQueue, Process, Queue, Value, set_start_method
+
 from flarestack.core.minimisation import MinimisationHandler, read_mh_dict
-from multiprocessing import JoinableQueue, Process, Queue, Value
-import random
-from multiprocessing import set_start_method
 
 logger = logging.getLogger(__name__)
 

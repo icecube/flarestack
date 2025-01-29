@@ -1,29 +1,31 @@
-import logging
-import numpy as np
-import resource
-import random
-from sys import stdout
-import os
 import argparse
+import logging
+import os
 import pickle as Pickle
+import random
+import resource
+from sys import stdout
+
+import matplotlib as mpl
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
 import scipy.optimize
+from matplotlib.colors import ListedColormap, Normalize
+
+from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.core.injector import read_injector_dict
 from flarestack.core.llh import LLH, generate_dynamic_flare_class, read_llh_dict
+from flarestack.core.time_pdf import Box, Steady, TimePDF
 from flarestack.shared import (
-    name_pickle_output_dir,
+    flux_to_k,
     inj_dir_name,
+    name_pickle_output_dir,
     plot_output_dir,
     scale_shortener,
-    flux_to_k,
 )
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.colors import Normalize, ListedColormap
-import matplotlib as mpl
-from flarestack.core.time_pdf import TimePDF, Box, Steady
-from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
-from flarestack.utils.catalogue_loader import load_catalogue, calculate_source_weight
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
+from flarestack.utils.catalogue_loader import calculate_source_weight, load_catalogue
 
 logger = logging.getLogger(__name__)
 

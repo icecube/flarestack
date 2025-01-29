@@ -5,10 +5,12 @@
 # if in the future this script is updated to use a new data set, remove the `type: ignore` comment
 
 import os
+
 import matplotlib.pyplot as plt
+
 from flarestack.data.icecube.northern_tracks.nt_v002_p01 import diffuse_8year
-from flarestack.shared import plots_dir
 from flarestack.icecube_utils.dataset_loader import data_loader, grl_loader
+from flarestack.shared import plots_dir
 
 data_rate_dir = plots_dir + "data_rate/"
 

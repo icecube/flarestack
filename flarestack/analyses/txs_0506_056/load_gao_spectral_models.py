@@ -1,15 +1,16 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import str
-from builtins import range
+from __future__ import division, print_function
+
 import os
-import numpy as np
 import pickle as Pickle
-from astropy import units as u
-from astropy import constants as const
-from flarestack.shared import plot_output_dir, fs_scratch_dir
+from builtins import range, str
+
 import matplotlib.pyplot as plt
+import numpy as np
+from astropy import constants as const
+from astropy import units as u
 from scipy.interpolate import InterpolatedUnivariateSpline
+
+from flarestack.shared import fs_scratch_dir, plot_output_dir
 
 base_dir = "/afs/ifh.de/user/s/steinrob/scratch/gao_txs/"
 

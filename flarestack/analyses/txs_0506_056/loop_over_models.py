@@ -1,20 +1,22 @@
 from __future__ import print_function
-from builtins import str
-from builtins import range
-import numpy as np
+
 import os
 import pickle as Pickle
+from builtins import range, str
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from flarestack.analyses.txs_0506_056.load_gao_spectral_models import spline_name
+from flarestack.analyses.txs_0506_056.make_txs_catalogue import (
+    txs_cat_path,
+    txs_catalogue,
+)
+from flarestack.cluster import run_desy_cluster as rd
+from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict, IC86_234_dict
 from flarestack.shared import flux_to_k, make_analysis_pickle, plot_output_dir
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.cluster import run_desy_cluster as rd
-import matplotlib.pyplot as plt
-from flarestack.analyses.txs_0506_056.make_txs_catalogue import (
-    txs_catalogue,
-    txs_cat_path,
-)
-from flarestack.analyses.txs_0506_056.load_gao_spectral_models import spline_name
 from flarestack.utils.custom_dataset import custom_dataset
 
 base_dir = "analyses/txs_0506_056/loop_gao_models/"
