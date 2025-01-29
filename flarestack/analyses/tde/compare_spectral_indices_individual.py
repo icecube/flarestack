@@ -1,14 +1,17 @@
 from __future__ import print_function
-from builtins import str
-import numpy as np
+
 import os
 import pickle as Pickle
+from builtins import str
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from flarestack.cluster import run_desy_cluster as rd
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import run_desy_cluster as rd
-import matplotlib.pyplot as plt
+from flarestack.shared import analysis_dir, catalogue_dir, flux_to_k, plot_output_dir
 from flarestack.utils.custom_dataset import custom_dataset
 
 analyses = dict()

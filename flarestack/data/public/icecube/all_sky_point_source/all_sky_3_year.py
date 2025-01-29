@@ -1,15 +1,21 @@
-import os
-import logging
-import numpy as np
 import csv
+import logging
+import os
 import pickle
-from flarestack.shared import public_dataset_dir, med_ang_res_path, ang_res_plot_path
-from flarestack.utils.make_SoB_splines import make_individual_spline_set
-from flarestack.shared import SoB_spline_path
+import zipfile
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 from flarestack.data import Dataset
 from flarestack.data.public.icecube import PublicICSeason
-import matplotlib.pyplot as plt
-import zipfile
+from flarestack.shared import (
+    SoB_spline_path,
+    ang_res_plot_path,
+    med_ang_res_path,
+    public_dataset_dir,
+)
+from flarestack.utils.make_SoB_splines import make_individual_spline_set
 
 logger = logging.getLogger(__name__)
 

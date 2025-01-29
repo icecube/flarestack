@@ -1,10 +1,12 @@
-import numpy as np
-import random
-from scipy.interpolate import interp1d
 import logging
-from flarestack.data.public import icecube_ps_3_year
+import random
+
+import numpy as np
+from scipy.interpolate import interp1d
+
 from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.data.simulate import SimSeason, SimDataset
+from flarestack.data.public import icecube_ps_3_year
+from flarestack.data.simulate import SimDataset, SimSeason
 
 logger = logging.getLogger(__name__)
 

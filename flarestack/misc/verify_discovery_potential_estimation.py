@@ -4,16 +4,18 @@
 # this also implies that this file is currently untested, otherwise such a test would fail
 # if in the future its functionality is restored, remove the `type: ignore` comment
 
-import numpy as np
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
-from flarestack.shared import plot_output_dir
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.icecube_utils.reference_sensitivity import (
     reference_7year_discovery_potential,
 )
-import matplotlib.pyplot as plt
+from flarestack.shared import plot_output_dir
 from flarestack.utils.asimov_estimator import AsimovEstimator
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 name = "verify_disc_potential"
 

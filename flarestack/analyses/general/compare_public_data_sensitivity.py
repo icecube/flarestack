@@ -1,17 +1,19 @@
 """Script to replicate unblinding of the neutrino flare found for the source
 TXS 0506+056, as described in https://arxiv.org/abs/1807.08794.
 """
-import os
-import matplotlib.pyplot as plt
-from flarestack.core.results import ResultsHandler
-import numpy as np
-from flarestack.data.icecube.public.all_sky_point_source.all_sky_3_year import ps_3_year
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_3_systematic_set
-from flarestack.cluster import analyse, wait_cluster
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.utils.asimov_estimator import AsimovEstimator
-from flarestack.shared import plot_output_dir, flux_to_k
 
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from flarestack.cluster import analyse, wait_cluster
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_3_systematic_set
+from flarestack.data.icecube.public.all_sky_point_source.all_sky_3_year import ps_3_year
+from flarestack.shared import flux_to_k, plot_output_dir
+from flarestack.utils.asimov_estimator import AsimovEstimator
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 # Initialise Injectors/LLHs
 

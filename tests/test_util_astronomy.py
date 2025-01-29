@@ -1,12 +1,15 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+
 import logging
 import unittest
-from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
-from flarestack.utils import load_catalogue, calculate_astronomy
-from astropy import units as u
+
 import numpy as np
+from astropy import units as u
+
+from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
+from flarestack.utils import calculate_astronomy, load_catalogue
 
 true_res_astro = {
     "Energy Flux (GeV cm^{-2} s^{-1})": 1.151292546497023e-08,

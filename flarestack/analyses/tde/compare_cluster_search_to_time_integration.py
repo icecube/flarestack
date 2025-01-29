@@ -2,17 +2,20 @@
 with negative n_s, and also to the flare search method, which looks for
 temporal clustering. The script runs for all individual TDEs to be analysed.
 """
+
+import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
+
+from flarestack.analyses.tde.shared_TDE import individual_tde_cat, individual_tdes
+from flarestack.cluster import analyse, wait_cluster
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2
 from flarestack.data.icecube.gfu.gfu_v002_p04 import gfu_v002_p04
-from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.utils import load_catalogue, custom_dataset
-from flarestack.cluster import analyse, wait_cluster
-import matplotlib.pyplot as plt
-from flarestack.analyses.tde.shared_TDE import individual_tdes, individual_tde_cat
-import logging
+from flarestack.shared import flux_to_k, plot_output_dir
+from flarestack.utils import custom_dataset, load_catalogue
 
 logging.basicConfig(level=logging.INFO)
 

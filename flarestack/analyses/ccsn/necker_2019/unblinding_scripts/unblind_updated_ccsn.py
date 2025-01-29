@@ -1,14 +1,14 @@
 import numpy as np
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
     sn_cats,
+    sn_time_pdfs,
     sn_times,
     updated_sn_catalogue_name,
-    sn_time_pdfs,
 )
 from flarestack.core.unblinding import create_unblinder
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.utils.custom_dataset import custom_dataset
-
 
 name_root = "analyses/ccsn/necker_2019/unblind_ccsn"
 bkg_ts_root = "analyses/ccsn/necker_2019/calculate_sensitivity/fit_weights"

@@ -1,8 +1,9 @@
-import os
-import numpy as np
 import logging
-from flarestack.utils.prepare_catalogue import single_source
+import os
 
+import numpy as np
+
+from flarestack.utils.prepare_catalogue import single_source
 
 logging.getLogger().setLevel(logging.INFO)
 

@@ -3,14 +3,15 @@
 This is the sample that was used for the second TXS analysis up to March 2018
 """
 
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+import numpy as np
+
+from flarestack.data.icecube.gfu import gfu_binning
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,
     get_dataset_dir,
 )
-from flarestack.data.icecube.gfu import gfu_binning
-import numpy as np
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 
 icecube_dataset_dir = get_dataset_dir()
 

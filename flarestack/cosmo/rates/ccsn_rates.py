@@ -1,12 +1,14 @@
 import logging
-from astropy.cosmology import Planck15 as cosmo
-from astropy import units as u
+
 import numpy as np
+from astropy import units as u
+from astropy.cosmology import Planck15 as cosmo
+
 from flarestack.cosmo.rates.sfr_rates import (
     get_local_sfr_rate,
     get_sfr_evolution,
-    sfr_evolutions,
     local_sfr_rates,
+    sfr_evolutions,
 )
 
 # Taken from https://arxiv.org/pdf/1509.06574.pdf

@@ -1,5 +1,7 @@
 import logging
+
 from astropy import units as u
+
 from flarestack.cosmo.rates.sfr_rates import get_sfr_evolution
 
 local_fbot_rates = {

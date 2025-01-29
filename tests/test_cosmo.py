@@ -1,17 +1,20 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+
 import logging
 import unittest
+
+from astropy import units as u
+
 from flarestack.cosmo import (
+    calculate_transient_cosmology,
+    get_diffuse_flux,
     get_diffuse_flux_at_1GeV,
     get_diffuse_flux_at_100TeV,
-    get_diffuse_flux,
-    calculate_transient_cosmology,
     get_rate,
 )
 from flarestack.cosmo.icecube_diffuse_flux import contours, plot_diffuse_flux
-from astropy import units as u
 
 default_flux_100TeV = [
     (2.2333333333333334e-18 / (u.cm**2 * u.GeV * u.s * u.sr), 2.5),

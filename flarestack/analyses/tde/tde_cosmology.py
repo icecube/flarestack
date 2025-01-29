@@ -1,18 +1,23 @@
 from __future__ import division
-from flarestack.utils.neutrino_cosmology import calculate_transient_cosmology
-from astropy import units as u
-import matplotlib.pyplot as plt
-from flarestack.shared import plot_output_dir
-import numpy as np
+
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy import units as u
+
+from flarestack.analyses.tde.shared_TDE import tde_cat_limit
 from flarestack.misc.convert_diffuse_flux_contour import (
     contour_95,
-    upper_contour,
-    lower_contour,
     global_fit_e_range,
+    lower_contour,
+    upper_contour,
 )
-from flarestack.utils.neutrino_cosmology import get_diffuse_flux_at_1GeV
-from flarestack.analyses.tde.shared_TDE import tde_cat_limit
+from flarestack.shared import plot_output_dir
+from flarestack.utils.neutrino_cosmology import (
+    calculate_transient_cosmology,
+    get_diffuse_flux_at_1GeV,
+)
 
 e_pdf_dict_template = {
     "Name": "Power Law",

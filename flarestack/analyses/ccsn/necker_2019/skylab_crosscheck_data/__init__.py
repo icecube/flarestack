@@ -1,10 +1,10 @@
-import os
-import numpy as np
 import logging
+import os
 from pathlib import Path
 
-from flarestack.shared import host_server
+import numpy as np
 
+from flarestack.shared import host_server
 
 logger = logging.getLogger(__name__)
 # dir_path = os.path.dirname(os.path.realpath(__file__))

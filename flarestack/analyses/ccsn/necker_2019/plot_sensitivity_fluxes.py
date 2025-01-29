@@ -1,27 +1,29 @@
 """Script to calculate and plot the sensitivity flux from the population of the different SNe types"""
-import numpy as np
-from astropy import units as u
-from scipy.integrate import quad
-from flarestack.shared import plot_output_dir
-from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
-    raw_output_dir,
-    limit_sens,
-    sn_times,
-    get_population_flux,
-    pdf_names,
-)
-from flarestack.analyses.ccsn.necker_2019.ccsn_rate import get_ccsn_rate_type_function
-from flarestack.analyses.ccsn import get_sn_color
-from flarestack.cosmo.neutrino_cosmology import get_diffuse_flux_at_1GeV
-from flarestack.cosmo import get_diffuse_flux_contour
-from flarestack.cosmo.icecube_diffuse_flux.joint_15 import contour_95, e_range, units
+
+import logging
+import os
 
 # from flarestack.misc.convert_diffuse_flux_contour import contour_95, lower_contour, upper_contour, e_range
 import pickle
-import matplotlib.pyplot as plt
-import os
-import logging
 
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy import units as u
+from scipy.integrate import quad
+
+from flarestack.analyses.ccsn import get_sn_color
+from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
+    get_population_flux,
+    limit_sens,
+    pdf_names,
+    raw_output_dir,
+    sn_times,
+)
+from flarestack.analyses.ccsn.necker_2019.ccsn_rate import get_ccsn_rate_type_function
+from flarestack.cosmo import get_diffuse_flux_contour
+from flarestack.cosmo.icecube_diffuse_flux.joint_15 import contour_95, e_range, units
+from flarestack.cosmo.neutrino_cosmology import get_diffuse_flux_at_1GeV
+from flarestack.shared import plot_output_dir
 
 mh_name = "fit_weights"
 energy_range_gev = np.linspace(10**3, 10**7, 10)

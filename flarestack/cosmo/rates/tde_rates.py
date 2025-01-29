@@ -1,4 +1,5 @@
 import logging
+
 from astropy import units as u
 
 # Assumed source evolution is highly negative

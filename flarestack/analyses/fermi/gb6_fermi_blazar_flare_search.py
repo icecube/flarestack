@@ -5,20 +5,23 @@ https://wiki.icecube.wisc.edu/index.php/1ES_1959_Analysis.
 The script can be used to verify that the flare search method, as implemented
 here, is capable of matching previous flare search methods.
 """
-from __future__ import print_function
-from __future__ import division
+
+from __future__ import division, print_function
+
 from builtins import str
-import numpy as np
-from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube import txs_sample_v1
-from flarestack.utils.custom_dataset import custom_dataset
-from flarestack.shared import plot_output_dir, flux_to_k, transients_dir
-from flarestack.utils.prepare_catalogue import custom_sources
-from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import analyse, wait_for_cluster
+
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 from astropy.coordinates import Distance
+
+from flarestack.cluster import analyse, wait_for_cluster
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube import txs_sample_v1
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
+from flarestack.shared import flux_to_k, plot_output_dir, transients_dir
+from flarestack.utils.custom_dataset import custom_dataset
+from flarestack.utils.prepare_catalogue import custom_sources
 
 name = "analyses/fermi/GB6_blazar_flare_search/"
 

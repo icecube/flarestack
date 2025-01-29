@@ -13,10 +13,11 @@ themselves are duplicates of those provided at:
 
 """
 
-import os
-import numpy as np
 import csv
+import os
 import pickle
+
+import numpy as np
 
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.icecube_utils.dataset_loader import data_loader

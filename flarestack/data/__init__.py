@@ -1,21 +1,22 @@
-"""Generic classes for a Dataset, and for a Season.
-"""
-import os
-import numpy as np
+"""Generic classes for a Dataset, and for a Season."""
+
 import copy
 import logging
+import os
+
+import numpy as np
 from numpy.lib.recfunctions import append_fields, drop_fields
-from flarestack.core.injector import MCInjector, EffectiveAreaInjector
-from flarestack.utils.make_SoB_splines import make_background_spline
-from flarestack.utils.create_acceptance_functions import make_acceptance_season
+
+import flarestack
+from flarestack.core.injector import EffectiveAreaInjector, MCInjector
 from flarestack.core.time_pdf import (
-    TimePDF,
     DetectorOnOffList,
     FixedEndBox,
     FixedRefBox,
+    TimePDF,
 )
-import flarestack
-
+from flarestack.utils.create_acceptance_functions import make_acceptance_season
+from flarestack.utils.make_SoB_splines import make_background_spline
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,9 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from flarestack.shared import illustration_dir
+import matplotlib.pyplot as plt
+import numpy as np
 import scipy.stats
+
+from flarestack.shared import illustration_dir
 
 plt.xkcd()
 

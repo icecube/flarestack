@@ -1,20 +1,21 @@
-"""Script to calculate the sensitivity and discovery potential for some sources to check consistency with skylab.
-"""
-import numpy as np
+"""Script to calculate the sensitivity and discovery potential for some sources to check consistency with skylab."""
+
 import argparse
+import logging
+import math
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 from flarestack.analyses.skylab_crosscheck.make_sources import fs_sources, nsources
 from flarestack.analyses.skylab_crosscheck.skylab_results import sl_data_dir
+from flarestack.cluster import analyse, wait_for_cluster
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube import ps_v002_p01
-from flarestack.shared import plot_output_dir, flux_to_k
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import analyse, wait_for_cluster
-import math
-import matplotlib.pyplot as plt
+from flarestack.shared import flux_to_k, plot_output_dir
 from flarestack.utils.custom_dataset import custom_dataset
-import os
-import logging
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-a", "--analyse", type=bool, default=False, const=True, nargs="?")

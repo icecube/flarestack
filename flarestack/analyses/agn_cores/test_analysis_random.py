@@ -1,16 +1,17 @@
 import unittest
-import numpy as np
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_v002_p01
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.shared import fs_scratch_dir, flux_to_k, make_analysis_pickle
-from flarestack.utils.reference_sensitivity import reference_sensitivity
-from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
-from flarestack.core.results import ResultsHandler
-from flarestack.analyses.agn_cores.shared_agncores import agn_catalogue_name
 
+import numpy as np
+
+from flarestack.analyses.agn_cores.shared_agncores import agn_catalogue_name
+from flarestack.analyses.tde.shared_TDE import tde_catalogue_name
 from flarestack.cluster import run_desy_cluster as rd
+from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube.gfu.gfu_v002_p01 import gfu_v002_p01
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.shared import flux_to_k, fs_scratch_dir, make_analysis_pickle
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
+from flarestack.utils.reference_sensitivity import reference_sensitivity
 
 # Initialise Injectors/LLHs
 

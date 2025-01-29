@@ -1,10 +1,12 @@
 import logging
+
 import matplotlib.pyplot as plt
-from flarestack.shared import illustration_dir
+
 from flarestack.cosmo.icecube_diffuse_flux.joint_15 import joint_15
 from flarestack.cosmo.icecube_diffuse_flux.nt_16 import nt_16
 from flarestack.cosmo.icecube_diffuse_flux.nt_17 import nt_17
 from flarestack.cosmo.icecube_diffuse_flux.nt_19 import nt_19
+from flarestack.shared import illustration_dir
 
 logger = logging.getLogger(__name__)
 

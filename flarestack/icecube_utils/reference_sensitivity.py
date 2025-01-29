@@ -1,9 +1,10 @@
-import os
-import numpy as np
 import logging
-from scipy.interpolate import interp1d, interp2d
-from flarestack.data.icecube.ic_season import get_published_sens_ref_dir
+import os
 
+import numpy as np
+from scipy.interpolate import interp1d, interp2d
+
+from flarestack.data.icecube.ic_season import get_published_sens_ref_dir
 
 logger = logging.getLogger(__name__)
 

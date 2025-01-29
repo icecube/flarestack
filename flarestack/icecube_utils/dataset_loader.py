@@ -1,6 +1,8 @@
-import numpy as np
 import logging
+
+import numpy as np
 from numpy.lib.recfunctions import append_fields, rename_fields
+
 from flarestack.shared import min_angular_err
 
 logger = logging.getLogger(__name__)

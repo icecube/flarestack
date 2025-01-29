@@ -78,15 +78,17 @@ with following README:
     /data/ana/PointSource/IC86_2012_PS/Merged_11*.hd5
 
 """
+
+import logging
+
+import numpy as np
+
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,
     get_dataset_dir,
 )
 from flarestack.data.icecube.ps_tracks import get_ps_binning
-import numpy as np
-import logging
-
 
 logger = logging.getLogger(__name__)
 

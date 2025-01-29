@@ -1,9 +1,11 @@
 from __future__ import print_function
-import numpy as np
+
 import matplotlib.pyplot as plt
-from astropy import units as u
+import numpy as np
 from astropy import cosmology
+from astropy import units as u
 from astropy.coordinates import Distance
+
 from flarestack.shared import plot_output_dir
 
 dist_mpc = np.array(

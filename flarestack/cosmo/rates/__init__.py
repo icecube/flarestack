@@ -1,10 +1,11 @@
 import logging
-from flarestack.cosmo.rates.sfr_rates import get_sfr_rate
+
 from flarestack.cosmo.rates.ccsn_rates import get_ccsn_rate
-from flarestack.cosmo.rates.tde_rates import get_tde_rate
-from flarestack.cosmo.rates.grb_rates import get_grb_rate
 from flarestack.cosmo.rates.fbot_rates import get_fbot_rate
 from flarestack.cosmo.rates.frb_rates import get_frb_rate
+from flarestack.cosmo.rates.grb_rates import get_grb_rate
+from flarestack.cosmo.rates.sfr_rates import get_sfr_rate
+from flarestack.cosmo.rates.tde_rates import get_tde_rate
 
 logger = logging.getLogger(__name__)
 

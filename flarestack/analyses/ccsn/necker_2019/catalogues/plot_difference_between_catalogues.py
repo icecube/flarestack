@@ -1,18 +1,21 @@
-import matplotlib, os
+import os
+
+import matplotlib
 
 matplotlib.use("Agg")
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
+
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
-    updated_sn_catalogue_name,
-    sn_cats,
-    sn_times,
     pdf_names,
     raw_output_dir,
+    sn_cats,
+    sn_times,
+    updated_sn_catalogue_name,
 )
-import logging
 from flarestack.shared import plot_output_dir
-
 
 plot_dir = plot_output_dir(
     raw_output_dir + "/catalogue_visualization/difference_stasik/"

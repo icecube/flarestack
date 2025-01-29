@@ -6,34 +6,37 @@ to determine the sensitivity to these models.
 
 These splines are injected, but a standard power law is fit.
 """
+
+import math
+
+import matplotlib.pyplot as plt
 import numpy as np
-from flarestack.core.results import ResultsHandler
-from flarestack.core.energy_PDFs import EnergyPDF
+from astropy import units as u
 from astropy.cosmology import WMAP9 as cosmo
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.shared import (
-    plot_output_dir,
-    flux_to_k,
-    make_analysis_pickle,
-    k_to_flux,
-)
-from flarestack.utils.reference_sensitivity import reference_sensitivity
+
 from flarestack.analyses.tde.shared_TDE import (
-    tde_catalogues,
-    tde_catalogue_name,
     individual_tde_cat,
+    tde_catalogue_name,
+    tde_catalogues,
+)
+from flarestack.analyses.tde.tde_cosmology import biehl_local_rate, measured_local_rate
+from flarestack.analyses.tde.tde_model_spline.convert_spline import (
+    min_nu_e_gev,
+    tde_spline_output_path,
 )
 from flarestack.cluster import run_desy_cluster as rd
-import math
-import matplotlib.pyplot as plt
-from flarestack.utils.custom_seasons import custom_dataset
-from flarestack.analyses.tde.tde_model_spline.convert_spline import (
-    tde_spline_output_path,
-    min_nu_e_gev,
-)
+from flarestack.core.energy_PDFs import EnergyPDF
 from flarestack.core.minimisation import MinimisationHandler
-from astropy import units as u
-from flarestack.analyses.tde.tde_cosmology import biehl_local_rate, measured_local_rate
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
+from flarestack.shared import (
+    flux_to_k,
+    k_to_flux,
+    make_analysis_pickle,
+    plot_output_dir,
+)
+from flarestack.utils.custom_seasons import custom_dataset
+from flarestack.utils.reference_sensitivity import reference_sensitivity
 
 analyses = dict()
 
