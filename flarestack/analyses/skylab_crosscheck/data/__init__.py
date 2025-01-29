@@ -1,10 +1,11 @@
-import numpy as np
-import os
 import logging
+import os
 import pickle
-from flarestack.utils.prepare_catalogue import single_source
-from flarestack.shared import fs_scratch_dir
 
+import numpy as np
+
+from flarestack.shared import fs_scratch_dir
+from flarestack.utils.prepare_catalogue import single_source
 
 logger = logging.getLogger(__name__)
 

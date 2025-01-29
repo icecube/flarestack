@@ -1,13 +1,16 @@
 from __future__ import division
-import numpy as np
+
 import os
-from flarestack.shared import plot_output_dir
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
+
 import matplotlib.pyplot as plt
-from flarestack.utils.asimov_estimator import AsimovEstimator
-from flarestack import analyse, MinimisationHandler
-from flarestack.data.simulate.simcube import simcube_dataset
+import numpy as np
+
+from flarestack import MinimisationHandler, analyse
 from flarestack.data.public import icecube_ps_3_year
+from flarestack.data.simulate.simcube import simcube_dataset
+from flarestack.shared import plot_output_dir
+from flarestack.utils.asimov_estimator import AsimovEstimator
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 name = "analyses/simcube/verify_sensitivity"
 

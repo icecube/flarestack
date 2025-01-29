@@ -1,9 +1,11 @@
 import logging
-import astropy
-from astropy import units as u
-import numpy as np
 import math
+
+import astropy
+import numpy as np
+from astropy import units as u
 from astropy.coordinates import Distance
+
 from flarestack.core.energy_pdf import EnergyPDF
 
 logger = logging.getLogger(__name__)

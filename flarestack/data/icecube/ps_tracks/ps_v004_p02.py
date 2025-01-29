@@ -1,6 +1,6 @@
 """
-    This is the interface to the IceCube PS Tracks v4.2 dataset
-    For further information, see the readme file contained in the dataset folder.
+This is the interface to the IceCube PS Tracks v4.2 dataset
+For further information, see the readme file contained in the dataset folder.
 """
 
 import numpy as np
@@ -10,7 +10,6 @@ from flarestack.data.icecube.ic_season import (
     IceCubeSeason,
     icecube_dataset_dir,
 )
-
 from flarestack.data.icecube.ps_tracks import get_ps_binning
 
 sample_name = "ps_tracks_v004_p02"

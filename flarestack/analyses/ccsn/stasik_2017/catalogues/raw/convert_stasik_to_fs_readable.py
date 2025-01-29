@@ -1,4 +1,5 @@
 import numpy as np
+
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
     raw_sn_catalogue_name,
     sn_cats,

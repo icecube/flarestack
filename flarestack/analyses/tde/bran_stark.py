@@ -1,7 +1,8 @@
 from astropy import units as u
+
 from flarestack.utils.neutrino_cosmology import (
-    integrate_over_z,
     define_cosmology_functions,
+    integrate_over_z,
 )
 
 

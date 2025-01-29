@@ -1,11 +1,13 @@
-from flarestack.data import SeasonWithoutMC, Dataset
-import os
-import numpy as np
 import copy
 import logging
+import os
+
+import numpy as np
+
 from flarestack.core.energy_pdf import EnergyPDF
-from flarestack.shared import sim_dataset_dir_path, k_to_flux
+from flarestack.data import Dataset, SeasonWithoutMC
 from flarestack.data.public.icecube import PublicICSeason
+from flarestack.shared import k_to_flux, sim_dataset_dir_path
 
 sim_dir = os.path.abspath(os.path.dirname(__file__))
 raw_sim_data_dir = sim_dir + "/raw_data/"

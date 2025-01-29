@@ -1,4 +1,5 @@
 import numpy as np
+
 from flarestack.core.time_pdf import TimePDF
 
 

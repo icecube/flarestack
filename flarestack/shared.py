@@ -1,12 +1,13 @@
-import os
-import numpy as np
-import socket
-import pickle
 import json
-import zlib
 import logging
+import os
+import pickle
+import socket
+import zlib
 from pathlib import Path
 from typing import Optional
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 

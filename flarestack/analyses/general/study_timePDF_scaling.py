@@ -1,18 +1,19 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import input
-from builtins import str
-import numpy as np
+from __future__ import division, print_function
+
 import os
 import pickle as Pickle
+from builtins import input, str
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from flarestack.cluster import run_desy_cluster as rd
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.cluster import run_desy_cluster as rd
-import matplotlib.pyplot as plt
+from flarestack.shared import analysis_dir, flux_to_k, plot_output_dir
 from flarestack.utils.custom_dataset import custom_dataset
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 name_root = "benchmarks/timePDFs/scaling/"
 

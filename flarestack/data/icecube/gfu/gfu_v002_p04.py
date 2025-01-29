@@ -4,14 +4,16 @@ This was the complete GFU data samle, extending from 2011-2018, that was used
 in Thomas Kintscher's final unblinding of GFU for the application of the
 'Online Flare Search' method on archival data.
 """
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+
+import numpy as np
+
+from flarestack.data.icecube.gfu import gfu_binning
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,
     get_dataset_dir,
 )
-from flarestack.data.icecube.gfu import gfu_binning
-import numpy as np
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 
 icecube_dataset_dir = get_dataset_dir()
 
