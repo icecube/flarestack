@@ -1,12 +1,14 @@
 """Test the flare search method using one fixed-seed background trial. The
 process is deterministic, so the same flare should be found each time.
 """
+
 import logging
 import unittest
+
 from flarestack import MinimisationHandler, analyse
+from flarestack.core.unblinding import create_unblinder
 from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.core.unblinding import create_unblinder
 
 # Initialise Injectors/LLHs
 

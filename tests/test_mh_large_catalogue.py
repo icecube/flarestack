@@ -1,12 +1,14 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+
 import logging
 import unittest
-from flarestack.data.public import icecube_ps_3_year
-from flarestack.core.unblinding import create_unblinder
-from flarestack.core.minimisation import MinimisationHandler
+
 from flarestack.analyses.agn_cores.shared_agncores import agn_subset_catalogue
+from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.unblinding import create_unblinder
+from flarestack.data.public import icecube_ps_3_year
 
 # Initialise Injectors/LLHs
 

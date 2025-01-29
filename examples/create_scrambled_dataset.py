@@ -1,6 +1,7 @@
-from flarestack.data.icecube import gfu_v002_p04
-from flarestack.utils import ps_catalogue_name, load_catalogue
 import logging
+
+from flarestack.data.icecube import gfu_v002_p04
+from flarestack.utils import load_catalogue, ps_catalogue_name
 
 logging.getLogger().setLevel("INFO")
 

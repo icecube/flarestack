@@ -1,12 +1,15 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+
 import logging
 import unittest
-from flarestack.utils import load_catalogue
-from flarestack.data.public import icecube_ps_3_year
-from flarestack.cosmo import simulate_transient_catalogue, get_rate
+
 from astropy import units as u
+
+from flarestack.cosmo import get_rate, simulate_transient_catalogue
+from flarestack.data.public import icecube_ps_3_year
+from flarestack.utils import load_catalogue
 
 default_cat = [
     (0.60035332, 0.01447306, 1.0, 1.0, 56327.97886837, 0.0, 0.0, 5.74325505, b"src0"),
