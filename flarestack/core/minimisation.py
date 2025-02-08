@@ -330,7 +330,7 @@ class MinimisationHandler(object):
 
         # if static then both floor & pull need gamma in the e_pdf_dict for weighting MC
         if ("gamma" not in self.llh_dict["llh_energy_pdf"].keys()) and (
-            self.floor_name in static_floors and self.pull_name in static_pulls
+            self.floor_name in static_floors or self.pull_name in static_pulls
         ):
             raise KeyError(
                 "You chose static floor and/or static pull correction without fixing the gamma. "
