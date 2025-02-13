@@ -25,9 +25,9 @@ copyright = "2018, Robert Stein"
 author = "Robert Stein"
 
 # The short X.Y version
-version = "2.4.10"
+version = "2.4.11"
 # The full version, including alpha/beta/rc tags
-release = "2.4.10"
+release = "2.4.11"
 
 # -- General configuration ---------------------------------------------------
 
