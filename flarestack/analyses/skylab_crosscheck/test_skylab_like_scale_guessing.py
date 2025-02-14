@@ -114,9 +114,11 @@ if __name__ == "__main__":
             }
 
             llh_dict = {
-                "llh_name": "standard"
-                if not mh_name == "large_catalogue"
-                else "standard_matrix",
+                "llh_name": (
+                    "standard"
+                    if not mh_name == "large_catalogue"
+                    else "standard_matrix"
+                ),
                 "llh_energy_pdf": llh_energy,
                 "llh_sig_time_pdf": llh_time,
                 "llh_bkg_time_pdf": {"time_pdf_name": "steady"},

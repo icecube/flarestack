@@ -2,6 +2,7 @@
 with negative n_s, and also to the flare search method, which looks for
 temporal clustering. The script runs for all individual TDEs to be analysed.
 """
+
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube.gfu.gfu_v002_p02 import txs_sample_v2

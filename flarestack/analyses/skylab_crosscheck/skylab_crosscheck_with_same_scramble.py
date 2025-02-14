@@ -544,9 +544,9 @@ def get_minimizer_dict(
 
     minimizer_dictionary = {
         "name": name,
-        "mh_name": "fixed_weights"
-        if "spatial" in name
-        else minimizer_name,  # TODO: find a way to not do this!
+        "mh_name": (
+            "fixed_weights" if "spatial" in name else minimizer_name
+        ),  # TODO: find a way to not do this!
         "dataset": data,
         "catalogue": catalogue_path,
         "llh_dict": llh_dict,
@@ -1023,9 +1023,7 @@ def make_individual_scatter_plots(
         injected_value = (
             injected_ns
             if "ns" in param_name
-            else injected_gamma
-            if param_name == "gamma"
-            else np.nan
+            else injected_gamma if param_name == "gamma" else np.nan
         )
         qs = [0.5, 0.05, 0.95]
 
@@ -1075,9 +1073,7 @@ def make_individual_scatter_plots(
         lower_lim = (
             0
             if param_name == "ns"
-            else 1
-            if param_name == "gamma"
-            else min((min(xlim), min(ylim)))
+            else 1 if param_name == "gamma" else min((min(xlim), min(ylim)))
         )
         upper_lim = 4 if param_name == "gamma" else max(max(xlim), max(ylim))
         lim = (lower_lim, upper_lim)
@@ -1178,9 +1174,7 @@ def make_plots_comparing_smoothings(
         injected_value = (
             injected_ns
             if param_name == "ns"
-            else injected_gamma
-            if param_name == "gamma"
-            else np.nan
+            else injected_gamma if param_name == "gamma" else np.nan
         )
         injected_value = float(injected_value)
 
@@ -1434,13 +1428,19 @@ if __name__ == "__main__":
             smoothing_str = (
                 ""
                 if (smoothing == "default") or (smoothing == "flarestack")
-                else "SkyLab_pdf_smoothing"
-                if smoothing == "skylab"
-                else "SkyLab_splines_kernel1"
-                if ("splines" in smoothing) and ("kernel1" in smoothing)
-                else "SkyLab_splines_kernel0"
-                if ("splines" in smoothing) and ("kernel0" in smoothing)
-                else None
+                else (
+                    "SkyLab_pdf_smoothing"
+                    if smoothing == "skylab"
+                    else (
+                        "SkyLab_splines_kernel1"
+                        if ("splines" in smoothing) and ("kernel1" in smoothing)
+                        else (
+                            "SkyLab_splines_kernel0"
+                            if ("splines" in smoothing) and ("kernel0" in smoothing)
+                            else None
+                        )
+                    )
+                )
             )
 
             if isinstance(smoothing_str, type(None)):
@@ -1513,9 +1513,9 @@ if __name__ == "__main__":
                                 hsphere,
                                 nsources,
                                 gamma,
-                                use_skylab_energy_splines=True
-                                if "skylab_splines" in smoothing
-                                else False,
+                                use_skylab_energy_splines=(
+                                    True if "skylab_splines" in smoothing else False
+                                ),
                                 skylab_kernel=skylab_kernel,
                             )
 
@@ -1857,9 +1857,9 @@ if __name__ == "__main__":
                                 nsources,
                                 use_dataset,
                                 outlier_indices,
-                                use_skylab_splines=True
-                                if "splines" in smoothing_str
-                                else False,
+                                use_skylab_splines=(
+                                    True if "splines" in smoothing_str else False
+                                ),
                                 skylab_kernel=skylab_kernel,
                             )
 
@@ -1952,9 +1952,9 @@ if __name__ == "__main__":
                             nsources,
                             use_dataset,
                             outlier_indices,
-                            use_skylab_splines=True
-                            if "splines" in smoothing_str
-                            else False,
+                            use_skylab_splines=(
+                                True if "splines" in smoothing_str else False
+                            ),
                             skylab_kernel=skylab_kernel,
                         )
 

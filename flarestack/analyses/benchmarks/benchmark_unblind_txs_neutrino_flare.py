@@ -1,6 +1,7 @@
 """Script to replicate unblinding of the neutrino flare found for the source
 TXS 0506+056, as described in https://arxiv.org/abs/1807.08794.
 """
+
 from flarestack.core.unblinding import create_unblinder
 from flarestack.data.icecube import txs_sample_v1, ps_v003_p02, nt_v002_p05
 from flarestack.analyses.txs_0506_056.make_txs_catalogue import (

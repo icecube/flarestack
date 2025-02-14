@@ -1,5 +1,5 @@
-"""Script to calculate the sensitivity and discovery potential for CCSNe.
-"""
+"""Script to calculate the sensitivity and discovery potential for CCSNe."""
+
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.core.experimental_results import ExperimentalResultHandler

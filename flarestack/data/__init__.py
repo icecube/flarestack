@@ -1,5 +1,5 @@
-"""Generic classes for a Dataset, and for a Season.
-"""
+"""Generic classes for a Dataset, and for a Season."""
+
 import os
 import numpy as np
 import copy

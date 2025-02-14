@@ -1,5 +1,4 @@
-""" This module provides the functionality to create a dataset index by instantiating a DatasetIndex object and importing all the available datasets. Each dataset, in turns, is expect to import `dataset_index` from this module, and adding its own information.
-"""
+"""This module provides the functionality to create a dataset index by instantiating a DatasetIndex object and importing all the available datasets. Each dataset, in turns, is expect to import `dataset_index` from this module, and adding its own information."""
 
 import logging
 from typing import List

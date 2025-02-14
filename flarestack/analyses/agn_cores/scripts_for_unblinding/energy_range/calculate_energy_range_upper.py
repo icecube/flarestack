@@ -1,6 +1,7 @@
 """Script to reproduce the sensitivity curves as a function of the maximum energy of the injected neutrinos,
 using 100 sources of the radio-selected AGN sample.
 """
+
 from __future__ import print_function
 from __future__ import division
 import numpy as np

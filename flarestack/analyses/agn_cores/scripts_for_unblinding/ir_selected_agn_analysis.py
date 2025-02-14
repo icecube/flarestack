@@ -2,6 +2,7 @@
 as a function of injected spectral index. The analysis is performed for 10 sub-samples of the
 X-ray brightest sources of the total IR-selected AGN sample (total of 32249 sources).
 """
+
 from __future__ import print_function
 from __future__ import division
 import numpy as np

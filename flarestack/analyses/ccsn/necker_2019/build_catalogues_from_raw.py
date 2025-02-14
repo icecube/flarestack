@@ -198,9 +198,11 @@ def load_catalogue(sn_type, pdf_name, include_flagged=False, z_add=0):
 
 def keymap(keys, raw_catalogue):
     indices = [
-        np.where(np.array(raw_catalogue.columns) == key)[0][0]
-        if len(np.where(np.array(raw_catalogue.columns) == key)) <= 1
-        else np.where(np.array(raw_catalogue.columns) == key)
+        (
+            np.where(np.array(raw_catalogue.columns) == key)[0][0]
+            if len(np.where(np.array(raw_catalogue.columns) == key)) <= 1
+            else np.where(np.array(raw_catalogue.columns) == key)
+        )
         for key in keys
     ]
 

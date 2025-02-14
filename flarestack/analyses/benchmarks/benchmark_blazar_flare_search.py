@@ -5,6 +5,7 @@ https://wiki.icecube.wisc.edu/index.php/1ES_1959_Analysis.
 The script can be used to verify that the flare search method, as implemented
 here, is capable of matching previous flare search methods.
 """
+
 from __future__ import print_function
 from __future__ import division
 from builtins import str

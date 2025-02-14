@@ -5,6 +5,7 @@ the code. Modification of variable n can produces a catalogue with an
 arbitrary number of sources.
 
 """
+
 import numpy as np
 import os
 import logging

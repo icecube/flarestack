@@ -3,6 +3,7 @@ injected spectral index. Rather than the traditional flux at 1 GeV,
 Sensitivities are given as the total integrated fluence across all sources,
 and as the corresponding standard-candle-luminosity.
 """
+
 from __future__ import print_function
 from __future__ import division
 import numpy as np

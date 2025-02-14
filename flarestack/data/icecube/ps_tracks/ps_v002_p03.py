@@ -78,6 +78,7 @@ with following README:
     /data/ana/PointSource/IC86_2012_PS/Merged_11*.hd5
 
 """
+
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,
     IceCubeSeason,

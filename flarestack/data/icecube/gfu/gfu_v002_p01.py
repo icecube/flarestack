@@ -8,6 +8,7 @@ Path to local copy of point source tracks, downloaded on 16/05/18 from
 This is the sample that was used for the original TXS analysis in 2017
 (NOT THE ONE THAT INCLUDED ADDITIONAL DATA UP TO SPRING 2018!)
 """
+
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
 from flarestack.data.icecube.ic_season import (
     IceCubeDataset,

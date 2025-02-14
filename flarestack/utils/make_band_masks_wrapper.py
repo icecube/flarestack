@@ -1,8 +1,8 @@
-""" Script for making band masks for each season when 'large_catalogue' minimizer is chosen.
-    In case jobs are submitted in the cluster, this script is ran locally first,
-    performing 1 trial in order to write the band masks per catalogue,
-    which are then loaded when running trials on the cluster.
-    This tackles issue #7 in flarestack repo
+"""Script for making band masks for each season when 'large_catalogue' minimizer is chosen.
+In case jobs are submitted in the cluster, this script is ran locally first,
+performing 1 trial in order to write the band masks per catalogue,
+which are then loaded when running trials on the cluster.
+This tackles issue #7 in flarestack repo
 """
 
 import os
