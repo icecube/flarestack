@@ -1,5 +1,5 @@
-"""Script to calculate the sensitivity and discovery potential for some sources to check consistency with skylab."""
-
+"""Script to calculate the sensitivity and discovery potential for some sources to check consistency with skylab.
+"""
 import numpy as np
 import argparse
 from flarestack.analyses.skylab_crosscheck.make_sources import fs_sources, nsources

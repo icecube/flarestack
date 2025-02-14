@@ -4,7 +4,6 @@ n_s, stacking where an n_s for each source is fit individually (rather than a
 joint n_s split across sources assuming standard candles), and lastly an
 independent flare search for each source with TS values summed at the end.
 """
-
 from __future__ import division
 from builtins import str
 import numpy as np

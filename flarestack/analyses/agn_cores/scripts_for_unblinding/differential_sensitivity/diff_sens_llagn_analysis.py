@@ -1,7 +1,6 @@
 """Script to compare the sensitivity and discovery potential for the LLAGN sample (15887 sources)
 as a function of injected spectral index for energy decades between 100 GeV and 10 PeV.
 """
-
 from __future__ import print_function
 from __future__ import division
 import numpy as np

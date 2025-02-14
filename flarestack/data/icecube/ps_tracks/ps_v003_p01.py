@@ -1,5 +1,5 @@
-"""PS Tracks v003_p01, as used by Tessa in the 10 year PS analysis."""
-
+"""PS Tracks v003_p01, as used by Tessa in the 10 year PS analysis.
+"""
 from flarestack.data.icecube.ic_season import (
     IceCubeSeason,
     IceCubeDataset,

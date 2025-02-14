@@ -4,7 +4,6 @@ single trial, and is good to within ~30-50%). Use with some caution to
 quickly guess appropriate flux scales, or understand trends, without full
 calculations.
 """
-
 import numpy as np
 from flarestack.core.llh import LLH
 from flarestack.core.astro import angular_distance

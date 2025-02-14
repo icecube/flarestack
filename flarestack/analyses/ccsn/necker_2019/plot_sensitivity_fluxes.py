@@ -1,5 +1,4 @@
 """Script to calculate and plot the sensitivity flux from the population of the different SNe types"""
-
 import numpy as np
 from astropy import units as u
 from scipy.integrate import quad

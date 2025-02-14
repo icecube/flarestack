@@ -5,7 +5,6 @@ The catalogue is given by the positional cross-match between 2RXS and NVSS,
 and XMMSL2 and NVSS. From the two subsamples 3LAC blazars have been removed.
 Also double X-Ray sources and double radio sources have been removed.
 """
-
 from flarestack.analyses.agn_cores.shared_agncores import (
     raw_cat_dir,
     agn_catalogue_name,

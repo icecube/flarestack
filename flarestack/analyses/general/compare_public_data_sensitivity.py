@@ -1,7 +1,6 @@
 """Script to replicate unblinding of the neutrino flare found for the source
 TXS 0506+056, as described in https://arxiv.org/abs/1807.08794.
 """
-
 import os
 import matplotlib.pyplot as plt
 from flarestack.core.results import ResultsHandler

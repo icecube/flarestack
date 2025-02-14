@@ -1,6 +1,6 @@
 """
-This is the interface to the IceCube PS Tracks v4.2 dataset
-For further information, see the readme file contained in the dataset folder.
+    This is the interface to the IceCube PS Tracks v4.2 dataset
+    For further information, see the readme file contained in the dataset folder.
 """
 
 import numpy as np

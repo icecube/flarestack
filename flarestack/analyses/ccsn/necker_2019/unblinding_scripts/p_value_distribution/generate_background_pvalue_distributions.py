@@ -24,6 +24,7 @@ logger = logging.getLogger("main")
 
 
 class MyPValueSubmitter(DESYSubmitter):
+
     """
     This is a bit hacky. We will subclass the Submitter class and put a different submission script in,
     that no longer runs the MultiProcessor on the cluster but our run_background_pvalue_trials() function.

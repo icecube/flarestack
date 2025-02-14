@@ -1,7 +1,6 @@
 """
 Function taken from IceCube astro package.
 """
-
 import numpy as np
 
 

@@ -3,7 +3,6 @@ injected spectral index. Rather than the traditional flux at 1 GeV,
 Sensitivities are given as the total integrated fluence across all sources,
 and as the corresponding standard-candle-luminosity.
 """
-
 from builtins import str
 import numpy as np
 from flarestack.core.results import ResultsHandler

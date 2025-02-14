@@ -6,7 +6,6 @@ and 95% contours in Figure 1.
 
 C
 """
-
 import numpy as np
 from astropy import units as u
 

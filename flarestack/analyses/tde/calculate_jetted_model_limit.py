@@ -6,7 +6,6 @@ to determine the sensitivity to these models.
 
 These splines are injected, but a standard power law is fit.
 """
-
 import numpy as np
 from flarestack.core.results import ResultsHandler
 from flarestack.core.energy_PDFs import EnergyPDF

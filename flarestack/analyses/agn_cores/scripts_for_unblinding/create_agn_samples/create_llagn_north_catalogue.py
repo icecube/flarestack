@@ -5,7 +5,6 @@ The catalogue is given by the positional cross-match between 2RXS and AllWISE,
 and removing the 3LAC blazars. A Seyferntess PDF is assigned and only sources with
 Seyfertness larger than 0.5 are selected in the final sample.
 """
-
 from flarestack.analyses.agn_cores.shared_agncores import (
     raw_cat_dir,
     agn_catalogue_name,

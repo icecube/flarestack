@@ -1,5 +1,5 @@
-"""Script to calculate the sensitivity and discovery potential for CCSNe."""
-
+"""Script to calculate the sensitivity and discovery potential for CCSNe.
+"""
 import numpy as np
 import math, pickle, os, logging, time, shutil
 from flarestack.core.results import ResultsHandler, OverfluctuationError

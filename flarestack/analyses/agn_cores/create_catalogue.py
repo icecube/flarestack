@@ -7,7 +7,6 @@ contained 70% of the signal weight. Another larger sample contained the
 remaining 30% weight distributed across many sources. As integer numbers of
 sources are used, the closest percentage to 70% is used for splitting.
 """
-
 from __future__ import print_function
 from __future__ import absolute_import
 from builtins import zip

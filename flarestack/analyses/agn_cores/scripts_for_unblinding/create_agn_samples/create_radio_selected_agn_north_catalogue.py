@@ -5,7 +5,6 @@ The catalogue is given by the positional cross-match between 2RXS and AllWISE,
 and XMMSL2 and AllWISE. From the two subsamples 3LAC blazars have been removed.
 Also double X-Ray sources have been removed.
 """
-
 from flarestack.analyses.agn_cores.shared_agncores import (
     raw_cat_dir,
     agn_catalogue_name,

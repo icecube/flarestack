@@ -2,7 +2,6 @@
 events based on a given energy PDF.
 
 """
-
 import numexpr
 import numpy as np
 import pickle as Pickle
@@ -287,7 +286,9 @@ class PowerLaw(EnergyPDF):
         else:
             phi_power = 1 - self.gamma
 
-            phi_integral = (1.0 / phi_power) * ((e_max**phi_power) - (e_min**phi_power))
+            phi_integral = (1.0 / phi_power) * (
+                (e_max**phi_power) - (e_min**phi_power)
+            )
 
         return phi_integral
 

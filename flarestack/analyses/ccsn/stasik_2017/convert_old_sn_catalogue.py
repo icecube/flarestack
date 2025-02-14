@@ -7,7 +7,6 @@ contained 70% of the signal weight. Another larger sample contained the
 remaining 30% weight distributed across many sources. As integer numbers of
 sources are used, the closest percentage to 70% is used for splitting.
 """
-
 from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import (
     raw_cat_dir,
     sn_catalogue_name,
