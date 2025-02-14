@@ -353,11 +353,7 @@ class HTCondorSubmitter(Submitter):
         self.cluster_files_directory = os.path.join(
             cluster_dir, self.mh_dict["name"] if self.mh_dict else ""
         )
-        if self.override_log_path is not None:
-            submit_file_path = self.override_log_path
-        else:
-            submit_file_path = self.cluster_files_directory
-        self.submit_file = os.path.join(submit_file_path, "job.submit")
+        self.submit_file = os.path.join(self.cluster_files_directory, "job.submit")
         self.executable_file = os.path.join(self.cluster_files_directory, "job.sh")
 
         # Check whether automatic submission is desired and possible
@@ -424,13 +420,13 @@ class HTCondorSubmitter(Submitter):
         logfile_path = Path(log_path) / self.format_jobfile(extension)
         return str(logfile_path)
 
-    def get_outfile_path(self, extension: str):
+    def get_outfile_path(self, extension: str, make_dir=False):
         """Formats an output filename for a job given an extension.
 
         Args:
             extension (str): file extension
         """
-        outfile_dir = self.select_logdir(log_dir)
+        outfile_dir = self.select_logdir(log_dir, make_dir)
         logger.debug(f"Using {outfile_dir} for storing condor output files.")
         outfile_path = Path(outfile_dir) / self.format_jobfile(extension)
         return str(outfile_path)
@@ -441,7 +437,10 @@ class HTCondorSubmitter(Submitter):
         :param n_tasks: Number of jobs that will be created
         """
         log_file = self.get_logfile_path("log")
-        stdout_file = self.get_outfile_path("out")
+        if self.override_log_path is not None:
+            stdout_file = self.get_outfile_path("out", True)
+        else:
+            stdout_file = self.get_outfile_path("out")
         stderr_file = self.get_outfile_path("err")
 
         text = (
