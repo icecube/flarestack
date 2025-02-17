@@ -45,6 +45,10 @@ class ResultsHandler(object):
         else:
             self.scale = rh_dict["scale"]
 
+        # set the maximum number of function evaluations for the minimizer when doing the sensitivity / DP fit
+        # 800 is the default scipy value but in some cases it might be necessary to increase it
+        self.maxfev = rh_dict.get("maxfev", 800)
+
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(self.name)
         self.plot_dir = plot_output_dir(self.name)
@@ -613,7 +617,7 @@ class ResultsHandler(object):
             return value
 
         popt, pcov = scipy.optimize.curve_fit(
-            f, x, y, sigma=yerr, absolute_sigma=True, p0=[1.0 / max(x)]
+            f, x, y, sigma=yerr, absolute_sigma=True, p0=[1.0 / max(x)], maxfev=self.maxfev
         )
 
         perr = np.sqrt(np.diag(pcov))
@@ -774,7 +778,7 @@ class ResultsHandler(object):
 
             try:
                 res = scipy.optimize.curve_fit(
-                    f, x, y_val, p0=[6, -0.1 * max(x), 0.1 * max(x)]
+                    f, x, y_val, p0=[6, -0.1 * max(x), 0.1 * max(x)], maxfev=self.maxfev
                 )
 
                 best_a = res[0][0]
