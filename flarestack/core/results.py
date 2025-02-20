@@ -619,7 +619,13 @@ class ResultsHandler(object):
             return value
 
         popt, pcov = scipy.optimize.curve_fit(
-            f, x, y, sigma=yerr, absolute_sigma=True, p0=[1.0 / max(x)], maxfev=self.maxfev
+            f,
+            x,
+            y,
+            sigma=yerr,
+            absolute_sigma=True,
+            p0=[1.0 / max(x)],
+            maxfev=self.maxfev,
         )
 
         perr = np.sqrt(np.diag(pcov))
