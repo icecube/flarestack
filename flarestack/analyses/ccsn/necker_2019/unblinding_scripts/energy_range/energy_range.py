@@ -1,27 +1,34 @@
-"""Script to calculate the sensitivity and discovery potential for CCSNe.
-"""
+"""Script to calculate the sensitivity and discovery potential for CCSNe."""
+
+import logging
+import math
+import os
+import pickle
+import shutil
+import time
+
 import numpy as np
-import math, pickle, os, logging, time, shutil
-from flarestack.core.results import ResultsHandler, OverfluctuationError
-from flarestack.core.experimental_results import ExperimentalResultHandler
-from flarestack.data.icecube import ps_v002_p03
-from flarestack.shared import (
-    flux_to_k,
-    scale_shortener,
-    storage_dir,
-    pickle_dir,
-    inj_param_dir,
-)
-from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
+
 from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
-    sn_cats,
-    updated_sn_catalogue_name,
-    sn_time_pdfs,
-    raw_output_dir,
     pdf_names,
+    raw_output_dir,
+    sn_cats,
+    sn_time_pdfs,
+    updated_sn_catalogue_name,
 )
 from flarestack.cluster import analyse
 from flarestack.cluster.run_desy_cluster import wait_for_cluster
+from flarestack.core.experimental_results import ExperimentalResultHandler
+from flarestack.core.results import OverfluctuationError, ResultsHandler
+from flarestack.data.icecube import ps_v002_p03
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
+from flarestack.shared import (
+    flux_to_k,
+    inj_param_dir,
+    pickle_dir,
+    scale_shortener,
+    storage_dir,
+)
 from flarestack.utils.custom_dataset import custom_dataset
 
 # Set Logger Level

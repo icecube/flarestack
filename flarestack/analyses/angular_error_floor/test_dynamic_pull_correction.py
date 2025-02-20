@@ -1,15 +1,17 @@
 from __future__ import division
-from builtins import str
-from builtins import range
+
 import os
-import numpy as np
+from builtins import range, str
+
 import matplotlib.pyplot as plt
+import numpy as np
+from numpy.lib.recfunctions import append_fields
+
+from flarestack.core.astro import angular_distance
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
 from flarestack.data.icecube.ps_tracks.ps_v003_p01 import IC86_234567_dict
-from flarestack.shared import plot_output_dir
 from flarestack.icecube_utils.dataset_loader import data_loader
-from flarestack.core.astro import angular_distance
-from numpy.lib.recfunctions import append_fields
+from flarestack.shared import plot_output_dir
 
 basedir = plot_output_dir("analyses/angular_error_floor/dynamic_pull_corrections/")
 

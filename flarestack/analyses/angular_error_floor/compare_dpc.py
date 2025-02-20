@@ -1,20 +1,22 @@
-from __future__ import print_function
-from __future__ import division
+from __future__ import division, print_function
+
 from builtins import str
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.core.results import ResultsHandler
-from flarestack.cluster import run_desy_cluster as rd
-from flarestack.shared import (
-    flux_to_k,
-    plot_output_dir,
-    scale_shortener,
-    make_analysis_pickle,
-)
-from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+from flarestack.cluster import run_desy_cluster as rd
+from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
+from flarestack.shared import (
+    flux_to_k,
+    make_analysis_pickle,
+    plot_output_dir,
+    scale_shortener,
+)
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 all_res = dict()
 

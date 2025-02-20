@@ -1,31 +1,33 @@
+import logging
 import os
 import pickle as Pickle
+import sys
+
+import matplotlib.animation as animation
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.stats
-import matplotlib.cm as cm
-import matplotlib.colors as colors
-import matplotlib.animation as animation
-import matplotlib.pyplot as plt
-from flarestack.shared import (
-    name_pickle_output_dir,
-    plot_output_dir,
-    k_to_flux,
-    inj_dir_name,
-    scale_shortener,
-    flux_to_k,
-)
-from flarestack.core.ts_distributions import (
-    plot_background_ts_distribution,
-    plot_fit_results,
-    get_ts_fit_type,
-)
-from flarestack.utils.neutrino_astronomy import calculate_astronomy
+
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.time_pdf import TimePDF
+from flarestack.core.ts_distributions import (
+    get_ts_fit_type,
+    plot_background_ts_distribution,
+    plot_fit_results,
+)
+from flarestack.shared import (
+    flux_to_k,
+    inj_dir_name,
+    k_to_flux,
+    name_pickle_output_dir,
+    plot_output_dir,
+    scale_shortener,
+)
 from flarestack.utils.catalogue_loader import load_catalogue
-import sys
-import logging
+from flarestack.utils.neutrino_astronomy import calculate_astronomy
 
 logger = logging.getLogger(__name__)
 
@@ -617,7 +619,13 @@ class ResultsHandler(object):
             return value
 
         popt, pcov = scipy.optimize.curve_fit(
-            f, x, y, sigma=yerr, absolute_sigma=True, p0=[1.0 / max(x)], maxfev=self.maxfev
+            f,
+            x,
+            y,
+            sigma=yerr,
+            absolute_sigma=True,
+            p0=[1.0 / max(x)],
+            maxfev=self.maxfev,
         )
 
         perr = np.sqrt(np.diag(pcov))

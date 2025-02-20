@@ -1,15 +1,15 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import input
-from builtins import str
-from builtins import range
+from __future__ import division, print_function
+
 import os
-import numpy as np
+from builtins import input, range, str
+
 import matplotlib.pyplot as plt
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.shared import plot_output_dir
-from flarestack.icecube_utils.dataset_loader import data_loader
+import numpy as np
+
 from flarestack.core.astro import angular_distance
+from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
+from flarestack.icecube_utils.dataset_loader import data_loader
+from flarestack.shared import plot_output_dir
 
 basedir = plot_output_dir("analyses/angular_error_floor/plots/")
 

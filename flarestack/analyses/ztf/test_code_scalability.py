@@ -1,17 +1,18 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import str
-from builtins import range
-import numpy as np
+from __future__ import division, print_function
+
 import datetime
+import math
 import os
 import pickle as Pickle
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
-from flarestack.shared import plot_output_dir, flux_to_k, analysis_dir, catalogue_dir
-from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.core.minimisation import MinimisationHandler
+from builtins import range, str
+
 import matplotlib.pyplot as plt
-import math
+import numpy as np
+
+from flarestack.core.minimisation import MinimisationHandler
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_v002_p01
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
+from flarestack.shared import analysis_dir, catalogue_dir, flux_to_k, plot_output_dir
 from flarestack.utils.prepare_catalogue import cat_dtype
 
 name_root = "analyses/ztf/scalability/"

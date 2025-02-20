@@ -1,8 +1,9 @@
 import logging
+import unittest
+
+from flarestack.core.unblinding import create_unblinder
 from flarestack.data.public import icecube_ps_3_year
 from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.core.unblinding import create_unblinder
-import unittest
 
 llh_dict = {
     "llh_name": "spatial",

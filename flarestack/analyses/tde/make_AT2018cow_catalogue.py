@@ -1,9 +1,11 @@
-from flarestack.utils.prepare_catalogue import custom_sources
-from astropy.coordinates import Distance
-from flarestack.shared import catalogue_dir
-from flarestack.analyses.tde.shared_TDE import individual_tde_cat
-import numpy as np
 import os
+
+import numpy as np
+from astropy.coordinates import Distance
+
+from flarestack.analyses.tde.shared_TDE import individual_tde_cat
+from flarestack.shared import catalogue_dir
+from flarestack.utils.prepare_catalogue import custom_sources
 
 # Max time taken from https://arxiv.org/pdf/1807.05965
 # Corresponding time window set by method laid out in TDE analysis page:

@@ -1,11 +1,12 @@
-from __future__ import print_function
-from __future__ import division
+from __future__ import division, print_function
+
 import numpy as np
+from astropy import units as u
+
+from flarestack.data.icecube.gfu.gfu_v002_p01 import ps_v002_p01, txs_sample_v1
 from flarestack.shared import catalogue_dir
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1, ps_v002_p01
 from flarestack.utils.custom_dataset import custom_dataset
 from flarestack.utils.neutrino_astronomy import calculate_neutrinos
-from astropy import units as u
 
 # Calculate expected neutrino numbers for entries in the catalogue by Dai &
 # Fang, in which nearby TDEs were selected and event rates estimated. The

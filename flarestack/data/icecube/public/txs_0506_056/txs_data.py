@@ -1,9 +1,11 @@
-import os
-import numpy as np
 import csv
+import os
 import pickle
-from flarestack.shared import public_dataset_dir
+
+import numpy as np
+
 from flarestack.analyses.txs_0506_056.make_txs_catalogue import txs_catalogue
+from flarestack.shared import public_dataset_dir
 
 src_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
 

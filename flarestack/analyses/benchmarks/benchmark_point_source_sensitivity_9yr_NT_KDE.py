@@ -1,16 +1,18 @@
-import numpy as np
-from flarestack import ResultsHandler, MinimisationHandler
-from flarestack.data.icecube import nt_v005_p00
-from flarestack.shared import plot_output_dir, flux_to_k
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.icecube_utils.reference_sensitivity import (
-    reference_sensitivity,
-    reference_discovery_potential,
-)
-import matplotlib.pyplot as plt
-from flarestack import analyse, wait_cluster
 import logging
-import sys, pickle
+import pickle
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from flarestack import MinimisationHandler, ResultsHandler, analyse, wait_cluster
+from flarestack.data.icecube import nt_v005_p00
+from flarestack.icecube_utils.reference_sensitivity import (
+    reference_discovery_potential,
+    reference_sensitivity,
+)
+from flarestack.shared import flux_to_k, plot_output_dir
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 logging.basicConfig(level=logging.INFO)
 

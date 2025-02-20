@@ -1,8 +1,10 @@
-from flarestack.utils.prepare_catalogue import custom_sources
-from astropy.coordinates import Distance
-import numpy as np
 import os
+
+import numpy as np
+from astropy.coordinates import Distance
+
 from flarestack.shared import transients_dir
+from flarestack.utils.prepare_catalogue import custom_sources
 
 # Start and end time of neutrino flare, taken from box fit in
 # https://arxiv.org/abs/1807.08794.

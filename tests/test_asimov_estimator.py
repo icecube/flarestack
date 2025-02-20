@@ -1,11 +1,14 @@
 """A standard time-integrated analysis is performed, using one year of
 IceCube data (IC86_1).
 """
+
 import unittest
+
 import numpy as np
+
 from flarestack.data.public import icecube_ps_3_year
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.utils.asimov_estimator import AsimovEstimator
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 # Initialise Injectors/LLHs
 

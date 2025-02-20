@@ -1,15 +1,17 @@
 import logging
 import unittest
+
 import numpy as np
 from astropy import units as u
+
 from flarestack.cosmo import get_rate
 from flarestack.cosmo.rates import source_maps
-from flarestack.cosmo.rates.tde_rates import tde_evolutions, local_tde_rates
-from flarestack.cosmo.rates.sfr_rates import sfr_evolutions, local_sfr_rates
 from flarestack.cosmo.rates.ccsn_rates import kcc_rates, sn_subclass_rates
-from flarestack.cosmo.rates.grb_rates import grb_evolutions, local_grb_rates
 from flarestack.cosmo.rates.fbot_rates import local_fbot_rates
 from flarestack.cosmo.rates.frb_rates import local_frb_rates
+from flarestack.cosmo.rates.grb_rates import grb_evolutions, local_grb_rates
+from flarestack.cosmo.rates.sfr_rates import local_sfr_rates, sfr_evolutions
+from flarestack.cosmo.rates.tde_rates import local_tde_rates, tde_evolutions
 
 zrange = np.linspace(0.0, 8.0, 5)
 

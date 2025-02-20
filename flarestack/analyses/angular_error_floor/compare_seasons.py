@@ -1,13 +1,15 @@
-from __future__ import print_function
-from __future__ import division
+from __future__ import division, print_function
+
 from builtins import str
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict, IC86_234_dict
-from flarestack.core.results import ResultsHandler
-from flarestack.cluster import run_desy_cluster as rd
-from flarestack.shared import plot_output_dir, scale_shortener, make_analysis_pickle
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+from flarestack.cluster import run_desy_cluster as rd
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict, IC86_234_dict
+from flarestack.shared import make_analysis_pickle, plot_output_dir, scale_shortener
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 seasons = [IC86_1_dict, IC86_234_dict]
 

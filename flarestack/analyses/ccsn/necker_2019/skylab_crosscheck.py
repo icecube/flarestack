@@ -1,38 +1,39 @@
-import numpy as np
-from astropy.table import Table
 import argparse
-from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube import ps_v002_p01
-from flarestack.shared import plot_output_dir, flux_to_k
-from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
-from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import (
-    limits,
-    get_figure_limits,
-    p_vals,
-)
-from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
-    sn_cats,
-    updated_sn_catalogue_name,
-    sn_time_pdfs,
-    raw_output_dir,
-    pdf_names,
-    limit_sens,
-)
-from flarestack.analyses.ccsn.necker_2019.skylab_crosscheck_data import skylab_data
-from flarestack.analyses.ccsn import get_sn_color
-from flarestack.cluster import analyse
-from flarestack.cluster.run_desy_cluster import wait_for_cluster
+import logging
 import math
+import os
 import pickle
+import time
+
 import matplotlib
 
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from flarestack.utils.custom_dataset import custom_dataset
-import os
-import logging
-import time
+import numpy as np
+from astropy.table import Table
 
+from flarestack.analyses.ccsn import get_sn_color
+from flarestack.analyses.ccsn.necker_2019.ccsn_helpers import (
+    limit_sens,
+    pdf_names,
+    raw_output_dir,
+    sn_cats,
+    sn_time_pdfs,
+    updated_sn_catalogue_name,
+)
+from flarestack.analyses.ccsn.necker_2019.skylab_crosscheck_data import skylab_data
+from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import (
+    get_figure_limits,
+    limits,
+    p_vals,
+)
+from flarestack.cluster import analyse
+from flarestack.cluster.run_desy_cluster import wait_for_cluster
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube import ps_v002_p01
+from flarestack.icecube_utils.reference_sensitivity import reference_sensitivity
+from flarestack.shared import flux_to_k, plot_output_dir
+from flarestack.utils.custom_dataset import custom_dataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-a", "--analyse", type=bool, default=False)

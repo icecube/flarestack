@@ -1,15 +1,17 @@
+import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
+
+from flarestack import analyse, wait_cluster
 from flarestack.core.results import ResultsHandler
 from flarestack.data.icecube import ps_v003_p02
-from flarestack.shared import plot_output_dir, flux_to_k
-from flarestack.utils.prepare_catalogue import ps_catalogue_name
 from flarestack.icecube_utils.reference_sensitivity import (
-    reference_sensitivity,
     reference_7year_discovery_potential,
+    reference_sensitivity,
 )
-import matplotlib.pyplot as plt
-from flarestack import analyse, wait_cluster
-import logging
+from flarestack.shared import flux_to_k, plot_output_dir
+from flarestack.utils.prepare_catalogue import ps_catalogue_name
 
 logging.getLogger().setLevel("INFO")
 

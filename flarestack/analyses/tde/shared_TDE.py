@@ -1,9 +1,11 @@
-from flarestack.shared import catalogue_dir, limits_dir
 import os
 import pickle as Pickle
-from scipy.interpolate import interp1d
+
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import interp1d
+
+from flarestack.shared import catalogue_dir, limits_dir
 
 tde_dir = os.path.abspath(os.path.dirname(__file__))
 tde_cat_dir = tde_dir + "/tde_catalogues/"

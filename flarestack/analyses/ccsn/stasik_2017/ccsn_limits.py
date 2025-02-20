@@ -3,11 +3,13 @@ Methods and results are detailed in https://edoc.hu-berlin.de/handle/18452/19442
 Two methods were used, both a traditional fixed-weight analysis and a
 fixed-weight analysis.
 """
+
+import numpy as np
 from astropy import units as u
 from astropy.table import Table
-from flarestack.utils.neutrino_astronomy import calculate_astronomy
+
 from flarestack.core.energy_pdf import EnergyPDF
-import numpy as np
+from flarestack.utils.neutrino_astronomy import calculate_astronomy
 
 # Results
 
