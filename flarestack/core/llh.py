@@ -996,14 +996,13 @@ class StandardLLH(FixedEnergyLLH):
         energy_SoB_cache = dict()
 
         for gamma in list(self.SoB_spline_2Ds.keys()):
-            try:
-                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma].ev(
-                    cut_data["logE"], cut_data["sinDec"]
-                )
-            except:  # this is in case the splines were produced using the RegularGridInterpolator
-                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma](
-                    (cut_data["logE"], cut_data["sinDec"])
-                )
+            s = self.SoB_spline_2Ds[gamma]
+            if isinstance(s, interpolate.RectBivariateSpline):
+                energy_SoB_cache[gamma] = s.ev(cut_data["logE"], cut_data["sinDec"])
+            elif isinstance(s, interpolate.RegularGridInterpolator):
+                energy_SoB_cache[gamma] = s((cut_data["logE"], cut_data["sinDec"]))
+            else:
+                raise RuntimeError("Unknown spline type")
 
         return energy_SoB_cache
 
