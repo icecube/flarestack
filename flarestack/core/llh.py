@@ -5,9 +5,8 @@ from typing import Optional
 
 import numexpr
 import numpy as np
-import scipy.interpolate
 from astropy.table import Table
-from scipy import sparse
+from scipy import sparse, interpolate
 
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import SpatialPDF
@@ -544,7 +543,7 @@ class FixedEnergyLLH(LLH):
         with open(acc_path, "rb") as f:
             [dec_vals, acc] = pickle.load(f)
 
-        acc_spline = scipy.interpolate.interp1d(dec_vals, acc, kind="linear")
+        acc_spline = interpolate.interp1d(dec_vals, acc, kind="linear")
 
         def acc_f(source, params=None):
             return acc_spline(source["dec_rad"])
@@ -826,7 +825,7 @@ class StandardLLH(FixedEnergyLLH):
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)
 
-        f = scipy.interpolate.interp2d(dec_bins, gamma_bins, acc.T, kind="linear")
+        f = interpolate.interp2d(dec_bins, gamma_bins, acc.T, kind="linear")
         return f
 
     def new_acceptance(self, source, params=None):
