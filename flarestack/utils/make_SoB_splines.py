@@ -280,7 +280,7 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order):
         binmids = (log_e_bin_center, sin_bin_center)
 
         spline = scipy.interpolate.RegularGridInterpolator(
-            binmids, np.log(ratio), method="linear", bounds_error=False, fill_value=0.0
+            binmids, np.log(ratio), method="linear", bounds_error=True, fill_value=0.0
         )
 
     # If the interpolating splines are of order greater than 1, use RectBivariateSpline

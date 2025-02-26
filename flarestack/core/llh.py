@@ -997,8 +997,26 @@ class StandardLLH(FixedEnergyLLH):
 
         for gamma in list(self.SoB_spline_2Ds.keys()):
             s = self.SoB_spline_2Ds[gamma]
+
+            # For smoothing of the background PDF of order >1, the spline is
+            # created using the RectBivariateSpline
+            # It does not automatically fail if the data is outside the interpolation
+            # range, so we make it fail manually
             if isinstance(s, interpolate.RectBivariateSpline):
+                loge_knots, sindec_knots = s.get_knots()
+                data_not_within_interpolation_range = (
+                    np.min(cut_data["logE"]) < np.min(loge_knots)
+                    or np.max(cut_data["logE"]) > np.max(loge_knots)
+                    or np.min(cut_data["sinDec"]) < np.min(sindec_knots)
+                    or np.max(cut_data["sinDec"]) > np.max(sindec_knots)
+                )
+                if data_not_within_interpolation_range:
+                    raise ValueError("Data out of interpolation range")
                 energy_SoB_cache[gamma] = s.ev(cut_data["logE"], cut_data["sinDec"])
+
+            # For smoothing of the background PDF of order 1, the spline is
+            # created using the RegularGridInterpolator. It fails automatically
+            # if the data is outside the interpolation range
             elif isinstance(s, interpolate.RegularGridInterpolator):
                 energy_SoB_cache[gamma] = s((cut_data["logE"], cut_data["sinDec"]))
             else:
