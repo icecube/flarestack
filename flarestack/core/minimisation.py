@@ -211,6 +211,19 @@ class MinimisationHandler(object):
         except KeyError:
             self.floor_name = "static_floor"
 
+        # run trials for a fixed gamma, by default trials run with gamma fitted
+        # make sure you pass the same gamma in the llh and injection energy dictionaries
+        self.fix_gamma = mh_dict.get("fix_gamma", False)
+        if self.fix_gamma:
+            assert (
+                "gamma" in self.llh_dict["llh_energy_pdf"].keys()
+            ), "Running trials with fixed gamma but no gamma passed in the llh energy pdf"
+            self.llh_gamma = self.llh_dict["llh_energy_pdf"]["gamma"]
+            inj_gamma = self.inj_dict["injection_energy_pdf"]["gamma"]
+            assert (
+                self.llh_gamma == inj_gamma
+            ), f"Fixing gamma to {self.llh_gamma} for llh but injection is with {inj_gamma}"
+
         p0, bounds, names = self.return_parameter_info(mh_dict)
 
         self.p0 = p0
@@ -476,8 +489,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     def run_trial(self, full_dataset):
         raw_f = self.trial_function(full_dataset)
 
-        def llh_f(scale):
-            return -np.sum(raw_f(scale))
+        def llh_f(ns, g):
+            params = [ns, g]
+            return -np.sum(raw_f(params))
 
         if self.brute:
             brute_range = [(max(x, -30), min(y, 30)) for (x, y) in self.bounds]
@@ -488,11 +502,21 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         else:
             start_seed = self.p0
 
-        res = scipy.optimize.minimize(llh_f, start_seed, bounds=self.bounds)
+        if self.fix_gamma:
+            start_seed = np.array(self.p0[0])
+            res = scipy.optimize.minimize(
+                llh_f, start_seed, args=(self.llh_gamma,), bounds=[self.bounds[0]]
+            )
+            best_ns = res.x
+            vals = [best_ns, self.llh_gamma]
 
-        vals = res.x
+        else:
+            res = scipy.optimize.minimize(llh_f, start_seed, bounds=self.bounds)
+            vals = res.x
+
         flag = res.status
         # If the minimiser does not converge, try different strategy
+        # TODO: change for fixed gamma if needed
         if flag == 1:
             Nparam = len(self.bounds)
 
@@ -525,12 +549,17 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             start_seed = list(self.p0)
             start_seed[0] = -1.0
 
-            new_res = scipy.optimize.minimize(llh_f, start_seed, bounds=bounds)
+            if self.fix_gamma:
+                new_res = scipy.optimize.minimize(
+                    llh_f, start_seed[0], args=(self.llh_gamma,), bounds=[bounds[0]]
+                )
+            else:
+                new_res = scipy.optimize.minimize(llh_f, start_seed, bounds=bounds)
 
             if new_res.status == 0:
                 res = new_res
 
-            vals = [res.x[0]]
+            vals = [res.x[0]] if not self.fix_gamma else res.x
             best_llh = res.fun
 
         ts = np.sum(best_llh)
