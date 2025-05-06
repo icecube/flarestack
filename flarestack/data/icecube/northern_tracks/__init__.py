@@ -72,19 +72,24 @@ class NTSeason(IceCubeSeason):
                 "Monte Carlo background is not loaded. Call `load_background_model` before `simulate_background`."
             )
 
-        n_mc = len(self.loaded_background_model["weight"])
-
         # Total number of events in the MC sample, weighted according to background.
         n_exp = np.sum(self.loaded_background_model["weight"])
 
         # Creates a normalised array of atmospheric weights.
-        p_select = self.loaded_background_model["weight"] / n_exp
+        p_select = self.loaded_background_model["weight"].cumsum() / n_exp
 
         # Simulates poisson noise around the expectation value n_exp.
         n_bkg = rng.poisson(n_exp)
 
         # Choose n_bkg from n_mc events according to background weight.
-        ind = rng.choice(n_mc, size=n_bkg, p=p_select)
+        ind = np.searchsorted(
+            p_select,
+            # NB: with n_bkg=8e5 and n_mc=11.5e6, explicitly sorting the uniform
+            # samples is ~6x faster than np.random.choice
+            np.sort(rng.uniform(size=n_bkg)),
+            side="right",
+        )
+
         sim_bkg = self.loaded_background_model[ind]
 
         time_pdf = self.get_time_pdf()
