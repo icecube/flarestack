@@ -10,7 +10,7 @@ from astropy.table import Table
 from scipy import sparse
 
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
-from flarestack.core.spatial_pdf import SpatialPDF
+from flarestack.core.spatial_pdf import NorthernTracksKDE, SpatialPDF
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.shared import (
     SoB_spline_path,
@@ -1371,13 +1371,13 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
             )
         super().__init__(season, sources, llh_dict)
 
-        if llh_dict["llh_spatial_pdf"]["spatial_pdf_name"] != "northern_tracks_kde":
-            raise ValueError(
-                "Specified LLH ({}) is only compatible with NorthernTracksKDE, ".format(
-                    self.llh_dict["llh_name"]
-                )
-                + "please change 'the spatial_pdf_name' accordingly"
-            )
+        # if llh_dict["llh_spatial_pdf"]["spatial_pdf_name"] != "northern_tracks_kde":
+        #     raise ValueError(
+        #         "Specified LLH ({}) is only compatible with NorthernTracksKDE, ".format(
+        #             self.llh_dict["llh_name"]
+        #         )
+        #         + "please change 'the spatial_pdf_name' accordingly"
+        #     )
 
     # NB: numexpr implements fmod but not mod, and mod is equivalent to abs(fmod(...))
     _in_box = numexpr.NumExpr(
@@ -1501,8 +1501,11 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 # but that would add an extra dimension in the matrix so better not
                 coincident_data = data[idx]
                 if (
-                    self.spatial_pdf.signal.SplineIs4D
-                    and self.spatial_pdf.signal.KDE_eval_gamma is not None
+                    not isinstance(self.spatial_pdf.signal, NorthernTracksKDE)
+                    or (
+                        self.spatial_pdf.signal.SplineIs4D
+                        and self.spatial_pdf.signal.KDE_eval_gamma is not None
+                    )
                 ) or not self.spatial_pdf.signal.SplineIs4D:
                     sig = self.signal_pdf(source, coincident_data)  # gamma = None
 
@@ -1551,8 +1554,11 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         # create sparse matrix with non-weighted SoB
         # relevant when signal pdf is gamma-independent so that spline evaluation is done once
         if (
-            self.spatial_pdf.signal.SplineIs4D
-            and self.spatial_pdf.signal.KDE_eval_gamma is not None
+            not isinstance(self.spatial_pdf.signal, NorthernTracksKDE)
+            or (
+                self.spatial_pdf.signal.SplineIs4D
+                and self.spatial_pdf.signal.KDE_eval_gamma is not None
+            )
         ) or not self.spatial_pdf.signal.SplineIs4D:
             logger.debug(
                 "Creating gamma-independent SoB matrix for all srcs when 3D KDE or 4D w/ 'spatial_pdf_index'"
@@ -1622,7 +1628,10 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         :param cut_data: Subset of Dataset with coincident events
         :return: Array of Signal Spacetime PDF values
         """
-        space_term = self.spatial_pdf.signal_spatial(source, cut_data, gamma)
+        if isinstance(self.spatial_pdf.signal, NorthernTracksKDE):
+            space_term = self.spatial_pdf.signal_spatial(source, cut_data, gamma)
+        else:
+            space_term = self.spatial_pdf.signal_spatial(source, cut_data)
 
         if hasattr(self, "sig_time_pdf"):
             time_term = self.sig_time_pdf.f(cut_data["time"], source)
