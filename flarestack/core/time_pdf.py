@@ -288,6 +288,11 @@ class Steady(TimePDF):
         else:
             self.livetime = livetime_pdf.get_livetime()
 
+        # the effective injection time is independent of the source. calculate it once.
+        self._effective_injection_time = (
+            self.integral_to_infinity(None) * self.livetime * (60 * 60 * 24)
+        )
+
     def f(self, t, source):
         """In the case of a steady source, the signal PDF is a uniform PDF in
         time. It is thus simply equal to the season_f, normalised with the
@@ -332,9 +337,7 @@ class Steady(TimePDF):
         :param source: Source to be considered
         :return: Effective Livetime in seconds
         """
-        season_length = self.integral_to_infinity(source) * self.livetime
-
-        return season_length * (60 * 60 * 24)
+        return self._effective_injection_time
 
     def raw_injection_time(self, source):
         """Calculates the 'raw injection time' which is the injection time
