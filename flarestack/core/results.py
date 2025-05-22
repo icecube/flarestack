@@ -37,7 +37,7 @@ class OverfluctuationError(Exception):
 
 
 class ResultsHandler(object):
-    def __init__(self, rh_dict, do_sens=True, do_disc=True, bias_error="std", disc_thresholds = [3.0, 5.0]):
+    def __init__(self, rh_dict, do_sens=True, do_disc=True, bias_error="std", sigma_thresholds = [3.0, 5.0]):
         self.sources = load_catalogue(rh_dict["catalogue"])
 
         self.name = rh_dict["name"]
@@ -56,51 +56,21 @@ class ResultsHandler(object):
 
         self.valid = True
 
-        # Checks if the code should search for flares. By default, this is
-        # not done.
-        # self.flare = self.mh_name == "flare"
-
-        # if self.flare:
-        #     self.make_plots = self.flare_plots
-        # else:
-        self.make_plots = self.noflare_plots
         self.bias_error = bias_error
 
-        # Checks whether negative n_s is fit or not
-        #
-        # try:
-        #     self.negative_n_s = llh_kwargs["Fit Negative n_s?"]
-        # except KeyError:
-        #     self.negative_n_s = False
-        #
-        # try:
-        #     self.fit_weights = llh_kwargs["Fit Weights?"]
-        # except KeyError:
-        #     self.fit_weights = False
 
-        # Sets default Chi2 distribution to fit to background trials
-        #
-        # if self.fit_weights:
-        #     self.ts_type = "Fit Weights"
-        # elif self.flare:
-        #     self.ts_type = "Flare"
-        # elif self.negative_n_s:
-        #     self.ts_type = "Negative n_s"
-        # else:
+        # ts_type reads 'flare' or 'standard' depending on 'mh_name'
         self.ts_type = get_ts_fit_type(rh_dict)
 
-        # print "negative_ns", self.negative_n_s
+        # assign the correct callback function to build the fit plots
+        # self.flare_plots should be used when ts_type == 'flare'
+        # however that code is unmaintained / commented out
+        self.make_plots = self.noflare_plots
 
         p0, bounds, names = MinimisationHandler.find_parameter_info(rh_dict)
-
-        # p0, bounds, names = fit_setup(llh_kwargs, self.sources, self.flare)
-        
         self.param_names = names
         self.bounds = bounds
         self.p0 = p0
-
-        # if cleanup:
-        #     self.clean_merged_data()
 
         # this will have the TS threshold values as keys and a tuple containing
         # (injection scale, relative overfluctuations, error on overfluctuations)
@@ -118,6 +88,17 @@ class ResultsHandler(object):
         self.extrapolated_sens = False
         self.extrapolated_disc = False
         self.flux_to_ns = np.nan
+
+
+        # Generalised discovery potential
+        self.discovery = {}
+
+        for threshold in sigma_thresholds:
+            self.discovery[threshold] = {
+                "ts": np.nan,
+                "flux": np.nan,
+                "extrapolated": False,
+            }
 
         try:
             # if self.show_inj:
