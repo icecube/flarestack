@@ -37,15 +37,11 @@ class OverfluctuationError(Exception):
 
 
 class ResultsHandler(object):
-    def __init__(self, rh_dict, do_sens=True, do_disc=True, bias_error="std"):
+    def __init__(self, rh_dict, do_sens=True, do_disc=True, bias_error="std", disc_thresholds = [3.0, 5.0]):
         self.sources = load_catalogue(rh_dict["catalogue"])
 
         self.name = rh_dict["name"]
         self.mh_name = rh_dict["mh_name"]
-        if "fixed_scale" in list(rh_dict.keys()):
-            self.scale = rh_dict["fixed_scale"]
-        else:
-            self.scale = rh_dict["scale"]
 
         # set the maximum number of function evaluations for the minimizer when doing the sensitivity / DP fit
         # 800 is the default scipy value but in some cases it might be necessary to increase it
@@ -98,6 +94,7 @@ class ResultsHandler(object):
         p0, bounds, names = MinimisationHandler.find_parameter_info(rh_dict)
 
         # p0, bounds, names = fit_setup(llh_kwargs, self.sources, self.flare)
+        
         self.param_names = names
         self.bounds = bounds
         self.p0 = p0
