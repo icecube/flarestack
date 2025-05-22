@@ -790,7 +790,7 @@ class ResultsHandler(object):
             fig.savefig(save_path)
             plt.close()
 
-            extrapolated = self.disc_potential > max(x_flux):
+            extrapolated = self.disc_potential > max(x_flux)
 
             logger.info(
                 f"Discovery Potential ({zval}-sigma): {discovery_flux[zval]} ({extrapolated=})"
