@@ -51,6 +51,9 @@ class ResultsHandler(object):
         self.name = rh_dict["name"]
         self.mh_name = rh_dict["mh_name"]
 
+        self._inj_dict = rh_dict["inj_dict"]
+        self._dataset = rh_dict["dataset"]
+
         # set the maximum number of function evaluations for the minimizer when doing the sensitivity / DP fit
         # 800 is the default scipy value but in some cases it might be necessary to increase it
         self.maxfev = rh_dict.get("maxfev", 800)
@@ -70,34 +73,18 @@ class ResultsHandler(object):
         self.bias_error = bias_error
 
         # ts_type reads 'flare' or 'standard' depending on 'mh_name'
-        self.ts_type = get_ts_fit_type(rh_dict)
+        self.ts_type: str = get_ts_fit_type(rh_dict)
 
-        # assign the correct callback function to build the fit plots
-        # self.flare_plots should be used when ts_type == 'flare'
-        # however that code is unmaintained / commented out
-        self.make_plots = self.noflare_plots
+        # alternative "flare_plots" routine has been unmaintained and commented out for some time
+        self.make_plots: callable = self.standard_plots
 
-        p0, bounds, names = MinimisationHandler.find_parameter_info(rh_dict)
-        self.param_names = names
-        self.bounds = bounds
-        self.p0 = p0
+        # (p0, bounds, names)
+        self.param_info: tuple = MinimisationHandler.find_parameter_info(rh_dict)
 
         # this will have the TS threshold values as keys and a tuple containing
         # (injection scale, relative overfluctuations, error on overfluctuations)
         # as values
         self.overfluctuations = dict()
-
-        self.sensitivity = np.nan
-        self.sensitivity_err = np.nan
-        self.bkg_median = np.nan
-        self.frac_over = np.nan
-        self.disc_potential = np.nan
-        self.disc_err = np.nan
-        self.disc_potential_25 = np.nan
-        self.disc_ts_threshold = np.nan
-        self.extrapolated_sens = False
-        self.extrapolated_disc = False
-        self.flux_to_ns = np.nan
 
         # Generalised discovery potential
         self.discovery = {}
@@ -126,14 +113,21 @@ class ResultsHandler(object):
             self.valid = False
             return
 
-        self._inj_dict = rh_dict["inj_dict"]
-        self._dataset = rh_dict["dataset"]
-
         # Load and merge the trial results
         try:
             self.merge_pickle_data()
         except FileNotFoundError:
             logger.warning(f"No files found at {self.pickle_output_dir}")
+
+        # auxiliary parameters
+        # self.sorted_scales = sorted(self.results.keys())
+        self.scale_values = sorted(
+            [float(j) for j in self.results.keys()]
+        )  # replaces self.scales_float
+        self.scale_labels = [scale_shortener(i) for i in self.scale_values]
+
+        logger.info(f"Injection scales: {self.scale_values}")
+        # print("Scale labels: ", self.scale_labels)
 
         # Determine the injection scales
         try:
@@ -146,6 +140,7 @@ class ResultsHandler(object):
             )
 
         # Create fit bias plots
+        # this expects flux_to_ns to be set
         self.plot_bias()
 
         if do_sens:
@@ -163,6 +158,23 @@ class ResultsHandler(object):
                 logger.warning(f"TypeError for discovery potential: \n {e}")
             except ValueError as e:
                 logger.warning(f"ValueError for discovery potential: \n {e}")
+
+        # from find_ns_scale
+        # self.flux_to_ns = np.nan
+
+        # from find_sensitivity
+        # self.sensitivity = np.nan
+        # self.sensitivity_err = np.nan
+        # self.bkg_median = np.nan
+        # self.frac_over = np.nan
+
+        # from find_disc_potential
+        # self.disc_potential = np.nan
+        # self.disc_err = np.nan
+        # self.disc_potential_25 = np.nan
+        # self.disc_ts_threshold = np.nan
+        # self.extrapolated_sens = False
+        # self.extrapolated_disc = False
 
     def is_valid(self):
         """If results are valid, returns True.
@@ -187,27 +199,17 @@ class ResultsHandler(object):
         return out
 
     @property
-    def scales_float(self):
-        """directly return the injected scales as floats"""
-        x = sorted(self.results.keys())
-        return sorted([float(j) for j in x])
-
-    @property
-    def scales(self):
-        """directly return the injected scales"""
-        scales = [scale_shortener(i) for i in self.scales_float]
-        return scales
-
-    @property
     def ns(self):
         """returns the injection scales converted to number of signal neutrinos"""
-        ns = np.array([k_to_flux(float(s)) for s in self.scales]) * self.flux_to_ns
+        ns = (
+            np.array([k_to_flux(float(s)) for s in self.scale_labels]) * self.flux_to_ns
+        )
         return ns
 
     @property
     def ts_arrays(self):
         """returns the generated test statistic distributions as arrays for each injection step"""
-        return [np.array(self.results[scale]["TS"]) for scale in self.scales]
+        return [np.array(self.results[scale]["TS"]) for scale in self.scale_labels]
 
     @property
     def ns_injected(self):
@@ -221,7 +223,7 @@ class ResultsHandler(object):
                         if "n_s" in key
                     ]
                 )
-                for scale in self.scales
+                for scale in self.scale_labels
             ]
         )
 
@@ -388,21 +390,22 @@ class ResultsHandler(object):
     def find_ns_scale(self):
         """Find the number of neutrinos corresponding to flux"""
         # x = sorted([float(x) for x in self.results.keys()])
+        # self.flux_to_ns = np.nan
 
         try:
             # if weights were not fitted, number of neutrinos is stored in just one parameter
 
-            if "n_s" in self.inj[self.scales[1]]:
-                self.flux_to_ns = self.inj[self.scales[1]]["n_s"] / k_to_flux(
-                    self.scales_float[1]
+            if "n_s" in self.inj[self.scale_labels[1]]:
+                self.flux_to_ns = self.inj[self.scale_labels[1]]["n_s"] / k_to_flux(
+                    self.scale_values[1]
                 )
 
             # if weights were fitted, or for cluster search, there is one n_s for each fitted source
             else:
-                sc_dict = self.inj[self.scales[1]]
+                sc_dict = self.inj[self.scale_labels[1]]
                 self.flux_to_ns = sum(
                     [sc_dict[k] for k in sc_dict if "n_s" in str(k)]
-                ) / k_to_flux(self.scales_float[1])
+                ) / k_to_flux(self.scale_values[1])
 
             logger.debug(f"Conversion ratio of flux to n_s: {self.flux_to_ns:.2f}")
 
@@ -417,7 +420,7 @@ class ResultsHandler(object):
         logger.debug("  scale   avg_sigma     avg_TS")
         logger.debug("  ----------------------------")
 
-        for scale, ts_array in zip(self.scales_float, self.ts_arrays):
+        for scale, ts_array in zip(self.scale_values, self.ts_arrays):
             # calculate averages
             avg_ts = ts_array.sum() / ts_array.size
             avg_sigma = np.sqrt(avg_ts)
@@ -526,14 +529,8 @@ class ResultsHandler(object):
         either case, a plot of the overfluctuations as a function of the
         injected signal is produced.
         """
-
-        x = sorted(self.results.keys())
-        x_acc = []
-        y = []
-
-        x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
-
-        yerr = []
+        x_acc, y, yerr = [], [], []
+        x = self.scale_labels
 
         for scale in x:
             ts_array = np.array(self.results[scale]["TS"])
@@ -674,17 +671,16 @@ class ResultsHandler(object):
         for zval in self.discovery:
             if zval != "nominal":
                 self.discovery[zval]["ts"] = plot_background_ts_distribution(
-                    bkg_ts, ts_path, ts_type=self.ts_type
+                    bkg_ts, ts_path, ts_type=self.ts_type, zval=zval
                 )
 
         # keep this attribute for backwards compatibility
         self.disc_ts_threshold = self.discovery[5.0]["ts"]
 
-        x = sorted(self.results.keys())
-        x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
+        x = self.scale_labels
 
         # maps sigma values to array of overfluctuation fractions for the injection strength represented in x
-        y = {}
+        y = {zval: [] for zval in self.discovery}
 
         # evaluate for each injection step the fraction of overfluctuations above the threshold
         # for each of the z values
@@ -717,7 +713,7 @@ class ResultsHandler(object):
         threshold = 0.5
 
         """
-        Calculate the discovery potential based on the 5-sigma threshold of the TS distribution only if the distribution is non-degenerate. Otherwise, use only the TS=25 threshold.
+        Now calculate discovery flux.
         """
         discovery_flux = {}
 
@@ -775,7 +771,7 @@ class ResultsHandler(object):
 
             ax1.axhline(threshold, lw=1, color="red", linestyle="--")
             ax1.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
-            ax1.axvline(self.disc_potential, lw=2, color="red")
+            ax1.axvline(sol, lw=2, color="red")
             ax1.set_ylim(0.0, 1.0)
             ax1.set_xlim(0.0, k_to_flux(max(xrange)))
             ax1.set_ylabel(r"Overfluctuations relative to f{zval}$\sigma$ threshold")
@@ -790,7 +786,7 @@ class ResultsHandler(object):
             fig.savefig(save_path)
             plt.close()
 
-            extrapolated = self.disc_potential > max(x_flux)
+            extrapolated = sol > max(x_flux)
 
             logger.info(
                 f"Discovery Potential ({zval}-sigma): {discovery_flux[zval]} ({extrapolated=})"
@@ -799,7 +795,7 @@ class ResultsHandler(object):
             self.discovery[zval]["flux_val"] = discovery_flux[zval]
             self.discovery[zval]["extrapolated"] = extrapolated
 
-    def noflare_plots(self, scale):
+    def standard_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
         ts_path = os.path.join(self.plot_dir, "ts_distributions/" + str(scale) + ".pdf")
 
@@ -965,12 +961,13 @@ class ResultsHandler(object):
         plt.close()
 
     def plot_bias(self):
-        x = sorted(self.results.keys())
-        raw_x = [scale_shortener(i) for i in sorted([float(j) for j in x])]
+        raw_x = self.scale_labels
         base_x = [k_to_flux(float(j)) for j in raw_x]
         base_x_label = r"$\Phi_{1GeV}$ (GeV$^{-1}$ cm$^{-2}$)"
 
-        for i, param in enumerate(self.param_names):
+        (_p0, _bounds, names) = self.param_info
+
+        for i, param in enumerate(names):
             try:
                 plt.figure()
 
