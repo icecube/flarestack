@@ -9,7 +9,6 @@ from scipy.stats import norm
 
 logger = logging.getLogger(__name__)
 
-raw_five_sigma = norm.cdf(5)
 n_bins = 100
 
 
@@ -285,7 +284,7 @@ def plot_expanded_negative(ts_array, path):
 
 
 def plot_background_ts_distribution(
-    ts_array, path, ts_type="standard", ts_val=None, mock_unblind=False
+    ts_array, path, ts_type="standard", ts_val=None, mock_unblind=False, zval=5.0
 ):
     try:
         os.makedirs(os.path.dirname(path))
@@ -320,7 +319,9 @@ def plot_background_ts_distribution(
 
     frac_under = 1 - frac_over
 
-    five_sigma = (raw_five_sigma - frac_under) / (1.0 - frac_under)
+    raw_cdf = norm.cdf(zval)
+
+    five_sigma = (raw_cdf - frac_under) / (1.0 - frac_under)
 
     plt.axhline(frac_over * (1 - five_sigma), color="r", linestyle="--")
 
