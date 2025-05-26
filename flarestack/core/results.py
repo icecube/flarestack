@@ -671,13 +671,11 @@ class ResultsHandler(object):
 
         # determine the ts values corresponding to the different significance (z) values
         for zval in self.discovery:
+            # skip the "nominal" TS=25 case
             if zval != "nominal":
                 self.discovery[zval]["ts"] = plot_background_ts_distribution(
                     bkg_ts, ts_path, ts_type=self.ts_type, zval=zval
                 )
-
-        # keep this attribute for backwards compatibility
-        self.disc_ts_threshold = self.discovery[5.0]["ts"]
 
         x = self.scale_labels
 
@@ -722,7 +720,7 @@ class ResultsHandler(object):
         for zval in self.discovery:
             # if the threshold is nan, skip
             if np.isnan(self.discovery[zval]["ts"]):
-                continue
+                discovery_flux[zval] = np.nan
 
             y_vals = y[zval]
 
