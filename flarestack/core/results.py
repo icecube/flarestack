@@ -165,16 +165,18 @@ class ResultsHandler(object):
         # from find_sensitivity
         # self.sensitivity = np.nan
         # self.sensitivity_err = np.nan
+        # self.extrapolated_sens = False
         # self.bkg_median = np.nan
         # self.frac_over = np.nan
 
-        # from find_disc_potential
-        # self.disc_potential = np.nan
-        # self.disc_err = np.nan
-        # self.disc_potential_25 = np.nan
-        # self.disc_ts_threshold = np.nan
-        # self.extrapolated_sens = False
-        # self.extrapolated_disc = False
+        # attributes for backward compatibility
+        self.disc_potential = self.discovery[5.0]["flux_val"]
+        self.disc_err = self.discovery[5.0]["flux_err"]
+        self.disc_potential_25 = self.discovery["nominal"]["flux_val"]
+        self.disc_ts_threshold = self.discovery[5.0]["ts"]
+        self.extrapolated_sens = self.discovery[5.0]["extrapolated"]
+        self.extrapolated_disc = self.discovery[5.0]["extrapolated"]
+
 
     def is_valid(self):
         """If results are valid, returns True.
@@ -472,7 +474,7 @@ class ResultsHandler(object):
         ax.axvline(disc_scale_guess, ls="--", color="red", label="DP scale guess")
         ax.axvline(sens_scale_guess, ls="--", color="blue", label="Sens scale guess")
         ax.set_xlabel("flux scale")
-        ax.set_ylabel("$\sigma_{mean}$")
+        ax.set_ylabel(r"$\sigma_{mean}$")
         ax.legend()
         fn = os.path.join(self.plot_dir, "quick_injection_scale_guess.pdf")
         fig.savefig(fn)
@@ -748,14 +750,15 @@ class ResultsHandler(object):
                     return f(x, best_a, best_b, best_c)
 
                 # estimate the solution flux
-                sol = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
+                interpolated_flux = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
 
                 # "disc_potential" and "disc_potential_25" attributes are set here
                 # use of `setattr` makes the code a bit obscure and could be improved
-                discovery_flux[zval] = sol
+                discovery_flux[zval] = interpolated_flux
 
             except RuntimeError as e:
                 logger.warning(f"RuntimeError for discovery potential!: {e}")
+                # interpolated_flux = np.nan
 
             # now plot the whole ordeal
             xrange = np.linspace(0.0, 1.1 * max(x), 1000)
@@ -766,12 +769,13 @@ class ResultsHandler(object):
             ax1 = fig.add_subplot(111)
             ax1.scatter(x_flux, y_vals, color="black")
 
-            if not isinstance(best_f, type(None)):
+            if not best_f is not None:
                 ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")
 
             ax1.axhline(threshold, lw=1, color="red", linestyle="--")
             ax1.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
-            ax1.axvline(sol, lw=2, color="red")
+            if not np.isnan(interpolated_flux):
+                ax1.axvline(interpolated_flux, lw=2, color="red")
             ax1.set_ylim(0.0, 1.0)
             ax1.set_xlim(0.0, k_to_flux(max(xrange)))
             ax1.set_ylabel(r"Overfluctuations relative to f{zval}$\sigma$ threshold")
@@ -786,7 +790,7 @@ class ResultsHandler(object):
             fig.savefig(save_path)
             plt.close()
 
-            extrapolated = sol > max(x_flux)
+            extrapolated = interpolated_flux > max(x_flux)
 
             logger.info(
                 f"Discovery Potential ({zval}-sigma): {discovery_flux[zval]} ({extrapolated=})"
