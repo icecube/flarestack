@@ -177,7 +177,6 @@ class ResultsHandler(object):
         self.extrapolated_sens = self.discovery[5.0]["extrapolated"]
         self.extrapolated_disc = self.discovery[5.0]["extrapolated"]
 
-
     def is_valid(self):
         """If results are valid, returns True.
             If something went wrong during the instantiation, returns False.
