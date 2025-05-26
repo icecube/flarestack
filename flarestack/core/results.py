@@ -159,16 +159,6 @@ class ResultsHandler(object):
             except ValueError as e:
                 logger.warning(f"ValueError for discovery potential: \n {e}")
 
-        # from find_ns_scale
-        # self.flux_to_ns = np.nan
-
-        # from find_sensitivity
-        # self.sensitivity = np.nan
-        # self.sensitivity_err = np.nan
-        # self.extrapolated_sens = False
-        # self.bkg_median = np.nan
-        # self.frac_over = np.nan
-
         # attributes for backward compatibility
         self.disc_potential = self.discovery[5.0]["flux_val"]
         self.disc_err = self.discovery[5.0]["flux_err"]
@@ -390,9 +380,6 @@ class ResultsHandler(object):
 
     def find_ns_scale(self):
         """Find the number of neutrinos corresponding to flux"""
-        # x = sorted([float(x) for x in self.results.keys()])
-        # self.flux_to_ns = np.nan
-
         try:
             # if weights were not fitted, number of neutrinos is stored in just one parameter
 
@@ -1062,27 +1049,3 @@ class ResultsHandler(object):
 
             finally:
                 plt.close()
-
-    # def flare_plots(self, scale):
-    #
-    #     sources = [x for x in self.results[scale].keys() if x != "TS"]
-    #
-    #     for source in sources:
-    #
-    #         ts_array = np.array(self.results[scale][source]["TS"])
-    #         ts_path = self.plot_dir + source + "/ts_distributions/" + str(
-    #             scale) + ".pdf"
-    #
-    #         plot_background_ts_distribution(ts_array, ts_path,
-    #                                         ts_type=self.ts_type)
-    #
-    #         param_path = self.plot_dir + source + "/params/" + str(scale) + \
-    #                      ".pdf"
-    #
-    #         if self.show_inj:
-    #             inj = self.inj[str(scale)]
-    #         else:
-    #             inj = None
-    #
-    #         plot_fit_results(self.results[scale][source]["Parameters"],
-    #                          param_path, inj)
