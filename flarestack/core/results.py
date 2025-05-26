@@ -60,9 +60,8 @@ class ResultsHandler(object):
 
         self.results = dict()
         self.pickle_output_dir = name_pickle_output_dir(self.name)
-        self.plot_dir = plot_output_dir(self.name)
 
-        self.plot_path = Path(self.plot_dir)
+        self.plot_path = Path(plot_output_dir(self.name))
 
         self.merged_dir = os.path.join(self.pickle_output_dir, "merged")
 
@@ -462,7 +461,7 @@ class ResultsHandler(object):
         ax.set_xlabel("flux scale")
         ax.set_ylabel(r"$\sigma_{mean}$")
         ax.legend()
-        fn = os.path.join(self.plot_dir, "quick_injection_scale_guess.pdf")
+        fn = self.plot_path / "quick_injection_scale_guess.pdf"
         fig.savefig(fn)
         logger.debug(f"saved figure under {fn}")
         plt.close()
@@ -491,7 +490,7 @@ class ResultsHandler(object):
         bkg_median = np.median(bkg_ts)
         self.bkg_median = bkg_median
 
-        savepath = os.path.join(self.plot_dir, "sensitivity.pdf")
+        savepath = self.plot_path / "sensitivity.pdf"
 
         (
             self.sensitivity,
@@ -645,7 +644,7 @@ class ResultsHandler(object):
         return fit, fit_err, extrapolated
 
     def find_disc_potential(self):
-        ts_path = os.path.join(self.plot_dir, "ts_distributions/0.pdf")
+        ts_path = self.plot_path / "ts_distributions/0.pdf"
 
         try:
             bkg_dict = self.results[scale_shortener(0.0)]
@@ -785,11 +784,11 @@ class ResultsHandler(object):
 
     def standard_plots(self, scale):
         ts_array = np.array(self.results[scale]["TS"])
-        ts_path = os.path.join(self.plot_dir, "ts_distributions/" + str(scale) + ".pdf")
+        ts_path = self.plot_path / f"ts_distributions/{str(scale)}.pdf"
 
         plot_background_ts_distribution(ts_array, ts_path, ts_type=self.ts_type)
 
-        param_path = os.path.join(self.plot_dir, "params/" + str(scale) + ".pdf")
+        param_path = self.plot_path / f"params/{str(scale)}.pdf"
 
         # if self.show_inj:
         try:
@@ -859,10 +858,8 @@ class ResultsHandler(object):
             sq_fig, update, frames=np.arange(0, n_scale_steps), interval=500
         )
 
-        anim_name = os.path.join(
-            self.plot_dir, "ts_distributions/ts_distributions_evolution.gif"
-        )
-        logger.debug("saving animation under " + anim_name)
+        anim_name = self.plot_path / "ts_distributions/ts_distributions_evolution.gif"
+        logger.debug(f"saving animation under {anim_name}")
         anim.save(anim_name, dpi=80, writer="imagemagick")
 
     def ts_distribution_evolution(self):
@@ -942,8 +939,8 @@ class ResultsHandler(object):
 
         plt.tight_layout()
 
-        sn = os.path.join(self.plot_dir, "ts_distributions/ts_evolution_.pdf")
-        logger.debug("saving plot to " + sn)
+        sn = self.plot_path / "ts_distributions/ts_evolution_.pdf"
+        logger.debug(f"saving plot to {sn}")
         fig.savefig(sn)
 
         plt.close()
@@ -1033,7 +1030,7 @@ class ResultsHandler(object):
                 ax.set_ylabel(param)
                 plt.title("Bias (" + param + ")")
 
-                savepath = os.path.join(self.plot_dir, "bias_" + param + ".pdf")
+                savepath = self.plot_path / f"bias_{param}.pdf"
                 logger.info("Saving bias plot to {0}".format(savepath))
 
                 try:
