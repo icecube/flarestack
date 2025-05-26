@@ -321,7 +321,7 @@ def plot_background_ts_distribution(
 
     # raw CDF value for the given significance (z) value
     zval_raw_cdf = norm.cdf(zval)
-    # corrected CDF value, after excluding the fraction of trials with TS <= 0 
+    # corrected CDF value, after excluding the fraction of trials with TS <= 0
     zval_corrected_cdf = (zval_raw_cdf - nonpositive_fraction) / positive_fraction
 
     plt.axhline(positive_fraction * (1 - zval_corrected_cdf), color="r", linestyle="--")
@@ -370,7 +370,9 @@ def plot_background_ts_distribution(
         if ts_val > np.median(ts_array):
             # val = (ts_val - frac_under) / (1. - frac_under)
 
-            cdf = nonpositive_fraction + positive_fraction * scipy.stats.chi2.cdf(ts_val, df, loc, scale)
+            cdf = nonpositive_fraction + positive_fraction * scipy.stats.chi2.cdf(
+                ts_val, df, loc, scale
+            )
 
             sig = norm.ppf(cdf)
 
