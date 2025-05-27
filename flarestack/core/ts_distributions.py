@@ -9,7 +9,6 @@ from scipy.stats import norm
 
 logger = logging.getLogger(__name__)
 
-raw_five_sigma = norm.cdf(5)
 n_bins = 100
 
 
@@ -285,7 +284,7 @@ def plot_expanded_negative(ts_array, path):
 
 
 def plot_background_ts_distribution(
-    ts_array, path, ts_type="standard", ts_val=None, mock_unblind=False
+    ts_array, path, ts_type="standard", ts_val=None, mock_unblind=False, zval=5.0
 ):
     try:
         os.makedirs(os.path.dirname(path))
@@ -312,25 +311,28 @@ def plot_background_ts_distribution(
         )
         return np.NaN
 
-    fig = plt.figure()
+    _fig = plt.figure()
 
     ax = plt.subplot(1, 1, 1)
 
-    df, loc, scale, frac_over, t_err = fit_background_ts(ts_array, ts_type)
+    df, loc, scale, positive_fraction, t_err = fit_background_ts(ts_array, ts_type)
 
-    frac_under = 1 - frac_over
+    nonpositive_fraction = 1.0 - positive_fraction
 
-    five_sigma = (raw_five_sigma - frac_under) / (1.0 - frac_under)
+    # raw CDF value for the given significance (z) value
+    zval_raw_cdf = norm.cdf(zval)
+    # corrected CDF value, after excluding the fraction of trials with TS <= 0
+    zval_corrected_cdf = (zval_raw_cdf - nonpositive_fraction) / positive_fraction
 
-    plt.axhline(frac_over * (1 - five_sigma), color="r", linestyle="--")
+    plt.axhline(positive_fraction * (1 - zval_corrected_cdf), color="r", linestyle="--")
 
-    disc_potential = scipy.stats.chi2.ppf(five_sigma, df, loc, scale)
+    disc_potential = scipy.stats.chi2.ppf(zval_corrected_cdf, df, loc, scale)
 
     x_range = np.linspace(0.0, max(max_ts, disc_potential), 100)
 
     plt.plot(
         x_range,
-        frac_over * scipy.stats.chi2.pdf(x_range, df, loc, scale),
+        positive_fraction * scipy.stats.chi2.pdf(x_range, df, loc, scale),
         color="blue",
         label=r"$\chi^{2}$ Distribution",
     )
@@ -338,14 +340,14 @@ def plot_background_ts_distribution(
     if t_err is not None:
         plt.fill_between(
             x_range,
-            frac_over * scipy.stats.chi2.pdf(x_range, df + t_err, loc, scale),
-            frac_over * scipy.stats.chi2.pdf(x_range, df - t_err, loc, scale),
+            positive_fraction * scipy.stats.chi2.pdf(x_range, df + t_err, loc, scale),
+            positive_fraction * scipy.stats.chi2.pdf(x_range, df - t_err, loc, scale),
             alpha=0.1,
             color="blue",
         )
 
     def integral(x):
-        return frac_under * np.sign(x) + frac_over * (
+        return nonpositive_fraction * np.sign(x) + positive_fraction * (
             scipy.stats.chi2.cdf(x, df, loc, scale)
         )
 
@@ -368,7 +370,9 @@ def plot_background_ts_distribution(
         if ts_val > np.median(ts_array):
             # val = (ts_val - frac_under) / (1. - frac_under)
 
-            cdf = frac_under + frac_over * scipy.stats.chi2.cdf(ts_val, df, loc, scale)
+            cdf = nonpositive_fraction + positive_fraction * scipy.stats.chi2.cdf(
+                ts_val, df, loc, scale
+            )
 
             sig = norm.ppf(cdf)
 
@@ -390,7 +394,7 @@ def plot_background_ts_distribution(
 
     else:
         plt.annotate(
-            "{:.1f}".format(100 * frac_under)
+            "{:.1f}".format(100 * nonpositive_fraction)
             + "% of data in delta. \n"
             + r"$\chi^{2}$ Distribution:"
             + "\n   * d.o.f.="
