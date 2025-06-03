@@ -163,17 +163,16 @@ class SignalSpatialPDF:
 @SignalSpatialPDF.register_subclass("circular_gaussian")
 class CircularGaussian(SignalSpatialPDF):
     def simulate_distribution(self, source, data: Table) -> Table:
-        data["ra"] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
-        data["dec"] = norm.rvs(size=len(data)) * data["sigma"]
-        data["sinDec"] = np.sin(data["dec"])
-        data.add_columns(
-            [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])],
-            ["trueRa", "trueDec"],
-        )
+        data = data.copy()
+        data["ra"][:] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
+        data["dec"][:] = norm.rvs(size=len(data)) * data["sigma"]
+        data["sinDec"][:] = np.sin(data["dec"])
+        data["trueRa"][:] = np.ones_like(data["dec"]) * np.pi
+        data["trueDec"][:] = np.zeros_like(data["dec"])
 
         data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"])
 
-        return data.copy()
+        return data
 
     @staticmethod
     def signal_spatial(source, cut_data):
