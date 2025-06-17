@@ -229,6 +229,13 @@ class ResultsHandler(object):
             self.pickle_cache.merge_and_load(output_dict=self.results)
             # Load the background trials. Will override the existing one.
             self.pickle_cache_bg.merge_and_load(output_dict=self.results)
+            if not self.results:
+                logger.warning("No data was found by ResultsHandler object! \n")
+                logger.warning(
+                    "Tried root directory: \n {0} \n ".format(self.pickle_output_dir)
+                )
+                sys.exit()
+
         except FileNotFoundError:
             logger.warning(f"No files found at {self.pickle_output_dir}")
 
@@ -414,79 +421,6 @@ class ResultsHandler(object):
                 logger.debug(f"Did not load {path}, not a file!")
 
         return inj_values
-
-    def merge_and_load_pickle_data(self):
-        # NOTE:
-        # self.pickle_output_path
-        # self.merged_dir = self.pickle_output_path / "merged"
-
-        # Loop over all subdirectories, one for each injection scale, containing one pickle per trial.
-        all_sub_dirs = [
-            x for x in os.listdir(self.path) if x[0] != "." and x != "merged"
-        ]
-        # Create a "merged" directory, that will contain a single pickle with many trials per injection scale.
-        try:
-            os.makedirs(self.merged_dir)
-        except OSError:
-            pass
-
-        for sub_dir_name in all_sub_dirs:
-            sub_dir = os.path.join(self.path, sub_dir_name)
-
-            files = os.listdir(sub_dir)
-
-            # Map one dir to one pickle
-            merged_path = os.path.join(self.merged_dir, sub_dir_name + ".pkl")
-            # Load previously merged data, if it exists.
-            if os.path.isfile(merged_path):
-                logger.debug(f"loading merged data from {merged_path}")
-                with open(merged_path, "rb") as mp:
-                    merged_data = Pickle.load(mp)
-            else:
-                merged_data = {}
-
-            for filename in files:
-                pending_file = os.path.join(sub_dir, filename)
-
-                try:
-                    with open(pending_file, "rb") as f:
-                        data = Pickle.load(f)
-                except (EOFError, IsADirectoryError):
-                    logger.warning("Failed loading: {0}".format(pending_file))
-                    continue
-                # This can be "dangerous" because if the program crashes or gets terminated, we will have removed files before writing the merged data.
-                os.remove(pending_file)
-
-                if merged_data == {}:
-                    merged_data = data
-                else:
-                    for key, info in data.items():
-                        if isinstance(info, list):
-                            merged_data[key] += info
-                        else:
-                            for param_name, params in info.items():
-                                try:
-                                    merged_data[key][param_name] += params
-                                except KeyError as m:
-                                    logger.warning(
-                                        f"Keys [{key}][{param_name}] not found in \n {merged_data}"
-                                    )
-                                    raise KeyError(m)
-
-            # Save merged data.
-            with open(merged_path, "wb") as mp:
-                Pickle.dump(merged_data, mp)
-
-            # Load merged data in results.
-            if merged_data:
-                self.results[scale_shortener(float(sub_dir_name))] = merged_data
-
-        if not self.results:
-            logger.warning("No data was found by ResultsHandler object! \n")
-            logger.warning(
-                "Tried root directory: \n {0} \n ".format(self.pickle_output_dir)
-            )
-            sys.exit()
 
     def find_ns_scale(self):
         """Find the number of neutrinos corresponding to flux"""
