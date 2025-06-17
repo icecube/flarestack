@@ -55,13 +55,11 @@ class PickleCache:
             logger.debug(f"Removed all files from {self.merged_path}")
 
     def get_subdirs(self):
-        return [
-            x
-            for x in os.listdir(self.path)
-            if x[0] != "." and x != "merged"
-        ]
+        return [x for x in os.listdir(self.path) if x[0] != "." and x != "merged"]
 
-    def merge_datadict(self, merged: dict[str, list | dict], pending_data: dict[str, list | dict]):
+    def merge_datadict(
+        self, merged: dict[str, list | dict], pending_data: dict[str, list | dict]
+    ):
         """Merge the content of pending_data into merged."""
         for key, info in pending_data.items():
             if isinstance(info, list):
@@ -80,7 +78,6 @@ class PickleCache:
                 raise TypeError(
                     f"Unexpected type for key {key}: {type(info)}. Expected list or dict."
                 )
-
 
     def merge_and_load_subdir(self, subdir_name):
         """Merge and load data from a single subdirectory."""
@@ -138,10 +135,10 @@ class PickleCache:
 
             if pending_data:
                 if scale_label == background_label and background_label in output_dict:
+                    logger.info("Appending background data to existing trials.")
                     self.merge_datadict(output_dict[background_label], pending_data)
                 else:
                     output_dict[scale_label] = pending_data
-
 
 
 class ResultsHandler(object):
@@ -152,7 +149,7 @@ class ResultsHandler(object):
         do_disc=True,
         bias_error="std",
         sigma_thresholds=[3.0, 5.0],
-        background_from=None
+        background_from=None,
     ):
         self.sources = load_catalogue(rh_dict["catalogue"])
 
@@ -238,9 +235,7 @@ class ResultsHandler(object):
             logger.warning(f"No files found at {self.pickle_output_dir}")
 
         # auxiliary parameters
-        self.scale_values = sorted(
-            [float(j) for j in self.results.keys()]
-        )  
+        self.scale_values = sorted([float(j) for j in self.results.keys()])
         self.scale_labels = [scale_shortener(i) for i in self.scale_values]
 
         logger.info(f"Injection scales: {self.scale_values}")
@@ -396,7 +391,6 @@ class ResultsHandler(object):
         """Clean merged data from pickle cache, only for main analysis. Do not touch the background cache."""
         self.pickle_cache.clean_merged_data()
 
-
     def load_injection_values(self):
         """Function to load the values used in injection, so that a
         comparison to the fit results can be made.
@@ -423,18 +417,14 @@ class ResultsHandler(object):
 
         return inj_values
 
-
     def merge_and_load_pickle_data(self):
         # NOTE:
         # self.pickle_output_path
         # self.merged_dir = self.pickle_output_path / "merged"
 
-
         # Loop over all subdirectories, one for each injection scale, containing one pickle per trial.
         all_sub_dirs = [
-            x
-            for x in os.listdir(self.path)
-            if x[0] != "." and x != "merged"
+            x for x in os.listdir(self.path) if x[0] != "." and x != "merged"
         ]
         # Create a "merged" directory, that will contain a single pickle with many trials per injection scale.
         try:
