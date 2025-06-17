@@ -57,13 +57,11 @@ class PickleCache:
     def get_subdirs(self):
         return [x for x in os.listdir(self.path) if x[0] != "." and x != "merged"]
 
-    def merge_datadict(
-        self, merged: dict[str, list | dict], pending_data: dict[str, list | dict]
-    ):
+    def merge_datadict(self, merged, pending_data):
         """Merge the content of pending_data into merged."""
         for key, info in pending_data.items():
             if isinstance(info, list):
-                # Append the list to the existing one.
+                # Append the list to the existing one. We assume that on the left-hand-side we always have a list, so we ignore the type checking.
                 merged[key] += info
             elif isinstance(info, dict):
                 for param_name, params in info.items():
@@ -149,14 +147,14 @@ class ResultsHandler(object):
         do_disc=True,
         bias_error="std",
         sigma_thresholds=[3.0, 5.0],
-        background_from=None,
+        background_source=None,
     ):
         self.sources = load_catalogue(rh_dict["catalogue"])
 
         self.name = rh_dict["name"]
 
-        if background_from is not None:
-            self.background_from = background_from
+        if background_source is not None:
+            self.background_from = background_source
         else:
             self.background_from = rh_dict["name"]
 
