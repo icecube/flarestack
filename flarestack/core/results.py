@@ -123,20 +123,33 @@ class PickleCache:
         background_label = scale_shortener(0.0)
 
         for subdir_name in scales_subdirs:
-            scale_label = scale_shortener(float(subdir_name))
+            try:
+                scale_label = scale_shortener(float(subdir_name))
+            except ValueError as e:
+                # If analysis paths are nested, i.e. we have analyses ana1 and ana1/sub1, the ana1/sub1 directory will be scanned, but should be skipped. Ideally the user should avoid nesting analysis directories, but there is no safeguard against this behaviour.
+                logger.debug(
+                    f"Skipping subdirectory {subdir_name} as it does not represent a valid scale. Parent directory: {self.path}"
+                )
+                continue
 
             if self.background_only and scale_label != background_label:
-                # skip non-background trials
+                # skip non-background trials for background_only mode
                 continue
 
             pending_data = self.merge_and_load_subdir(subdir_name)
 
             if pending_data:
+                n_pending = len(pending_data["TS"])
+
                 if scale_label == background_label and background_label in output_dict:
-                    logger.info("Appending background data to existing trials.")
+                    logger.info(f"Appending f{n_pending} background data to {len(output_dict[background_label]['TS'])} existing trials ({scale_label=})")
                     self.merge_datadict(output_dict[background_label], pending_data)
                 else:
                     output_dict[scale_label] = pending_data
+                    if self.background_only:
+                        logger.info(
+                            f"Loading {n_pending} background trials ({scale_label=})"
+                        )
 
 
 class ResultsHandler(object):
@@ -153,10 +166,7 @@ class ResultsHandler(object):
 
         self.name = rh_dict["name"]
 
-        if background_source is not None:
-            self.background_from = background_source
-        else:
-            self.background_from = rh_dict["name"]
+        self.background_source = background_source
 
         self.mh_name = rh_dict["mh_name"]
 
@@ -170,10 +180,11 @@ class ResultsHandler(object):
         self.results = dict()
 
         self.pickle_output_dir = name_pickle_output_dir(self.name)
-        self.pickle_output_dir_bg = name_pickle_output_dir(self.background_from)
+        self.pickle_output_dir_bg = name_pickle_output_dir(self.background_source) if self.background_source else None
 
         self.pickle_cache = PickleCache(Path(self.pickle_output_dir))
-        self.pickle_cache_bg = PickleCache(Path(self.pickle_output_dir_bg))
+
+        self.pickle_cache_bg = PickleCache(Path(self.pickle_output_dir_bg), background_only=True) if self.background_source else None
 
         self.plot_path = Path(plot_output_dir(self.name))
 
@@ -228,12 +239,20 @@ class ResultsHandler(object):
         try:
             self.pickle_cache.merge_and_load(output_dict=self.results)
             # Load the background trials. Will override the existing one.
-            self.pickle_cache_bg.merge_and_load(output_dict=self.results)
+            if self.pickle_cache_bg is not None:
+                print("NOTE!!!! Loading BG")
+                self.pickle_cache_bg.merge_and_load(output_dict=self.results)
+            else:
+                print("NOTE!!!! No BG pickle cache")
             if not self.results:
                 logger.warning("No data was found by ResultsHandler object! \n")
                 logger.warning(
                     "Tried root directory: \n {0} \n ".format(self.pickle_output_dir)
                 )
+                sys.exit()
+            if not scale_shortener(0.0) in self.results:
+                logger.error(f"No key equal to '0' in results! Keys are {self.results.keys()}")
+
                 sys.exit()
 
         except FileNotFoundError:
@@ -726,7 +745,7 @@ class ResultsHandler(object):
                     )
 
                     logger.info(
-                        f"Scale: {scale}, TS_threshold: {disc_threshold}, n_trials: {len(ts_array)} => overfluctuations {frac=}"
+                        f"Scale: {scale}, TS_threshold: {disc_threshold:.1f}, n_trials: {len(ts_array)} => overfluctuations {frac=:.4f}"
                     )
 
                     y[zval].append(frac)
@@ -1010,6 +1029,7 @@ class ResultsHandler(object):
 
                 for scale in raw_x:
                     vals = self.results[scale]["Parameters"][param]
+
 
                     if self.bias_error == "std":
                         med = np.median(vals)
