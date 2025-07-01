@@ -142,7 +142,9 @@ class PickleCache:
                 n_pending = len(pending_data["TS"])
 
                 if scale_label == background_label and background_label in output_dict:
-                    logger.info(f"Appending f{n_pending} background data to {len(output_dict[background_label]['TS'])} existing trials ({scale_label=})")
+                    logger.info(
+                        f"Appending f{n_pending} background data to {len(output_dict[background_label]['TS'])} existing trials ({scale_label=})"
+                    )
                     self.merge_datadict(output_dict[background_label], pending_data)
                 else:
                     output_dict[scale_label] = pending_data
@@ -180,11 +182,19 @@ class ResultsHandler(object):
         self.results = dict()
 
         self.pickle_output_dir = name_pickle_output_dir(self.name)
-        self.pickle_output_dir_bg = name_pickle_output_dir(self.background_source) if self.background_source else None
+        self.pickle_output_dir_bg = (
+            name_pickle_output_dir(self.background_source)
+            if self.background_source
+            else None
+        )
 
         self.pickle_cache = PickleCache(Path(self.pickle_output_dir))
 
-        self.pickle_cache_bg = PickleCache(Path(self.pickle_output_dir_bg), background_only=True) if self.background_source else None
+        self.pickle_cache_bg = (
+            PickleCache(Path(self.pickle_output_dir_bg), background_only=True)
+            if self.background_source
+            else None
+        )
 
         self.plot_path = Path(plot_output_dir(self.name))
 
@@ -251,7 +261,9 @@ class ResultsHandler(object):
                 )
                 sys.exit()
             if not scale_shortener(0.0) in self.results:
-                logger.error(f"No key equal to '0' in results! Keys are {self.results.keys()}")
+                logger.error(
+                    f"No key equal to '0' in results! Keys are {self.results.keys()}"
+                )
 
                 sys.exit()
 
@@ -1029,7 +1041,6 @@ class ResultsHandler(object):
 
                 for scale in raw_x:
                     vals = self.results[scale]["Parameters"][param]
-
 
                     if self.bias_error == "std":
                         med = np.median(vals)
