@@ -1240,7 +1240,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     @staticmethod
     def return_parameter_info(mh_dict):
-        params = [[1.0], [(0, 1000.0)], ["n_s"]]
+        params = [[1.0], [(0, None)], ["n_s"]]
 
         params = [
             params[i] + x for i, x in enumerate(LLH.get_parameters(mh_dict["llh_dict"]))
