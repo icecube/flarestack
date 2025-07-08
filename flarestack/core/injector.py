@@ -717,6 +717,7 @@ class MockUnblindedInjector:
     def __init__(self, season, sources=np.nan, **kwargs):
         self.season = season
         self._raw_data = season.get_exp_data()
+        season.load_background_model()
 
     def create_dataset(self, scale, angular_error_modifier=None):
         """Returns a background scramble

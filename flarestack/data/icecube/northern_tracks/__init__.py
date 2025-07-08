@@ -1,6 +1,5 @@
 import numpy as np
 from astropy.table import Table
-from numpy.lib.recfunctions import rename_fields
 
 from flarestack.data.icecube.ic_season import IceCubeSeason
 

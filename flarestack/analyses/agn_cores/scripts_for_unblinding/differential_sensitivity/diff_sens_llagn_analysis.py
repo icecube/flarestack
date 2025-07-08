@@ -41,8 +41,6 @@ from flarestack.utils.catalogue_loader import load_catalogue
 # plt.style.use('~/scratch/phdthesis.mpltstyle')
 
 
-
-
 analyses = dict()
 
 # Initialise Injectors/LLHs

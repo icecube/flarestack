@@ -1528,7 +1528,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
 
                 SoB_matrix_sparse = sparse.csr_matrix(
                     (data, SoB_only_matrix.indices, SoB_only_matrix.indptr),
-                    shape=SoB_only_matrix,
+                    shape=SoB_only_matrix.shape,
                 )
 
                 SoB_sum = SoB_matrix_sparse.sum(axis=0)

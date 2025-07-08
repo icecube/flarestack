@@ -61,17 +61,23 @@ This will install all packages as documented in the `poetry.lock` file.
 If you want to also build the documentation locally, you should install the respective dependencies:
 
 ```shell
-poetry install --with docs
+poetry install --with dev
 ```
 
 You can still use `pip` if you want to:
 
 ```shell
-pip install -e flarestack/
+pip install -e ".[dev]"
 ```
  
 Either way will give you the very latest copy of the code, update the installed version if you git pull or modify scripts 
 yourself, and still enable you to import flarestack.
+
+Finally, install the pre-commit hooks:
+
+```shell
+pre-commit install
+```
 
 If you do want to contribute to _flarestack_, you can check out some guidelines [here](https://github.com/icecube/flarestack/blob/master/CONTRIBUTING.md).
 
