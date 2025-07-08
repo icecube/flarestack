@@ -1,8 +1,11 @@
 from __future__ import print_function
-from builtins import zip
+
 import os
+from builtins import zip
+
 import numpy as np
-from flarestack.shared import plot_output_dir, catalogue_dir
+
+from flarestack.shared import catalogue_dir, plot_output_dir
 from flarestack.utils.catalogue_loader import load_catalogue
 
 agncores_dir = os.path.abspath(os.path.dirname(__file__))
@@ -180,8 +183,8 @@ def create_random_src(min_distance=10, nr_sources=100):
 
     import astropy.coordinates as coord
     import astropy.units as u
-    from astropy.coordinates import SkyCoord
     import numpy as np
+    from astropy.coordinates import SkyCoord
 
     min_distance = min_distance * u.deg
     print(
@@ -241,12 +244,12 @@ def plot_catalogue(
     :return: mollewied plot in equatorial coordinates
     """
 
-    import numpy as np
     import astropy.coordinates as coord
     import astropy.units as u
     import matplotlib.pyplot as plt
-    from matplotlib.pyplot import cm
+    import numpy as np
     from matplotlib.colors import LogNorm
+    from matplotlib.pyplot import cm
 
     if radians:
         src_ra = np.rad2deg(src_ra)

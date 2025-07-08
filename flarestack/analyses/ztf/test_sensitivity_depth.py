@@ -1,17 +1,19 @@
-import numpy as np
-import os
 import logging
-from flarestack.data.icecube import ps_7_year
-from flarestack.shared import plot_output_dir, k_to_flux
-from flarestack.cluster import analyse, wait_for_cluster
+import os
+
 import matplotlib.pyplot as plt
-from flarestack.utils.simulate_catalogue import simulate_transient_catalogue
+import numpy as np
+
 from flarestack.analyses.ccsn.sn_cosmology import get_sn_type_rate
-from flarestack.utils.catalogue_loader import load_catalogue
-from flarestack.utils.neutrino_astronomy import calculate_astronomy
-from flarestack.utils.asimov_estimator import AsimovEstimator
+from flarestack.cluster import analyse, wait_for_cluster
 from flarestack.core.minimisation import MinimisationHandler
 from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube import ps_7_year
+from flarestack.shared import k_to_flux, plot_output_dir
+from flarestack.utils.asimov_estimator import AsimovEstimator
+from flarestack.utils.catalogue_loader import load_catalogue
+from flarestack.utils.neutrino_astronomy import calculate_astronomy
+from flarestack.utils.simulate_catalogue import simulate_transient_catalogue
 
 logging.getLogger().setLevel("INFO")
 

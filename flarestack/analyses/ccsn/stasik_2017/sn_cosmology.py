@@ -1,25 +1,28 @@
 from __future__ import division
+
+import os
 from builtins import str
-from flarestack.utils.neutrino_cosmology import (
-    calculate_transient_cosmology,
-    sfr_madau,
-    sfr_clash_candels,
-    get_diffuse_flux_at_1GeV,
-)
+
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy.cosmology import Planck15 as cosmo
+
 from flarestack.analyses.ccsn.stasik_2017.ccsn_limits import limits
 from flarestack.core.energy_pdf import EnergyPDF
-from astropy.cosmology import Planck15 as cosmo
-import numpy as np
-from flarestack.cosmo.icecube_diffuse_flux.joint_15 import contour_95, e_range
 from flarestack.cosmo import lower_contour, upper_contour
-import matplotlib.pyplot as plt
-from flarestack.shared import plot_output_dir
-import os
+from flarestack.cosmo.icecube_diffuse_flux.joint_15 import contour_95, e_range
 from flarestack.cosmo.rates import (
     ccsn_clash_candels,
     ccsn_madau,
     get_sn_fraction,
     get_sn_type_rate,
+)
+from flarestack.shared import plot_output_dir
+from flarestack.utils.neutrino_cosmology import (
+    calculate_transient_cosmology,
+    get_diffuse_flux_at_1GeV,
+    sfr_clash_candels,
+    sfr_madau,
 )
 
 global_fit_e_range = e_range

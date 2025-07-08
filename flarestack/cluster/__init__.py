@@ -1,4 +1,5 @@
 import logging
+
 from flarestack.cluster.submitter import Submitter
 
 logger = logging.getLogger(__name__)

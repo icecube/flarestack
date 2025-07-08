@@ -6,13 +6,15 @@
 
 
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
+
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
-from flarestack.shared import dataset_plot_dir
 from flarestack.icecube_utils.dataset_loader import data_loader
+from flarestack.shared import dataset_plot_dir
 
 season = IC86_1_dict
 

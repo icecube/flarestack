@@ -1,15 +1,17 @@
-import numpy as np
-import healpy as hp
-import os
 import logging
-from astropy.table import Table
+import os
 from typing import Optional
-from scipy.stats import norm
+
+import healpy as hp
+import numpy as np
+from astropy.table import Table
+from photospline import SplineTable
 from scipy.interpolate import interp1d
+from scipy.stats import norm
+
 from flarestack.core.astro import angular_distance
 from flarestack.shared import bkg_spline_path
 from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
-from photospline import SplineTable
 
 logger = logging.getLogger(__name__)
 

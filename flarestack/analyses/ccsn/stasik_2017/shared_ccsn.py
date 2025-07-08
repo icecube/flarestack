@@ -1,12 +1,15 @@
 from __future__ import print_function
-import os
+
 import logging
-import numpy as np
+import os
 import pickle as Pickle
-from scipy.interpolate import interp1d
-from flarestack.shared import limit_output_path, limits_dir
+
+import numpy as np
 from astropy import units as u
 from astropy.table import Table
+from scipy.interpolate import interp1d
+
+from flarestack.shared import limit_output_path, limits_dir
 
 ccsn_dir = os.path.abspath(os.path.dirname(__file__))
 ccsn_cat_dir = ccsn_dir + "/catalogues/"

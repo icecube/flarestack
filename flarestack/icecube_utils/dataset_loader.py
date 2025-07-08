@@ -1,9 +1,11 @@
-import numpy as np
 import logging
+from pathlib import Path
+
+import numpy as np
 from astropy.table import Table, vstack
 from numpy.lib.recfunctions import rename_fields
+
 from flarestack.shared import min_angular_err
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

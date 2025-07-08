@@ -1,19 +1,21 @@
 import logging
-import numpy as np
 import os
-import shutil
-import scipy.interpolate
 import pickle as Pickle
-from flarestack.shared import (
-    default_gamma_precision,
-    SoB_spline_path,
-    default_smoothing_order,
-    bkg_spline_path,
-    get_base_sob_plot_dir,
-    flarestack_gamma_precision,
-)
-from flarestack.core.energy_pdf import PowerLaw
+import shutil
+
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.interpolate
+
+from flarestack.core.energy_pdf import PowerLaw
+from flarestack.shared import (
+    SoB_spline_path,
+    bkg_spline_path,
+    default_gamma_precision,
+    default_smoothing_order,
+    flarestack_gamma_precision,
+    get_base_sob_plot_dir,
+)
 
 environment_smoothing_key = "FLARESATCK_SMOOTHING_ORDER"
 environment_precision_key = "FLARESTACK_PRECISION"

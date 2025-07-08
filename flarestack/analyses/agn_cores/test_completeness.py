@@ -3,33 +3,33 @@ injected spectral index. Rather than the traditional flux at 1 GeV,
 Sensitivities are given as the total integrated fluence across all sources,
 and as the corresponding standard-candle-luminosity.
 """
-from __future__ import print_function
-from __future__ import division
-import numpy as np
-from flarestack.core.results import ResultsHandler
-from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
-from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
-from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
-from flarestack.shared import (
-    plot_output_dir,
-    flux_to_k,
-    make_analysis_pickle,
-    k_to_flux,
-)
-from flarestack.utils.catalogue_loader import load_catalogue
-from flarestack.analyses.agn_cores.shared_agncores import (
-    agn_subset_catalogue,
-    complete_cats,
-    agn_catalogue_name,
-)
-from flarestack.core.minimisation import MinimisationHandler
 
-from flarestack.cluster import analyse
+from __future__ import division, print_function
+
 import math
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.ticker import ScalarFormatter
 
-import matplotlib.pyplot as plt
+from flarestack.analyses.agn_cores.shared_agncores import (
+    agn_catalogue_name,
+    agn_subset_catalogue,
+    complete_cats,
+)
+from flarestack.cluster import analyse
+from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.results import ResultsHandler
+from flarestack.data.icecube.gfu.gfu_v002_p01 import txs_sample_v1
+from flarestack.data.icecube.ps_tracks.ps_v002_p01 import ps_7year
+from flarestack.data.icecube.ps_tracks.ps_v003_p02 import ps_10year
+from flarestack.shared import (
+    flux_to_k,
+    k_to_flux,
+    make_analysis_pickle,
+    plot_output_dir,
+)
+from flarestack.utils.catalogue_loader import load_catalogue
 
 plt.style.use("~/scratch/phdthesis.mpltstyle")
 

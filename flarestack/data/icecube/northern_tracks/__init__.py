@@ -1,8 +1,8 @@
 import numpy as np
 from astropy.table import Table
-from flarestack.data.icecube.ic_season import IceCubeSeason
 from numpy.lib.recfunctions import rename_fields
 
+from flarestack.data.icecube.ic_season import IceCubeSeason
 
 diffuse_binning = {
     "IC59": (

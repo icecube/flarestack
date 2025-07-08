@@ -1,11 +1,10 @@
-""" This module provides the functionality to create a dataset index by instantiating a DatasetIndex object and importing all the available datasets. Each dataset, in turns, is expect to import `dataset_index` from this module, and adding its own information.
-"""
+"""This module provides the functionality to create a dataset index by instantiating a DatasetIndex object and importing all the available datasets. Each dataset, in turns, is expect to import `dataset_index` from this module, and adding its own information."""
 
 import logging
 from typing import List
-from flarestack.data import Dataset
 
-from flarestack.data.icecube import ps_v004_p02, nt_v005_p01, gfu_v002_p04
+from flarestack.data import Dataset
+from flarestack.data.icecube import gfu_v002_p04, nt_v005_p01, ps_v004_p02
 
 logger = logging.getLogger(__name__)
 

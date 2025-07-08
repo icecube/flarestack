@@ -1,19 +1,19 @@
 import logging
 import os
-import numpy as np
 import random
 import zipfile
 import zlib
-from astropy.table import Table
-from flarestack.shared import band_mask_cache_name
-from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
-from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
-from flarestack.core.spatial_pdf import SpatialPDF
-from flarestack.utils.catalogue_loader import calculate_source_weight
-from scipy import sparse, interpolate
-from flarestack.shared import k_to_flux
-
 from typing import TYPE_CHECKING
+
+import numpy as np
+from astropy.table import Table
+from scipy import interpolate, sparse
+
+from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
+from flarestack.core.spatial_pdf import SpatialPDF
+from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
+from flarestack.shared import band_mask_cache_name, k_to_flux
+from flarestack.utils.catalogue_loader import calculate_source_weight
 
 if TYPE_CHECKING:
     from flarestack.data import SeasonWithMC

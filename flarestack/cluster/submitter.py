@@ -1,30 +1,30 @@
 import copy
 import json
 import logging
-import numpy as np
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import Optional
 
+import numpy as np
+
+from flarestack.core.minimisation import MinimisationHandler
+from flarestack.core.multiprocess_wrapper import run_multiprocess
+from flarestack.core.results import ResultsHandler
 from flarestack.shared import (
+    cluster_dir,
     fs_dir,
-    log_dir,
     fs_scratch_dir,
-    make_analysis_pickle,
     host_server,
     inj_dir_name,
+    log_dir,
+    make_analysis_pickle,
     name_pickle_output_dir,
-    cluster_dir,
 )
-from flarestack.core.multiprocess_wrapper import run_multiprocess
-from flarestack.core.minimisation import MinimisationHandler
-from flarestack.core.results import ResultsHandler
 from flarestack.utils.make_band_masks_wrapper import make_band_mask
-
 
 logger = logging.getLogger(__name__)
 

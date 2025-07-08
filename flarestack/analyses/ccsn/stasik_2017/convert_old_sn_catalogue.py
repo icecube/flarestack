@@ -7,14 +7,17 @@ contained 70% of the signal weight. Another larger sample contained the
 remaining 30% weight distributed across many sources. As integer numbers of
 sources are used, the closest percentage to 70% is used for splitting.
 """
+
+import logging
+import os
+
+import numpy as np
+
 from flarestack.analyses.ccsn.stasik_2017.shared_ccsn import (
     raw_cat_dir,
     sn_catalogue_name,
 )
 from flarestack.utils.prepare_catalogue import cat_dtype
-import numpy as np
-import os
-import logging
 
 mask = ["ra", "dec", "distance", "discoverydate_mjd", "name", "weight"]
 new_names = ["ra", "dec", "distance_mpc", "ref_time_mjd", "source_name", "weight"]

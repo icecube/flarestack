@@ -1,5 +1,13 @@
-import numpy as np
+import logging
 import os
+from pathlib import Path
+from typing import Optional
+
+import numpy as np
+from astropy.table import Table
+from scipy.interpolate import interp1d
+
+from flarestack.core.time_pdf import DetectorOnOffList, TimePDF
 from flarestack.data import Dataset, SeasonWithMC
 from flarestack.icecube_utils.dataset_loader import (
     data_loader,
@@ -7,13 +15,6 @@ from flarestack.icecube_utils.dataset_loader import (
     verify_grl_with_data,
 )
 from flarestack.shared import host_server
-from flarestack.core.time_pdf import TimePDF, DetectorOnOffList
-from scipy.interpolate import interp1d
-import logging
-from pathlib import Path
-from typing import Optional
-from astropy.table import Table
-
 
 logger = logging.getLogger(__name__)
 
