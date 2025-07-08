@@ -10,7 +10,7 @@ from astropy.table import Table
 from scipy import sparse
 
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
-from flarestack.core.spatial_pdf import SpatialPDF
+from flarestack.core.spatial_pdf import SpatialPDF, angular_distance
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.shared import (
     SoB_spline_path,
@@ -1363,6 +1363,12 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
     """
 
     def __init__(self, season, sources, llh_dict):
+        # propagate the spatial_box_width from llh_dict to the
+        # llh_spatial_pdf if not explicitly set
+        if "spatial_box_width" not in llh_dict["llh_spatial_pdf"]:
+            llh_dict["llh_spatial_pdf"]["spatial_box_width"] = llh_dict.get(
+                "spatial_box_width", default_spacial_box_width
+            )
         super().__init__(season, sources, llh_dict)
 
         if llh_dict["llh_spatial_pdf"]["spatial_pdf_name"] != "northern_tracks_kde":
@@ -1400,7 +1406,18 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         ra_dist = np.fabs(
             (data["ra"][dec_range] - source["ra_rad"] + np.pi) % (2.0 * np.pi) - np.pi
         )
-        return np.nonzero(ra_dist < dPhi / 2.0)[0] + dec_range.start
+
+        # Indices (with respect to the start of the declination band) of events inside the box
+        idx = np.nonzero(ra_dist < dPhi / 2.0)[0]
+
+        # Cut the box down to a circle
+        psi = angular_distance(
+            data["ra"][dec_range][idx],
+            data["dec"][dec_range][idx],
+            source["ra_rad"],
+            source["dec_rad"],
+        )
+        return idx[np.nonzero(psi < width)[0]] + dec_range.start
 
     def create_kwargs(self, data, pull_corrector, weight_f=None):
         if weight_f is None:

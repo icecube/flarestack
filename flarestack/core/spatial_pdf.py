@@ -258,21 +258,37 @@ class NorthernTracksKDE(SignalSpatialPDF):
 
         logger.info("Using KDE spatial PDF from file {0}.".format(KDEfile))
 
-    @cached_property
-    def _cdf(self) -> RegularGridInterpolator:
+        if (spatial_box_width := spatial_pdf_dict.get("spatial_box_width")) is not None:
+            self._normalization_logr = np.log10(np.deg2rad(spatial_box_width))
+        else:
+            # do not normalize to the box
+            self._normalization_logr = None
+
+    def _make_cdf(self, normalize=True):
         """Interpolate the cumulative distribution function (CDF) of the KDE in the distance dimension"""
         logSigma, logE, logR = self.KDEspline.knots[:3]
         dR = np.diff(10**logR, axis=0) / (2 * np.log(10))
         dPdR = self.KDEspline.grideval([logSigma, logE, logR]) / 10**logR
         # trapezoid rule integration
         p = np.cumsum((dPdR[..., 1:] + dPdR[..., :-1]) * dR[None, None, ...], axis=2)
-        # ensure normalization
-        p /= p[..., -1:]
+        if normalize:
+            # normalize the CDF to 1 at the end of the distance range
+            p /= p[..., -1:]
         return RegularGridInterpolator(
             [logSigma, logE, logR[1:]],
             p,
             bounds_error=False,
         )
+
+    @cached_property
+    def _cdf(self) -> RegularGridInterpolator:
+        """CDF, useful for sampling"""
+        return self._make_cdf(normalize=True)
+
+    @cached_property
+    def _raw_cdf(self) -> RegularGridInterpolator:
+        """CDF without normalization, useful normalizing the spatial PDF to the configured selection radius"""
+        return self._make_cdf(normalize=False)
 
     def simulate_distribution(
         self, source: Table, data: Table, gamma: float = 2.0
@@ -366,6 +382,15 @@ class NorthernTracksKDE(SignalSpatialPDF):
             )
 
         space_term /= 2 * np.pi * np.log(10) * (distance**2)
+        if self._normalization_logr is not None:
+            # normalize to the box
+            space_term /= self._raw_cdf(
+                (
+                    np.log10(cut_data["sigma"]),
+                    cut_data["logE"],
+                    self._normalization_logr,
+                )
+            )
 
         return space_term
 
