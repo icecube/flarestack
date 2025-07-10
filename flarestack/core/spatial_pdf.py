@@ -44,7 +44,7 @@ class SpatialPDF:
 class SignalSpatialPDF:
     """Base Signal Spatial PDF class."""
 
-    subclasses: dict[str, object] = {}
+    subclasses: "dict[str, type[SignalSpatialPDF]]" = {}
 
     def __init__(self, spatial_pdf_dict):
         pass
@@ -69,7 +69,7 @@ class SignalSpatialPDF:
         return decorator
 
     @classmethod
-    def create(cls, s_pdf_dict):
+    def create(cls, s_pdf_dict) -> "SignalSpatialPDF":
         try:
             s_pdf_name = s_pdf_dict["spatial_pdf_name"]
         except KeyError:
@@ -386,7 +386,7 @@ class NorthernTracksKDE(SignalSpatialPDF):
 
 
 class BackgroundSpatialPDF:
-    subclasses: dict[str, object] = {}
+    subclasses: "dict[str, type[BackgroundSpatialPDF]]" = {}
 
     def __init__(self, spatial_pdf_dict, season):
         pass
@@ -404,7 +404,7 @@ class BackgroundSpatialPDF:
         return decorator
 
     @classmethod
-    def create(cls, s_pdf_dict, season):
+    def create(cls, s_pdf_dict, season) -> "BackgroundSpatialPDF":
         try:
             s_pdf_name = s_pdf_dict["bkg_spatial_pdf"]
         except KeyError:

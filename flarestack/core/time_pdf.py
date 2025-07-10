@@ -96,7 +96,7 @@ def read_t_pdf_dict(t_pdf_dict):
 
 
 class TimePDF:
-    subclasses: dict[str, object] = {}
+    subclasses: "dict[str, type[TimePDF]]" = {}
 
     def __init__(self, t_pdf_dict, livetime_pdf=None):
         self.t_dict = t_pdf_dict
@@ -128,7 +128,7 @@ class TimePDF:
         return decorator
 
     @classmethod
-    def create(cls, t_pdf_dict, livetime_pdf=None):
+    def create(cls, t_pdf_dict, livetime_pdf=None) -> "TimePDF":
         t_pdf_dict = read_t_pdf_dict(t_pdf_dict)
 
         t_pdf_name = t_pdf_dict["time_pdf_name"]
