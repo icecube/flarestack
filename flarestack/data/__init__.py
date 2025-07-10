@@ -175,7 +175,7 @@ class Season:
 
         self._subselection_fraction = subselection_fraction
 
-    def get_background_dtype(self):
+    def get_background_dtype(self) -> np.dtype:
         if self.background_dtype is None:
             exp = self.get_exp_data()
             self.background_dtype = exp.dtype
@@ -194,10 +194,10 @@ class Season:
         or a weighted MC dataset. By default, uses data."""
         return self.data_background_model()
 
-    def generate_trial_dataset(self):
+    def generate_trial_dataset(self) -> Table:
         if self.loaded_trial_model is None:
             self.load_trial_model()
-        return np.copy(self.loaded_trial_model)
+        return Table(self.loaded_trial_model, copy=True)
 
     def use_data_for_trials(self):
         if self.__class__.get_background_model == Season.get_background_model:
@@ -209,7 +209,7 @@ class Season:
             self.get_trial_model = self.get_exp_data
             logger.info("Set trial model to use scrambled data.")
 
-    def pseudo_background(self):
+    def pseudo_background(self) -> Table:
         """Scrambles the raw dataset to "blind" the data. Assigns a flat Right
         Ascension distribution, and randomly redistributes the arrival times
         in the dataset. Returns a shuffled dataset, which can be used for
@@ -220,8 +220,9 @@ class Season:
         # Assigns a flat random distribution for Right Ascension
         data["ra"] = np.random.uniform(0, 2 * np.pi, size=len(data))
         # Randomly reorders the times
-        np.random.shuffle(data["time"])
-        return np.array(data[list(self.get_background_dtype().names)].copy())[:,]
+        np.random.shuffle(np.asarray(data["time"]))
+        data.keep_columns(self.get_background_dtype().names)
+        return data
 
     def simulate_background(self):
         data = self.pseudo_background()
