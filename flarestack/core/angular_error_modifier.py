@@ -129,7 +129,7 @@ class StaticFloor(BaseStaticFloor):
         )
 
     def floor(self, data):
-        return np.array([self.min_error for _ in data])
+        return self.min_error
 
 
 class BaseQuantileFloor(BaseFloorClass):
