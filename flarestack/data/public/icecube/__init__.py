@@ -211,10 +211,7 @@ class PublicICSeason(SeasonWithoutMC):
 
             pseudo_mc_cut = pseudo_mc[(sign * pseudo_mc["sinDec"]) > (sign * cut_value)]
 
-            log_e_exp = exp_cut["logE"]
-            log_e_exp[log_e_exp < min(pseudo_mc_cut["logE"])] = min(
-                pseudo_mc_cut["logE"]
-            )
+            log_e_exp = np.maximum(exp_cut["logE"], min(pseudo_mc_cut["logE"]))
 
             # spread = np.linspace(-1., 1., 10)
             # weights = scipy.stats.norm.pdf(spread, scale=0.3)
