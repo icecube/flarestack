@@ -570,7 +570,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     def run_trial_fixed_gamma(self, full_dataset):
         """Same as run_trial method but change
         the llh func to fix gamma param in the minimizer.
-        Disclaimer: Brute force minimization NOT implemented!!!!
         """
 
         raw_f = self.trial_function(full_dataset)
@@ -584,12 +583,12 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
             start_seed = scipy.optimize.brute(
                 llh_f, ranges=brute_range, args=(self.llh_gamma,), finish=None, Ns=40
-            )[0]
+            )
         else:
             start_seed = np.array(self.p0[:-1])
 
         res = scipy.optimize.minimize(
-            llh_f, start_seed, args=(self.llh_gamma,), bounds=[self.bounds[:-1]]
+            llh_f, start_seed, args=(self.llh_gamma,), bounds=self.bounds[:-1]
         )
         best_ns = res.x
         vals = [best_ns, self.llh_gamma]
@@ -622,7 +621,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 # for less than 40 parameters try with brute force grid evaluation
                 best_ns = scipy.optimize.brute(
                     llh_f, ranges=self.bounds[:-1], args=(self.llh_gamma,), finish=None
-                )[0]
+                )
                 vals = [best_ns, self.llh_gamma]
 
         best_llh = raw_f(vals)
