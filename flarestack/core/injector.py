@@ -252,7 +252,7 @@ class MCInjector(BaseInjector):
     def get_mc(self, season: "SeasonWithMC") -> Table:
         return season.get_mc()
 
-    def select_mc_band(self, source):
+    def select_mc_band(self, source) -> tuple[Table, float, np.ndarray | slice]:
         """For a given source, selects MC events within a declination band of
         width +/- 5 degrees that contains the source. Then returns the MC data
         subset containing only those MC events.
@@ -349,8 +349,10 @@ class MCInjector(BaseInjector):
         :param scale: Ratio of Injected Flux to source flux.
         :return: Set of signal events for the given IC Season.
         """
+        rng = np.random
+
         # Creates empty signal event array
-        sig_events = np.empty((0,), dtype=self.season.get_background_dtype())
+        sig_events = []
 
         n_tot_exp = 0
 
@@ -390,14 +392,13 @@ class MCInjector(BaseInjector):
 
             source_mc = self.calculate_single_source(source, scale)
 
-            # Creates a normalised array of OneWeights
-            p_select = source_mc["ow"] / np.sum(source_mc["ow"])
-
-            # Creates an array with n_signal entries.
-            # Each entry is a random integer between 0 and no. of sources.
-            # The probability for each integer is equal to the OneWeight of
-            # the corresponding source_path.
-            ind = np.random.choice(len(source_mc["ow"]), size=n_s, p=p_select)
+            # Select indices of n_s signal events proportional to their OneWeight
+            cum_ow = np.cumsum(source_mc["ow"])
+            ind = np.searchsorted(
+                cum_ow / cum_ow[-1],
+                np.sort(rng.uniform(size=n_s)),
+                side="right",
+            )
 
             # Selects the sources corresponding to the random integer array
             sim_ev = source_mc[ind]
@@ -410,13 +411,12 @@ class MCInjector(BaseInjector):
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.
             sim_ev["time"] = self.sig_time_pdf.simulate_times(source, n_s)
+            sim_ev.keep_columns(self.season.get_background_dtype().names)
 
             # Joins the new events to the signal events
-            sig_events = np.concatenate(
-                (sig_events, sim_ev[list(self.season.get_background_dtype().names)])
-            )
+            sig_events.append(sim_ev)
 
-        return sig_events
+        return vstack(sig_events) if sig_events else Table()
 
 
 @MCInjector.register_subclass("low_memory_injector")
@@ -550,11 +550,6 @@ class TableInjector(MCInjector):
 
     def get_band_mask(self, source, min_dec, max_dec):
         return slice(*np.searchsorted(self._mc["trueDec"], [min_dec, max_dec]))
-
-    def select_mc_band(self, source):
-        table, omega, band_mask = super().select_mc_band(source)
-        # allow individual columns to be replaced
-        return table.copy(copy_data=False), omega, band_mask
 
 
 @MCInjector.register_subclass("effective_area_injector")
