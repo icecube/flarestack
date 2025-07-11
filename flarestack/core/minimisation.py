@@ -489,8 +489,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
     def run_trial(self, full_dataset):
         raw_f = self.trial_function(full_dataset)
 
-        def llh_f(ns, g):
-            params = [ns, g]
+        def llh_f(params):
             return -np.sum(raw_f(params))
 
         if self.brute:
@@ -502,21 +501,11 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         else:
             start_seed = self.p0
 
-        if self.fix_gamma:
-            start_seed = np.array(self.p0[0])
-            res = scipy.optimize.minimize(
-                llh_f, start_seed, args=(self.llh_gamma,), bounds=[self.bounds[0]]
-            )
-            best_ns = res.x
-            vals = [best_ns, self.llh_gamma]
-
-        else:
-            res = scipy.optimize.minimize(llh_f, start_seed, bounds=self.bounds)
-            vals = res.x
+        res = scipy.optimize.minimize(llh_f, start_seed, bounds=self.bounds)
+        vals = res.x
 
         flag = res.status
         # If the minimiser does not converge, try different strategy
-        # TODO: change for fixed gamma if needed
         if flag == 1:
             Nparam = len(self.bounds)
 
@@ -536,6 +525,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                         f"No success with differential evolution either: {res.message}"
                     )
                 logger.debug(f"success! {res.message}")
+                vals = res.x
 
             else:
                 # for less than 40 parameters try with brute force grid evaluation
@@ -549,17 +539,108 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             start_seed = list(self.p0)
             start_seed[0] = -1.0
 
-            if self.fix_gamma:
-                new_res = scipy.optimize.minimize(
-                    llh_f, start_seed[0], args=(self.llh_gamma,), bounds=[bounds[0]]
-                )
-            else:
-                new_res = scipy.optimize.minimize(llh_f, start_seed, bounds=bounds)
+            new_res = scipy.optimize.minimize(llh_f, start_seed, bounds=bounds)
 
             if new_res.status == 0:
                 res = new_res
 
-            vals = [res.x[0]] if not self.fix_gamma else res.x
+            vals = [res.x[0]]
+            best_llh = res.fun
+
+        ts = np.sum(best_llh)
+
+        if ts == -0.0:
+            ts = 0.0
+
+        parameters = dict()
+
+        for i, val in enumerate(vals):
+            parameters[self.param_names[i]] = val
+
+        res_dict = {
+            "res": res,
+            "Parameters": parameters,
+            "TS": ts,
+            "Flag": flag,
+            "f": llh_f,
+        }
+
+        return res_dict
+
+    def run_trial_fixed_gamma(self, full_dataset):
+        """Same as run_trial method but change
+        the llh func to fix gamma param in the minimizer.
+        Disclaimer: Brute force minimization NOT implemented!!!!
+        """
+
+        raw_f = self.trial_function(full_dataset)
+
+        def llh_f(ns, g):
+            params = [ns, g]
+            return -np.sum(raw_f(params))
+
+        if self.brute:
+            brute_range = [(max(x, -30), min(y, 30)) for (x, y) in self.bounds[:-1]]
+
+            start_seed = scipy.optimize.brute(
+                llh_f, ranges=brute_range, args=(self.llh_gamma,), finish=None, Ns=40
+            )[0]
+        else:
+            start_seed = np.array(self.p0[:-1])
+
+        res = scipy.optimize.minimize(
+            llh_f, start_seed, args=(self.llh_gamma,), bounds=[self.bounds[:-1]]
+        )
+        best_ns = res.x
+        vals = [best_ns, self.llh_gamma]
+
+        flag = res.status
+        # If the minimiser does not converge, try different strategy
+        if flag == 1:
+            Nparam = len(self.bounds[:-1])
+
+            if Nparam > 40:
+                # brute force with more than 40 parameters is unfeasible
+                # try differential evolution
+                logger.warning(
+                    f"Minimize failed with {Nparam} parameters. Can not brute force!"
+                    f"Trying with differential evolution"
+                )
+                res = scipy.optimize.differential_evolution(
+                    llh_f, bounds=self.bounds[:-1], args=(self.llh_gamma,), polish=True
+                )
+
+                if not res.success:
+                    raise ValueError(
+                        f"No success with differential evolution either: {res.message}"
+                    )
+                logger.debug(f"success! {res.message}")
+                best_ns = res.x
+                vals = [best_ns, self.llh_gamma]
+
+            else:
+                # for less than 40 parameters try with brute force grid evaluation
+                best_ns = scipy.optimize.brute(
+                    llh_f, ranges=self.bounds[:-1], args=(self.llh_gamma,), finish=None
+                )[0]
+                vals = [best_ns, self.llh_gamma]
+
+        best_llh = raw_f(vals)
+
+        if np.logical_and(not best_ns > 0.0, self.negative_n_s):
+            bounds = self.bounds[:-1]
+            bounds = [(-1000.0, -0.0) for _ in range(len(bounds))]
+            start_seed = self.p0[:-1]
+            start_seed = [-1 for _ in range(len(start_seed))]
+
+            new_res = scipy.optimize.minimize(
+                llh_f, start_seed, args=(self.llh_gamma,), bounds=bounds
+            )
+
+            if new_res.status == 0:
+                res = new_res
+
+            vals = [res.x]
             best_llh = res.fun
 
         ts = np.sum(best_llh)
@@ -589,7 +670,10 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         ts_vals = []
         flags = []
 
-        res_dict = self.run_trial(full_dataset)
+        if self.fix_gamma:
+            res_dict = self.run_trial_fixed_gamma(full_dataset)
+        else:
+            res_dict = self.run_trial(full_dataset)
 
         for key, val in res_dict["Parameters"].items():
             param_vals[key].append(val)
