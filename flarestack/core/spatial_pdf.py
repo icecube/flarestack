@@ -8,7 +8,7 @@ import numpy as np
 from astropy.table import Table
 from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import bisect
-from scipy.stats import norm
+from scipy.stats import norm, rayleigh
 
 from flarestack.core.astro import angular_distance, fast_angular_distance
 from flarestack.shared import bkg_spline_path
@@ -54,9 +54,8 @@ class SignalSpatialPDF:
     def simulate_distribution(self, source, data: Table) -> Table:
         return data
 
-    @staticmethod
-    def signal_spatial(source, events):
-        return
+    def signal_spatial(self, source: Table, events: Table) -> np.ndarray:
+        raise NotImplementedError
 
     @classmethod
     def register_subclass(cls, spatial_pdf_name):
@@ -170,6 +169,16 @@ class SignalSpatialPDF:
 
 @SignalSpatialPDF.register_subclass("circular_gaussian")
 class CircularGaussian(SignalSpatialPDF):
+
+    def __init__(self, spatial_pdf_dict: dict) -> None:
+        super().__init__(spatial_pdf_dict)
+
+        if (spatial_box_width := spatial_pdf_dict.get("spatial_box_width")) is not None:
+            self._normalization_r = np.deg2rad(spatial_box_width)
+        else:
+            # do not normalize to the box
+            self._normalization_r = None
+
     def simulate_distribution(self, source, data: Table) -> Table:
         data = data.copy()
         data["ra"][:] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
@@ -182,24 +191,26 @@ class CircularGaussian(SignalSpatialPDF):
 
         return data
 
-    @staticmethod
-    def signal_spatial(source, cut_data):
+    def signal_spatial(self, source: Table, events: Table) -> np.ndarray:
         """Calculates the angular distance between the source and the
         coincident dataset. Uses a Gaussian PDF function, centered on the
         source. Returns the value of the Gaussian at the given distances.
 
         :param source: Single Source
-        :param cut_data: Subset of Dataset with coincident events
+        :param events: Subset of Dataset with coincident events
         :return: Array of Spatial PDF values
         """
         distance = angular_distance(
-            cut_data["ra"], cut_data["dec"], source["ra_rad"], source["dec_rad"]
+            events["ra"], events["dec"], source["ra_rad"], source["dec_rad"]
         )
         space_term = (
             1.0
-            / (2.0 * np.pi * cut_data["sigma"] ** 2.0)
-            * np.exp(-0.5 * (distance / cut_data["sigma"]) ** 2.0)
+            / (2.0 * np.pi * events["sigma"] ** 2.0)
+            * np.exp(-0.5 * (distance / events["sigma"]) ** 2.0)
         )
+
+        if self._normalization_r is not None:
+            space_term /= rayleigh.cdf(self._normalization_r, scale=events["sigma"])
 
         return space_term
 
