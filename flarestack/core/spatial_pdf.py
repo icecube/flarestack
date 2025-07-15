@@ -10,7 +10,7 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import bisect
 from scipy.stats import norm
 
-from flarestack.core.astro import angular_distance
+from flarestack.core.astro import angular_distance, fast_angular_distance
 from flarestack.shared import bkg_spline_path
 from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
 
@@ -340,8 +340,8 @@ class NorthernTracksKDE(SignalSpatialPDF):
 
         # logger.debug(f"signal_spatial called with gamma={gamma}.")
 
-        distance = angular_distance(
-            cut_data["ra"], cut_data["dec"], source["ra_rad"], source["dec_rad"]
+        distance = fast_angular_distance(
+            cut_data["ra"], cut_data["dec"], source["ra_rad"], source["dec_rad"], np.pi
         )
 
         if self.SplineIs4D:
