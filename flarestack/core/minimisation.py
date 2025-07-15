@@ -502,7 +502,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             start_seed = self.p0
 
         res = scipy.optimize.minimize(llh_f, start_seed, bounds=self.bounds)
-        vals = res.x
 
         flag = res.status
         # If the minimiser does not converge, try different strategy
@@ -530,6 +529,9 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             else:
                 # for less than 40 parameters try with brute force grid evaluation
                 vals = scipy.optimize.brute(llh_f, ranges=self.bounds, finish=None)
+
+        else:
+            vals = res.x
 
         best_llh = raw_f(vals)
 
