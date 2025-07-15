@@ -2,6 +2,8 @@ import inspect
 import logging
 import os
 import pickle as Pickle
+from collections.abc import Callable, Mapping
+from typing import Collection, Iterator, KeysView, TypeVar
 
 import numexpr
 import numpy as np
@@ -197,6 +199,30 @@ class QuantileFloor1D(BaseQuantileFloor, BaseStaticFloor):
         return lambda data, params: func(data["logE"])
 """
 
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
+
+class LazyDict(Mapping[_K, _V]):
+    def __init__(self, keys: Collection[_K], func: Callable[[_K], _V]):
+        self._keys = frozenset(keys)
+        self._func = func
+        self._store = dict()
+
+    def keys(self) -> KeysView[_K]:
+        return self._keys
+
+    def __iter__(self) -> Iterator[_K]:
+        return iter(self._keys)
+
+    def __len__(self):
+        return len(self._keys)
+
+    def __getitem__(self, key: _K) -> _V:
+        if key not in self._store:
+            self._store[key] = self._func(key)
+        return self._store[key]
+
 
 @BaseFloorClass.register_subclass("quantile_floor_1d_e")
 class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
@@ -278,15 +304,16 @@ class BaseAngularErrorModifier(object):
 
     def create_spatial_cache(self, cut_data, SoB_pdf):
         if len(inspect.getfullargspec(SoB_pdf)[0]) == 2:
-            SoB = dict()
-            for gamma in get_gamma_support_points(precision=self.precision):
-                SoB[gamma] = np.log(SoB_pdf(cut_data, gamma))
+            SoB = LazyDict(
+                get_gamma_support_points(precision=self.precision),
+                lambda gamma: np.log(SoB_pdf(cut_data, gamma)),
+            )
         else:
             SoB = SoB_pdf(cut_data)
         return SoB
 
     def estimate_spatial(self, gamma, spatial_cache):
-        if isinstance(spatial_cache, dict):
+        if isinstance(spatial_cache, Mapping):
             return self.estimate_spatial_dynamic(gamma, spatial_cache)
         else:
             return spatial_cache
