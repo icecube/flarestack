@@ -10,7 +10,7 @@ from astropy.table import Table
 from scipy import sparse
 
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
-from flarestack.core.spatial_pdf import SpatialPDF, angular_distance
+from flarestack.core.spatial_pdf import SpatialPDF
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.shared import (
     SoB_spline_path,
@@ -1379,19 +1379,48 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 + "please change 'the spatial_pdf_name' accordingly"
             )
 
-    def get_spatially_coincident_indices(self, data, source) -> np.ndarray:
+    # NB: numexpr implements fmod but not mod, and mod is equivalent to abs(fmod(...))
+    _in_box = numexpr.NumExpr(
+        "abs(abs(fmod(lon1 - lon2 + pi, 2 * pi)) - pi) < dPhi",
+        signature=[
+            ("lon1", np.float64),
+            ("lon2", np.float64),
+            ("pi", np.float64),
+            ("dPhi", np.float64),
+        ],
+    )
+
+    _in_circle = numexpr.NumExpr(
+        "arccos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(fmod(lon2 - lon1 + pi, 2 * pi) - pi)) < radius",
+        signature=[
+            ("lon1", np.float64),
+            ("lat1", np.float64),
+            ("lon2", np.float64),
+            ("lat2", np.float64),
+            ("pi", np.float64),
+            ("radius", np.float64),
+        ],
+    )
+
+    def get_spatially_coincident_indices(
+        self,
+        event_ra: np.ndarray,
+        event_dec: np.ndarray,
+        source_ra: float,
+        source_dec: float,
+        radius: float,
+    ) -> np.ndarray:
         """
         Get spatially coincident data for a single source, taking advantage of
         the fact that data are sorted in dec
         """
-        width = np.deg2rad(self.spatial_box_width)
 
         # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2.0, source["dec_rad"] - width)
-        max_dec = min(np.pi / 2.0, source["dec_rad"] + width)
+        min_dec = max(-np.pi / 2.0, source_dec - radius)
+        max_dec = min(np.pi / 2.0, source_dec + radius)
 
         # Accepts events lying within a 5 degree band of the source
-        dec_range = slice(*np.searchsorted(data["dec"], [min_dec, max_dec]))
+        dec_range = slice(*np.searchsorted(event_dec, [min_dec, max_dec]))
 
         # Sets the minimum value of cos(dec)
         cos_factor = np.amin(np.cos([min_dec, max_dec]))
@@ -1399,25 +1428,32 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         # Scales the width of the box in ra, to give a roughly constant
         # area. However, if the width would have to be greater that +/- pi,
         # then sets the area to be exactly 2 pi.
-        dPhi = np.amin([2.0 * np.pi, 2.0 * width / cos_factor])
+        dPhi = np.amin([np.pi, radius / cos_factor])
 
-        # Accounts for wrapping effects at ra=0, calculates the distance
-        # of each event to the source.
-        ra_dist = np.fabs(
-            (data["ra"][dec_range] - source["ra_rad"] + np.pi) % (2.0 * np.pi) - np.pi
+        idx = np.nonzero(
+            self._in_box(
+                event_ra[dec_range],
+                source_ra,
+                np.pi,
+                dPhi,
+            )
+        )[0]
+
+        return (
+            idx[
+                np.nonzero(
+                    self._in_circle(
+                        event_ra[dec_range][idx],
+                        event_dec[dec_range][idx],
+                        source_ra,
+                        source_dec,
+                        np.pi,
+                        radius,
+                    )
+                )[0]
+            ]
+            + dec_range.start
         )
-
-        # Indices (with respect to the start of the declination band) of events inside the box
-        idx = np.nonzero(ra_dist < dPhi / 2.0)[0]
-
-        # Cut the box down to a circle
-        psi = angular_distance(
-            data["ra"][dec_range][idx],
-            data["dec"][dec_range][idx],
-            source["ra_rad"],
-            source["dec_rad"],
-        )
-        return idx[np.nonzero(psi < width)[0]] + dec_range.start
 
     def create_kwargs(self, data, pull_corrector, weight_f=None):
         if weight_f is None:
@@ -1439,9 +1475,18 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
 
         # Treat sources in declination order to keep caches hot
         order = np.argsort(self.sources[["dec_rad", "ra_rad"]])
-        for i in order:
+        ra, dec = (np.asarray(data["ra"]), np.asarray(data["dec"]))
+        sources_ra, sources_dec = (
+            np.asarray(self.sources["ra_rad"][order]),
+            np.asarray(self.sources["dec_rad"][order]),
+        )
+        radius = np.deg2rad(self.spatial_box_width)
+
+        for i, (source_ra, source_dec) in zip(order, zip(sources_ra, sources_dec)):
             source = self.sources[i]
-            idx = self.get_spatially_coincident_indices(data, source)
+            idx = self.get_spatially_coincident_indices(
+                ra, dec, source_ra, source_dec, radius
+            )
 
             if len(idx) > 0:
                 # Only bother accepting neutrinos where the spacial
