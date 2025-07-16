@@ -6,11 +6,12 @@ from typing import Optional
 import healpy as hp
 import numpy as np
 from astropy.table import Table
-from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import LinearNDInterpolator, RegularGridInterpolator
 from scipy.optimize import bisect
 from scipy.stats import norm, rayleigh
 
 from flarestack.core.astro import angular_distance, fast_angular_distance
+from flarestack.core.stats import king
 from flarestack.shared import bkg_spline_path
 from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
 
@@ -401,6 +402,103 @@ class NorthernTracksKDE(SignalSpatialPDF):
                     cut_data["logE"],
                     self._normalization_logr,
                 )
+            )
+
+        return space_term
+
+
+@SignalSpatialPDF.register_subclass("northern_tracks_king")
+class NorthernTracksKing(SignalSpatialPDF):
+    """
+    Normalizable representation of the Northern Tracks PSF, using the King function.
+    """
+
+    def __init__(self, spatial_pdf_dict) -> None:
+        super().__init__(spatial_pdf_dict)
+        assert "spatial_pdf_data" in spatial_pdf_dict.keys() and os.path.exists(
+            spatial_pdf_dict["spatial_pdf_data"]
+        )
+
+        fit_params = Table.read(spatial_pdf_dict["spatial_pdf_data"])
+
+        self._fit_params = LinearNDInterpolator(
+            np.vstack(((fit_params["logE"]), fit_params["logSigma"])).T,
+            np.vstack(((fit_params["shape"]), fit_params["logScale"])).T,
+            fill_value=np.nan,
+            rescale=True,
+        )
+
+        if (spatial_box_width := spatial_pdf_dict.get("spatial_box_width")) is not None:
+            self._normalization_r = np.deg2rad(spatial_box_width)
+        else:
+            # do not normalize to the box
+            self._normalization_r = None
+
+    def _get_params(self, data: Table) -> tuple[np.ndarray, np.ndarray]:
+        """Extracts the parameters for the fit from the data.
+
+        :param data: Table with 'logE' and 'sigma' columns
+        :return: Tuple of shape and logScale parameters
+        """
+        v = self._fit_params(data["logE"], np.log10(data["sigma"]))
+        # fall back to 1.5 outside the domain of the fit
+        shape = np.where(np.isfinite(v[:, 0]), 1 + np.exp(v[:, 0]), 1.5)
+        # fall back to data["sigma"] outside the domain of the fit
+        scale = np.where(
+            np.isfinite(v[:, 1]), (10 ** v[:, 1]) * data["sigma"], data["sigma"]
+        )
+        return shape, scale
+
+    def simulate_distribution(self, source: Table, data: Table) -> Table:
+        nevents = len(data)
+        phi = np.random.rand(nevents) * 2.0 * np.pi
+
+        shape, scale = self._get_params(data)
+
+        distance = king.rvs(size=nevents, shape=shape, scale=scale)
+
+        data["ra"] = np.pi + distance * np.cos(phi)
+        data["dec"] = distance * np.sin(phi)
+        data["sinDec"] = np.sin(data["dec"])
+        data.add_columns(
+            [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])],
+            ["trueRa", "trueDec"],
+        )
+
+        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"])
+
+        return data.copy()
+
+    def signal_spatial(self, source: Table, events: Table) -> np.ndarray:
+        """Calculates the angular distance between the source and the coincident dataset.
+        This class provides an interface for the KDE-smoothed MC PDF introduced for the 10yr NT analysis.
+        Returns the value of the PDF at the given distances between the source and the events.
+
+        :param source: Single Source
+        :param cut_data: Subset of Dataset with coincident events
+        :param gamma (float | None): gamma = None if 3D KDE or 4D KDE with a specified gamma for spline evaluation,
+                                else gamma-dependent pdf
+        :return: Array of Spatial PDF values
+        """
+
+        distance = fast_angular_distance(
+            events["ra"], events["dec"], source["ra_rad"], source["dec_rad"], np.pi
+        )
+
+        shape, scale = self._get_params(events)
+
+        space_term = king.pdf(
+            distance,
+            shape=shape,
+            scale=scale,
+        ) / (2 * np.pi * distance)
+
+        if self._normalization_r is not None:
+            # normalize to the box
+            space_term /= king.cdf(
+                self._normalization_r,
+                shape=shape,
+                scale=scale,
             )
 
         return space_term
