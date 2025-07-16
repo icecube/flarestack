@@ -592,8 +592,6 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         res = scipy.optimize.minimize(
             llh_f, start_seed, args=(self.llh_gamma,), bounds=self.bounds[:-1]
         )
-        best_ns = res.x
-        vals = [best_ns, self.llh_gamma]
 
         flag = res.status
         # If the minimiser does not converge, try different strategy
@@ -625,6 +623,10 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                     llh_f, ranges=self.bounds[:-1], args=(self.llh_gamma,), finish=None
                 )
                 vals = [best_ns, self.llh_gamma]
+
+        else:
+            best_ns = res.x
+            vals = [best_ns, self.llh_gamma]
 
         best_llh = raw_f(vals)
 
