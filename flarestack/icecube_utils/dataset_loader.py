@@ -1,14 +1,48 @@
 import logging
+from pathlib import Path
 
 import numpy as np
-from numpy.lib.recfunctions import append_fields, rename_fields
+from astropy.table import Table, vstack
+from numpy.lib.recfunctions import rename_fields
 
 from flarestack.shared import min_angular_err
 
 logger = logging.getLogger(__name__)
 
+ALLOWED_FIELDS = {
+    "time",
+    "ra",
+    "dec",
+    "sigma",
+    "angErr",
+    "logE",
+    "trueE",
+    "trueRa",
+    "trueDec",
+    "ow",
+    "sinDec",
+    "raw_sigma",
+}
 
-def data_loader(data_path, floor=True, cut_fields=True):
+
+def _load_data_table(path_or_str, cut_fields=True) -> Table:
+    path = Path(path_or_str)
+    if path.with_suffix(".npz").exists():
+        data = np.load(path.with_suffix(".npz"))
+        fields = data.keys()
+        copy = False
+    else:
+        data = np.load(path, allow_pickle=True)
+        fields = data.dtype.names
+        # Copy fields into individual columns to improve memory locality
+        copy = True
+    if cut_fields:
+        return Table({k: data[k] for k in fields if k in ALLOWED_FIELDS}, copy=copy)
+    else:
+        return Table(data, copy=copy)
+
+
+def data_loader(data_path, floor=True, cut_fields=True) -> Table:
     """Helper function to load data for a given season/set of season.
     Adds sinDec field if this is not available, and combines multiple years
     of data is appropriate (different sets of data from the same icecube
@@ -20,63 +54,40 @@ def data_loader(data_path, floor=True, cut_fields=True):
     """
 
     if isinstance(data_path, list):
-        dataset = np.concatenate(tuple([np.load(x) for x in data_path]))
+        dataset = vstack(tuple(_load_data_table(x, cut_fields) for x in data_path))
     else:
-        dataset = np.load(data_path, allow_pickle=True)
+        dataset = _load_data_table(data_path, cut_fields)
 
-    if "sinDec" not in dataset.dtype.names:
-        new_dtype = np.dtype([("sinDec", float)])
-
-        sinDec = np.array(np.sin(dataset["dec"]), dtype=new_dtype)
-
-        dataset = append_fields(
-            dataset, "sinDec", sinDec, usemask=False, dtypes=[float]
-        )
+    if "sinDec" not in dataset.columns:
+        dataset.add_column(np.sin(dataset["dec"]), name="sinDec")
 
     # Check if 'run' or 'Run'
 
-    if "run" not in dataset.dtype.names:
-        if "Run" in dataset.dtype.names:
-            dataset = rename_fields(dataset, {"Run": "run"})
+    if "run" not in dataset.columns:
+        if "Run" in dataset.columns:
+            dataset.rename_column("Run", "run")
 
     # Check if 'sigma' or 'angErr' is Used
 
-    if "sigma" not in dataset.dtype.names:
-        if "angErr" in dataset.dtype.names:
-            dataset = rename_fields(dataset, {"angErr": "sigma"})
+    if "sigma" not in dataset.columns:
+        if "angErr" in dataset.columns:
+            dataset.rename_column("angErr", "sigma")
         else:
             raise Exception(
                 "No recognised Angular Error field found in "
                 "dataset. (Searched for 'sigma' and 'angErr')"
             )
 
-    if "raw_sigma" not in dataset.dtype.names:
-        dataset = append_fields(
-            dataset, "raw_sigma", dataset["sigma"], usemask=False, dtypes=[float]
-        )
+    if "raw_sigma" not in dataset.columns:
+        dataset.add_column(dataset["sigma"], name="raw_sigma")
 
     # Apply a minimum angular error "floor"
     if floor:
         dataset["sigma"][dataset["sigma"] < min_angular_err] = min_angular_err
 
-    if cut_fields:
-        allowed_fields = [
-            "time",
-            "ra",
-            "dec",
-            "sigma",
-            "logE",
-            "trueE",
-            "trueRa",
-            "trueDec",
-            "ow",
-            "sinDec",
-            "raw_sigma",
-        ]
-
-        mask = [x for x in dataset.dtype.names if x in allowed_fields]
-
-        dataset = dataset[mask]
+    # prevent accidental in-place updates
+    for col in dataset.columns.values():
+        col.setflags(write=False)
 
     return dataset
 
