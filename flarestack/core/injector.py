@@ -16,7 +16,7 @@ from flarestack.shared import band_mask_cache_name, k_to_flux
 from flarestack.utils.catalogue_loader import calculate_source_weight
 
 if TYPE_CHECKING:
-    from flarestack.data import SeasonWithMC
+    from flarestack.data import Season, SeasonWithMC
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class BaseInjector:
 
     subclasses: dict[str, object] = {}
 
-    def __init__(self, season, sources, **kwargs):
+    def __init__(self, season: "Season", sources: Table, **kwargs) -> None:
         kwargs = read_injector_dict(kwargs)
         self.inj_kwargs = kwargs
 
