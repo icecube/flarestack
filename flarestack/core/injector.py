@@ -114,6 +114,8 @@ class BaseInjector:
         except KeyError:
             self.fixed_n = np.nan
 
+        self.spatial_box_width: float | None = kwargs.get("spatial_box_width", None)
+
     def calculate_n_exp(self):
         all_n_exp = np.empty(
             (len(self.sources), 1),
@@ -150,7 +152,11 @@ class BaseInjector:
         )
         self.n_exp = self.calculate_n_exp()
 
-    def create_dataset(self, scale, angular_error_modifier=None):
+    def create_dataset(
+        self,
+        scale: float,
+        angular_error_modifier: "None | BaseAngularErrorModifier" = None,
+    ) -> tuple[Table, int]:
         """Create a dataset based on scrambled data for background, and Monte
         Carlo simulation for signal. Returns the composite dataset. The source
         flux can be scaled by the scale parameter.
@@ -159,7 +165,9 @@ class BaseInjector:
         :param angular_error_modifier: AngularErrorModifier to change angular errors
         :return: Simulated dataset
         """
-        bkg_events = self.season.simulate_background()
+        bkg_events, n_excluded = self.season.simulate_background(
+            self.sources, self.spatial_box_width
+        )
 
         if scale > 0.0:
             sig_events = self.inject_signal(scale)
@@ -174,7 +182,7 @@ class BaseInjector:
         if angular_error_modifier is not None:
             simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
 
-        return simulated_data
+        return simulated_data, n_excluded
 
     def inject_signal(self, scale: float) -> Table:
         raise NotImplementedError

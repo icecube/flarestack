@@ -47,3 +47,14 @@ fast_angular_distance = numexpr.NumExpr(
         ("pi", np.float64),
     ],
 )
+
+# NB: numexpr implements fmod but not mod, and mod is equivalent to abs(fmod(...))
+in_ra_window = numexpr.NumExpr(
+    "abs(abs(fmod(lon1 - lon2 + pi, 2 * pi)) - pi) < dPhi",
+    signature=[
+        ("lon1", np.float64),
+        ("lon2", np.float64),
+        ("pi", np.float64),
+        ("dPhi", np.float64),
+    ],
+)

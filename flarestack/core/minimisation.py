@@ -712,9 +712,12 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         n_all = dict()
 
         for name in self.seasons:
-            dataset = full_dataset[name]
+            dataset, n_excluded = full_dataset[name]
             llh_f = self.get_likelihood(name).create_llh_function(
-                dataset, self.get_angular_error_modifier(name), self.make_season_weight
+                dataset,
+                n_excluded,
+                self.get_angular_error_modifier(name),
+                self.make_season_weight,
             )
             llh_functions[name] = llh_f
             n_all[name] = len(dataset)
@@ -1312,9 +1315,12 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         n_all = dict()
 
         for name in self.seasons:
-            dataset = full_dataset[name]
+            dataset, n_excluded = full_dataset[name]
             llh_f = self.get_likelihood(name).create_llh_function(
-                dataset, self.get_angular_error_modifier(name), self.make_season_weight
+                dataset,
+                n_excluded,
+                self.get_angular_error_modifier(name),
+                self.make_season_weight,
             )
             llh_functions[name] = llh_f
             n_all[name] = len(dataset)

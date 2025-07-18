@@ -224,11 +224,13 @@ class Season:
         data.keep_columns(self.get_background_dtype().names)
         return data
 
-    def simulate_background(self):
+    def simulate_background(
+        self, sources: Table, spatial_box_width: None | float
+    ) -> tuple[Table, int]:
         data = self.pseudo_background()
         if self._subselection_fraction is not None:
             data = np.random.choice(data, int(len(data) * self._subselection_fraction))
-        return data
+        return data, 0
 
     def get_exp_data(self, **kwargs) -> Table:
         return self.load_data(self.exp_path, **kwargs)

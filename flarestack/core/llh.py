@@ -9,6 +9,7 @@ import scipy.interpolate
 from astropy.table import Table
 from scipy import sparse
 
+from flarestack.core.astro import in_ra_window
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import NorthernTracksKDE, SpatialPDF
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
@@ -333,18 +334,22 @@ class LLH(object):
         """
         return (n_all - n_coincident) * np.log1p(-n_s / n_all)
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         kwargs = dict()
         return kwargs
 
-    def create_llh_function(self, data, pull_corrector, weight_f=None):
+    def create_llh_function(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
         :return: LLH function that can be minimised
         """
 
-        kwargs = self.create_kwargs(data, pull_corrector, weight_f)
+        kwargs = self.create_kwargs(data, n_excluded, pull_corrector, weight_f)
 
         def test_statistic(params, weights):
             return self.calculate_test_statistic(params, weights, **kwargs)
@@ -408,7 +413,9 @@ class SpatialLLH(LLH):
         # return lambda x: data_rate
         return lambda x: np.exp(self.bkg_spatial(np.sin(x))) * data_rate
 
-    def create_llh_function(self, data, pull_corrector, weight_f=None):
+    def create_llh_function(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
@@ -637,14 +644,16 @@ class FixedEnergyLLH(LLH):
         with open(SoB_path, "wb") as f:
             pickle.dump([dec_range, ratio_hist], f)
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
         :return: LLH function that can be minimised
         """
         kwargs = dict()
-        kwargs["n_all"] = float(len(data))
+        kwargs["n_all"] = float(len(data) + n_excluded)
         SoB = []
 
         assumed_bkg_mask = np.ones(len(data), dtype=bool)
@@ -847,10 +856,12 @@ class StandardLLH(FixedEnergyLLH):
 
         return self.acceptance_f(dec, gamma)
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         kwargs = dict()
 
-        kwargs["n_all"] = float(len(data))
+        kwargs["n_all"] = float(len(data) + n_excluded)
         SoB_spacetime = []
         SoB_energy_cache = []
 
@@ -1069,10 +1080,12 @@ class StandardLLH(FixedEnergyLLH):
 
 @LLH.register_subclass("standard_kde_enabled")
 class StandardKDEEnabledLLH(StandardLLH):
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         kwargs = dict()
 
-        kwargs["n_all"] = float(len(data))
+        kwargs["n_all"] = float(len(data) + n_excluded)
         SoB_spacetime = []
         SoB_energy_cache = []
 
@@ -1164,7 +1177,9 @@ class StandardKDEEnabledLLH(StandardLLH):
 
 @LLH.register_subclass("standard_overlapping")
 class StandardOverlappingLLH(StandardLLH):
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1175,7 +1190,7 @@ class StandardOverlappingLLH(StandardLLH):
 
         kwargs = dict()
 
-        kwargs["n_all"] = float(len(data))
+        kwargs["n_all"] = float(len(data) + n_excluded)
 
         assumed_background_mask = np.ones(len(data), dtype=bool)
 
@@ -1266,7 +1281,9 @@ class StandardOverlappingLLH(StandardLLH):
 
 @LLH.register_subclass("standard_matrix")
 class StandardMatrixLLH(StandardOverlappingLLH):
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1279,7 +1296,7 @@ class StandardMatrixLLH(StandardOverlappingLLH):
 
         kwargs = dict()
 
-        kwargs["n_all"] = float(len(data))
+        kwargs["n_all"] = float(len(data) + n_excluded)
 
         sources = self.sources
 
@@ -1431,7 +1448,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         dPhi = np.amin([np.pi, radius / cos_factor])
 
         idx = np.nonzero(
-            self._in_box(
+            in_ra_window(
                 event_ra[dec_range],
                 source_ra,
                 np.pi,
@@ -1455,7 +1472,9 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
             + dec_range.start
         )
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
