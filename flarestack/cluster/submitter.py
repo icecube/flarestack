@@ -95,7 +95,7 @@ class Submitter(object):
         if self.remove_old_results:
             self._clean_injection_values_and_pickled_results(self.mh_dict["name"])
         if self.use_cluster:
-            if mh_dict["mh_name"] == "large_catalogue":
+            if mh_dict["inj_dict"]["injector_name"] == "low_memory_injector":
                 make_band_mask(mh_dict=copy.deepcopy(mh_dict))
 
             self.submit_cluster(mh_dict)
