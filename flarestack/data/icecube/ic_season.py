@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+from astropy.table import Table
 from scipy.interpolate import interp1d
 
 from flarestack.core.time_pdf import DetectorOnOffList, TimePDF
@@ -328,7 +329,7 @@ class IceCubeSeason(SeasonWithMC):
     def get_grl(self):
         return grl_loader(self)
 
-    def load_data(self, path, **kwargs):
+    def load_data(self, path, **kwargs) -> Table:
         return data_loader(path, **kwargs)
 
     def build_time_pdf_dict(self):

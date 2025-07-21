@@ -4,7 +4,7 @@ from typing import Optional
 
 import healpy as hp
 import numpy as np
-from numpy.lib.recfunctions import append_fields
+from astropy.table import Table
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 
@@ -44,13 +44,12 @@ class SpatialPDF:
 class SignalSpatialPDF:
     """Base Signal Spatial PDF class."""
 
-    subclasses: dict[str, object] = {}
+    subclasses: "dict[str, type[SignalSpatialPDF]]" = {}
 
     def __init__(self, spatial_pdf_dict):
         pass
 
-    @staticmethod
-    def simulate_distribution(source, data):
+    def simulate_distribution(self, source, data: Table) -> Table:
         return data
 
     @staticmethod
@@ -70,7 +69,7 @@ class SignalSpatialPDF:
         return decorator
 
     @classmethod
-    def create(cls, s_pdf_dict):
+    def create(cls, s_pdf_dict) -> "SignalSpatialPDF":
         try:
             s_pdf_name = s_pdf_dict["spatial_pdf_name"]
         except KeyError:
@@ -132,7 +131,7 @@ class SignalSpatialPDF:
         ra = phi + np.pi
         return np.atleast_1d(ra), np.atleast_1d(dec)
 
-    def rotate_to_position(self, ev, ra, dec):
+    def rotate_to_position(self, ev: Table, ra: float, dec: float) -> Table:
         """Modifies the events by reassigning the Right Ascension and
         Declination of the events. Rotates the events, so that they are
         distributed as if they originated from the source. Removes the
@@ -162,29 +161,24 @@ class SignalSpatialPDF:
         ev["sinDec"] = np.sin(rot_dec)
 
         # Deletes the Monte Carlo information from sampled events
-        non_mc = [
-            name for name in names if name not in ["trueRa", "trueDec", "trueE", "ow"]
-        ]
-        ev = ev[non_mc].copy()
+        ev.remove_columns(["trueRa", "trueDec", "trueE", "ow"])
 
         return ev
 
 
 @SignalSpatialPDF.register_subclass("circular_gaussian")
 class CircularGaussian(SignalSpatialPDF):
-    def simulate_distribution(self, source, data):
-        data["ra"] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
-        data["dec"] = norm.rvs(size=len(data)) * data["sigma"]
-        data["sinDec"] = np.sin(data["dec"])
-        data = append_fields(
-            data,
-            ["trueRa", "trueDec"],
-            [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])],
-        ).copy()
+    def simulate_distribution(self, source, data: Table) -> Table:
+        data = data.copy()
+        data["ra"][:] = np.pi + norm.rvs(size=len(data)) * data["sigma"]
+        data["dec"][:] = norm.rvs(size=len(data)) * data["sigma"]
+        data["sinDec"][:] = np.sin(data["dec"])
+        data["trueRa"][:] = np.ones_like(data["dec"]) * np.pi
+        data["trueDec"][:] = np.zeros_like(data["dec"])
 
-        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"]).copy()
+        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"])
 
-        return data.copy()
+        return data
 
     @staticmethod
     def signal_spatial(source, cut_data):
@@ -316,13 +310,12 @@ class NorthernTracksKDE(SignalSpatialPDF):
         data["ra"] = np.pi + distance * np.cos(phi)
         data["dec"] = distance * np.sin(phi)
         data["sinDec"] = np.sin(data["dec"])
-        data = append_fields(
-            data,
-            ["trueRa", "trueDec"],
+        data.add_columns(
             [np.ones_like(data["dec"]) * np.pi, np.zeros_like(data["dec"])],
-        ).copy()
+            ["trueRa", "trueDec"],
+        )
 
-        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"]).copy()
+        data = self.rotate_to_position(data, source["ra_rad"], source["dec_rad"])
 
         return data.copy()
 
@@ -393,7 +386,7 @@ class NorthernTracksKDE(SignalSpatialPDF):
 
 
 class BackgroundSpatialPDF:
-    subclasses: dict[str, object] = {}
+    subclasses: "dict[str, type[BackgroundSpatialPDF]]" = {}
 
     def __init__(self, spatial_pdf_dict, season):
         pass
@@ -411,7 +404,7 @@ class BackgroundSpatialPDF:
         return decorator
 
     @classmethod
-    def create(cls, s_pdf_dict, season):
+    def create(cls, s_pdf_dict, season) -> "BackgroundSpatialPDF":
         try:
             s_pdf_name = s_pdf_dict["bkg_spatial_pdf"]
         except KeyError:
