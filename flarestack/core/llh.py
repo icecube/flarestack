@@ -1,7 +1,7 @@
 import logging
 import os
 import pickle
-from typing import Optional
+from typing import Mapping, Optional
 
 import numexpr
 import numpy as np
@@ -9,6 +9,7 @@ import scipy.interpolate
 from astropy.table import Table
 from scipy import sparse
 
+from flarestack.core.angular_error_modifier import LazyDict
 from flarestack.core.astro import in_ra_window
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import NorthernTracksKDE, SpatialPDF
@@ -994,7 +995,7 @@ class StandardLLH(FixedEnergyLLH):
     # Energy Log(Signal/Background) Ratio
     # ==============================================================================
 
-    def create_SoB_energy_cache(self, cut_data):
+    def create_SoB_energy_cache(self, cut_data: Table) -> Mapping[float, np.ndarray]:
         """Evaluates the Log(Signal/Background) values for all coincident
         data. For each value of gamma in self.gamma_support_points, calculates
         the Log(Signal/Background) values for the coincident data. Then saves
@@ -1005,19 +1006,22 @@ class StandardLLH(FixedEnergyLLH):
         gamma value.
         """
 
-        energy_SoB_cache = dict()
-
-        for gamma in list(self.SoB_spline_2Ds.keys()):
+        def SoB(gamma) -> np.ndarray:
             try:
-                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma].ev(
+                return self.SoB_spline_2Ds[gamma].ev(
                     cut_data["logE"], cut_data["sinDec"]
                 )
-            except:  # this is in case the splines were produced using the RegularGridInterpolator
-                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma](
+            except (
+                AttributeError
+            ):  # this is in case the splines were produced using the RegularGridInterpolator
+                return self.SoB_spline_2Ds[gamma](
                     (cut_data["logE"], cut_data["sinDec"])
                 )
 
-        return energy_SoB_cache
+        return LazyDict(
+            list(self.SoB_spline_2Ds.keys()),
+            SoB,
+        )
 
     def estimate_energy_weights(self, gamma, energy_SoB_cache):
         """Quickly estimates the value of Signal/Background for Gamma.
