@@ -13,7 +13,12 @@ class _king_gen(rv_continuous):
         return np.asarray(shape) > 1
 
     def _pdf(self, x, shape):
-        return x * (1.0 - 1.0 / shape) * (1 + 1.0 / (2.0 * shape) * (x) ** 2) ** -shape
+        return x * (1.0 - 1.0 / shape) * (1 + x**2 / (2.0 * shape)) ** -shape
+
+    def _logpdf(self, x, shape):
+        return (
+            np.log(x) + np.log1p(-1.0 / shape) - shape * np.log1p(x**2 / (2.0 * shape))
+        )
 
     def _cdf(self, x, shape):
         x2 = x**2
