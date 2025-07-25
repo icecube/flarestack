@@ -826,7 +826,7 @@ class StandardLLH(FixedEnergyLLH):
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)
 
-        f = scipy.interpolate.interp2d(dec_bins, gamma_bins, acc.T, kind="linear")
+        f = scipy.interpolate.RectBivariateSpline(dec_bins, gamma_bins, acc, kx=1, ky=1)
         return f
 
     def new_acceptance(self, source, params=None):
@@ -845,7 +845,7 @@ class StandardLLH(FixedEnergyLLH):
         dec = source["dec_rad"]
         gamma = params[-1]
 
-        return self.acceptance_f(dec, gamma)
+        return self.acceptance_f(dec, gamma)[0, :]
 
     def create_kwargs(self, data, pull_corrector, weight_f=None):
         kwargs = dict()
@@ -1480,9 +1480,8 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         coincident_data = data[coincident_nu_mask]
         coincident_sources = self.sources[coincident_source_mask]
 
-        season_weight = lambda x: weight_f([1.0, x], self.season)[
-            coincident_source_mask
-        ]
+        def season_weight(x):
+            return weight_f([1.0, x], self.season)[coincident_source_mask]
 
         SoB_energy_cache = self.create_SoB_energy_cache(coincident_data)
 
