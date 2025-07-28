@@ -272,8 +272,18 @@ def make_2d_spline_from_hist(ratio, sin_dec_bins, log_e_bins, smoothing_order):
         return
 
     # Fits a 2D spline function to the log of ratio array
+    if smoothing_order == 0:
+        # use nearest-neighbor interpolation to ensure that ratio retains the normalization of the underlying histograms
+        spline = scipy.interpolate.RegularGridInterpolator(
+            (log_e_bin_center, sin_bin_center),
+            np.log(ratio),
+            method="nearest",
+            bounds_error=False,
+            fill_value=None,
+        )
+
     # If the splines are of order one the RegularGridInterpolator is used to match the SkyLab behavior
-    if smoothing_order == 1:
+    elif smoothing_order == 1:
         sin_bin_center[0], sin_bin_center[-1] = sin_dec_bins[0], sin_dec_bins[-1]
         # log_e_bins[0], log_e_bins[-1] = log_e_bins[0], log_e_bins[-1]
 
