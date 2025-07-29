@@ -407,26 +407,9 @@ class NorthernTracksKDE(SignalSpatialPDF):
         return space_term
 
 
-@SignalSpatialPDF.register_subclass("northern_tracks_king")
-class NorthernTracksKing(SignalSpatialPDF):
-    """
-    Normalizable representation of the Northern Tracks PSF, using the King function.
-    """
-
+class NorthernTracksKingBase(SignalSpatialPDF):
     def __init__(self, spatial_pdf_dict) -> None:
         super().__init__(spatial_pdf_dict)
-        assert "spatial_pdf_data" in spatial_pdf_dict.keys() and os.path.exists(
-            spatial_pdf_dict["spatial_pdf_data"]
-        )
-
-        fit_params = Table.read(spatial_pdf_dict["spatial_pdf_data"])
-
-        self._fit_params = LinearNDInterpolator(
-            np.vstack(((fit_params["logE"]), fit_params["logSigma"])).T,
-            np.vstack(((fit_params["shape"]), fit_params["logScale"])).T,
-            fill_value=np.nan,
-            rescale=True,
-        )
 
         if (spatial_box_width := spatial_pdf_dict.get("spatial_box_width")) is not None:
             self._normalization_r = np.deg2rad(spatial_box_width)
@@ -434,26 +417,24 @@ class NorthernTracksKing(SignalSpatialPDF):
             # do not normalize to the box
             self._normalization_r = None
 
-    def _get_params(self, data: Table) -> tuple[np.ndarray, np.ndarray]:
+    def _get_params(
+        self, sigma: np.ndarray, logE: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError
+
+    def _get_params_from_table(self, data: Table) -> tuple[np.ndarray, np.ndarray]:
         """Extracts the parameters for the fit from the data.
 
         :param data: Table with 'logE' and 'sigma' columns
         :return: Tuple of shape and logScale parameters
         """
-        v = self._fit_params(data["logE"], np.log10(data["sigma"]))
-        # fall back to 1.5 outside the domain of the fit
-        shape = np.where(np.isfinite(v[:, 0]), 1 + np.exp(v[:, 0]), 1.5)
-        # fall back to data["sigma"] outside the domain of the fit
-        scale = np.where(
-            np.isfinite(v[:, 1]), (10 ** v[:, 1]) * data["sigma"], data["sigma"]
-        )
-        return shape, scale
+        return self._get_params(np.asarray(data["sigma"]), np.asarray(data["logE"]))
 
     def simulate_distribution(self, source: Table, data: Table) -> Table:
         nevents = len(data)
         phi = np.random.rand(nevents) * 2.0 * np.pi
 
-        shape, scale = self._get_params(data)
+        shape, scale = self._get_params_from_table(data)
 
         distance = king.rvs(size=nevents, shape=shape, scale=scale)
 
@@ -485,7 +466,7 @@ class NorthernTracksKing(SignalSpatialPDF):
             events["ra"], events["dec"], source["ra_rad"], source["dec_rad"], np.pi
         )
 
-        shape, scale = self._get_params(events)
+        shape, scale = self._get_params_from_table(events)
 
         space_term = king.pdf(
             distance,
@@ -502,6 +483,73 @@ class NorthernTracksKing(SignalSpatialPDF):
             )
 
         return space_term
+
+
+@SignalSpatialPDF.register_subclass("northern_tracks_king_interpolated")
+class NorthernTracksKingInterpolated(NorthernTracksKingBase):
+    """
+    Normalizable representation of the Northern Tracks PSF, using the King function.
+    """
+
+    def __init__(self, spatial_pdf_dict) -> None:
+        super().__init__(spatial_pdf_dict)
+        assert "spatial_pdf_data" in spatial_pdf_dict.keys() and os.path.exists(
+            spatial_pdf_dict["spatial_pdf_data"]
+        )
+
+        fit_params = Table.read(spatial_pdf_dict["spatial_pdf_data"])
+
+        self._fit_params = LinearNDInterpolator(
+            np.vstack(((fit_params["logE"]), fit_params["logSigma"])).T,
+            np.vstack(((fit_params["shape"]), fit_params["logScale"])).T,
+            fill_value=np.nan,
+            rescale=True,
+        )
+
+    def _get_params(
+        self, sigma: np.ndarray, logE: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Extracts the parameters for the fit from the data.
+
+        :param data: Table with 'logE' and 'sigma' columns
+        :return: Tuple of shape and logScale parameters
+        """
+        v = self._fit_params(logE, np.log10(sigma))
+        # fall back to 1.5 outside the domain of the fit
+        shape = np.where(np.isfinite(v[:, 0]), 1 + np.exp(v[:, 0]), 1.5)
+        # fall back to data["sigma"] outside the domain of the fit
+        scale = np.where(np.isfinite(v[:, 1]), (10 ** v[:, 1]) * sigma, sigma)
+        return shape, scale
+
+
+@SignalSpatialPDF.register_subclass("northern_tracks_king")
+class NorthernTracksKing(NorthernTracksKingBase):
+    """
+    Normalizable representation of the Northern Tracks PSF, using the King function.
+    """
+
+    def __init__(self, spatial_pdf_dict) -> None:
+        super().__init__(spatial_pdf_dict)
+        for label in "shape", "scale":
+            assert f"spatial_pdf_{label}" in spatial_pdf_dict.keys() and os.path.exists(
+                spatial_pdf_dict[f"spatial_pdf_{label}"]
+            )
+
+        if SplineTable is None:
+            logger.error("Photospline is not installed, cannot use King spatial PDF")
+            raise ImportError(
+                "Photospline is not installed, cannot use King spatial PDF"
+            )
+
+        self._shape_spline = SplineTable(spatial_pdf_dict["spatial_pdf_shape"])
+        self._scale_spline = SplineTable(spatial_pdf_dict["spatial_pdf_scale"])
+
+    def _get_params(
+        self, sigma: np.ndarray, logE: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        shape = 1 + np.exp(self._shape_spline((np.log10(sigma), logE)))
+        scale = (10 ** self._scale_spline((np.log10(sigma), logE))) * sigma
+        return shape, scale
 
 
 # ==============================================================================
