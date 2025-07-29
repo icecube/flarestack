@@ -1591,7 +1591,9 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 weight = np.array(season_weight(gamma))
                 weight /= np.sum(weight)
 
-                return np.asarray(SoB_only_matrix.multiply(weight).sum(axis=0))[0]
+                return np.asarray(
+                    SoB_only_matrix.multiply(sparse.coo_array(weight)).sum(axis=0)
+                )[0]
 
         elif (
             self.spatial_pdf.signal.SplineIs4D
