@@ -4,11 +4,12 @@ import os
 import pickle as Pickle
 import random
 import resource
-from sys import stdout
+from typing import TYPE_CHECKING
 
 import matplotlib as mpl
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+import numexpr
 import numpy as np
 import scipy.optimize
 from matplotlib.colors import ListedColormap, Normalize
@@ -25,7 +26,10 @@ from flarestack.shared import (
     scale_shortener,
 )
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
-from flarestack.utils.catalogue_loader import calculate_source_weight, load_catalogue
+from flarestack.utils.catalogue_loader import calculate_source_weights, load_catalogue
+
+if TYPE_CHECKING:
+    from flarestack.data import Season
 
 logger = logging.getLogger(__name__)
 
@@ -645,36 +649,21 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         self.dump_results(results, scale, seed)
         self.dump_injection_values(scale)
 
-    def make_season_weight(self, params, season):
+    def make_season_weight(self, params, season: "Season"):
         src = self.sources
 
-        weight_scale = calculate_source_weight(src)
-
-        # dist_weight = src["distance_mpc"] ** -2
-        # base_weight = src["base_weight"]
+        source_weights = calculate_source_weights(src)
+        source_weights /= source_weights.sum()
 
         llh = self.get_likelihood(season.season_name)
-        acc = []
 
-        time_weights = []
-        source_weights = []
+        time_weights = np.array(
+            [llh.sig_time_pdf.effective_injection_time(source) for source in src]
+        )
 
-        for source in src:
-            time_weights.append(llh.sig_time_pdf.effective_injection_time(source))
-            acc.append(llh.acceptance(source, params))
-            source_weights.append(calculate_source_weight(source) / weight_scale)
+        acc = llh.acceptance(src, params)
 
-        time_weights = np.array(time_weights)
-        source_weights = np.array(source_weights)
-
-        acc = np.array(acc).T[0]
-
-        w = acc * time_weights
-        w *= source_weights
-
-        w = w[:, np.newaxis]
-
-        return w
+        return numexpr.evaluate("acc * time_weights * source_weights")[:, None]
 
     def make_weight_matrix(self, params):
         # Creates a matrix fixing the fraction of the total signal that

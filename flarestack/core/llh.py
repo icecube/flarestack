@@ -836,7 +836,7 @@ class StandardLLH(FixedEnergyLLH):
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)
 
-        f = scipy.interpolate.interp2d(dec_bins, gamma_bins, acc.T, kind="linear")
+        f = scipy.interpolate.RectBivariateSpline(dec_bins, gamma_bins, acc, kx=1, ky=1)
         return f
 
     def new_acceptance(self, source, params=None):
@@ -855,7 +855,7 @@ class StandardLLH(FixedEnergyLLH):
         dec = source["dec_rad"]
         gamma = params[-1]
 
-        return self.acceptance_f(dec, gamma)
+        return self.acceptance_f(dec, gamma, grid=False)
 
     def create_kwargs(
         self, data: Table, n_excluded: int, pull_corrector, weight_f=None

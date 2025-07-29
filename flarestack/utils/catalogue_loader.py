@@ -13,6 +13,10 @@ def calculate_source_weight(sources) -> float:
     return np.sum(sources["base_weight"] * sources["distance_mpc"] ** -2)
 
 
+def calculate_source_weights(sources: np.ndarray) -> np.ndarray:
+    return sources["base_weight"] * sources["distance_mpc"] ** -2
+
+
 def load_catalogue(path):
     sources = np.load(path)
 
