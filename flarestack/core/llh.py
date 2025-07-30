@@ -1545,7 +1545,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 SoB_rows[i] = sparse.csr_matrix(
                     (
                         sig[nonzero_idx]
-                        / self.background_pdf(source, coincident_data[nonzero_idx]),
+                        / self.background_pdf(source, coincident_data)[nonzero_idx],
                         column_indices,
                         [0, len(column_indices)],
                     ),
