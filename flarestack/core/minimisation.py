@@ -220,8 +220,8 @@ class MinimisationHandler(object):
             self.llh_gamma = self.llh_dict["llh_energy_pdf"]["gamma"]
             if self.llh_gamma != self.inj_dict["injection_energy_pdf"]["gamma"]:
                 logger.warning(
-                    f"Fixing gamma to {self.llh_gamma} for llh but injection is with {self.inj_dict["injection_energy_pdf"]["gamma"]}"
-                    )
+                    f"Fixing gamma to {self.llh_gamma} for llh but injection is with {self.inj_dict['injection_energy_pdf']['gamma']}"
+                )
 
         p0, bounds, names = self.return_parameter_info(mh_dict)
 
