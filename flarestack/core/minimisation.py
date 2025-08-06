@@ -212,17 +212,16 @@ class MinimisationHandler(object):
             self.floor_name = "static_floor"
 
         # run trials for a fixed gamma, by default trials run with gamma fitted
-        # make sure you pass the same gamma in the llh and injection energy dictionaries
         self.fix_gamma = mh_dict.get("fix_gamma", False)
         if self.fix_gamma:
             assert (
                 "gamma" in self.llh_dict["llh_energy_pdf"].keys()
             ), "Running trials with fixed gamma but no gamma passed in the llh energy pdf"
             self.llh_gamma = self.llh_dict["llh_energy_pdf"]["gamma"]
-            inj_gamma = self.inj_dict["injection_energy_pdf"]["gamma"]
-            assert (
-                self.llh_gamma == inj_gamma
-            ), f"Fixing gamma to {self.llh_gamma} for llh but injection is with {inj_gamma}"
+            if self.llh_gamma != self.inj_dict["injection_energy_pdf"]["gamma"]:
+                logger.warning(
+                    f"Fixing gamma to {self.llh_gamma} for llh but injection is with {self.inj_dict["injection_energy_pdf"]["gamma"]}"
+                    )
 
         p0, bounds, names = self.return_parameter_info(mh_dict)
 
