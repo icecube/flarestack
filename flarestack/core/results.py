@@ -137,6 +137,10 @@ class ResultsHandler(object):
             logger.warning(
                 f"IndexError for ns scale factor. Only background trials? \n {e}"
             )
+            # if indeed running bkg-only trials
+            # just make the TS and param distr plots
+            if len(self.scale_values) == 1 and self.scale_values[0] == 0:
+                self.make_plots(self.scale_labels[0])
 
         # Create fit bias plots
         # this expects flux_to_ns to be set
