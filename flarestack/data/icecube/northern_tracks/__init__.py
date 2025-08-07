@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.lib.recfunctions import rename_fields
+from astropy.table import Table
 
 from flarestack.data.icecube.ic_season import IceCubeSeason
 
@@ -50,7 +50,7 @@ def get_diffuse_binning(season):
 
 
 class NTSeason(IceCubeSeason):
-    def get_background_model(self) -> dict:
+    def get_background_model(self) -> Table:
         """Loads Monte Carlo dataset from file according to object path set in object properties.
 
         Returns:
@@ -60,7 +60,7 @@ class NTSeason(IceCubeSeason):
         # According to NT specifications (README):
         #  "conv" gives the weight for conventional atmospheric neutrinos
         #  flarestack renames it to "weight"
-        mc = rename_fields(mc, {"conv": "weight"})
+        mc.rename_column("conv", "weight")
         return mc
 
     def simulate_background(self):
@@ -71,19 +71,24 @@ class NTSeason(IceCubeSeason):
                 "Monte Carlo background is not loaded. Call `load_background_model` before `simulate_background`."
             )
 
-        n_mc = len(self.loaded_background_model["weight"])
-
         # Total number of events in the MC sample, weighted according to background.
         n_exp = np.sum(self.loaded_background_model["weight"])
 
         # Creates a normalised array of atmospheric weights.
-        p_select = self.loaded_background_model["weight"] / n_exp
+        p_select = self.loaded_background_model["weight"].cumsum() / n_exp
 
         # Simulates poisson noise around the expectation value n_exp.
         n_bkg = rng.poisson(n_exp)
 
         # Choose n_bkg from n_mc events according to background weight.
-        ind = rng.choice(n_mc, size=n_bkg, p=p_select)
+        ind = np.searchsorted(
+            p_select,
+            # NB: with n_bkg=8e5 and n_mc=11.5e6, explicitly sorting the uniform
+            # samples is ~6x faster than np.random.choice
+            np.sort(rng.uniform(size=n_bkg)),
+            side="right",
+        )
+
         sim_bkg = self.loaded_background_model[ind]
 
         time_pdf = self.get_time_pdf()
@@ -114,5 +119,5 @@ class NTSeasonNewStyle(NTSeason):
         mc = super(NTSeasonNewStyle, self).get_background_model()
         livetime = self.get_time_pdf().get_livetime()
         for weight in ("astro", "weight", "prompt"):
-            mc[weight] *= livetime * 86400.0
+            mc[weight] = mc[weight] * livetime * 86400.0
         return mc

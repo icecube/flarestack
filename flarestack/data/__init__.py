@@ -5,7 +5,7 @@ import logging
 import os
 
 import numpy as np
-from numpy.lib.recfunctions import append_fields, drop_fields
+from astropy.table import Table
 
 import flarestack
 from flarestack.core.injector import EffectiveAreaInjector, MCInjector
@@ -185,11 +185,10 @@ class Season:
     def data_background_model(self, **kwargs):
         """Function to return data as a background model."""
         exp = self.get_exp_data(**kwargs)
-        weight = np.ones(len(exp))
-        exp = append_fields(exp, "weight", weight, usemask=False, dtypes=[float]).copy()
+        exp.add_column(np.ones(len(exp), dtype=float), name="weight")
         return exp
 
-    def get_background_model(self) -> dict:
+    def get_background_model(self) -> Table:
         """Generic Function to return background model. This could be
         the experimental data (if the signal contamination is small),
         or a weighted MC dataset. By default, uses data."""
@@ -230,8 +229,8 @@ class Season:
             data = np.random.choice(data, int(len(data) * self._subselection_fraction))
         return data
 
-    def get_exp_data(self, **kwargs):
-        return np.array(self.load_data(self.exp_path, **kwargs))
+    def get_exp_data(self, **kwargs) -> Table:
+        return self.load_data(self.exp_path, **kwargs)
 
     def build_time_pdf_dict(self):
         """Function to build a pdf for the livetime of the season. By
@@ -275,8 +274,12 @@ class Season:
     def clean_season_cache(self):
         self._time_pdf = None
 
-    def load_data(self, path, **kwargs):
-        return np.load(path)
+    def load_data(self, path, **kwargs) -> Table:
+        tab = Table(np.load(path))
+        # prevent in-place updates
+        for col in tab.columns.values():
+            col.setflags(write=False)
+        return tab
 
     def make_injector(self, sources, **inj_kwargs):
         pass
@@ -322,7 +325,7 @@ class SeasonWithMC(Season):
     def make_injector(self, sources, **inj_kwargs):
         return MCInjector.create(self, sources, **inj_kwargs)
 
-    def get_mc(self, **kwargs):
+    def get_mc(self, **kwargs) -> Table:
         return self.load_data(self.mc_path, **kwargs)
 
 

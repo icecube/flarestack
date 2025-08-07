@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 import scipy.interpolate
+from astropy.table import Table
 from matplotlib.colors import LogNorm
 
 from flarestack.data import Season, SeasonWithoutMC
@@ -40,7 +41,7 @@ class PublicICSeason(SeasonWithoutMC):
         self.log_e_bins = log_e_bins
         self.a_eff_path = a_eff_path
 
-    def load_data(self, path, **kwargs):
+    def load_data(self, path, **kwargs) -> Table:
         return data_loader(path, **kwargs)
 
     def load_angular_resolution(self):
