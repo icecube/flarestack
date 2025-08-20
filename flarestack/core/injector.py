@@ -3,9 +3,10 @@ import os
 import random
 import zipfile
 import zlib
+from typing import TYPE_CHECKING
 
 import numpy as np
-from astropy.table import Table
+from astropy.table import Table, vstack
 from scipy import interpolate, sparse
 
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
@@ -13,6 +14,9 @@ from flarestack.core.spatial_pdf import SpatialPDF
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.shared import band_mask_cache_name, k_to_flux
 from flarestack.utils.catalogue_loader import calculate_source_weight
+
+if TYPE_CHECKING:
+    from flarestack.data import SeasonWithMC
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +167,7 @@ class BaseInjector:
             sig_events = []
 
         if len(sig_events) > 0:
-            simulated_data = np.concatenate((bkg_events, sig_events))
+            simulated_data = vstack((bkg_events, sig_events))
         else:
             simulated_data = bkg_events
 
@@ -172,8 +176,8 @@ class BaseInjector:
 
         return simulated_data
 
-    def inject_signal(self, scale):
-        return
+    def inject_signal(self, scale: float) -> Table:
+        raise NotImplementedError
 
     @classmethod
     def register_subclass(cls, inj_name):
@@ -245,7 +249,7 @@ class MCInjector(BaseInjector):
             logger.warning("No Injection Arguments. Are you unblinding?")
             pass
 
-    def get_mc(self, season):
+    def get_mc(self, season: "SeasonWithMC") -> Table:
         return season.get_mc()
 
     def select_mc_band(self, source):
@@ -337,7 +341,7 @@ class MCInjector(BaseInjector):
 
         return source_mc
 
-    def inject_signal(self, scale):
+    def inject_signal(self, scale: float) -> Table:
         """Randomly select simulated events from the Monte Carlo dataset to
         simulate a signal for each source. The source flux can be scaled by
         the scale parameter.
@@ -370,7 +374,7 @@ class MCInjector(BaseInjector):
                 n_s = int(n_inj)
 
             try:
-                f_n_inj = float(n_inj[0])
+                f_n_inj = float(n_inj[0])  # type: ignore[index]
             except (TypeError, IndexError):
                 f_n_inj = float(n_inj)
 
@@ -537,14 +541,12 @@ class TableInjector(MCInjector):
     For 1000 sources, calculate_n_exp() is ~60x faster than MCInjector.
     """
 
-    def get_mc(self, season):
-        mc: np.ndarray = season.get_mc()
-        # Sort rows by trueDec, and store as columns in a Table
-        table = Table(mc[np.argsort(mc["trueDec"].copy())])
-        # Prevent in-place modifications
-        for k in table.columns:
-            table[k].setflags(write=False)
-        return table
+    def get_mc(self, season: "SeasonWithMC") -> Table:
+        mc = season.get_mc().copy(copy_data=False)
+        mc.sort("trueDec")
+        for col in mc.columns.values():
+            col.setflags(write=False)
+        return mc
 
     def get_band_mask(self, source, min_dec, max_dec):
         return slice(*np.searchsorted(self._mc["trueDec"], [min_dec, max_dec]))
@@ -570,9 +572,9 @@ class EffectiveAreaInjector(BaseInjector):
         self.n_exp = self.calculate_n_exp()
         self.conversion_cache = dict()
 
-    def inject_signal(self, scale):
+    def inject_signal(self, scale: float) -> Table:
         # Creates empty signal event array
-        sig_events = np.empty((0,), dtype=self.season.get_background_dtype())
+        sig_events = []
 
         n_tot_exp = 0
 
@@ -598,7 +600,7 @@ class EffectiveAreaInjector(BaseInjector):
             logger.debug(
                 "Injected {0} events with an expectation of {1:.2f} events for {2}".format(
                     n_s,
-                    n_inj if isinstance(n_inj, float) else float(n_inj[0]),
+                    n_inj if isinstance(n_inj, float) else float(n_inj[0]),  # type: ignore[index]
                     source["source_name"],
                 )
             )
@@ -607,7 +609,20 @@ class EffectiveAreaInjector(BaseInjector):
             if n_s < 1:
                 continue
 
-            sim_ev = np.empty((n_s,), dtype=self.season.get_background_dtype())
+            sim_ev = Table(
+                np.empty(
+                    (n_s,),
+                    dtype=np.dtype(
+                        self.season.get_background_dtype().descr
+                        + [
+                            ("trueRa", float),
+                            ("trueDec", float),
+                            ("trueE", float),
+                            ("ow", float),
+                        ]
+                    ),
+                )
+            )
 
             # Fills the energy proxy conversion cache
 
@@ -631,16 +646,14 @@ class EffectiveAreaInjector(BaseInjector):
             sim_ev["raw_sigma"] = sim_ev["sigma"].copy()
 
             sim_ev = self.spatial_pdf.simulate_distribution(source, sim_ev)
+            sim_ev.keep_columns(self.season.get_background_dtype().names)
 
-            sim_ev = sim_ev[list(self.season.get_background_dtype().names)].copy()
-            #
+            sig_events.append(sim_ev)
 
-            # Joins the new events to the signal events
-            sig_events = np.concatenate((sig_events, sim_ev))
-
-        sig_events = np.array(sig_events)
-
-        return sig_events
+        if sig_events:
+            return vstack(sig_events)
+        else:
+            return Table()
 
     def calculate_single_source(self, source, scale):
         # Calculate the effective injection time for simulation. Equal to
