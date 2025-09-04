@@ -137,6 +137,10 @@ class ResultsHandler(object):
             logger.warning(
                 f"IndexError for ns scale factor. Only background trials? \n {e}"
             )
+            # if indeed running bkg-only trials
+            # just make the TS and param distr plots
+            if len(self.scale_values) == 1 and self.scale_values[0] == 0:
+                self.make_plots(self.scale_labels[0])
 
         # Create fit bias plots
         # this expects flux_to_ns to be set
@@ -737,7 +741,7 @@ class ResultsHandler(object):
 
                 # "disc_potential" and "disc_potential_25" attributes are set here
                 # use of `setattr` makes the code a bit obscure and could be improved
-                discovery_flux[zval] = interpolated_flux
+                discovery_flux[zval] = k_to_flux(interpolated_flux)
 
             except RuntimeError as e:
                 logger.warning(f"RuntimeError for discovery potential!: {e}")
@@ -752,13 +756,13 @@ class ResultsHandler(object):
             ax1 = fig.add_subplot(111)
             ax1.scatter(x_flux, y_vals, color="black")
 
-            if not best_f is not None:
+            if best_f is not None:
                 ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")
 
             ax1.axhline(threshold, lw=1, color="red", linestyle="--")
             ax1.axvline(self.sensitivity, lw=2, color="black", linestyle="--")
             if not np.isnan(interpolated_flux):
-                ax1.axvline(interpolated_flux, lw=2, color="red")
+                ax1.axvline(k_to_flux(interpolated_flux), lw=2, color="red")
             ax1.set_ylim(0.0, 1.0)
             ax1.set_xlim(0.0, k_to_flux(max(xrange)))
             ax1.set_ylabel(r"Overfluctuations relative to f{zval}$\sigma$ threshold")
@@ -773,7 +777,7 @@ class ResultsHandler(object):
             fig.savefig(save_path)
             plt.close()
 
-            extrapolated = interpolated_flux > max(x_flux)
+            extrapolated = k_to_flux(interpolated_flux) > max(x_flux)
 
             logger.info(
                 f"Discovery Potential ({zval}-sigma): {discovery_flux[zval]} ({extrapolated=})"

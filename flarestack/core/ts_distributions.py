@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -279,7 +280,11 @@ def plot_expanded_negative(ts_array, path):
     plt.yscale("log")
     plt.xlabel(r"Test Statistic ($\lambda$)")
     plt.legend(loc="upper right")
-    plt.savefig(path[:-4] + "_expanded.pdf")
+
+    path_seg = list(path.parts)
+    path_seg[-1] = path_seg[-1].split(".")[0] + "_expanded.pdf"
+    new_path = Path(*path_seg)
+    plt.savefig(new_path)
     plt.close()
 
 
