@@ -1,7 +1,7 @@
 import logging
 import os
 import pickle
-from typing import Mapping, Optional
+from typing import Any, Mapping, Never, Optional
 
 import numexpr
 import numpy as np
@@ -9,7 +9,7 @@ import scipy.interpolate
 from astropy.table import Table
 from scipy import sparse
 
-from flarestack.core.angular_error_modifier import LazyDict
+from flarestack.core.angular_error_modifier import BaseAngularErrorModifier, LazyDict
 from flarestack.core.astro import in_ra_window
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import NorthernTracksKDE, SpatialPDF
@@ -91,7 +91,7 @@ def read_llh_dict(llh_dict):
 class LLH(object):
     """Base class LLH."""
 
-    subclasses: dict[str, object] = {}
+    subclasses: dict[str, type["LLH"]] = {}
 
     def __init__(self, season, sources, llh_dict):
         self.season = season
@@ -139,7 +139,7 @@ class LLH(object):
         return decorator
 
     @classmethod
-    def create(cls, season, sources, llh_dict):
+    def create(cls, season, sources, llh_dict) -> "LLH":
         llh_dict = read_llh_dict(llh_dict)
         llh_name = llh_dict["llh_name"]
 
@@ -336,13 +336,21 @@ class LLH(object):
         return (n_all - n_coincident) * np.log1p(-n_s / n_all)
 
     def create_kwargs(
-        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
-    ):
-        kwargs = dict()
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
+        kwargs: dict[str, Any] = dict()
         return kwargs
 
     def create_llh_function(
-        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
     ):
         """Creates a likelihood function to minimise, based on the dataset.
 
@@ -445,15 +453,13 @@ class SpatialLLH(LLH):
 
         n_coincident = np.sum(~assumed_bkg_mask)
 
-        SoB_spacetime = np.array(SoB_spacetime)
-
         def test_statistic(params, weights):
             return self.calculate_test_statistic(
                 params,
                 weights,
                 n_all=n_all,
                 n_coincident=n_coincident,
-                SoB_spacetime=SoB_spacetime,
+                SoB_spacetime=np.array(SoB_spacetime),
             )
 
         return test_statistic
@@ -646,14 +652,18 @@ class FixedEnergyLLH(LLH):
             pickle.dump([dec_range, ratio_hist], f)
 
     def create_kwargs(
-        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
-    ):
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
         :return: LLH function that can be minimised
         """
-        kwargs = dict()
+        kwargs: dict[str, Any] = dict()
         kwargs["n_all"] = float(len(data) + n_excluded)
         SoB = []
 
@@ -858,13 +868,17 @@ class StandardLLH(FixedEnergyLLH):
         return self.acceptance_f(dec, gamma, grid=False)
 
     def create_kwargs(
-        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
-    ):
-        kwargs = dict()
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
+        kwargs: dict[str, Any] = dict()
 
         kwargs["n_all"] = float(len(data) + n_excluded)
-        SoB_spacetime = []
-        SoB_energy_cache = []
+        SoB_spacetime: list[list[Never] | Mapping[float, np.ndarray]] = []
+        SoB_energy_cache: list[list[Never] | Mapping[float, np.ndarray]] = []
 
         assumed_background_mask = np.ones(len(data), dtype=bool)
 
@@ -1085,13 +1099,17 @@ class StandardLLH(FixedEnergyLLH):
 @LLH.register_subclass("standard_kde_enabled")
 class StandardKDEEnabledLLH(StandardLLH):
     def create_kwargs(
-        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
-    ):
-        kwargs = dict()
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
+        kwargs: dict[str, Any] = dict()
 
         kwargs["n_all"] = float(len(data) + n_excluded)
-        SoB_spacetime = []
-        SoB_energy_cache = []
+        SoB_spacetime: list[list[Never] | Mapping[float, np.ndarray]] = []
+        SoB_energy_cache: list[list[Never] | Mapping[float, np.ndarray]] = []
 
         assumed_background_mask = np.ones(len(data), dtype=bool)
 
@@ -1182,8 +1200,12 @@ class StandardKDEEnabledLLH(StandardLLH):
 @LLH.register_subclass("standard_overlapping")
 class StandardOverlappingLLH(StandardLLH):
     def create_kwargs(
-        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
-    ):
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1192,7 +1214,7 @@ class StandardOverlappingLLH(StandardLLH):
 
         season_weight = lambda x: weight_f([1.0, x], self.season)
 
-        kwargs = dict()
+        kwargs: dict[str, Any] = dict()
 
         kwargs["n_all"] = float(len(data) + n_excluded)
 
@@ -1286,8 +1308,12 @@ class StandardOverlappingLLH(StandardLLH):
 @LLH.register_subclass("standard_matrix")
 class StandardMatrixLLH(StandardOverlappingLLH):
     def create_kwargs(
-        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
-    ):
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1298,7 +1324,7 @@ class StandardMatrixLLH(StandardOverlappingLLH):
             (len(self.sources), len(data)), dtype=bool
         )
 
-        kwargs = dict()
+        kwargs: dict[str, Any] = dict()
 
         kwargs["n_all"] = float(len(data) + n_excluded)
 
@@ -1477,8 +1503,12 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         )
 
     def create_kwargs(
-        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
-    ):
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1492,7 +1522,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
 
         SoB_rows = [None] * len(self.sources)
 
-        kwargs = dict()
+        kwargs: dict[str, Any] = dict()
 
         kwargs["n_all"] = float(len(data))
 

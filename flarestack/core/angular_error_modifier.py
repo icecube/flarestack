@@ -3,7 +3,7 @@ import logging
 import os
 import pickle as Pickle
 from collections.abc import Callable, Mapping
-from typing import Collection, Iterator, KeysView, TypeVar
+from typing import Any, Collection, Iterator, KeysView, TypeVar
 
 import numexpr
 import numpy as np
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseFloorClass(object):
-    subclasses: dict[str, object] = {}
+    subclasses: dict[str, type["BaseFloorClass"]] = {}
 
     def __init__(self, floor_dict):
         self.floor_dict = floor_dict
@@ -58,7 +58,7 @@ class BaseFloorClass(object):
         return decorator
 
     @classmethod
-    def create(cls, floor_dict):
+    def create(cls, floor_dict) -> "BaseFloorClass":
         floor_name = floor_dict["floor_name"]
 
         if floor_name not in cls.subclasses:
@@ -207,10 +207,10 @@ class LazyDict(Mapping[_K, _V]):
     def __init__(self, keys: Collection[_K], func: Callable[[_K], _V]):
         self._keys = frozenset(keys)
         self._func = func
-        self._store = dict()
+        self._store: dict[_K, _V] = dict()
 
     def keys(self) -> KeysView[_K]:
-        return self._keys
+        return self._keys  # type: ignore[return-value]
 
     def __iter__(self) -> Iterator[_K]:
         return iter(self._keys)
@@ -244,9 +244,9 @@ class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
 
 
 class BaseAngularErrorModifier(object):
-    subclasses: dict[str, object] = {}
+    subclasses: dict[str, type["BaseAngularErrorModifier"]] = {}
 
-    def __init__(self, pull_dict):
+    def __init__(self, pull_dict: dict[str, Any]) -> None:
         self.season = pull_dict["season"]
         self.floor = BaseFloorClass.create(pull_dict)
         self.pull_dict = pull_dict
@@ -278,7 +278,7 @@ class BaseAngularErrorModifier(object):
         floor_name="static_floor",
         aem_name="no_modifier",
         **kwargs,
-    ):
+    ) -> "BaseAngularErrorModifier":
         pull_dict = dict()
         pull_dict["season"] = season
         pull_dict["e_pdf_dict"] = e_pdf_dict

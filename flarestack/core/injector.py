@@ -9,6 +9,7 @@ import numpy as np
 from astropy.table import Table, vstack
 from scipy import interpolate, sparse
 
+from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import SpatialPDF
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
@@ -70,14 +71,14 @@ def read_injector_dict(inj_dict):
 class BaseInjector:
     """Base Injector Class"""
 
-    subclasses: dict[str, object] = {}
+    subclasses: dict[str, type["BaseInjector"]] = {}
 
     def __init__(self, season: "Season", sources: Table, **kwargs) -> None:
         kwargs = read_injector_dict(kwargs)
         self.inj_kwargs = kwargs
 
         logger.info("Initialising Injector for {0}".format(season.season_name))
-        self.injection_band_mask = dict()
+        self.injection_band_mask: dict[str, np.ndarray] = dict()
         self.season = season
         self.season.load_background_model()
 
@@ -200,7 +201,7 @@ class BaseInjector:
         return decorator
 
     @classmethod
-    def create(cls, season, sources, **kwargs):
+    def create(cls, season, sources, **kwargs) -> "BaseInjector":
         inj_dict = read_injector_dict(kwargs)
 
         if "injector_name" not in inj_dict.keys():
@@ -237,8 +238,6 @@ class MCInjector(BaseInjector):
     performed. This base class is tailored for injection of MC into mock
     background. This can be either MC background, or scrambled real data.
     """
-
-    subclasses: dict[str, object] = {}
 
     def __init__(self, season, sources, **kwargs):
         kwargs = read_injector_dict(kwargs)

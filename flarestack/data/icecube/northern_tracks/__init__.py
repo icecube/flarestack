@@ -191,7 +191,7 @@ class NTSeason(IceCubeSeason):
             )
 
         # Reduce the data to the relevant fields for analysis.
-        analysis_keys = list(self.get_background_dtype().names)
+        analysis_keys = list(self.get_background_dtype().names or [])
         return sim_bkg[analysis_keys], n_excluded
 
 
