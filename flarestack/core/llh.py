@@ -1,7 +1,10 @@
 import logging
 import os
 import pickle
-from typing import Any, Mapping, Never, Optional
+from typing import TYPE_CHECKING, Any, Mapping, Optional
+
+if TYPE_CHECKING:
+    from typing_extensions import Never
 
 import numexpr
 import numpy as np
