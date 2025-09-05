@@ -763,7 +763,7 @@ class ResultsHandler(object):
                 ax1.axvline(k_to_flux(interpolated_flux), lw=2, color="red")
             ax1.set_ylim(0.0, 1.0)
             ax1.set_xlim(0.0, k_to_flux(max(xrange)))
-            ax1.set_ylabel(r"Overfluctuations relative to f{zval}$\sigma$ threshold")
+            ax1.set_ylabel(rf"Overfluctuations relative to {zval}$\sigma$ threshold")
             plt.xlabel(r"Flux Normalisation @ 1GeV [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
 
             if not np.isnan(self.flux_to_ns):
