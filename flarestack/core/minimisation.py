@@ -1214,7 +1214,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 ns_names, ns_bounds, upper_ranges
             ):
                 xlabel = r"Spectral Index ($\gamma$)"
-                ylabel = "n$_{\mathrm{signal}}$" if ns_name == "n_s" else ns_name
+                ylabel = r"n$_{\mathrm{signal}}$" if ns_name == "n_s" else ns_name
 
                 use_bound = [ns_bound[0], upper_range]
 
