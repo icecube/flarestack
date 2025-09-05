@@ -719,6 +719,7 @@ class ResultsHandler(object):
 
             # this trick could be replaced by calling f on the vector of best fit parameters
             best_f = None
+            interpolated_flux = np.nan
 
             try:
                 res = scipy.optimize.curve_fit(
@@ -739,13 +740,10 @@ class ResultsHandler(object):
                 # estimate the solution flux
                 interpolated_flux = scipy.stats.gamma.ppf(0.5, best_a, best_b, best_c)
 
-                # "disc_potential" and "disc_potential_25" attributes are set here
-                # use of `setattr` makes the code a bit obscure and could be improved
-                discovery_flux[zval] = k_to_flux(interpolated_flux)
-
             except RuntimeError as e:
                 logger.warning(f"RuntimeError for discovery potential!: {e}")
-                # interpolated_flux = np.nan
+
+            discovery_flux[zval] = k_to_flux(interpolated_flux)
 
             # now plot the whole ordeal
             xrange = np.linspace(0.0, 1.1 * max(x), 1000)
@@ -765,7 +763,7 @@ class ResultsHandler(object):
                 ax1.axvline(k_to_flux(interpolated_flux), lw=2, color="red")
             ax1.set_ylim(0.0, 1.0)
             ax1.set_xlim(0.0, k_to_flux(max(xrange)))
-            ax1.set_ylabel(r"Overfluctuations relative to f{zval}$\sigma$ threshold")
+            ax1.set_ylabel(rf"Overfluctuations relative to {zval}$\sigma$ threshold")
             plt.xlabel(r"Flux Normalisation @ 1GeV [ GeV$^{-1}$ cm$^{-2}$ s$^{-1}$]")
 
             if not np.isnan(self.flux_to_ns):
