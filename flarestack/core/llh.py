@@ -1,7 +1,10 @@
 import logging
 import os
 import pickle
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Mapping, Optional
+
+if TYPE_CHECKING:
+    from typing_extensions import Never
 
 import numexpr
 import numpy as np
@@ -9,8 +12,10 @@ import scipy.interpolate
 from astropy.table import Table
 from scipy import sparse
 
+from flarestack.core.angular_error_modifier import BaseAngularErrorModifier, LazyDict
+from flarestack.core.astro import in_ra_window
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
-from flarestack.core.spatial_pdf import SpatialPDF
+from flarestack.core.spatial_pdf import NorthernTracksKDE, SpatialPDF
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.shared import (
     SoB_spline_path,
@@ -89,7 +94,7 @@ def read_llh_dict(llh_dict):
 class LLH(object):
     """Base class LLH."""
 
-    subclasses: dict[str, object] = {}
+    subclasses: dict[str, type["LLH"]] = {}
 
     def __init__(self, season, sources, llh_dict):
         self.season = season
@@ -137,7 +142,7 @@ class LLH(object):
         return decorator
 
     @classmethod
-    def create(cls, season, sources, llh_dict):
+    def create(cls, season, sources, llh_dict) -> "LLH":
         llh_dict = read_llh_dict(llh_dict)
         llh_name = llh_dict["llh_name"]
 
@@ -333,18 +338,30 @@ class LLH(object):
         """
         return (n_all - n_coincident) * np.log1p(-n_s / n_all)
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
-        kwargs = dict()
+    def create_kwargs(
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
+        kwargs: dict[str, Any] = dict()
         return kwargs
 
-    def create_llh_function(self, data, pull_corrector, weight_f=None):
+    def create_llh_function(
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
         :return: LLH function that can be minimised
         """
 
-        kwargs = self.create_kwargs(data, pull_corrector, weight_f)
+        kwargs = self.create_kwargs(data, n_excluded, pull_corrector, weight_f)
 
         def test_statistic(params, weights):
             return self.calculate_test_statistic(params, weights, **kwargs)
@@ -408,7 +425,9 @@ class SpatialLLH(LLH):
         # return lambda x: data_rate
         return lambda x: np.exp(self.bkg_spatial(np.sin(x))) * data_rate
 
-    def create_llh_function(self, data, pull_corrector, weight_f=None):
+    def create_llh_function(
+        self, data: Table, n_excluded: int, pull_corrector, weight_f=None
+    ):
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
@@ -437,15 +456,13 @@ class SpatialLLH(LLH):
 
         n_coincident = np.sum(~assumed_bkg_mask)
 
-        SoB_spacetime = np.array(SoB_spacetime)
-
         def test_statistic(params, weights):
             return self.calculate_test_statistic(
                 params,
                 weights,
                 n_all=n_all,
                 n_coincident=n_coincident,
-                SoB_spacetime=SoB_spacetime,
+                SoB_spacetime=np.array(SoB_spacetime),
             )
 
         return test_statistic
@@ -637,14 +654,20 @@ class FixedEnergyLLH(LLH):
         with open(SoB_path, "wb") as f:
             pickle.dump([dec_range, ratio_hist], f)
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
         """Creates a likelihood function to minimise, based on the dataset.
 
         :param data: Dataset
         :return: LLH function that can be minimised
         """
-        kwargs = dict()
-        kwargs["n_all"] = float(len(data))
+        kwargs: dict[str, Any] = dict()
+        kwargs["n_all"] = float(len(data) + n_excluded)
         SoB = []
 
         assumed_bkg_mask = np.ones(len(data), dtype=bool)
@@ -826,7 +849,7 @@ class StandardLLH(FixedEnergyLLH):
         with open(acc_path, "rb") as f:
             [dec_bins, gamma_bins, acc] = pickle.load(f)
 
-        f = scipy.interpolate.interp2d(dec_bins, gamma_bins, acc.T, kind="linear")
+        f = scipy.interpolate.RectBivariateSpline(dec_bins, gamma_bins, acc, kx=1, ky=1)
         return f
 
     def new_acceptance(self, source, params=None):
@@ -845,14 +868,20 @@ class StandardLLH(FixedEnergyLLH):
         dec = source["dec_rad"]
         gamma = params[-1]
 
-        return self.acceptance_f(dec, gamma)
+        return self.acceptance_f(dec, gamma, grid=False)
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
-        kwargs = dict()
+    def create_kwargs(
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
+        kwargs: dict[str, Any] = dict()
 
-        kwargs["n_all"] = float(len(data))
-        SoB_spacetime = []
-        SoB_energy_cache = []
+        kwargs["n_all"] = float(len(data) + n_excluded)
+        SoB_spacetime: list[list[Never] | Mapping[float, np.ndarray]] = []
+        SoB_energy_cache: list[list[Never] | Mapping[float, np.ndarray]] = []
 
         assumed_background_mask = np.ones(len(data), dtype=bool)
 
@@ -983,7 +1012,7 @@ class StandardLLH(FixedEnergyLLH):
     # Energy Log(Signal/Background) Ratio
     # ==============================================================================
 
-    def create_SoB_energy_cache(self, cut_data):
+    def create_SoB_energy_cache(self, cut_data: Table) -> Mapping[float, np.ndarray]:
         """Evaluates the Log(Signal/Background) values for all coincident
         data. For each value of gamma in self.gamma_support_points, calculates
         the Log(Signal/Background) values for the coincident data. Then saves
@@ -994,19 +1023,22 @@ class StandardLLH(FixedEnergyLLH):
         gamma value.
         """
 
-        energy_SoB_cache = dict()
-
-        for gamma in list(self.SoB_spline_2Ds.keys()):
+        def SoB(gamma) -> np.ndarray:
             try:
-                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma].ev(
+                return self.SoB_spline_2Ds[gamma].ev(
                     cut_data["logE"], cut_data["sinDec"]
                 )
-            except:  # this is in case the splines were produced using the RegularGridInterpolator
-                energy_SoB_cache[gamma] = self.SoB_spline_2Ds[gamma](
+            except (
+                AttributeError
+            ):  # this is in case the splines were produced using the RegularGridInterpolator
+                return self.SoB_spline_2Ds[gamma](
                     (cut_data["logE"], cut_data["sinDec"])
                 )
 
-        return energy_SoB_cache
+        return LazyDict(
+            list(self.SoB_spline_2Ds.keys()),
+            SoB,
+        )
 
     def estimate_energy_weights(self, gamma, energy_SoB_cache):
         """Quickly estimates the value of Signal/Background for Gamma.
@@ -1069,12 +1101,18 @@ class StandardLLH(FixedEnergyLLH):
 
 @LLH.register_subclass("standard_kde_enabled")
 class StandardKDEEnabledLLH(StandardLLH):
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
-        kwargs = dict()
+    def create_kwargs(
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
+        kwargs: dict[str, Any] = dict()
 
-        kwargs["n_all"] = float(len(data))
-        SoB_spacetime = []
-        SoB_energy_cache = []
+        kwargs["n_all"] = float(len(data) + n_excluded)
+        SoB_spacetime: list[list[Never] | Mapping[float, np.ndarray]] = []
+        SoB_energy_cache: list[list[Never] | Mapping[float, np.ndarray]] = []
 
         assumed_background_mask = np.ones(len(data), dtype=bool)
 
@@ -1164,7 +1202,13 @@ class StandardKDEEnabledLLH(StandardLLH):
 
 @LLH.register_subclass("standard_overlapping")
 class StandardOverlappingLLH(StandardLLH):
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1173,9 +1217,9 @@ class StandardOverlappingLLH(StandardLLH):
 
         season_weight = lambda x: weight_f([1.0, x], self.season)
 
-        kwargs = dict()
+        kwargs: dict[str, Any] = dict()
 
-        kwargs["n_all"] = float(len(data))
+        kwargs["n_all"] = float(len(data) + n_excluded)
 
         assumed_background_mask = np.ones(len(data), dtype=bool)
 
@@ -1266,7 +1310,13 @@ class StandardOverlappingLLH(StandardLLH):
 
 @LLH.register_subclass("standard_matrix")
 class StandardMatrixLLH(StandardOverlappingLLH):
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1277,9 +1327,9 @@ class StandardMatrixLLH(StandardOverlappingLLH):
             (len(self.sources), len(data)), dtype=bool
         )
 
-        kwargs = dict()
+        kwargs: dict[str, Any] = dict()
 
-        kwargs["n_all"] = float(len(data))
+        kwargs["n_all"] = float(len(data) + n_excluded)
 
         sources = self.sources
 
@@ -1363,29 +1413,64 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
     """
 
     def __init__(self, season, sources, llh_dict):
+        # propagate the spatial_box_width from llh_dict to the
+        # llh_spatial_pdf if not explicitly set
+        if "spatial_box_width" not in llh_dict["llh_spatial_pdf"]:
+            llh_dict["llh_spatial_pdf"]["spatial_box_width"] = llh_dict.get(
+                "spatial_box_width", default_spacial_box_width
+            )
         super().__init__(season, sources, llh_dict)
 
-        if llh_dict["llh_spatial_pdf"]["spatial_pdf_name"] != "northern_tracks_kde":
-            raise ValueError(
-                "Specified LLH ({}) is only compatible with NorthernTracksKDE, ".format(
-                    self.llh_dict["llh_name"]
-                )
-                + "please change 'the spatial_pdf_name' accordingly"
-            )
+        # if llh_dict["llh_spatial_pdf"]["spatial_pdf_name"] != "northern_tracks_kde":
+        #     raise ValueError(
+        #         "Specified LLH ({}) is only compatible with NorthernTracksKDE, ".format(
+        #             self.llh_dict["llh_name"]
+        #         )
+        #         + "please change 'the spatial_pdf_name' accordingly"
+        #     )
 
-    def get_spatially_coincident_indices(self, data, source) -> np.ndarray:
+    # NB: numexpr implements fmod but not mod, and mod is equivalent to abs(fmod(...))
+    _in_box = numexpr.NumExpr(
+        "abs(abs(fmod(lon1 - lon2 + pi, 2 * pi)) - pi) < dPhi",
+        signature=[
+            ("lon1", np.float64),
+            ("lon2", np.float64),
+            ("pi", np.float64),
+            ("dPhi", np.float64),
+        ],
+    )
+
+    _in_circle = numexpr.NumExpr(
+        "arccos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(fmod(lon2 - lon1 + pi, 2 * pi) - pi)) < radius",
+        signature=[
+            ("lon1", np.float64),
+            ("lat1", np.float64),
+            ("lon2", np.float64),
+            ("lat2", np.float64),
+            ("pi", np.float64),
+            ("radius", np.float64),
+        ],
+    )
+
+    def get_spatially_coincident_indices(
+        self,
+        event_ra: np.ndarray,
+        event_dec: np.ndarray,
+        source_ra: float,
+        source_dec: float,
+        radius: float,
+    ) -> np.ndarray:
         """
         Get spatially coincident data for a single source, taking advantage of
         the fact that data are sorted in dec
         """
-        width = np.deg2rad(self.spatial_box_width)
 
         # Sets a declination band 5 degrees above and below the source
-        min_dec = max(-np.pi / 2.0, source["dec_rad"] - width)
-        max_dec = min(np.pi / 2.0, source["dec_rad"] + width)
+        min_dec = max(-np.pi / 2.0, source_dec - radius)
+        max_dec = min(np.pi / 2.0, source_dec + radius)
 
         # Accepts events lying within a 5 degree band of the source
-        dec_range = slice(*np.searchsorted(data["dec"], [min_dec, max_dec]))
+        dec_range = slice(*np.searchsorted(event_dec, [min_dec, max_dec]))
 
         # Sets the minimum value of cos(dec)
         cos_factor = np.amin(np.cos([min_dec, max_dec]))
@@ -1393,16 +1478,40 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         # Scales the width of the box in ra, to give a roughly constant
         # area. However, if the width would have to be greater that +/- pi,
         # then sets the area to be exactly 2 pi.
-        dPhi = np.amin([2.0 * np.pi, 2.0 * width / cos_factor])
+        dPhi = np.amin([np.pi, radius / cos_factor])
 
-        # Accounts for wrapping effects at ra=0, calculates the distance
-        # of each event to the source.
-        ra_dist = np.fabs(
-            (data["ra"][dec_range] - source["ra_rad"] + np.pi) % (2.0 * np.pi) - np.pi
+        idx = np.nonzero(
+            in_ra_window(
+                event_ra[dec_range],
+                source_ra,
+                np.pi,
+                dPhi,
+            )
+        )[0]
+
+        return (
+            idx[
+                np.nonzero(
+                    self._in_circle(
+                        event_ra[dec_range][idx],
+                        event_dec[dec_range][idx],
+                        source_ra,
+                        source_dec,
+                        np.pi,
+                        radius,
+                    )
+                )[0]
+            ]
+            + dec_range.start
         )
-        return np.nonzero(ra_dist < dPhi / 2.0)[0] + dec_range.start
 
-    def create_kwargs(self, data, pull_corrector, weight_f=None):
+    def create_kwargs(
+        self,
+        data: Table,
+        n_excluded: int,
+        pull_corrector: BaseAngularErrorModifier,
+        weight_f=None,
+    ) -> Mapping[str, Any]:
         if weight_f is None:
             raise Exception(
                 "Weight function not passed, but is required for "
@@ -1416,15 +1525,24 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
 
         SoB_rows = [None] * len(self.sources)
 
-        kwargs = dict()
+        kwargs: dict[str, Any] = dict()
 
         kwargs["n_all"] = float(len(data))
 
         # Treat sources in declination order to keep caches hot
         order = np.argsort(self.sources[["dec_rad", "ra_rad"]])
-        for i in order:
+        ra, dec = (np.asarray(data["ra"]), np.asarray(data["dec"]))
+        sources_ra, sources_dec = (
+            np.asarray(self.sources["ra_rad"][order]),
+            np.asarray(self.sources["dec_rad"][order]),
+        )
+        radius = np.deg2rad(self.spatial_box_width)
+
+        for i, (source_ra, source_dec) in zip(order, zip(sources_ra, sources_dec)):
             source = self.sources[i]
-            idx = self.get_spatially_coincident_indices(data, source)
+            idx = self.get_spatially_coincident_indices(
+                ra, dec, source_ra, source_dec, radius
+            )
 
             if len(idx) > 0:
                 # Only bother accepting neutrinos where the spacial
@@ -1439,8 +1557,11 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 # but that would add an extra dimension in the matrix so better not
                 coincident_data = data[idx]
                 if (
-                    self.spatial_pdf.signal.SplineIs4D
-                    and self.spatial_pdf.signal.KDE_eval_gamma is not None
+                    not isinstance(self.spatial_pdf.signal, NorthernTracksKDE)
+                    or (
+                        self.spatial_pdf.signal.SplineIs4D
+                        and self.spatial_pdf.signal.KDE_eval_gamma is not None
+                    )
                 ) or not self.spatial_pdf.signal.SplineIs4D:
                     sig = self.signal_pdf(source, coincident_data)  # gamma = None
 
@@ -1457,7 +1578,7 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 SoB_rows[i] = sparse.csr_matrix(
                     (
                         sig[nonzero_idx]
-                        / self.background_pdf(source, coincident_data[nonzero_idx]),
+                        / self.background_pdf(source, coincident_data)[nonzero_idx],
                         column_indices,
                         [0, len(column_indices)],
                     ),
@@ -1489,8 +1610,11 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         # create sparse matrix with non-weighted SoB
         # relevant when signal pdf is gamma-independent so that spline evaluation is done once
         if (
-            self.spatial_pdf.signal.SplineIs4D
-            and self.spatial_pdf.signal.KDE_eval_gamma is not None
+            not isinstance(self.spatial_pdf.signal, NorthernTracksKDE)
+            or (
+                self.spatial_pdf.signal.SplineIs4D
+                and self.spatial_pdf.signal.KDE_eval_gamma is not None
+            )
         ) or not self.spatial_pdf.signal.SplineIs4D:
             logger.debug(
                 "Creating gamma-independent SoB matrix for all srcs when 3D KDE or 4D w/ 'spatial_pdf_index'"
@@ -1500,7 +1624,9 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
                 weight = np.array(season_weight(gamma))
                 weight /= np.sum(weight)
 
-                return np.asarray(SoB_only_matrix.multiply(weight).sum(axis=0))[0]
+                return np.asarray(
+                    SoB_only_matrix.multiply(sparse.coo_array(weight)).sum(axis=0)
+                )[0]
 
         elif (
             self.spatial_pdf.signal.SplineIs4D
@@ -1560,7 +1686,10 @@ class StdMatrixKDEEnabledLLH(StandardOverlappingLLH):
         :param cut_data: Subset of Dataset with coincident events
         :return: Array of Signal Spacetime PDF values
         """
-        space_term = self.spatial_pdf.signal_spatial(source, cut_data, gamma)
+        if isinstance(self.spatial_pdf.signal, NorthernTracksKDE):
+            space_term = self.spatial_pdf.signal_spatial(source, cut_data, gamma)
+        else:
+            space_term = self.spatial_pdf.signal_spatial(source, cut_data)
 
         if hasattr(self, "sig_time_pdf"):
             time_term = self.sig_time_pdf.f(cut_data["time"], source)
@@ -1593,8 +1722,10 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             self, data, flare_veto, n_all, src, n_season, pull_corrector
         ):
             coincident_data = data[~flare_veto]
-            kwargs = self.create_kwargs(coincident_data, pull_corrector)
-            kwargs["n_all"] = n_all
+            kwargs = {
+                **self.create_kwargs(coincident_data, 0, pull_corrector),
+                "n_all": n_all,
+            }
             weights = np.array([1.0])
 
             def test_statistic(params):

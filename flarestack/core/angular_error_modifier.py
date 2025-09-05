@@ -2,6 +2,8 @@ import inspect
 import logging
 import os
 import pickle as Pickle
+from collections.abc import Callable, Mapping
+from typing import Any, Collection, Iterator, KeysView, TypeVar
 
 import numexpr
 import numpy as np
@@ -36,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseFloorClass(object):
-    subclasses: dict[str, object] = {}
+    subclasses: dict[str, type["BaseFloorClass"]] = {}
 
     def __init__(self, floor_dict):
         self.floor_dict = floor_dict
@@ -56,7 +58,7 @@ class BaseFloorClass(object):
         return decorator
 
     @classmethod
-    def create(cls, floor_dict):
+    def create(cls, floor_dict) -> "BaseFloorClass":
         floor_name = floor_dict["floor_name"]
 
         if floor_name not in cls.subclasses:
@@ -129,7 +131,7 @@ class StaticFloor(BaseStaticFloor):
         )
 
     def floor(self, data):
-        return np.array([self.min_error for _ in data])
+        return self.min_error
 
 
 class BaseQuantileFloor(BaseFloorClass):
@@ -197,6 +199,30 @@ class QuantileFloor1D(BaseQuantileFloor, BaseStaticFloor):
         return lambda data, params: func(data["logE"])
 """
 
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
+
+class LazyDict(Mapping[_K, _V]):
+    def __init__(self, keys: Collection[_K], func: Callable[[_K], _V]):
+        self._keys = frozenset(keys)
+        self._func = func
+        self._store: dict[_K, _V] = dict()
+
+    def keys(self) -> KeysView[_K]:
+        return self._keys  # type: ignore[return-value]
+
+    def __iter__(self) -> Iterator[_K]:
+        return iter(self._keys)
+
+    def __len__(self):
+        return len(self._keys)
+
+    def __getitem__(self, key: _K) -> _V:
+        if key not in self._store:
+            self._store[key] = self._func(key)
+        return self._store[key]
+
 
 @BaseFloorClass.register_subclass("quantile_floor_1d_e")
 class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
@@ -218,9 +244,9 @@ class QuantileFloor1D(BaseQuantileFloor, BaseDynamicFloorClass):
 
 
 class BaseAngularErrorModifier(object):
-    subclasses: dict[str, object] = {}
+    subclasses: dict[str, type["BaseAngularErrorModifier"]] = {}
 
-    def __init__(self, pull_dict):
+    def __init__(self, pull_dict: dict[str, Any]) -> None:
         self.season = pull_dict["season"]
         self.floor = BaseFloorClass.create(pull_dict)
         self.pull_dict = pull_dict
@@ -252,7 +278,7 @@ class BaseAngularErrorModifier(object):
         floor_name="static_floor",
         aem_name="no_modifier",
         **kwargs,
-    ):
+    ) -> "BaseAngularErrorModifier":
         pull_dict = dict()
         pull_dict["season"] = season
         pull_dict["e_pdf_dict"] = e_pdf_dict
@@ -278,15 +304,16 @@ class BaseAngularErrorModifier(object):
 
     def create_spatial_cache(self, cut_data, SoB_pdf):
         if len(inspect.getfullargspec(SoB_pdf)[0]) == 2:
-            SoB = dict()
-            for gamma in get_gamma_support_points(precision=self.precision):
-                SoB[gamma] = np.log(SoB_pdf(cut_data, gamma))
+            SoB = LazyDict(
+                get_gamma_support_points(precision=self.precision),
+                lambda gamma: np.log(SoB_pdf(cut_data, gamma)),
+            )
         else:
             SoB = SoB_pdf(cut_data)
         return SoB
 
     def estimate_spatial(self, gamma, spatial_cache):
-        if isinstance(spatial_cache, dict):
+        if isinstance(spatial_cache, Mapping):
             return self.estimate_spatial_dynamic(gamma, spatial_cache)
         else:
             return spatial_cache

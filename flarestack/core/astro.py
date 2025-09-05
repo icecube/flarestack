@@ -2,6 +2,7 @@
 Function taken from IceCube astro package.
 """
 
+import numexpr
 import numpy as np
 
 
@@ -33,3 +34,27 @@ def angular_distance(lon1, lat1, lon2, lat2):
     cd = np.cos(lon2 - lon1)
 
     return np.arctan2(np.hypot(c2 * sd, c1 * s2 - s1 * c2 * cd), s1 * s2 + c1 * c2 * cd)
+
+
+# Fast angular distance using numexpr to avoid creating large temporary arrays
+fast_angular_distance = numexpr.NumExpr(
+    "arccos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(fmod(lon2 - lon1 + pi, 2 * pi) - pi))",
+    signature=[
+        ("lon1", np.float64),
+        ("lat1", np.float64),
+        ("lon2", np.float64),
+        ("lat2", np.float64),
+        ("pi", np.float64),
+    ],
+)
+
+# NB: numexpr implements fmod but not mod, and mod is equivalent to abs(fmod(...))
+in_ra_window = numexpr.NumExpr(
+    "abs(abs(fmod(lon1 - lon2 + pi, 2 * pi)) - pi) < dPhi",
+    signature=[
+        ("lon1", np.float64),
+        ("lon2", np.float64),
+        ("pi", np.float64),
+        ("dPhi", np.float64),
+    ],
+)

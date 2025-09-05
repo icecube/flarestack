@@ -1,6 +1,7 @@
 import numpy as np
-from numpy.lib.recfunctions import rename_fields
+from astropy.table import Table
 
+from flarestack.core.astro import in_ra_window
 from flarestack.data.icecube.ic_season import IceCubeSeason
 
 diffuse_binning = {
@@ -50,7 +51,14 @@ def get_diffuse_binning(season):
 
 
 class NTSeason(IceCubeSeason):
-    def get_background_model(self) -> dict:
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._prev_sources = None
+        self._prev_mc = None
+        self._prev_spatial_box_width = None
+
+    def get_background_model(self) -> Table:
         """Loads Monte Carlo dataset from file according to object path set in object properties.
 
         Returns:
@@ -60,10 +68,58 @@ class NTSeason(IceCubeSeason):
         # According to NT specifications (README):
         #  "conv" gives the weight for conventional atmospheric neutrinos
         #  flarestack renames it to "weight"
-        mc = rename_fields(mc, {"conv": "weight"})
+        mc.rename_column("conv", "weight")
+        # sort by declination for easy band searches
+        mc.sort("dec")
         return mc
 
-    def simulate_background(self):
+    def _get_spatially_coincident_indices(
+        self,
+        event_ra: np.ndarray,
+        event_dec: np.ndarray,
+        source_ra: np.ndarray,
+        source_dec: np.ndarray,
+        radius: float,
+    ) -> np.ndarray:
+        """
+        Get spatially coincident data for a collection of sources, taking advantage of
+        the fact that data are sorted in dec
+        """
+
+        # Find edges of declination bands around each source
+        edges = np.array(
+            [
+                np.maximum(-np.pi / 2.0, source_dec - radius),
+                np.minimum(np.pi / 2.0, source_dec + radius),
+            ]
+        ).T
+        bands = np.searchsorted(event_dec, edges, side="right")
+
+        # Scales the width of the box in ra, to give a roughly constant
+        # area. However, if the width would have to be greater that +/- pi,
+        # then sets the area to be exactly 2 pi.
+        dPhi = np.minimum(np.pi, radius / np.amin(np.cos(edges), axis=1))
+
+        idx = set()
+        for band, dphi, ra in zip(bands, dPhi, source_ra):
+            dec_range = slice(*band)
+            idx.update(
+                np.nonzero(
+                    in_ra_window(
+                        event_ra[dec_range],
+                        ra,
+                        np.pi,
+                        dphi,
+                    )
+                )[0]
+                + dec_range.start
+            )
+
+        return np.array(sorted(idx))
+
+    def simulate_background(
+        self, sources: Table, spatial_box_width: None | float
+    ) -> tuple[Table, int]:
         rng = np.random
 
         if self.loaded_background_model is None:
@@ -71,20 +127,54 @@ class NTSeason(IceCubeSeason):
                 "Monte Carlo background is not loaded. Call `load_background_model` before `simulate_background`."
             )
 
-        n_mc = len(self.loaded_background_model["weight"])
+        if spatial_box_width is None:
+            # Draw from full MC sample
+            mc = self.loaded_background_model
+            n_excluded = 0
+        else:
+            # Draw from MC sample within a spatial box around the sources
+            if (
+                sources is not self._prev_sources
+                or spatial_box_width != self._prev_spatial_box_width
+            ):
+                self._prev_mc = self.loaded_background_model[
+                    self._get_spatially_coincident_indices(
+                        np.asarray(self.loaded_background_model["ra"]),
+                        np.asarray(self.loaded_background_model["dec"]),
+                        np.asarray(sources["ra_rad"]),
+                        np.asarray(sources["dec_rad"]),
+                        np.deg2rad(spatial_box_width),
+                    )
+                ]
+                self._prev_sources = sources
+                self._prev_spatial_box_width = spatial_box_width
+            mc = self._prev_mc
+            # Draw a number of events that would have been outside the box
+            n_excluded = rng.poisson(
+                np.sum(self.loaded_background_model["weight"]) - np.sum(mc["weight"])
+            )
 
         # Total number of events in the MC sample, weighted according to background.
-        n_exp = np.sum(self.loaded_background_model["weight"])
+        n_exp = np.sum(mc["weight"])
 
         # Creates a normalised array of atmospheric weights.
-        p_select = self.loaded_background_model["weight"] / n_exp
+        p_select = mc["weight"].cumsum() / n_exp
 
         # Simulates poisson noise around the expectation value n_exp.
         n_bkg = rng.poisson(n_exp)
 
+        print(f"Simulating {n_bkg} background events, excluding {n_excluded}.")
+
         # Choose n_bkg from n_mc events according to background weight.
-        ind = rng.choice(n_mc, size=n_bkg, p=p_select)
-        sim_bkg = self.loaded_background_model[ind]
+        ind = np.searchsorted(
+            p_select,
+            # NB: with n_bkg=8e5 and n_mc=11.5e6, explicitly sorting the uniform
+            # samples is ~6x faster than np.random.choice
+            np.sort(rng.uniform(size=n_bkg)),
+            side="right",
+        )
+
+        sim_bkg = mc[ind]
 
         time_pdf = self.get_time_pdf()
 
@@ -101,8 +191,8 @@ class NTSeason(IceCubeSeason):
             )
 
         # Reduce the data to the relevant fields for analysis.
-        analysis_keys = list(self.get_background_dtype().names)
-        return sim_bkg[analysis_keys]
+        analysis_keys = list(self.get_background_dtype().names or [])
+        return sim_bkg[analysis_keys], n_excluded
 
 
 class NTSeasonNewStyle(NTSeason):
@@ -114,5 +204,5 @@ class NTSeasonNewStyle(NTSeason):
         mc = super(NTSeasonNewStyle, self).get_background_model()
         livetime = self.get_time_pdf().get_livetime()
         for weight in ("astro", "weight", "prompt"):
-            mc[weight] *= livetime * 86400.0
+            mc[weight] = mc[weight] * livetime * 86400.0
         return mc

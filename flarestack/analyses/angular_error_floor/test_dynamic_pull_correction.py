@@ -5,7 +5,6 @@ from builtins import range, str
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.lib.recfunctions import append_fields
 
 from flarestack.core.astro import angular_distance
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
@@ -93,9 +92,7 @@ for gamma in [2.0, 3.5]:
         cut_mc = mc[mask]
 
         percentile = np.ones_like(cut_mc["ra"]) * np.nan
-        cut_mc = append_fields(
-            cut_mc, "percentile", percentile, usemask=False, dtypes=[np.float]
-        )
+        cut_mc.add_column(percentile, name="percentile")
 
         weights = cut_mc["ow"] * cut_mc["trueE"] ** -gamma
         # weights = np.ones_like(cut_mc["ow"])

@@ -10,7 +10,6 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-from numpy.lib.recfunctions import append_fields
 from scipy.interpolate import interp1d
 
 from flarestack.data.icecube.ps_tracks.ps_v002_p01 import IC86_1_dict
@@ -22,10 +21,7 @@ season = IC86_1_dict
 
 def custom_data_loader(path):
     dataset = data_loader(path, floor=False)
-    percentile = np.ones_like(dataset["ra"]) * np.nan
-    dataset = append_fields(
-        dataset, "percentile", percentile, usemask=False, dtypes=[float]
-    )
+    dataset.add_column(np.ones_like(dataset["ra"]) * np.nan, "percentile")
 
     return dataset
 

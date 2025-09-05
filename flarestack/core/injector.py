@@ -3,16 +3,21 @@ import os
 import random
 import zipfile
 import zlib
+from typing import TYPE_CHECKING
 
 import numpy as np
-from astropy.table import Table
+from astropy.table import Table, vstack
 from scipy import interpolate, sparse
 
+from flarestack.core.angular_error_modifier import BaseAngularErrorModifier
 from flarestack.core.energy_pdf import EnergyPDF, read_e_pdf_dict
 from flarestack.core.spatial_pdf import SpatialPDF
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.shared import band_mask_cache_name, k_to_flux
 from flarestack.utils.catalogue_loader import calculate_source_weight
+
+if TYPE_CHECKING:
+    from flarestack.data import Season, SeasonWithMC
 
 logger = logging.getLogger(__name__)
 
@@ -66,14 +71,14 @@ def read_injector_dict(inj_dict):
 class BaseInjector:
     """Base Injector Class"""
 
-    subclasses: dict[str, object] = {}
+    subclasses: dict[str, type["BaseInjector"]] = {}
 
-    def __init__(self, season, sources, **kwargs):
+    def __init__(self, season: "Season", sources: Table, **kwargs) -> None:
         kwargs = read_injector_dict(kwargs)
         self.inj_kwargs = kwargs
 
         logger.info("Initialising Injector for {0}".format(season.season_name))
-        self.injection_band_mask = dict()
+        self.injection_band_mask: dict[str, np.ndarray] = dict()
         self.season = season
         self.season.load_background_model()
 
@@ -109,6 +114,8 @@ class BaseInjector:
             self.fixed_n = kwargs["fixed_n"]
         except KeyError:
             self.fixed_n = np.nan
+
+        self.spatial_box_width: float | None = kwargs.get("spatial_box_width", None)
 
     def calculate_n_exp(self):
         all_n_exp = np.empty(
@@ -146,7 +153,11 @@ class BaseInjector:
         )
         self.n_exp = self.calculate_n_exp()
 
-    def create_dataset(self, scale, angular_error_modifier=None):
+    def create_dataset(
+        self,
+        scale: float,
+        angular_error_modifier: "None | BaseAngularErrorModifier" = None,
+    ) -> tuple[Table, int]:
         """Create a dataset based on scrambled data for background, and Monte
         Carlo simulation for signal. Returns the composite dataset. The source
         flux can be scaled by the scale parameter.
@@ -155,7 +166,9 @@ class BaseInjector:
         :param angular_error_modifier: AngularErrorModifier to change angular errors
         :return: Simulated dataset
         """
-        bkg_events = self.season.simulate_background()
+        bkg_events, n_excluded = self.season.simulate_background(
+            self.sources, self.spatial_box_width
+        )
 
         if scale > 0.0:
             sig_events = self.inject_signal(scale)
@@ -163,17 +176,17 @@ class BaseInjector:
             sig_events = []
 
         if len(sig_events) > 0:
-            simulated_data = np.concatenate((bkg_events, sig_events))
+            simulated_data = vstack((bkg_events, sig_events))
         else:
             simulated_data = bkg_events
 
         if angular_error_modifier is not None:
             simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
 
-        return simulated_data
+        return simulated_data, n_excluded
 
-    def inject_signal(self, scale):
-        return
+    def inject_signal(self, scale: float) -> Table:
+        raise NotImplementedError
 
     @classmethod
     def register_subclass(cls, inj_name):
@@ -188,7 +201,7 @@ class BaseInjector:
         return decorator
 
     @classmethod
-    def create(cls, season, sources, **kwargs):
+    def create(cls, season, sources, **kwargs) -> "BaseInjector":
         inj_dict = read_injector_dict(kwargs)
 
         if "injector_name" not in inj_dict.keys():
@@ -226,8 +239,6 @@ class MCInjector(BaseInjector):
     background. This can be either MC background, or scrambled real data.
     """
 
-    subclasses: dict[str, object] = {}
-
     def __init__(self, season, sources, **kwargs):
         kwargs = read_injector_dict(kwargs)
         self._mc = self.get_mc(season)
@@ -245,10 +256,10 @@ class MCInjector(BaseInjector):
             logger.warning("No Injection Arguments. Are you unblinding?")
             pass
 
-    def get_mc(self, season):
+    def get_mc(self, season: "SeasonWithMC") -> Table:
         return season.get_mc()
 
-    def select_mc_band(self, source):
+    def select_mc_band(self, source) -> tuple[Table, float, np.ndarray | slice]:
         """For a given source, selects MC events within a declination band of
         width +/- 5 degrees that contains the source. Then returns the MC data
         subset containing only those MC events.
@@ -337,7 +348,7 @@ class MCInjector(BaseInjector):
 
         return source_mc
 
-    def inject_signal(self, scale):
+    def inject_signal(self, scale: float) -> Table:
         """Randomly select simulated events from the Monte Carlo dataset to
         simulate a signal for each source. The source flux can be scaled by
         the scale parameter.
@@ -345,8 +356,10 @@ class MCInjector(BaseInjector):
         :param scale: Ratio of Injected Flux to source flux.
         :return: Set of signal events for the given IC Season.
         """
+        rng = np.random
+
         # Creates empty signal event array
-        sig_events = np.empty((0,), dtype=self.season.get_background_dtype())
+        sig_events = []
 
         n_tot_exp = 0
 
@@ -370,7 +383,7 @@ class MCInjector(BaseInjector):
                 n_s = int(n_inj)
 
             try:
-                f_n_inj = float(n_inj[0])
+                f_n_inj = float(n_inj[0])  # type: ignore[index]
             except (TypeError, IndexError):
                 f_n_inj = float(n_inj)
 
@@ -386,14 +399,13 @@ class MCInjector(BaseInjector):
 
             source_mc = self.calculate_single_source(source, scale)
 
-            # Creates a normalised array of OneWeights
-            p_select = source_mc["ow"] / np.sum(source_mc["ow"])
-
-            # Creates an array with n_signal entries.
-            # Each entry is a random integer between 0 and no. of sources.
-            # The probability for each integer is equal to the OneWeight of
-            # the corresponding source_path.
-            ind = np.random.choice(len(source_mc["ow"]), size=n_s, p=p_select)
+            # Select indices of n_s signal events proportional to their OneWeight
+            cum_ow = np.cumsum(source_mc["ow"])
+            ind = np.searchsorted(
+                cum_ow / cum_ow[-1],
+                np.sort(rng.uniform(size=n_s)),
+                side="right",
+            )
 
             # Selects the sources corresponding to the random integer array
             sim_ev = source_mc[ind]
@@ -406,13 +418,12 @@ class MCInjector(BaseInjector):
             # Generates times for each simulated event, drawing from the
             # Injector time PDF.
             sim_ev["time"] = self.sig_time_pdf.simulate_times(source, n_s)
+            sim_ev.keep_columns(self.season.get_background_dtype().names)
 
             # Joins the new events to the signal events
-            sig_events = np.concatenate(
-                (sig_events, sim_ev[list(self.season.get_background_dtype().names)])
-            )
+            sig_events.append(sim_ev)
 
-        return sig_events
+        return vstack(sig_events) if sig_events else Table()
 
 
 @MCInjector.register_subclass("low_memory_injector")
@@ -537,22 +548,15 @@ class TableInjector(MCInjector):
     For 1000 sources, calculate_n_exp() is ~60x faster than MCInjector.
     """
 
-    def get_mc(self, season):
-        mc: np.ndarray = season.get_mc()
-        # Sort rows by trueDec, and store as columns in a Table
-        table = Table(mc[np.argsort(mc["trueDec"].copy())])
-        # Prevent in-place modifications
-        for k in table.columns:
-            table[k].setflags(write=False)
-        return table
+    def get_mc(self, season: "SeasonWithMC") -> Table:
+        mc = season.get_mc().copy(copy_data=False)
+        mc.sort("trueDec")
+        for col in mc.columns.values():
+            col.setflags(write=False)
+        return mc
 
     def get_band_mask(self, source, min_dec, max_dec):
         return slice(*np.searchsorted(self._mc["trueDec"], [min_dec, max_dec]))
-
-    def select_mc_band(self, source):
-        table, omega, band_mask = super().select_mc_band(source)
-        # allow individual columns to be replaced
-        return table.copy(copy_data=False), omega, band_mask
 
 
 @MCInjector.register_subclass("effective_area_injector")
@@ -570,9 +574,9 @@ class EffectiveAreaInjector(BaseInjector):
         self.n_exp = self.calculate_n_exp()
         self.conversion_cache = dict()
 
-    def inject_signal(self, scale):
+    def inject_signal(self, scale: float) -> Table:
         # Creates empty signal event array
-        sig_events = np.empty((0,), dtype=self.season.get_background_dtype())
+        sig_events = []
 
         n_tot_exp = 0
 
@@ -598,7 +602,7 @@ class EffectiveAreaInjector(BaseInjector):
             logger.debug(
                 "Injected {0} events with an expectation of {1:.2f} events for {2}".format(
                     n_s,
-                    n_inj if isinstance(n_inj, float) else float(n_inj[0]),
+                    n_inj if isinstance(n_inj, float) else float(n_inj[0]),  # type: ignore[index]
                     source["source_name"],
                 )
             )
@@ -607,7 +611,20 @@ class EffectiveAreaInjector(BaseInjector):
             if n_s < 1:
                 continue
 
-            sim_ev = np.empty((n_s,), dtype=self.season.get_background_dtype())
+            sim_ev = Table(
+                np.empty(
+                    (n_s,),
+                    dtype=np.dtype(
+                        self.season.get_background_dtype().descr
+                        + [
+                            ("trueRa", float),
+                            ("trueDec", float),
+                            ("trueE", float),
+                            ("ow", float),
+                        ]
+                    ),
+                )
+            )
 
             # Fills the energy proxy conversion cache
 
@@ -631,16 +648,14 @@ class EffectiveAreaInjector(BaseInjector):
             sim_ev["raw_sigma"] = sim_ev["sigma"].copy()
 
             sim_ev = self.spatial_pdf.simulate_distribution(source, sim_ev)
+            sim_ev.keep_columns(self.season.get_background_dtype().names)
 
-            sim_ev = sim_ev[list(self.season.get_background_dtype().names)].copy()
-            #
+            sig_events.append(sim_ev)
 
-            # Joins the new events to the signal events
-            sig_events = np.concatenate((sig_events, sim_ev))
-
-        sig_events = np.array(sig_events)
-
-        return sig_events
+        if sig_events:
+            return vstack(sig_events)
+        else:
+            return Table()
 
     def calculate_single_source(self, source, scale):
         # Calculate the effective injection time for simulation. Equal to
@@ -712,12 +727,14 @@ class MockUnblindedInjector:
     one background scramble.
     """
 
-    def __init__(self, season, sources=np.nan, **kwargs):
+    def __init__(self, season: "Season", sources=np.nan, **kwargs):
         self.season = season
         self._raw_data = season.get_exp_data()
         season.load_background_model()
 
-    def create_dataset(self, scale, angular_error_modifier=None):
+    def create_dataset(
+        self, scale: float, angular_error_modifier=None
+    ) -> tuple[Table, int]:
         """Returns a background scramble
 
         :return: Scrambled data
@@ -725,11 +742,11 @@ class MockUnblindedInjector:
         seed = int(123456)
         np.random.seed(seed)
 
-        simulated_data = self.season.simulate_background()
+        simulated_data, n_excluded = self.season.simulate_background(Table(), None)
         if angular_error_modifier is not None:
             simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
 
-        return simulated_data
+        return simulated_data, n_excluded
 
 
 class TrueUnblindedInjector:
@@ -737,16 +754,18 @@ class TrueUnblindedInjector:
     this case, the create_dataset function simply returns the unblinded dataset.
     """
 
-    def __init__(self, season, sources, **kwargs):
+    def __init__(self, season: "Season", sources: np.ndarray, **kwargs):
         self.season = season
 
-    def create_dataset(self, scale, angular_error_modifier=None):
+    def create_dataset(
+        self, scale: float, angular_error_modifier=None
+    ) -> tuple[Table, int]:
         exp_data = self.season.get_exp_data()
 
         if angular_error_modifier is not None:
             exp_data = angular_error_modifier.pull_correct_static(exp_data)
 
-        return exp_data
+        return exp_data, 0
 
 
 # if __name__ == "__main__":

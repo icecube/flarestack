@@ -4,11 +4,12 @@ import os
 import pickle as Pickle
 import random
 import resource
-from sys import stdout
+from typing import TYPE_CHECKING
 
 import matplotlib as mpl
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+import numexpr
 import numpy as np
 import scipy.optimize
 from matplotlib.colors import ListedColormap, Normalize
@@ -25,7 +26,10 @@ from flarestack.shared import (
     scale_shortener,
 )
 from flarestack.utils.asimov_estimator import estimate_discovery_potential
-from flarestack.utils.catalogue_loader import calculate_source_weight, load_catalogue
+from flarestack.utils.catalogue_loader import calculate_source_weights, load_catalogue
+
+if TYPE_CHECKING:
+    from flarestack.data import Season
 
 logger = logging.getLogger(__name__)
 
@@ -760,36 +764,21 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         self.dump_results(results, scale, seed)
         self.dump_injection_values(scale)
 
-    def make_season_weight(self, params, season):
+    def make_season_weight(self, params, season: "Season"):
         src = self.sources
 
-        weight_scale = calculate_source_weight(src)
-
-        # dist_weight = src["distance_mpc"] ** -2
-        # base_weight = src["base_weight"]
+        source_weights = calculate_source_weights(src)
+        source_weights /= source_weights.sum()
 
         llh = self.get_likelihood(season.season_name)
-        acc = []
 
-        time_weights = []
-        source_weights = []
+        time_weights = np.array(
+            [llh.sig_time_pdf.effective_injection_time(source) for source in src]
+        )
 
-        for source in src:
-            time_weights.append(llh.sig_time_pdf.effective_injection_time(source))
-            acc.append(llh.acceptance(source, params))
-            source_weights.append(calculate_source_weight(source) / weight_scale)
+        acc = llh.acceptance(src, params)
 
-        time_weights = np.array(time_weights)
-        source_weights = np.array(source_weights)
-
-        acc = np.array(acc).T[0]
-
-        w = acc * time_weights
-        w *= source_weights
-
-        w = w[:, np.newaxis]
-
-        return w
+        return numexpr.evaluate("acc * time_weights * source_weights")[:, None]
 
     def make_weight_matrix(self, params):
         # Creates a matrix fixing the fraction of the total signal that
@@ -827,9 +816,12 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         n_all = dict()
 
         for name in self.seasons:
-            dataset = full_dataset[name]
+            dataset, n_excluded = full_dataset[name]
             llh_f = self.get_likelihood(name).create_llh_function(
-                dataset, self.get_angular_error_modifier(name), self.make_season_weight
+                dataset,
+                n_excluded,
+                self.get_angular_error_modifier(name),
+                self.make_season_weight,
             )
             llh_functions[name] = llh_f
             n_all[name] = len(dataset)
@@ -927,10 +919,23 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         # calculate upper bound for scan
         if ("n_s" in param_name) and adjust_bound:
             logger.debug("adjusting bound")
-            best[i] = bound[1]
-            while g(best) > (min_llh + upper_bound_level**2):
-                best[i] *= factor
-            ur = min(bound[1], max(best[i], 0))
+            if bound[1] is None:
+                ur = scipy.optimize.fmin_l_bfgs_b(
+                    lambda x: np.abs(
+                        g([*best[:i], x[0], *best[i + 1 :]])
+                        - (min_llh + upper_bound_level**2)
+                    ),
+                    x0=best[i] / factor,
+                    bounds=[(best[i], None)],
+                    approx_grad=True,
+                    disp=False,
+                    factr=1e12,
+                )[0][0]
+            else:
+                best[i] = bound[1]
+                while g(best) > (min_llh + upper_bound_level**2):
+                    best[i] *= factor
+                ur = min(bound[1], max(best[i], 0))
         else:
             ur = bound[1]
 
@@ -1222,7 +1227,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
                 ns_names, ns_bounds, upper_ranges
             ):
                 xlabel = r"Spectral Index ($\gamma$)"
-                ylabel = "n$_{\mathrm{signal}}$" if ns_name == "n_s" else ns_name
+                ylabel = r"n$_{\mathrm{signal}}$" if ns_name == "n_s" else ns_name
 
                 use_bound = [ns_bound[0], upper_range]
 
@@ -1268,7 +1273,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             for season in self.seasons:
                 # Generate a scrambled dataset, and save it to the datasets
                 # dictionary. Loads the llh for the season.
-                data = full_dataset[season]
+                data, n_excluded = full_dataset[season]
                 llh = self.get_likelihood(season)
 
                 mask = llh.select_spatially_coincident_data(data, [source])
@@ -1355,7 +1360,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
 
     @staticmethod
     def return_parameter_info(mh_dict):
-        params = [[1.0], [(0, 1000.0)], ["n_s"]]
+        params = [[1.0], [(0, None)], ["n_s"]]
 
         params = [
             params[i] + x for i, x in enumerate(LLH.get_parameters(mh_dict["llh_dict"]))
@@ -1427,9 +1432,12 @@ class FitWeightMinimisationHandler(FixedWeightMinimisationHandler):
         n_all = dict()
 
         for name in self.seasons:
-            dataset = full_dataset[name]
+            dataset, n_excluded = full_dataset[name]
             llh_f = self.get_likelihood(name).create_llh_function(
-                dataset, self.get_angular_error_modifier(name), self.make_season_weight
+                dataset,
+                n_excluded,
+                self.get_angular_error_modifier(name),
+                self.make_season_weight,
             )
             llh_functions[name] = llh_f
             n_all[name] = len(dataset)
@@ -1670,7 +1678,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # Generate a scrambled dataset, and save it to the datasets
             # dictionary. Loads the llh for the season.
 
-            data = full_dataset[name]
+            data, n_excluded = full_dataset[name]
+            assert n_excluded == 0, "n_excluded should be 0 for time-dependent llh"
             llh = self.get_likelihood(name)
 
             livetime_calcs[name] = TimePDF.create(time_dict, season.get_time_pdf())
@@ -1714,7 +1723,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     new_entry["Significant Times"] = significant["time"]
 
-                    new_entry["N_all"] = len(data)
+                    new_entry["N_all"] = len(data) + n_excluded
 
                     datasets[source_name][name] = new_entry
 
@@ -1838,7 +1847,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                                 np.greater(data["time"], t_end),
                             )
                         )
-                        for data in full_dataset.values()
+                        for data, n_excluded in full_dataset.values()
                     ]
                 )
 
@@ -1858,7 +1867,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     coincident_data = season_dict["Coincident Data"]
 
-                    data = full_dataset[name]
+                    data, n_excluded = full_dataset[name]
+                    assert (
+                        n_excluded == 0
+                    ), "n_excluded should be 0 for time-dependent llh"
 
                     n_season = np.sum(
                         ~np.logical_or(
