@@ -919,10 +919,23 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
         # calculate upper bound for scan
         if ("n_s" in param_name) and adjust_bound:
             logger.debug("adjusting bound")
-            best[i] = bound[1]
-            while g(best) > (min_llh + upper_bound_level**2):
-                best[i] *= factor
-            ur = min(bound[1], max(best[i], 0))
+            if bound[1] is None:
+                ur = scipy.optimize.fmin_l_bfgs_b(
+                    lambda x: np.abs(
+                        g([*best[:i], x[0], *best[i + 1 :]])
+                        - (min_llh + upper_bound_level**2)
+                    ),
+                    x0=best[i] / factor,
+                    bounds=[(best[i], None)],
+                    approx_grad=True,
+                    disp=False,
+                    factr=1e12,
+                )[0][0]
+            else:
+                best[i] = bound[1]
+                while g(best) > (min_llh + upper_bound_level**2):
+                    best[i] *= factor
+                ur = min(bound[1], max(best[i], 0))
         else:
             ur = bound[1]
 
