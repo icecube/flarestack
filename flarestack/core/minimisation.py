@@ -1260,7 +1260,7 @@ class FixedWeightMinimisationHandler(MinimisationHandler):
             for season in self.seasons:
                 # Generate a scrambled dataset, and save it to the datasets
                 # dictionary. Loads the llh for the season.
-                data = full_dataset[season]
+                data, n_excluded = full_dataset[season]
                 llh = self.get_likelihood(season)
 
                 mask = llh.select_spatially_coincident_data(data, [source])
@@ -1665,7 +1665,8 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
             # Generate a scrambled dataset, and save it to the datasets
             # dictionary. Loads the llh for the season.
 
-            data = full_dataset[name]
+            data, n_excluded = full_dataset[name]
+            assert n_excluded == 0, "n_excluded should be 0 for time-dependent llh"
             llh = self.get_likelihood(name)
 
             livetime_calcs[name] = TimePDF.create(time_dict, season.get_time_pdf())
@@ -1709,7 +1710,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     new_entry["Significant Times"] = significant["time"]
 
-                    new_entry["N_all"] = len(data)
+                    new_entry["N_all"] = len(data) + n_excluded
 
                     datasets[source_name][name] = new_entry
 
@@ -1833,7 +1834,7 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
                                 np.greater(data["time"], t_end),
                             )
                         )
-                        for data in full_dataset.values()
+                        for data, n_excluded in full_dataset.values()
                     ]
                 )
 
@@ -1853,7 +1854,10 @@ class FlareMinimisationHandler(FixedWeightMinimisationHandler):
 
                     coincident_data = season_dict["Coincident Data"]
 
-                    data = full_dataset[name]
+                    data, n_excluded = full_dataset[name]
+                    assert (
+                        n_excluded == 0
+                    ), "n_excluded should be 0 for time-dependent llh"
 
                     n_season = np.sum(
                         ~np.logical_or(

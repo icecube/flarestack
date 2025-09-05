@@ -1722,8 +1722,10 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
             self, data, flare_veto, n_all, src, n_season, pull_corrector
         ):
             coincident_data = data[~flare_veto]
-            kwargs = self.create_kwargs(coincident_data, pull_corrector)
-            kwargs["n_all"] = n_all
+            kwargs = {
+                **self.create_kwargs(coincident_data, 0, pull_corrector),
+                "n_all": n_all,
+            }
             weights = np.array([1.0])
 
             def test_statistic(params):
