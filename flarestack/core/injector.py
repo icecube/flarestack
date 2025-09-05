@@ -727,12 +727,14 @@ class MockUnblindedInjector:
     one background scramble.
     """
 
-    def __init__(self, season, sources=np.nan, **kwargs):
+    def __init__(self, season: "Season", sources=np.nan, **kwargs):
         self.season = season
         self._raw_data = season.get_exp_data()
         season.load_background_model()
 
-    def create_dataset(self, scale, angular_error_modifier=None):
+    def create_dataset(
+        self, scale: float, angular_error_modifier=None
+    ) -> tuple[Table, int]:
         """Returns a background scramble
 
         :return: Scrambled data
@@ -740,11 +742,11 @@ class MockUnblindedInjector:
         seed = int(123456)
         np.random.seed(seed)
 
-        simulated_data = self.season.simulate_background()
+        simulated_data, n_excluded = self.season.simulate_background(Table(), None)
         if angular_error_modifier is not None:
             simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
 
-        return simulated_data
+        return simulated_data, n_excluded
 
 
 class TrueUnblindedInjector:
@@ -752,16 +754,18 @@ class TrueUnblindedInjector:
     this case, the create_dataset function simply returns the unblinded dataset.
     """
 
-    def __init__(self, season, sources, **kwargs):
+    def __init__(self, season: "Season", sources: np.ndarray, **kwargs):
         self.season = season
 
-    def create_dataset(self, scale, angular_error_modifier=None):
+    def create_dataset(
+        self, scale: float, angular_error_modifier=None
+    ) -> tuple[Table, int]:
         exp_data = self.season.get_exp_data()
 
         if angular_error_modifier is not None:
             exp_data = angular_error_modifier.pull_correct_static(exp_data)
 
-        return exp_data
+        return exp_data, 0
 
 
 # if __name__ == "__main__":
