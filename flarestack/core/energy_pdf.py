@@ -12,7 +12,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-gamma_range = [1.0, 4.0]
+gamma_range = [0.5, 4.0]
 
 default_emin = 100
 default_emax = 10**7

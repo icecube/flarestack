@@ -70,7 +70,7 @@ def get_gamma_support_points(precision=flarestack_gamma_precision):
     Can also provide default of llh codes by name, either 'skylab' or 'flarestack'.
     :return: Gamma support points
     """
-    gamma_points = np.arange(0.7, 4.3, get_gamma_precision(precision=precision))
+    gamma_points = np.arange(0.2, 4.3, get_gamma_precision(precision=precision))
     return set([_around(i, precision=precision) for i in gamma_points])
 
 
