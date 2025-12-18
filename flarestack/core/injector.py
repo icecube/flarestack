@@ -189,9 +189,14 @@ class BaseInjector:
         :return: Simulated dataset
         """
         if self.sob_name != "no_difffuse":
-            bkg_events, n_excluded = self.season.simulate_bkg_with_diffuse(
-                self.sources, self.spatial_box_width, self.sob.bkg_weights
-            )
+            try:
+                bkg_events, n_excluded = self.season.simulate_bkg_with_diffuse(
+                    self.sources, self.spatial_box_width, self.sob.bkg_weights
+                )
+            except NotImplementedError:
+                bkg_events, n_excluded = self.season.simulate_background(
+                    self.sources, self.spatial_box_width
+                )
         else:
             bkg_events, n_excluded = self.season.simulate_background(
                 self.sources, self.spatial_box_width
