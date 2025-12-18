@@ -16,17 +16,14 @@ from flarestack.shared import (
     get_base_sob_plot_dir,
 )
 
-environment_smoothing_key = "FLARESATCK_SMOOTHING_ORDER"
-environment_precision_key = "FLARESTACK_PRECISION"
 logger = logging.getLogger(__name__)
 energy_pdf = PowerLaw()
 
 
 def get_gamma_precision(precision=flarestack_gamma_precision):
     """Returns the precision in gamma that is used.
-    Returns default value if the environment_precision_key is not present in th environ dictionary
 
-    :param precision: Specify which precision to use. Default to the standard precision.
+    :param precision: Specify which precision to use. Default is 0.025 for 'flarestack'.
     Can also provide default of llh codes by name, either 'skylab' or 'flarestack'.
     :return: Precision as a float
     """
@@ -65,102 +62,13 @@ def _around(value, precision=flarestack_gamma_precision):
 def get_gamma_support_points(precision=flarestack_gamma_precision):
     """Return the gamma support points based on the gamma precision
 
-    :param precision: Specify which precision to use. Default to the standard precision.
+    :param precision: Specify which precision to use.
     Can also provide default of llh codes by name, either 'skylab' or 'flarestack'.
+    Default is 0.025 for 'flarestack'.
     :return: Gamma support points
     """
     gamma_points = np.arange(0.7, 4.3, get_gamma_precision(precision=precision))
     return set([_around(i, precision=precision) for i in gamma_points])
-
-
-# ==============================================================================
-# BACKGROUND SPATIAL PDF
-# ==============================================================================
-
-
-def create_bkg_spatial_spline(exp, sin_dec_bins):
-    """Creates the spatial PDF for background.
-    Generates a histogram for the exp. distribution in sin declination.
-    Fits a spline function to the distribution, giving a spatial PDF.
-    Returns this spatial PDF.
-
-    :param exp: Experimental data (background)
-    :param sin_dec_bins: Bins of Sin(Declination) to be used
-    :return: Background spline function
-    """
-    sin_dec_range = (np.min(sin_dec_bins), np.max(sin_dec_bins))
-    hist, bins = np.histogram(
-        exp["sinDec"],
-        density=True,
-        bins=sin_dec_bins,
-        range=sin_dec_range,
-        weights=exp["weight"],
-    )
-
-    bins = np.concatenate([bins[:1], bins, bins[-1:]])
-    hist = np.concatenate([hist[:1], hist, hist[-1:]])
-
-    bkg_spline = scipy.interpolate.InterpolatedUnivariateSpline(
-        (bins[1:] + bins[:-1]) / 2.0, np.log(hist), k=2
-    )
-    return bkg_spline
-
-
-def make_background_spline(season):
-    bkg_path = bkg_spline_path(season)
-    bkg = season.get_background_model()
-    sin_dec_bins = season.sin_dec_bins
-
-    bkg_spline = create_bkg_spatial_spline(bkg, sin_dec_bins)
-
-    logger.info(f"Saving bakcground spatial spline to {bkg_path}")
-    try:
-        os.makedirs(os.path.dirname(bkg_path))
-    except OSError:
-        pass
-
-    with open(bkg_path, "wb") as f:
-        Pickle.dump(bkg_spline, f)
-
-    x_range = np.linspace(sin_dec_bins[0], sin_dec_bins[-1], 101)
-    plt.figure()
-    plt.plot(x_range, np.exp(bkg_spline(x_range)))
-    plt.ylabel(r"$P_{bkg}$ (spatial)")
-    plt.xlabel(r"$\sin(\delta)$")
-    savepath = get_base_sob_plot_dir(season)
-
-    try:
-        os.makedirs(os.path.dirname(savepath))
-    except OSError:
-        pass
-
-    plt.savefig(savepath + "bkg_spatial.pdf")
-    plt.close()
-
-
-def load_bkg_spatial_spline(season):
-    path = bkg_spline_path(season)
-
-    logger.debug(f"Loading background spatial spline from {path}")
-
-    try:
-        with open(path, "rb") as f:
-            res = Pickle.load(f)
-    except FileNotFoundError as err:
-        logger.info(f"No cached spline found at {path}. Creating this file instead.")
-        logger.info(f"Cause: {err}")
-        make_background_spline(season)
-        with open(path, "rb") as f:
-            res = Pickle.load(f)
-
-    except ModuleNotFoundError as err:
-        logger.error(
-            "A spline was found but it seems incompatible with this installation."
-        )
-        logger.error(f"Cause: {err}")
-        raise
-
-    return res
 
 
 class SoB_splines:
@@ -176,13 +84,21 @@ class SoB_splines:
 
     subclasses: dict[str, type["SoB_splines"]] = {}
 
-    def __init__(self, season, **kwargs) -> None:
+    def __init__(self, season, SoB_dict) -> None:
         self.season = season
-        self.spline_name = kwargs.get("bkg_model_name", "no_difffuse")
-        self.spline_kwargs = {
-            "gamma_precision": kwargs.get("gamma_precision", "flarestack"),
-            "smoothing_order": kwargs.get("smoothing_order", "flarestack"),
-        }
+        self.sob_dict = SoB_dict
+        self.spline_name = SoB_dict["bkg_model_name"]
+
+        self.smoothing_order = SoB_dict["smoothing_order"]
+        if isinstance(self.smoothing_order, str):
+            if self.smoothing_order in default_smoothing_order.keys():
+                self.smoothing_order = default_smoothing_order[self.smoothing_order]
+            else:
+                raise ValueError(
+                    f"Smoothing order for {self.smoothing_order} not known!"
+                )
+
+        self.gamma_precision = SoB_dict["gamma_precision"]
 
     @classmethod
     def register_subclass(cls, spline_name):
@@ -197,13 +113,109 @@ class SoB_splines:
         return decorator
 
     @classmethod
-    def create(cls, season, **kwargs) -> "SoB_splines":
-        spline_name = kwargs.get("bkg_model_name", "no_difffuse")
+    def create(cls, season, SoB_dict) -> "SoB_splines":
+        try:
+            spline_name = SoB_dict["bkg_model_name"]
+        except KeyError:
+            spline_name = "no_difffuse"
+            logger.info("No 'bkg_model_name' in sob dict, default to atmospheric-only")
 
         if spline_name not in cls.subclasses:
             raise ValueError("Bad SoB spline name {}".format(spline_name))
 
-        return cls.subclasses[spline_name](season, **kwargs)
+        return cls.subclasses[spline_name](season, SoB_dict)
+
+    def bkg_weights(self, exp: Table) -> np.ndarray:
+        raise NotImplementedError
+
+    # ==============================================================================
+    # BACKGROUND SPATIAL PDF
+    # ==============================================================================
+
+    def create_bkg_spatial_spline(self, exp, sin_dec_bins):
+        """Creates the spatial PDF for background.
+        Generates a histogram for the exp. distribution in sin declination.
+        Fits a spline function to the distribution, giving a spatial PDF.
+        Returns this spatial PDF.
+
+        :param exp: Experimental data (background)
+        :param sin_dec_bins: Bins of Sin(Declination) to be used
+        :return: Background spline function
+        """
+        sin_dec_range = (np.min(sin_dec_bins), np.max(sin_dec_bins))
+        hist, bins = np.histogram(
+            exp["sinDec"],
+            density=True,
+            bins=sin_dec_bins,
+            range=sin_dec_range,
+            weights=self.bkg_weights(exp),
+        )
+
+        bins = np.concatenate([bins[:1], bins, bins[-1:]])
+        hist = np.concatenate([hist[:1], hist, hist[-1:]])
+
+        bkg_spline = scipy.interpolate.InterpolatedUnivariateSpline(
+            (bins[1:] + bins[:-1]) / 2.0, np.log(hist), k=2
+        )
+        return bkg_spline
+
+    def make_background_spline(self, season):
+        bkg_path = bkg_spline_path(season, self.spline_name)
+        bkg = season.get_background_model()
+        sin_dec_bins = season.sin_dec_bins
+
+        bkg_spline = self.create_bkg_spatial_spline(bkg, sin_dec_bins)
+
+        logger.info(f"Saving bakcground spatial spline to {bkg_path}")
+        try:
+            os.makedirs(os.path.dirname(bkg_path))
+        except OSError:
+            pass
+
+        with open(bkg_path, "wb") as f:
+            Pickle.dump(bkg_spline, f)
+
+        x_range = np.linspace(sin_dec_bins[0], sin_dec_bins[-1], 101)
+        plt.figure()
+        plt.plot(x_range, np.exp(bkg_spline(x_range)))
+        plt.ylabel(r"$P_{bkg}$ (spatial)")
+        plt.xlabel(r"$\sin(\delta)$")
+        savepath = get_base_sob_plot_dir(season)
+
+        try:
+            os.makedirs(os.path.dirname(savepath))
+        except OSError:
+            pass
+
+        sfx = f"{self.spline_name}_" if self.spline_name != "no_difffuse" else ""
+        plt.savefig(savepath + sfx + "bkg_spatial.pdf")
+        plt.close()
+
+    def load_bkg_spatial_spline(self, season):
+        path = bkg_spline_path(season, self.spline_name)
+
+        logger.debug(f"Loading background spatial spline from {path}")
+
+        try:
+            with open(path, "rb") as f:
+                res = Pickle.load(f)
+        except FileNotFoundError as err:
+            logger.info(
+                f"No cached spline found at {path}. Creating this file instead."
+            )
+            logger.info(f"Cause: {err}")
+            self.make_background_spline(season)
+            with open(path, "rb") as f:
+                res = Pickle.load(f)
+
+        except ModuleNotFoundError as err:
+            logger.error(
+                "A spline was found but it seems incompatible with this installation."
+            )
+            logger.error(f"Cause: {err}")
+            raise
+
+        return res
 
     # ==============================================================================
     # ENERGY PDF SPLINES
@@ -245,9 +257,6 @@ class SoB_splines:
             log_e_bins,
             weights=weight_function(mc),
         )
-
-    def bkg_weights(self, exp: Table) -> np.ndarray:
-        return np.ones_like(exp["sinDec"])
 
     def create_bkg_2d_hist(self, exp, sin_dec_bins, log_e_bins):
         """Creates a background 2D logE/sinDec weighted histogram.
@@ -313,25 +322,12 @@ class SoB_splines:
         return ratio
 
     def make_2d_spline_from_hist(
-        self, ratio, sin_dec_bins, log_e_bins, smoothing_order
+        self, ratio, sin_dec_bins, log_e_bins, smoothing_order: int
     ):
+
         # Sets bin centers, and order of spline (for x and y)
         sin_bin_center = (sin_dec_bins[:-1] + sin_dec_bins[1:]) / 2.0
         log_e_bin_center = (log_e_bins[:-1] + log_e_bins[1:]) / 2.0
-
-        # the order of the splines defaults to 2
-        # default_order = 2
-        if not isinstance(smoothing_order, int):
-            smoothing_order = default_smoothing_order[smoothing_order]
-
-        # if the environment_smoothing_key is present in the environ dictionary use the corresponding value instead
-        # _order = os.environ.get(environment_smoothing_key, default_order)
-        # order = None if _order == 'None' else int(_order)
-
-        # when setting the emviron value to 'None', order will be None and no splines will be produced
-        if isinstance(smoothing_order, type(None)):
-            logger.warning(f"{environment_smoothing_key} is None! Not making splines!")
-            return
 
         # Fits a 2D spline function to the log of ratio array
         if smoothing_order == 0:
@@ -374,7 +370,7 @@ class SoB_splines:
         return spline
 
     def create_2d_ratio_spline(
-        self, exp, mc, sin_dec_bins, log_e_bins, weight_f, smoothing_order
+        self, exp, mc, sin_dec_bins, log_e_bins, weight_f, smoothing_order: int
     ):
         """Creates 2D histograms for both data and MC, in which the seasons
         are binned by Sin(Declination) and Log(Energy/GeV). Each histogram is
@@ -412,7 +408,7 @@ class SoB_splines:
         return spline
 
     def create_gamma_2d_ratio_spline(
-        self, exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order
+        self, exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order: int
     ):
         """Creates a 2D gamma ratio spline by creating a function that weights MC
         assuming a power law of spectral index gamma.
@@ -431,7 +427,7 @@ class SoB_splines:
             exp, mc, sin_dec_bins, log_e_bins, weight_function, smoothing_order
         )
 
-    def create_2d_splines(self, exp, mc, sin_dec_bins, log_e_bins, **spline_kwargs):
+    def create_2d_splines(self, exp, mc, sin_dec_bins, log_e_bins):
         """If gamma will not be fit, then calculates the Log(Signal/Background)
         2D PDF for the fixed value self.default_gamma. Fits a spline to each
         histogram, and saves the spline in a dictionary.
@@ -448,13 +444,11 @@ class SoB_splines:
         :return: Dictionary of 2D Log(Signal/Background) splines
         """
         splines = dict()
-        gamma_precision = spline_kwargs.get("gamma_precision", "flarestack")
-        smoothing_order = spline_kwargs.get("smoothing_order", "flarestack")
-        gamma_support_points = get_gamma_support_points(precision=gamma_precision)
 
+        gamma_support_points = get_gamma_support_points(self.gamma_precision)
         for gamma in gamma_support_points:
             splines[gamma] = self.create_gamma_2d_ratio_spline(
-                exp, mc, sin_dec_bins, log_e_bins, gamma, smoothing_order
+                exp, mc, sin_dec_bins, log_e_bins, gamma, self.smoothing_order
             )
 
         if not np.any(list(splines.values())):
@@ -500,7 +494,7 @@ class SoB_splines:
         plt.savefig(savepath)
         plt.close()
 
-    def make_individual_spline_set(self, season, SoB_path, **spline_kwargs):
+    def make_individual_spline_set(self, season, SoB_path):
         """Create the SoB splines dictionary for given season,
         and plot the normalized 2D histograms for background
         and signal, as well as the log(S/B) 2D hist.
@@ -509,7 +503,6 @@ class SoB_splines:
         """
         try:
             logger.info(f"Making SoB splines for {season.season_name}")
-            # path = SoB_spline_path(season)
 
             exp = season.get_background_model()
             mc = season.get_pseudo_mc()
@@ -518,9 +511,7 @@ class SoB_splines:
             log_e_bins = season.log_e_bins
 
             ##### MAKE SPLINES #####
-            splines = self.create_2d_splines(
-                exp, mc, sin_dec_bins, log_e_bins, **spline_kwargs
-            )
+            splines = self.create_2d_splines(exp, mc, sin_dec_bins, log_e_bins)
 
             logger.info(f"Saving SoB splines to {SoB_path}.")
 
@@ -535,14 +526,15 @@ class SoB_splines:
             if isinstance(splines, type(None)):
                 return
 
-                ##### GENERATE PLOTS #####
+            ##### GENERATE PLOTS #####
             base_plot_path = get_base_sob_plot_dir(season)
+            sfx = f"{self.spline_name}_" if self.spline_name != "no_difffuse" else ""
 
             # plot 2D background hist
             bkg_hist = self.create_bkg_2d_hist(exp, sin_dec_bins, log_e_bins)
             self.make_plot(
                 bkg_hist,
-                savepath=base_plot_path + f"{self.spline_name}_bkg.pdf",
+                savepath=base_plot_path + sfx + "bkg.pdf",
                 x_bins=sin_dec_bins,
                 y_bins=log_e_bins,
             )
@@ -554,9 +546,8 @@ class SoB_splines:
                     + "gamma="
                     + str(gamma)
                     + "/"
-                    + f'precision{spline_kwargs.get("gamma_precision", "flarestack")}_'
-                    f'smoothing{spline_kwargs.get("smoothing_order", "flarestack")}'
-                    + "/"
+                    + f"precision{get_gamma_precision(self.gamma_precision)}_"
+                    f"smoothing{self.smoothing_order}" + "/"
                 )
 
                 try:
@@ -572,7 +563,7 @@ class SoB_splines:
                 )
                 self.make_plot(
                     mc_hist,
-                    plot_path + f"{self.spline_name}_sig.pdf",
+                    plot_path + sfx + "sig.pdf",
                     sin_dec_bins,
                     log_e_bins,
                 )
@@ -581,7 +572,7 @@ class SoB_splines:
                     self.create_2d_ratio_hist(
                         exp, mc, sin_dec_bins, log_e_bins, weight_function
                     ),
-                    plot_path + f"{self.spline_name}_SoB.pdf",
+                    plot_path + sfx + "SoB.pdf",
                     sin_dec_bins,
                     log_e_bins,
                     normed=False,
@@ -613,7 +604,7 @@ class SoB_splines:
                 plt.colorbar(cbar, label="Log(Signal/Background)")
                 plt.xlabel(r"$\sin(\delta)$")
                 plt.ylabel("log(Energy)")
-                plt.savefig(plot_path + f"{self.spline_name}_spline.pdf")
+                plt.savefig(plot_path + sfx + "spline.pdf")
                 plt.close()
 
             del mc
@@ -629,17 +620,17 @@ class SoB_splines:
         logger.info(
             "Splines will be made to calculate the Signal/Background ratio of "
             + "the MC to data. The MC will be weighted with a power law for the signal, "
-            + f"for each gamma in: {list(get_gamma_support_points(**self.spline_kwargs))}. "
+            + f"for each gamma in: {list(get_gamma_support_points(self.gamma_precision))}. "
             + "For the background, the MC is weighted according to the model assumption"
         )
 
         for season in seasons.values():
-            SoB_path = SoB_spline_path(season, **self.spline_kwargs)
-            self.make_individual_spline_set(season, SoB_path, **self.spline_kwargs)
-            make_background_spline(season)
+            SoB_path = SoB_spline_path(season, **self.sob_dict)
+            self.make_individual_spline_set(season, SoB_path)
+            self.make_background_spline(season)
 
     def load_spline(self):
-        path = SoB_spline_path(self.season, **self.spline_kwargs)
+        path = SoB_spline_path(self.season, **self.sob_dict)
 
         logger.debug(f"Loading SoB spline from {path}")
 
@@ -651,7 +642,7 @@ class SoB_splines:
                 f"No cached spline found at {path}. Creating this file instead."
             )
             logger.info(f"Cause: {err}")
-            self.make_individual_spline_set(self.season, path, **self.spline_kwargs)
+            self.make_individual_spline_set(self.season, path)
             with open(path, "rb") as f:
                 res = Pickle.load(f)
 
@@ -675,7 +666,7 @@ class NoDiffuseSpline(SoB_splines):
     """
 
     def bkg_weights(self, exp: Table) -> np.ndarray:
-        logger.info("Atmospheric-only background used")
+        logger.debug("Atmospheric-only background weights")
         return np.asarray(exp["weight"])
 
 
@@ -683,8 +674,8 @@ class NoDiffuseSpline(SoB_splines):
 class SPLDiffuseSpline(SoB_splines):
     """Single powerlaw diffuse + atmospheric background.
     Provided the (per-flavour) best-fit spectral parameters
-    phi & gamma, the total diffuse flux following SPL is
-    Phi_total = 3 * phi * (E/100 TeV)**-gamma * 10**-18 /GeV cm2 s sr
+    phi & gamma, the per-flavour diffuse flux following SPL is
+    Phi_nu_antinu = phi * (E/100 TeV)**-gamma * 1e-18 /GeV cm2 s sr
     The flux is multiplied with the livetime
     to get the fluence and then with "ow"
     in order to get the weights that go into
@@ -698,40 +689,39 @@ class SPLDiffuseSpline(SoB_splines):
     w/ best-fit phi_0 = 1.68 & gamma = 2.58
     """
 
-    def __init__(self, season, **kwargs) -> None:
-        super().__init__(season, **kwargs)
+    def __init__(self, season, SoB_dict) -> None:
+        super().__init__(season, SoB_dict)
 
         time_pdf = self.season.get_time_pdf()
         self.livetime = time_pdf.get_livetime() * 3600 * 24
 
-        self.flux_kwargs = kwargs
-
     def get_diffuse_flux(self, exp: Table) -> np.ndarray:
-        phi = self.flux_kwargs.get("spl_phi0", 1.68)
-        gamma = self.flux_kwargs.get("spl_gamma", 2.58)
+        phi = self.sob_dict.get("phi0", 1.68)
+        gamma = self.sob_dict.get("spl_gamma", 2.58)
         logger.info(
             f"SPL diffuse flux used with best-fit phi = {phi} & gamma = {gamma}"
         )
-        return 3e-18 * phi * (np.asarray(exp["trueE"]) / 1e5) ** -gamma  # /GeV cm2 s sr
+        return 1e-18 * phi * (np.asarray(exp["trueE"]) / 1e5) ** -gamma  # /GeV cm2 s sr
 
     def bkg_weights(self, exp: Table) -> np.ndarray:
+        logger.debug("Background weights w/ SPL diffuse flux")
         flux = self.get_diffuse_flux(exp)
         fluence = flux * self.livetime
-        diff_weights = fluence * exp["ow"]
-
-        return np.asarray(diff_weights + exp["weight"])
+        diff_weights = fluence * np.asarray(exp["ow"])
+        return np.array(diff_weights + exp["weight"])
 
 
 @SoB_splines.register_subclass("bpl_difffuse")
 class BPLDiffuseSpline(SPLDiffuseSpline):
     """Broken powerlaw diffuse + atmospheric background.
     Provided the (per-flavour) best-fit spectral parameters
-    phi, gamma1, gamma2, and E_break the total diffuse flux
-    following a BPL is
-    Phi_total = 3 * C * phi * (E_break/100 TeV)**-gamma1 * (E/E_break)**-gamma1
-    for E < E_break & E_break > 100 TeV),
-    Phi_total = 3 * C * phi * (E_break/100 TeV)**-gamma2 * (E/E_break)**-gamma2
-    for E > E_break & E_break <= 100 TeV, where C = 10**-18 /GeV cm2 s sr.
+    phi, gamma1, gamma2, and E_break the
+    per-flavour diffuse flux following a BPL is
+    Phi_nu_antinu = C * phi * (E_break/100 TeV)**-gamma1 * (E/E_break)**-gamma1
+    for E < E_break & E_break > 100 TeV, and
+    Phi_nu_antinu = C * phi * (E_break/100 TeV)**-gamma2 * (E/E_break)**-gamma2
+    for E >= E_break & E_break <= 100 TeV,
+    where C = 10**-18 /GeV cm2 s sr.
     The flux is multiplied with the livetime
     to get the fluence and then with "ow"
     in order to get the weights that go into
@@ -746,29 +736,53 @@ class BPLDiffuseSpline(SPLDiffuseSpline):
     w/ best-fit phi_0 = 2.28, gamma1 = 1.72, gamma2 = 2.84, E_break = 33.11 TeV
     """
 
-    def __init__(self, season, **kwargs) -> None:
-        super().__init__(season, **kwargs)
+    def __init__(self, season, SoB_dict) -> None:
+        super().__init__(season, SoB_dict)
 
-    def get_diffuse_flux(self, exp: Table) -> np.ndarray:
-        phi0 = self.flux_kwargs.get("bpl_phi0", 2.28)
-        gamma1 = self.flux_kwargs.get("bpl_gamma1", 1.72)
-        gamma2 = self.flux_kwargs.get("bpl_gamma2", 2.84)
-        log_Ebreak = self.flux_kwargs.get("bpl_logEbreak", 4.52)  # log(E_break/GeV)
-        logger.debug(
-            f"BPL diffuse flux used with best-fit phi = {phi}, gamma1 = {gamma1}, "
+    def get_diffuse_flux(
+        self, exp: Table
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        phi0 = self.sob_dict.get("phi0", 2.28)
+        gamma1 = self.sob_dict.get("gamma1", 1.72)
+        gamma2 = self.sob_dict.get("gamma2", 2.84)
+        log_Ebreak = self.sob_dict.get("logEbreak", 4.52)  # log(E_break/GeV)
+        logger.info(
+            f"BPL diffuse flux used with best-fit phi = {phi0}, gamma1 = {gamma1}, "
             + f"gamma2 = {gamma2}, and E_break = {10**log_Ebreak/1e3} TeV"
         )
         E_break = 10**log_Ebreak  # in GeV
         if E_break <= 1e5:
-            phi = 3e-18 * phi0 * (E_break / 1e5) ** -gamma2
+            phi = 1e-18 * phi0 * (E_break / 1e5) ** -gamma2
         else:
-            phi = 3e-18 * phi0 * (E_break / 1e5) ** -gamma1
-        if exp["trueE"] < E_break:
-            return (
-                phi * (np.asarray(exp["trueE"]) / E_break) ** -gamma1
-            )  # /GeV cm2 s sr
-        else:
-            return phi * (np.asarray(exp["trueE"]) / E_break) ** -gamma2
+            phi = 1e-18 * phi0 * (E_break / 1e5) ** -gamma1
+        mask1 = np.nonzero(exp["trueE"] < E_break)
+        mask2 = np.nonzero(exp["trueE"] >= E_break)
+        phi1 = (
+            phi * (np.asarray(exp[mask1]["trueE"]) / E_break) ** -gamma1
+        )  # /GeV cm2 s sr
+        phi2 = (
+            phi * (np.asarray(exp[mask2]["trueE"]) / E_break) ** -gamma2
+        )  # /GeV cm2 s sr
+        return phi1, mask1, phi2, mask2
+
+    def bkg_weights(self, exp: Table) -> np.ndarray:
+        logger.debug("Background weights w/ BPL diffuse flux")
+        w = np.empty(len(exp), dtype=float)
+        flux1, mask1, flux2, mask2 = self.get_diffuse_flux(exp)
+
+        # get diffuse + atm weights when E < E_break
+        fluence1 = flux1 * self.livetime
+        bpl1_w = fluence1 * np.asarray(exp[mask1]["ow"])
+        w1 = np.array(bpl1_w + exp[mask1]["weight"])
+
+        # get diffuse + atm weights when E >= E_break
+        fluence2 = flux2 * self.livetime
+        bpl2_w = fluence2 * np.asarray(exp[mask2]["ow"])
+        w2 = np.array(bpl2_w + exp[mask2]["weight"])
+
+        w[mask1] = w1
+        w[mask2] = w2
+        return w
 
 
 # def delete_old_splines():
