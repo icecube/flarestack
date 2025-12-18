@@ -13,7 +13,7 @@ from scipy.stats import norm, rayleigh
 from flarestack.core.astro import angular_distance, fast_angular_distance
 from flarestack.core.stats import king
 from flarestack.shared import bkg_spline_path
-from flarestack.utils.make_SoB_splines import load_bkg_spatial_spline
+from flarestack.utils.make_SoB_splines import SoB_splines
 
 try:
     from photospline import SplineTable
@@ -28,9 +28,9 @@ class SpatialPDF:
     spatial PDF objects.
     """
 
-    def __init__(self, spatial_pdf_dict, season):
+    def __init__(self, spatial_pdf_dict, season, SoB: Optional[SoB_splines]):
         self.signal = SignalSpatialPDF.create(spatial_pdf_dict)
-        self.background = BackgroundSpatialPDF.create(spatial_pdf_dict, season)
+        self.background = BackgroundSpatialPDF.create(spatial_pdf_dict, season, SoB)
 
         self.simulate_distribution = self.signal.simulate_distribution
         self.signal_spatial = self.signal.signal_spatial
@@ -560,7 +560,7 @@ class NorthernTracksKing(NorthernTracksKingBase):
 class BackgroundSpatialPDF:
     subclasses: "dict[str, type[BackgroundSpatialPDF]]" = {}
 
-    def __init__(self, spatial_pdf_dict, season):
+    def __init__(self, spatial_pdf_dict, season, SoB: Optional[SoB_splines]):
         pass
 
     @classmethod
@@ -576,7 +576,9 @@ class BackgroundSpatialPDF:
         return decorator
 
     @classmethod
-    def create(cls, s_pdf_dict, season) -> "BackgroundSpatialPDF":
+    def create(
+        cls, s_pdf_dict, season, SoB: Optional[SoB_splines]
+    ) -> "BackgroundSpatialPDF":
         try:
             s_pdf_name = s_pdf_dict["bkg_spatial_pdf"]
         except KeyError:
@@ -588,7 +590,7 @@ class BackgroundSpatialPDF:
                 "Available names are {1}".format(s_pdf_name, cls.subclasses)
             )
 
-        return cls.subclasses[s_pdf_name](s_pdf_dict, season)
+        return cls.subclasses[s_pdf_name](s_pdf_dict, season, SoB)
 
     def background_spatial(self, events):
         return np.ones(len(events))
@@ -614,7 +616,7 @@ class UniformSolidAngle(BackgroundSpatialPDF):
     """
 
     def __init__(self, spatial_pdf_dict, season):
-        BackgroundSpatialPDF.__init__(self, spatial_pdf_dict, season)
+        BackgroundSpatialPDF.__init__(self, spatial_pdf_dict, season, None)
 
         try:
             self.solid_angle = spatial_pdf_dict["background_solid_angle"]
@@ -644,18 +646,22 @@ class ZenithSpline(BackgroundSpatialPDF):
     spline is used to parameterise this distribution.
     """
 
-    def __init__(self, spatial_pdf_dict, season):
-        BackgroundSpatialPDF.__init__(self, spatial_pdf_dict, season)
-        self.bkg_f = self.create_background_function(season)
+    def __init__(self, spatial_pdf_dict, season, SoB):
+        BackgroundSpatialPDF.__init__(self, spatial_pdf_dict, season, SoB)
+        if SoB is None:
+            raise TypeError(
+                "For 'zenith_spline' background spatial pdf you need the SoB"
+            )
+
+        self.bkg_f = self.create_background_function(season, SoB)
 
     @staticmethod
-    def create_background_function(season):
+    def create_background_function(season, SoB):
         # Checks if background spatial spline has been created
+        if not os.path.isfile(bkg_spline_path(season, SoB.spline_name)):
+            season.make_background_spatial(SoB)
 
-        if not os.path.isfile(bkg_spline_path(season)):
-            season.make_background_spatial()
-
-        return load_bkg_spatial_spline(season)
+        return SoB.load_bkg_spatial_spline(season)
 
     def background_spatial(self, events):
         space_term = (1.0 / (2.0 * np.pi)) * np.exp(self.bkg_f(events["sinDec"]))
