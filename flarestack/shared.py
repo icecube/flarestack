@@ -173,7 +173,7 @@ def pull_pickle(pull_dict):
     return pull_dir + str(unique_key) + ".pkl"
 
 
-def llh_energy_hash_pickles(llh_dict, season):
+def llh_energy_hash_pickles(llh_dict, season, bkg_model_name="no_difffuse"):
     hash_dict = dict(llh_dict["llh_energy_pdf"])
     hash_dict["llh_name"] = llh_dict["llh_name"]
 
@@ -187,7 +187,7 @@ def llh_energy_hash_pickles(llh_dict, season):
         + season.sample_name
         + "/"
         + season.season_name
-        + smoothing_precision_string(smoothing_order, precision)
+        + smoothing_precision_string(smoothing_order, precision, bkg_model_name)
         + ".pkl"
     )
     SoB_path = SoB_spline_dir + season_path
@@ -275,7 +275,9 @@ def get_base_sob_plot_dir(season):
     )
 
 
-def smoothing_precision_string(smoothing_order="flarestack", gamma_precision="skylab"):
+def smoothing_precision_string(
+    smoothing_order="flarestack", gamma_precision="skylab", bkg_model_name="no_difffuse"
+):
     if isinstance(smoothing_order, str):
         if smoothing_order in default_smoothing_order.keys():
             smoothing_order = default_smoothing_order[smoothing_order]
@@ -292,6 +294,8 @@ def smoothing_precision_string(smoothing_order="flarestack", gamma_precision="sk
         f"smoothing order is {smoothing_order}, gamma precision is {gamma_precision}"
     )
     s = ""
+    if bkg_model_name != "no_difffuse":
+        s += f"_{bkg_model_name}"
     if smoothing_order != default_smoothing_order["flarestack"]:
         s += f"_smoothing{smoothing_order}"
     if gamma_precision != default_gamma_precision["flarestack"]:
@@ -314,8 +318,13 @@ def SoB_spline_path(season, *args, **kwargs):
     )
 
 
-def bkg_spline_path(season):
-    return bkg_spline_dir + season.sample_name + "/" + season.season_name + ".pkl"
+def bkg_spline_path(season, bkg_model_name="no_difffuse"):
+    path = bkg_spline_dir + season.sample_name + "/" + season.season_name
+    if bkg_model_name != "no_difffuse":
+        path += f"_{bkg_model_name}.pkl"
+    else:
+        path += ".pkl"
+    return path
 
 
 def energy_proxy_path(season):
