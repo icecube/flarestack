@@ -222,10 +222,6 @@ class MinimisationHandler(object):
                 "gamma" in self.llh_dict["llh_energy_pdf"].keys()
             ), "Running trials with fixed gamma but no gamma passed in the llh energy pdf"
             self.llh_gamma = self.llh_dict["llh_energy_pdf"]["gamma"]
-            if self.llh_gamma != self.inj_dict["injection_energy_pdf"]["gamma"]:
-                logger.warning(
-                    f"Fixing gamma to {self.llh_gamma} for llh but injection is with {self.inj_dict['injection_energy_pdf']['gamma']}"
-                )
 
         # check if SoB spline dict is same in the llh & inj dicts
         if (
