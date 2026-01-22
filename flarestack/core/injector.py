@@ -761,8 +761,7 @@ class MockUnblindedInjector:
 
     def __init__(self, season: "Season", sources=np.nan, **kwargs):
         self.season = season
-        self._raw_data = season.get_exp_data()
-        season.load_background_model()
+        self.season.use_data_for_trials()
 
     def create_dataset(
         self, scale: float, angular_error_modifier=None
@@ -774,11 +773,18 @@ class MockUnblindedInjector:
         seed = int(123456)
         np.random.seed(seed)
 
-        simulated_data, n_excluded = self.season.simulate_background(Table(), None)
-        if angular_error_modifier is not None:
-            simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
+        # copy Season.simulate_background()
+        scrambled_data = self.season.pseudo_background()
+        if self.season._subselection_fraction is not None:
+            scrambled_data = np.random.choice(
+                scrambled_data,
+                int(len(scrambled_data) * self.season._subselection_fraction),
+            )
 
-        return simulated_data, n_excluded
+        if angular_error_modifier is not None:
+            scrambled_data = angular_error_modifier.pull_correct_static(scrambled_data)
+
+        return scrambled_data, 0
 
 
 class TrueUnblindedInjector:
