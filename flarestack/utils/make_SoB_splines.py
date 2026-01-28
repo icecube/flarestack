@@ -712,7 +712,7 @@ class SPLDiffuseSpline(SoB_splines):
 
 
 @SoB_splines.register_subclass("bpl_difffuse")
-class BPLDiffuseSpline(SPLDiffuseSpline):
+class BPLDiffuseSpline(SoB_splines):
     """Broken powerlaw diffuse + atmospheric background.
     Provided the (per-flavour) best-fit spectral parameters
     phi, gamma1, gamma2, and E_break the
@@ -739,6 +739,9 @@ class BPLDiffuseSpline(SPLDiffuseSpline):
     def __init__(self, season, SoB_dict) -> None:
         super().__init__(season, SoB_dict)
 
+        time_pdf = self.season.get_time_pdf()
+        self.livetime = time_pdf.get_livetime() * 3600 * 24
+
     def get_diffuse_flux(
         self, exp: Table
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -763,7 +766,7 @@ class BPLDiffuseSpline(SPLDiffuseSpline):
         phi2 = (
             phi * (np.asarray(exp[mask2]["trueE"]) / E_break) ** -gamma2
         )  # /GeV cm2 s sr
-        return phi1, mask1, phi2, mask2
+        return phi1, mask1[0], phi2, mask2[0]
 
     def bkg_weights(self, exp: Table) -> np.ndarray:
         logger.debug("Background weights w/ BPL diffuse flux")
