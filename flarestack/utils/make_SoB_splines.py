@@ -1,10 +1,11 @@
 import logging
 import os
 import pickle as Pickle
-from astropy.table import Table
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate
+from astropy.table import Table
 
 from flarestack.core.energy_pdf import PowerLaw
 from flarestack.shared import (

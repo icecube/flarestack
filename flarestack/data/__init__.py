@@ -4,6 +4,7 @@ import copy
 import logging
 import os
 from typing import Callable
+
 import numpy as np
 from astropy.table import Table
 
