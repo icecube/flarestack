@@ -20,20 +20,13 @@ from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.shared import (
     SoB_spline_path,
     acceptance_path,
-    default_gamma_precision,
-    default_smoothing_order,
     llh_energy_hash_pickles,
 )
 from flarestack.utils.create_acceptance_functions import (
     dec_range,
     make_acceptance_season,
 )
-from flarestack.utils.make_SoB_splines import (
-    create_2d_ratio_hist,
-    load_spline,
-    make_2d_spline_from_hist,
-    make_individual_spline_set,
-)
+from flarestack.utils.make_SoB_splines import SoB_splines, get_gamma_precision
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +93,26 @@ class LLH(object):
         self.season = season
         self.sources = sources
         self.llh_dict = llh_dict
-        self.spatial_pdf = SpatialPDF(llh_dict["llh_spatial_pdf"], season)
+
+        try:
+            sob_dict = llh_dict["sob_dict"]
+            sob_dict.setdefault("smoothing_order", "flarestack")
+            sob_dict.setdefault("gamma_precision", "flarestack")
+        except KeyError:
+            sob_dict = dict()
+            smoothing = llh_dict.get("smoothing_order", "flarestack")
+            precision = llh_dict.get("gamma_precision", "flarestack")
+            sob_dict = {"smoothing_order": smoothing, "gamma_precision": precision}
+
+        self.sob_name = sob_dict.setdefault("bkg_model_name", "no_difffuse")
+        self.sob = SoB_splines.create(season, sob_dict)
+        self.smoothing_order = self.sob.smoothing_order
+        self.precision = get_gamma_precision(self.sob.gamma_precision)
+
+        if "bkg_spatial_pdf" not in llh_dict["llh_spatial_pdf"].keys():
+            self.spatial_pdf = SpatialPDF(llh_dict["llh_spatial_pdf"], season, self.sob)
+        else:
+            self.spatial_pdf = SpatialPDF(llh_dict["llh_spatial_pdf"], season, None)
         self.spatial_box_width = llh_dict.get(
             "spatial_box_width", default_spacial_box_width
         )
@@ -423,7 +435,7 @@ class SpatialLLH(LLH):
         del exp
 
         # return lambda x: data_rate
-        return lambda x: np.exp(self.bkg_spatial(np.sin(x))) * data_rate
+        return lambda x: self.spatial_pdf.background_spatial(x) * data_rate
 
     def create_llh_function(
         self, data: Table, n_excluded: int, pull_corrector, weight_f=None
@@ -522,22 +534,6 @@ class FixedEnergyLLH(LLH):
                 "again."
             )
 
-        # defines the order of the splines used in the building of the energy PDF
-        self.smoothing_order = None
-        smoothing_order = llh_dict.get("smoothing_order", "flarestack")
-        if isinstance(smoothing_order, str):
-            self.smoothing_order = default_smoothing_order[smoothing_order]
-        else:
-            self.smoothing_order = smoothing_order
-
-        # used to construct the support points in gamma when the energy PDF is built
-        self.precision = None
-        precision = llh_dict.get("gamma_precision", "flarestack")
-        if isinstance(precision, str):
-            self.precision = default_gamma_precision[precision]
-        else:
-            self.precision = precision
-
         LLH.__init__(self, season, sources, llh_dict)
 
     def create_energy_functions(self):
@@ -548,7 +544,9 @@ class FixedEnergyLLH(LLH):
         :return: Acceptance function, energy_weighting_function
         """
 
-        SoB_path, acc_path = llh_energy_hash_pickles(self.llh_dict, self.season)
+        SoB_path, acc_path = llh_energy_hash_pickles(
+            self.llh_dict, self.season, self.sob_name
+        )
 
         # Set up acceptance function, creating values if they have not been
         # created before
@@ -577,7 +575,7 @@ class FixedEnergyLLH(LLH):
         with open(SoB_path, "rb") as f:
             [dec_vals, ratio_hist] = pickle.load(f)
 
-        spline = make_2d_spline_from_hist(
+        spline = self.sob.make_2d_spline_from_hist(
             np.array(ratio_hist), dec_vals, self.season.log_e_bins, self.smoothing_order
         )
 
@@ -636,12 +634,12 @@ class FixedEnergyLLH(LLH):
 
         # dec_range = self.season["sinDec bins"]
 
-        ratio_hist = create_2d_ratio_hist(
+        ratio_hist = self.sob.create_2d_ratio_hist(
             exp=self.season.get_background_model(),
             mc=self.season.get_pseudo_mc(),
-            sin_dec_bins=dec_range,
+            sin_dec_bins=self.season.sin_dec_bins,
             log_e_bins=self.season.log_e_bins,
-            weight_function=self.energy_pdf.weight_mc,
+            weight_f=self.energy_pdf.weight_mc,
         )
 
         try:
@@ -652,7 +650,7 @@ class FixedEnergyLLH(LLH):
         logger.info("Saving to {0}".format(SoB_path))
 
         with open(SoB_path, "wb") as f:
-            pickle.dump([dec_range, ratio_hist], f)
+            pickle.dump([self.season.sin_dec_bins, ratio_hist], f)
 
     def create_kwargs(
         self,
@@ -742,11 +740,7 @@ class StandardLLH(FixedEnergyLLH):
         # Sets precision for energy SoB
         # self.precision = .1
 
-        self.SoB_spline_2Ds = load_spline(
-            self.season,
-            smoothing_order=self.smoothing_order,
-            gamma_precision=self.precision,
-        )
+        self.SoB_spline_2Ds = self.sob.load_spline()
 
         if self.SoB_spline_2Ds:
             logger.debug("Loaded {0} splines.".format(len(self.SoB_spline_2Ds)))
@@ -778,11 +772,7 @@ class StandardLLH(FixedEnergyLLH):
         :return: Acceptance function, energy_weighting_function
         """
 
-        SoB_path = SoB_spline_path(
-            self.season,
-            smoothing_order=self.smoothing_order,
-            gamma_precision=self.precision,
-        )
+        SoB_path = SoB_spline_path(self.season, **self.sob.sob_dict)
         acc_path = acceptance_path(self.season)
 
         # Set up acceptance function, creating values if they have not been
@@ -807,12 +797,7 @@ class StandardLLH(FixedEnergyLLH):
         # Checks if energy weighting functions have been created
 
         if not os.path.isfile(SoB_path):
-            make_individual_spline_set(
-                self.season,
-                SoB_path,
-                smoothing_order=self.smoothing_order,
-                gamma_precision=self.precision,
-            )
+            self.sob.make_individual_spline_set(self.season, SoB_path)
 
         return acc_f, None
 
@@ -1708,8 +1693,12 @@ def generate_dynamic_flare_class(season, sources, llh_dict):
     except KeyError:
         raise KeyError("No LLH specified.")
 
-    # Set up dynamic inheritance
+    if mh_name in ["spatial", "fixed_energy"]:
+        raise NotImplementedError(
+            "Need an LLh that creates SoB energy cache, choose another"
+        )
 
+    # Set up dynamic inheritance
     try:
         ParentLLH = LLH.subclasses[mh_name]
     except KeyError:

@@ -95,8 +95,12 @@ class Submitter(object):
         if self.remove_old_results:
             self._clean_injection_values_and_pickled_results(self.mh_dict["name"])
         if self.use_cluster:
-            if mh_dict["inj_dict"]["injector_name"] == "low_memory_injector":
-                make_band_mask(mh_dict=copy.deepcopy(mh_dict))
+            try:
+                inj_name = mh_dict["inj_dict"]["injector_name"]
+                if inj_name == "low_memory_injector":
+                    make_band_mask(mh_dict=copy.deepcopy(mh_dict))
+            except KeyError:
+                pass
 
             self.submit_cluster(mh_dict)
         else:

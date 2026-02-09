@@ -222,10 +222,18 @@ class MinimisationHandler(object):
                 "gamma" in self.llh_dict["llh_energy_pdf"].keys()
             ), "Running trials with fixed gamma but no gamma passed in the llh energy pdf"
             self.llh_gamma = self.llh_dict["llh_energy_pdf"]["gamma"]
-            if self.llh_gamma != self.inj_dict["injection_energy_pdf"]["gamma"]:
-                logger.warning(
-                    f"Fixing gamma to {self.llh_gamma} for llh but injection is with {self.inj_dict['injection_energy_pdf']['gamma']}"
-                )
+
+        # check if SoB spline dict is same in the llh & inj dicts
+        if (
+            "sob_dict" in self.inj_dict
+            and "sob_dict" in self.llh_dict
+            and self.llh_dict["sob_dict"] != self.inj_dict["sob_dict"]
+        ):
+            logger.warning(
+                "Passed 'sob_dict' aren't the same for injector and llh: "
+                + f"inj = {self.inj_dict['sob_dict']}, llh = {self.llh_dict['sob_dict']}"
+                + " Proceed with caution!"
+            )
 
         p0, bounds, names = self.return_parameter_info(mh_dict)
 

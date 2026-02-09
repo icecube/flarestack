@@ -141,6 +141,7 @@ class ResultsHandler(object):
             # just make the TS and param distr plots
             if len(self.scale_values) == 1 and self.scale_values[0] == 0:
                 self.make_plots(self.scale_labels[0])
+                return
 
         # Create fit bias plots
         # this expects flux_to_ns to be set

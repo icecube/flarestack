@@ -15,6 +15,7 @@ from flarestack.core.spatial_pdf import SpatialPDF
 from flarestack.core.time_pdf import TimePDF, read_t_pdf_dict
 from flarestack.shared import band_mask_cache_name, k_to_flux
 from flarestack.utils.catalogue_loader import calculate_source_weight
+from flarestack.utils.make_SoB_splines import SoB_splines
 
 if TYPE_CHECKING:
     from flarestack.data import Season, SeasonWithMC
@@ -87,6 +88,17 @@ class BaseInjector:
         if len(sources) > 0:
             self.weight_scale = calculate_source_weight(self.sources)
 
+        # get SoB splines dict
+        try:
+            sob_dict = kwargs["sob_dict"]
+        except KeyError:
+            sob_dict = {}
+
+        sob_dict.setdefault("smoothing_order", "flarestack")
+        sob_dict.setdefault("gamma_precision", "flarestack")
+        self.sob_name = sob_dict.setdefault("bkg_model_name", "no_difffuse")
+        self.sob = SoB_splines.create(season, sob_dict)
+
         try:
             self.sig_time_pdf = TimePDF.create(
                 kwargs["injection_sig_time_pdf"], season.get_time_pdf()
@@ -94,7 +106,17 @@ class BaseInjector:
             # self.bkg_time_pdf = TimePDF.create(kwargs["injection_bkg_time_pdf"],
             #                                    season.get_time_pdf())
             self.energy_pdf = EnergyPDF.create(kwargs["injection_energy_pdf"])
-            self.spatial_pdf = SpatialPDF(kwargs["injection_spatial_pdf"], season)
+
+            # bkg_spatial_pdf = zenith_spline if not specified
+            # for this case SoB dict is needed
+            if "bkg_spatial_pdf" not in kwargs["injection_spatial_pdf"].keys():
+                self.spatial_pdf = SpatialPDF(
+                    kwargs["injection_spatial_pdf"], season, self.sob
+                )
+            else:
+                self.spatial_pdf = SpatialPDF(
+                    kwargs["injection_spatial_pdf"], season, None
+                )
         except KeyError:
             raise Exception(
                 "Injection Arguments missing. \n "
@@ -166,9 +188,19 @@ class BaseInjector:
         :param angular_error_modifier: AngularErrorModifier to change angular errors
         :return: Simulated dataset
         """
-        bkg_events, n_excluded = self.season.simulate_background(
-            self.sources, self.spatial_box_width
-        )
+        if self.sob_name != "no_difffuse":
+            try:
+                bkg_events, n_excluded = self.season.simulate_bkg_with_diffuse(
+                    self.sources, self.spatial_box_width, self.sob.bkg_weights
+                )
+            except NotImplementedError:
+                bkg_events, n_excluded = self.season.simulate_background(
+                    self.sources, self.spatial_box_width
+                )
+        else:
+            bkg_events, n_excluded = self.season.simulate_background(
+                self.sources, self.spatial_box_width
+            )
 
         if scale > 0.0:
             sig_events = self.inject_signal(scale)
@@ -729,8 +761,7 @@ class MockUnblindedInjector:
 
     def __init__(self, season: "Season", sources=np.nan, **kwargs):
         self.season = season
-        self._raw_data = season.get_exp_data()
-        season.load_background_model()
+        self.season.use_data_for_trials()
 
     def create_dataset(
         self, scale: float, angular_error_modifier=None
@@ -742,11 +773,18 @@ class MockUnblindedInjector:
         seed = int(123456)
         np.random.seed(seed)
 
-        simulated_data, n_excluded = self.season.simulate_background(Table(), None)
-        if angular_error_modifier is not None:
-            simulated_data = angular_error_modifier.pull_correct_static(simulated_data)
+        # copy Season.simulate_background()
+        scrambled_data = self.season.pseudo_background()
+        if self.season._subselection_fraction is not None:
+            scrambled_data = np.random.choice(
+                scrambled_data,
+                int(len(scrambled_data) * self.season._subselection_fraction),
+            )
 
-        return simulated_data, n_excluded
+        if angular_error_modifier is not None:
+            scrambled_data = angular_error_modifier.pull_correct_static(scrambled_data)
+
+        return scrambled_data, 0
 
 
 class TrueUnblindedInjector:

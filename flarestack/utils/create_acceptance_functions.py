@@ -6,7 +6,7 @@ import numpy as np
 
 from flarestack.core.energy_pdf import PowerLaw
 from flarestack.shared import acceptance_path, get_base_sob_plot_dir
-from flarestack.utils.make_SoB_splines import make_plot
+from flarestack.utils.make_SoB_splines import SoB_splines
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ def make_acceptance_season(season, acc_path):
     except OSError:
         pass
 
-    make_plot(
+    SoB_splines.make_plot(
         acc,
         savepath,
         gamma_vals,

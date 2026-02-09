@@ -1,3 +1,5 @@
+from typing import Callable
+
 import numpy as np
 from astropy.table import Table
 
@@ -179,6 +181,90 @@ class NTSeason(IceCubeSeason):
         time_pdf = self.get_time_pdf()
 
         # Simulates random times
+        sim_bkg["time"] = time_pdf.simulate_times(source=None, n_s=n_bkg)
+
+        # Check that the time pdf evaluates to 1 for all the simulated times.
+        pdf_sum = np.sum(time_pdf.season_f(sim_bkg["time"]))
+        if pdf_sum < n_bkg:
+            raise RuntimeError(
+                f"The time PDF does not evaluate to 1 for all generated event times.\n \
+                The sum of the PDF values over {n_bkg} events is {pdf_sum}.\n \
+                This means the sampling of background times is not reliable and must be fixed."
+            )
+
+        # Reduce the data to the relevant fields for analysis.
+        analysis_keys = list(self.get_background_dtype().names or [])
+        return sim_bkg[analysis_keys], n_excluded
+
+    def simulate_bkg_with_diffuse(
+        self, sources: Table, spatial_box_width: None | float, bkg_weights: Callable
+    ) -> tuple[Table, int]:
+        """Same method as simulating atmospheric-only background,
+        only that diffuse flux is added to the background model.
+        The diffuse flux spectrum is designated in the injector dict,
+        the events' diffuse + atm weights are used to estimate the
+        expected number of and subsequently select the background events.
+
+        Args:
+            sources (Table): sources when you want to choose
+                MC events in a spatial box around each
+            bkg_weights (Callable): method to get the events'
+                diffuse + atm weights, for the chosen diffuse flux.
+                Takes MC Table as arg
+
+        Returns:
+            tuple[Table, int]: bkg MC, no. excluded events if spatial box is on
+        """
+        rng = np.random
+
+        if self.loaded_background_model is None:
+            raise RuntimeError(
+                "Monte Carlo background is not loaded. Call `load_background_model` before `simulate_background`."
+            )
+
+        if spatial_box_width is None:
+            # Draw from full MC sample
+            mc = self.loaded_background_model
+            n_excluded = 0
+        else:
+            # Draw from MC sample within a spatial box around the sources
+            if (
+                sources is not self._prev_sources
+                or spatial_box_width != self._prev_spatial_box_width
+            ):
+                self._prev_mc = self.loaded_background_model[
+                    self._get_spatially_coincident_indices(
+                        np.asarray(self.loaded_background_model["ra"]),
+                        np.asarray(self.loaded_background_model["dec"]),
+                        np.asarray(sources["ra_rad"]),
+                        np.asarray(sources["dec_rad"]),
+                        np.deg2rad(spatial_box_width),
+                    )
+                ]
+                self._prev_sources = sources
+                self._prev_spatial_box_width = spatial_box_width
+            mc = self._prev_mc
+            # Draw a number of events that would have been outside the box
+            n_excluded = rng.poisson(
+                np.sum(bkg_weights(self.loaded_background_model))
+                - np.sum(bkg_weights(mc))
+            )
+
+        weights = bkg_weights(mc)  # diffuse + atmospheric bkg weights
+        n_exp = np.sum(weights)
+
+        n_bkg = rng.poisson(n_exp)
+        print(
+            f"Simulating {n_bkg} bkg diffuse + atmospheric events, excluding {n_excluded}."
+        )
+
+        p_select = weights.cumsum() / n_exp
+        ind = np.searchsorted(p_select, np.sort(rng.uniform(size=n_bkg)), side="right")
+
+        sim_bkg = mc[ind]
+
+        # Simulates random times
+        time_pdf = self.get_time_pdf()
         sim_bkg["time"] = time_pdf.simulate_times(source=None, n_s=n_bkg)
 
         # Check that the time pdf evaluates to 1 for all the simulated times.

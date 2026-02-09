@@ -15,7 +15,7 @@ from flarestack.shared import (
     med_ang_res_path,
     public_dataset_dir,
 )
-from flarestack.utils.make_SoB_splines import make_individual_spline_set
+from flarestack.utils.make_SoB_splines import SoB_splines
 
 logger = logging.getLogger(__name__)
 
@@ -228,10 +228,17 @@ def run_all():
     parse_numpy_dataset()
     parse_angular_resolution()
 
+    sob_dict = {
+        "bkg_model_name": "no_difffuse",
+        "smoothing_order": "flarestack",
+        "gamma_precision": "flarestack",
+    }
+
     for season in icecube_ps_3_year.get_seasons().values():
         season.map_energy_proxy()
         season.plot_effective_area()
-        make_individual_spline_set(season, SoB_spline_path(season))
+        sob = SoB_splines.create(season, sob_dict)
+        sob.make_individual_spline_set(season, SoB_spline_path(season, **sob.sob_dict))
 
 
 # If data has not been extracted, then extract from zip file

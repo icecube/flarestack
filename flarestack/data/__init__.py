@@ -3,6 +3,7 @@
 import copy
 import logging
 import os
+from typing import Callable
 
 import numpy as np
 from astropy.table import Table
@@ -16,7 +17,7 @@ from flarestack.core.time_pdf import (
     TimePDF,
 )
 from flarestack.utils.create_acceptance_functions import make_acceptance_season
-from flarestack.utils.make_SoB_splines import make_background_spline
+from flarestack.utils.make_SoB_splines import SoB_splines
 
 logger = logging.getLogger(__name__)
 
@@ -232,6 +233,11 @@ class Season:
             data = np.random.choice(data, int(len(data) * self._subselection_fraction))
         return data, 0
 
+    def simulate_bkg_with_diffuse(
+        self, sources: Table, spatial_box_width: None | float, diffuse_weights: Callable
+    ) -> tuple[Table, int]:
+        raise NotImplementedError("Diffuse background model is implemented only for NT")
+
     def get_exp_data(self, **kwargs) -> Table:
         return self.load_data(self.exp_path, **kwargs)
 
@@ -290,8 +296,8 @@ class Season:
     def return_name(self):
         return self.sample_name + "/" + self.season_name
 
-    def make_background_spatial(self):
-        make_background_spline(self)
+    def make_background_spatial(self, SoB: SoB_splines):
+        SoB.make_background_spline(self)
 
     def get_pseudo_mc(self, **kwargs):
         return self.load_data(self.pseudo_mc_path, **kwargs)
