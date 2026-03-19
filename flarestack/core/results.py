@@ -521,7 +521,7 @@ class ResultsHandler(object):
         either case, a plot of the overfluctuations as a function of the
         injected signal is produced.
         """
-        x_acc, y, yerr = [], [], []
+        x_acc, y, yerr, yerr_ts_jitter = [], [], [], []
         x = self.scale_labels
 
         for scale in x:
@@ -542,6 +542,12 @@ class ResultsHandler(object):
                 x_acc.append(float(scale))
                 yerr.append(1.0 / np.sqrt(float(len(ts_array))))
 
+                # another way to estimate the error on the overfluctuation fractions
+                ts_mean_fluc = np.mean(ts_array) / np.sqrt(len(ts_array))
+                frac_ul = float(len(ts_array[ts_array + ts_mean_fluc > ts_val])) / (float(len(ts_array)))
+                frac_ll = float(len(ts_array[ts_array - ts_mean_fluc > ts_val])) / (float(len(ts_array)))
+                yerr_ts_jitter.append(np.max([(frac_ul-frac_ll)/2., 1e-5]))
+
                 if frac != 0.0:
                     logger.info(f"Making plot for {scale=}, {frac=}")
                     self.make_plots(scale)
@@ -555,13 +561,13 @@ class ResultsHandler(object):
             )
 
         x = np.array(x_acc)
-        self.overfluctuations[ts_val] = x, y, yerr
+        self.overfluctuations[ts_val] = x, y, yerr, yerr_ts_jitter
 
         fit, err, extrapolated = self.sensitivity_fit(savepath, ts_val)
         return fit, err, extrapolated
 
     def sensitivity_fit(self, savepath, ts_val):
-        x, y, yerr = self.overfluctuations[ts_val]
+        x, y, yerr, yerr_ts_jitter = self.overfluctuations[ts_val]
         x_flux = k_to_flux(x)
 
         threshold = 0.9
@@ -612,7 +618,7 @@ class ResultsHandler(object):
 
         fig = plt.figure()
         ax1 = fig.add_subplot(111)
-        ax1.errorbar(x_flux, y, yerr=yerr, color="black", fmt=" ", marker="o")
+        ax1.errorbar(x_flux, y, yerr=yerr_ts_jitter, color="black", fmt=" ", marker="o")
         ax1.plot(k_to_flux(xrange), best_f(xrange), color="blue")
         ax1.fill_between(
             k_to_flux(xrange),
