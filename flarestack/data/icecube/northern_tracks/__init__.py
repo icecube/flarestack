@@ -263,6 +263,7 @@ class NTSeason(IceCubeSeason):
         ind = np.searchsorted(p_select, np.sort(rng.uniform(size=n_bkg)), side="right")
 
         sim_bkg = mc[ind]
+        sim_bkg["ra"] = np.random.uniform(0, 2 * np.pi, size=n_bkg)
 
         # Simulates random times
         time_pdf = self.get_time_pdf()
